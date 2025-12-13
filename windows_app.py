@@ -1584,6 +1584,12 @@ class IPSubnetSplitterApp:
             messagebox.showerror("错误", "请输入父网段")
             return
 
+        import re
+        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+        if not re.match(cidr_pattern, parent_cidr):
+            messagebox.showerror("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
+            return
+
         # 获取子网需求
         subnet_requirements = []
         for item in self.requirements_tree.get_children():
@@ -1690,6 +1696,28 @@ class IPSubnetSplitterApp:
             )
             # 设置错误标签样式
             self.split_tree.tag_configure("error", foreground="red")
+            return
+
+        # 验证CIDR格式
+        import re
+        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+        if not re.match(cidr_pattern, parent):
+            self.clear_result()
+            self.split_tree.delete(*self.split_tree.get_children())
+            self.split_tree.insert(
+                "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
+            )
+            self.split_tree.tag_configure("error", foreground="red")
+            messagebox.showerror("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
+            return
+        if not re.match(cidr_pattern, split):
+            self.clear_result()
+            self.split_tree.delete(*self.split_tree.get_children())
+            self.split_tree.insert(
+                "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
+            )
+            self.split_tree.tag_configure("error", foreground="red")
+            messagebox.showerror("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
             return
 
         try:
