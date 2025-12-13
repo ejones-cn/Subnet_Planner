@@ -8,6 +8,7 @@
 # 所有导入语句放在最顶部
 import tkinter as tk
 import math
+import re
 from tkinter import ttk, filedialog, messagebox
 
 # 导入自定义模块
@@ -330,7 +331,7 @@ class ColoredNotebook(ttk.Frame):
                     relief="flat",
                     bg="#808080",  # 灰色背景
                     font=("微软雅黑", 10, "normal"),
-                    foreground="#333333",  # 默认深灰色文字
+                    foreground="white",  # 白色文字
                 )
             else:
                 # 内部标签页非激活状态：保持原有背景色，深灰色文字
@@ -408,7 +409,32 @@ class ColoredNotebook(ttk.Frame):
 
 
 class IPSubnetSplitterApp:
+    def validate_split_cidr(self, text):
+        text = text.strip()
+        if not text:
+            self.split_entry.config(style='Valid.TEntry')
+            return True
+        try:
+            import ipaddress
+            ipaddress.IPv4Network(text, strict=False)
+            self.split_entry.config(style='Valid.TEntry')
+            return True
+        except ImportError:
+            # 回退到正则表达式验证
+            import re
+            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+            is_valid = bool(re.match(cidr_pattern, text))
+            self.split_entry.config(foreground='black' if is_valid else 'red')
+            return "1"
+        except ValueError:
+            self.split_entry.config(style='Invalid.TEntry')
+            return False
+
     def __init__(self, root):
+        # 创建自定义样式
+        self.style = ttk.Style()
+        self.style.configure('Valid.TEntry', foreground='black')
+        self.style.configure('Invalid.TEntry', foreground='red')
         # 导入版本管理模块
         import sys
         import os
@@ -589,7 +615,11 @@ class IPSubnetSplitterApp:
             foreground=[("selected", "white")]
         )
 
-        # 4. 斑马条纹样式配置
+        # 4. 输入框样式配置 - 用于CIDR验证颜色反馈
+        self.style.configure("Valid.TEntry", foreground="black")
+        self.style.configure("Invalid.TEntry", foreground="red")
+
+        # 5. 斑马条纹样式配置
         # 在Treeview中通过标签(tags)实现斑马条纹效果
         # 注意：ttk.Style不直接支持斑马条纹，需要在插入行时使用tags
         print("Treeview表格线样式设置完成")
@@ -620,8 +650,9 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
             row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
         )
-        self.parent_entry = ttk.Entry(input_frame, width=32, font=(
-            "微软雅黑", 10))
+        vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
+        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+            validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
@@ -629,8 +660,9 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
             row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
-        self.split_entry = ttk.Entry(input_frame, width=32, font=(
-            "微软雅黑", 10))
+        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
+        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+            validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
@@ -657,6 +689,22 @@ class IPSubnetSplitterApp:
             row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
         )
 
+    def validate_parent_cidr(self, text):
+        import re
+        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+        text = text.strip()
+        is_valid = bool(re.match(cidr_pattern, text)) if text else True
+        self.parent_entry.config(foreground='black' if is_valid else 'red')
+        return "1"
+
+    def validate_split_cidr_local(self, text):
+        import re
+        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+        text = text.strip()
+        is_valid = bool(re.match(cidr_pattern, text)) if text else True
+        self.split_entry.config(foreground='black' if is_valid else 'red')
+        return "1"
+
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
         input_frame = ttk.LabelFrame(self.split_main_container, text="输入参数", padding="10")  # 减小内边距
@@ -666,8 +714,19 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
             row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
         )
-        self.parent_entry = ttk.Entry(input_frame, width=32, font=(
-            "微软雅黑", 10))
+        def validate_cidr(text):
+            import re
+            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+            is_valid = bool(re.match(cidr_pattern, text)) if text else True
+            if is_valid:
+                self.parent_entry.config(foreground='black')
+            else:
+                self.parent_entry.config(foreground='red')
+            return is_valid
+
+        vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
+        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+            validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
@@ -675,8 +734,9 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
             row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
-        self.split_entry = ttk.Entry(input_frame, width=32, font=(
-            "微软雅黑", 10))
+        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
+        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+            validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
@@ -962,7 +1022,19 @@ class IPSubnetSplitterApp:
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
         ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
-        self.planning_parent_entry = ttk.Entry(parent_frame, width=20)
+        def validate_cidr(text):
+            import re
+            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+            is_valid = bool(re.match(cidr_pattern, text)) if text else True
+            if is_valid:
+                self.planning_parent_entry.config(foreground='black')
+            else:
+                self.planning_parent_entry.config(foreground='red')
+            return is_valid
+
+        vcmd = (self.root.register(validate_cidr), '%P')
+        self.planning_parent_entry = ttk.Entry(parent_frame, width=20,
+            validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
         
@@ -1587,8 +1659,21 @@ class IPSubnetSplitterApp:
 
             # 子网规划完成，不显示对话框提示
 
+        except ValueError as e:
+            error_msg = str(e)
+            if "not permitted" in error_msg and "Octet" in error_msg:
+                import re
+                match = re.search(r"Octet\D*(\d+)", error_msg)
+                if match:
+                    octet = match.group(1)
+                    message = f"子网规划失败: IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
+                else:
+                    message = f"子网规划失败: {error_msg}"
+            else:
+                message = f"子网规划失败: {error_msg}"
+            messagebox.showerror("错误", message)
         except Exception as e:
-            messagebox.showerror("错误", f"子网规划失败: {str(e)}")
+            messagebox.showerror("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
     def execute_split(self):
         """执行切分操作"""
@@ -1682,9 +1767,24 @@ class IPSubnetSplitterApp:
             # 绘制图表
             self.draw_distribution_chart()
 
+        except ValueError as e:
+            error_msg = str(e)
+            if "not permitted" in error_msg and "Octet" in error_msg:
+                import re
+                match = re.search(r"Octet\D*(\d+)", error_msg)
+                if match:
+                    octet = match.group(1)
+                    message = f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
+                else:
+                    message = error_msg
+            else:
+                message = error_msg
+            self.clear_result()
+            self.split_tree.insert("", tk.END, values=("错误", message), tags=("error",))
+            self.split_tree.tag_configure("error", foreground="red")
         except Exception as e:
             self.clear_result()
-            self.split_tree.insert("", tk.END, values=("错误", str(e)), tags=("error",))
+            self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
             self.split_tree.tag_configure("error", foreground="red")
 
     def show_result(self, text, error=False, keep_data=False):

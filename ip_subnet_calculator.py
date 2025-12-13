@@ -17,6 +17,7 @@ import os
 import json
 import csv
 import io
+import re
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from version import get_version
@@ -78,7 +79,49 @@ def get_subnet_info(network_str):
             "number_of_hosts": number_of_hosts
         }
     except ValueError as e:
-        return {"error": str(e)}
+        error_msg = str(e)
+        if "not a valid netmask" in error_msg:
+            return {"error": f"'{error_msg.split()[0]}' 不是有效的子网掩码"}
+        elif re.search(r"octet.*?not permitted", error_msg, re.IGNORECASE):
+            match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
+            if match:
+                octet = match.group(1)
+                if int(octet) > 255:
+                    return {"error": f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"}
+            return {"error": f"子网计算错误: {error_msg}"}
+        elif "does not appear to be an IPv4 or IPv6 network" in error_msg:
+            return {"error": f"无效的网络地址格式: {error_msg.split()[-1]}"}
+        elif "has host bits set" in error_msg:
+            return {"error": f"CIDR地址包含主机位: {error_msg.split()[0]}"}
+        elif re.search(r"expected 4 octets", error_msg, re.IGNORECASE):
+            # 匹配格式: "Expected 4 octets in '10.10'"或"Expected 4 octets but got 2"等
+            ip_match = re.search(r"'([^']+)'", error_msg)
+            if ip_match:
+                invalid_ip = ip_match.group(1)
+                return {"error": f"IP地址格式错误，需要4个八位组，实际为 '{invalid_ip}'"}
+        elif re.search(r"at most 3 characters permitted in '(\d+)'", error_msg, re.IGNORECASE):
+            octet_match = re.search(r"'(\d+)'", error_msg)
+            if octet_match:
+                invalid_octet = octet_match.group(1)
+                return {"error": f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"}
+        elif re.search(r"octet.*?exceeds", error_msg, re.IGNORECASE):
+            match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
+            if match:
+                octet_value = match.group(1)
+                return {"error": f"IP地址中八位组 '{octet_value}' 无效，必须小于等于255"}
+        elif "Octet" in error_msg and "exceeds" in error_msg:
+            match = re.search(r"Octet (\d+) exceeds", error_msg)
+            if match:
+                octet_value = match.group(1)
+                return {"error": f"IP地址中八位组 '{octet_value}' 无效，必须小于等于255"}
+        else:
+            # 作为最后的备选，将所有英文错误消息翻译成中文
+            if "has host bits set" in error_msg:
+                return {"error": f"CIDR地址包含主机位: {error_msg.split()[0]}"}
+            elif "not a valid netmask" in error_msg:
+                return {"error": f"无效的子网掩码: {error_msg.split()[0]}"}
+            else:
+                return {"error": f"子网计算错误: {error_msg}"}
 
 
 def split_subnet(parent_cidr, split_cidr):
@@ -121,7 +164,34 @@ def split_subnet(parent_cidr, split_cidr):
         }
 
     except ValueError as e:
-        return {"error": str(e)}
+        error_msg = str(e)
+        if "not a valid netmask" in error_msg:
+            return {"error": f"'{error_msg.split()[0]}' 不是有效的子网掩码"}
+        elif "Octet" in error_msg and "not permitted" in error_msg:
+            match = re.search(r"[Oo]ctet.*?(\d+)", error_msg)
+            if match:
+                octet = match.group(1)
+                if int(octet) > 255:
+                    return {"error": f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"}
+            return {"error": f"子网规划错误: {error_msg}"}
+        elif "does not appear to be an IPv4 or IPv6 network" in error_msg:
+            return {"error": f"无效的网络地址格式: {error_msg.split()[-1]}"}
+        elif "has host bits set" in error_msg:
+            return {"error": f"CIDR地址包含主机位: {error_msg.split()[0]}"}
+        elif re.search(r"expected.*?4 octets", error_msg, re.IGNORECASE | re.DOTALL):
+            ip_match = re.search(r"'([^']+)'", error_msg)
+            if ip_match:
+                invalid_ip = ip_match.group(1)
+                return {"error": f"IP地址格式错误，需要4个八位组，实际为 '{invalid_ip}'"}
+            else:
+                return {"error": "IP地址格式错误，需要4个八位组"}
+        elif re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
+            octet_match = re.search(r"in '([^']+)'", error_msg, re.IGNORECASE)
+            if octet_match:
+                invalid_octet = octet_match.group(1)
+                return {"error": f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"}
+        else:
+            return {"error": f"子网规划错误: {error_msg}"}
 
 
 def suggest_subnet_planning(parent_cidr, required_subnets):
@@ -222,7 +292,31 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
         }
 
     except ValueError as e:
-        return {"error": str(e)}
+        error_msg = str(e)
+        if "not a valid netmask" in error_msg:
+            return {"error": f"'{error_msg.split()[0]}' 不是有效的子网掩码"}
+        elif "Octet" in error_msg and "not permitted" in error_msg:
+            octet = error_msg.split()[1]
+            return {"error": f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"}
+        elif re.search(r"expected.*?4 octets", error_msg, re.IGNORECASE | re.DOTALL):
+            ip_match = re.search(r"'([^']+)'", error_msg)
+            if ip_match:
+                invalid_ip = ip_match.group(1)
+                return {"error": f"IP地址格式错误，需要4个八位组，实际为 '{invalid_ip}'"}
+            else:
+                return {"error": "IP地址格式错误，需要4个八位组"}
+            if ip_match:
+                invalid_ip = ip_match.group(1)
+                return {"error": f"IP地址格式错误，需要4个八位组，实际为 '{invalid_ip}'"}
+        elif re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
+            octet_match = re.search(r"in '([^']+)'", error_msg, re.IGNORECASE)
+            if octet_match:
+                invalid_octet = octet_match.group(1)
+                return {"error": f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"}
+        elif "has host bits set" in error_msg:
+            return {"error": f"CIDR地址包含主机位: {error_msg.split()[0]}"}
+        else:
+            return {"error": f"子网规划错误: {error_msg}"}
 
 
 # 测试示例
@@ -509,7 +603,13 @@ def export_to_pdf(data, file_path):
         doc.build(elements)
         return True
     except Exception as e:
-        print(f"PDF导出失败: {str(e)}")
+        error_msg = str(e)
+        if "字体" in error_msg or "font" in error_msg.lower():
+            print(f"PDF导出失败: 字体注册错误 - {error_msg}")
+        elif "文件" in error_msg or "file" in error_msg.lower():
+            print(f"PDF导出失败: 文件路径错误 - {error_msg}")
+        else:
+            print(f"PDF导出失败: {error_msg}")
         return False
 
 
