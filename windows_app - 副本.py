@@ -657,34 +657,25 @@ class IPSubnetSplitterApp:
     def create_input_section(self):
         """创建输入区域 - 优化布局"""
 
-        # 创建输入参数和操作历史的父容器
-        input_history_container = ttk.Frame(self.main_frame)
-        input_history_container.pack(fill=tk.BOTH, expand=False, pady=(0, 8))
-        
-        # 输入参数容器
-        input_frame = ttk.LabelFrame(input_history_container, text="输入参数", padding=(10, 5))  # 左右0，上下5内边距
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=(0, 5))  # 左侧排列
-        self.create_history_panel(input_history_container, 'split')
-        input_frame.columnconfigure(0, weight=0, pad=0)
-        input_frame.columnconfigure(1, weight=0, pad=0)
-        input_frame.columnconfigure(2, weight=0, pad=0)
+        input_frame = ttk.LabelFrame(self.main_frame, text="输入参数", padding="10")  # 减小内边距
+        input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段:", anchor="w", width=8).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=0
+        ttk.Label(input_frame, text="父网段:", anchor="e", width=22).grid(
+            row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
+        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
         # 切分网段
-        ttk.Label(input_frame, text="切分段:", anchor="w", width=8).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=0
+        ttk.Label(input_frame, text="切分段:", anchor="e", width=22).grid(
+            row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
+        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -692,24 +683,24 @@ class IPSubnetSplitterApp:
         # 按钮区域
         # 执行按钮
         self.execute_btn = ttk.Button(
-            input_frame, text="执行切分", command=self.execute_split, width=8
+            input_frame, text="执行切分", command=self.execute_split, width=12
         )
         self.execute_btn.grid(
-            row=0, column=2, padx=0, pady=5, sticky=tk.W
+            row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
         )
 
         # 清空按钮
         self.clear_btn = ttk.Button(
-            input_frame, text="清空结果", command=self.clear_result, width=8
+            input_frame, text="清空结果", command=self.clear_result, width=12
         )
-        self.clear_btn.grid(row=1, column=2, padx=0, pady=3, sticky=tk.W)
+        self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
         self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=8
+            input_frame, text="导出结果", command=self.export_result, width=14
         )
         self.export_btn.grid(
-            row=0, column=2, rowspan=2, padx=0, pady=(5, 3), sticky=tk.W
+            row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
         )
 
     def validate_parent_cidr(self, text):
@@ -730,18 +721,12 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self, parent):
         """创建子网切分功能的输入区域"""
-        # 创建输入参数和操作历史的父容器
-        input_history_container = ttk.Frame(parent)
-        input_history_container.pack(fill=tk.BOTH, expand=False, pady=(0, 8))
-        
-        # 输入参数容器
-        input_frame = ttk.LabelFrame(input_history_container, text="输入参数", padding=(10, 5))  # 左右0，上下5内边距
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))  # 左侧排列
-        self.create_history_panel(input_history_container, 'split')
+        input_frame = ttk.LabelFrame(parent, text="输入参数", padding="10")  # 减小内边距
+        input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段:", anchor="w", width=8).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=0
+        ttk.Label(input_frame, text="父网段:", anchor="e", width=22).grid(
+            row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
         )
         def validate_cidr(text):
             import re
@@ -754,17 +739,17 @@ class IPSubnetSplitterApp:
             return is_valid
 
         vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
+        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
         # 切分网段
-        ttk.Label(input_frame, text="切分段:", anchor="w", width=8).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=0
+        ttk.Label(input_frame, text="切分段:", anchor="e", width=22).grid(
+            row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
+        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -772,7 +757,7 @@ class IPSubnetSplitterApp:
         # 按钮区域
         # 执行按钮
         self.execute_btn = ttk.Button(
-            input_frame, text="执行切分", command=self.execute_split, width=8
+            input_frame, text="执行切分", command=self.execute_split, width=12
         )
         self.execute_btn.grid(
             row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
@@ -780,13 +765,13 @@ class IPSubnetSplitterApp:
 
         # 清空按钮
         self.clear_btn = ttk.Button(
-            input_frame, text="清空结果", command=self.clear_result, width=8
+            input_frame, text="清空结果", command=self.clear_result, width=12
         )
         self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
         self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=8
+            input_frame, text="导出结果", command=self.export_result, width=14
         )
         self.export_btn.grid(
             row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
@@ -839,24 +824,24 @@ class IPSubnetSplitterApp:
     def create_history_panel(self, parent, tab_type):
         """创建历史记录面板 - tab_type: 'split'或'planning'"""
         history_frame = ttk.LabelFrame(parent, text="操作历史", padding=(5, 5))
-        history_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))  # 右侧排列，与输入参数容器同一父容器
+        history_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 0))
 
         # 创建按钮框架
         btn_frame = ttk.Frame(history_frame)
         btn_frame.pack(side=tk.RIGHT, padx=5, pady=5)
 
         # 撤销按钮
-        undo_btn = ttk.Button(btn_frame, text="撤销", command=lambda: self.undo_last_action(tab_type), width=8)
-        undo_btn.pack(side=tk.TOP, pady=2)
+        undo_btn = ttk.Button(btn_frame, text="撤销", command=lambda: self.undo_last_action(tab_type))
+        undo_btn.pack(side=tk.LEFT, padx=2)
         undo_btn.config(state=tk.DISABLED)
 
         # 重做按钮
-        redo_btn = ttk.Button(btn_frame, text="重做", command=lambda: self.redo_last_action(tab_type), width=8)
-        redo_btn.pack(side=tk.TOP, pady=2)
+        redo_btn = ttk.Button(btn_frame, text="重做", command=lambda: self.redo_last_action(tab_type))
+        redo_btn.pack(side=tk.LEFT, padx=2)
         redo_btn.config(state=tk.DISABLED)
 
         # 创建历史记录列表
-        history_listbox = tk.Listbox(history_frame, height=3, width=80)
+        history_listbox = tk.Listbox(history_frame, height=5, width=80)
         history_listbox.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.BOTH, expand=True)
 
         # 存储控件引用
