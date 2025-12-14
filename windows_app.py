@@ -348,6 +348,7 @@ class ColoredNotebook(ttk.Frame):
         
         # 更新当前激活的标签页索引
         self.active_tab = tab_index
+        self.event_generate("<<NotebookTabChanged>>")
 
         # 根据是否为顶级标签页应用不同的激活样式
         if self.is_top_level:
@@ -401,6 +402,11 @@ class ColoredNotebook(ttk.Frame):
         # 调用标签页切换回调函数
         if self.tab_change_callback:
             self.tab_change_callback(tab_index)
+
+    def get_selected_tab(self):
+        if self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
+            return self.tabs[self.active_tab]
+        return None
 
     def add(self, frame, text=""):
         """模拟ttk.Notebook的add方法"""
@@ -838,7 +844,7 @@ class IPSubnetSplitterApp:
 
     def create_history_panel(self, parent, tab_type):
         """创建历史记录面板 - tab_type: 'split'或'planning'"""
-        history_frame = ttk.LabelFrame(parent, text="操作历史", padding=(5, 5))
+        history_frame = ttk.LabelFrame(parent, text="操作记录" if tab_type == 'split' else "操作历史", padding=(5, 5))
         history_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))  # 右侧排列，与输入参数容器同一父容器
 
         # 创建按钮框架
@@ -846,12 +852,12 @@ class IPSubnetSplitterApp:
         btn_frame.pack(side=tk.RIGHT, padx=5, pady=5)
 
         # 撤销按钮
-        undo_btn = ttk.Button(btn_frame, text="撤销", command=lambda: self.undo_last_action(tab_type), width=8)
+        undo_btn = ttk.Button(btn_frame, text="撤销", command=self.split_undo_last_action if tab_type == 'split' else self.planning_undo_last_action, width=8)
         undo_btn.pack(side=tk.TOP, pady=2)
         undo_btn.config(state=tk.DISABLED)
 
         # 重做按钮
-        redo_btn = ttk.Button(btn_frame, text="重做", command=lambda: self.redo_last_action(tab_type), width=8)
+        redo_btn = ttk.Button(btn_frame, text="重做", command=self.split_redo_last_action if tab_type == 'split' else self.planning_redo_last_action, width=8)
         redo_btn.pack(side=tk.TOP, pady=2)
         redo_btn.config(state=tk.DISABLED)
 
@@ -879,27 +885,30 @@ class IPSubnetSplitterApp:
         # 如果没有提供状态，则保存当前状态
         if current_state is None:
             if tab_type == 'split':
-                current_state = {
-                    'split_tree': [self.split_tree.item(item) for item in self.split_tree.get_children()],
-                    'remaining_tree': [self.remaining_tree.item(item) for item in self.remaining_tree.get_children()],
-                    'chart_data': self.chart_canvas,
-                    'parent_cidr': self.parent_cidr_var.get(),
-                    'split_cidr': self.split_cidr_var.get()
-                }
+                # 简化历史记录，仅保存父网段和切分段数据
+                parent_cidr = self.parent_cidr_var.get().strip()
+                split_cidr = self.split_cidr_var.get().strip()
+                if parent_cidr and split_cidr:  # 仅在有实际数据时才保存
+                    current_state = {
+                        'parent_cidr': parent_cidr,
+                        'split_cidr': split_cidr
+                    }
+                else:
+                    current_state = None  # 不保存空状态
             else:
-                # 子网规划状态
-                requirements = []
-                for item in self.requirements_tree.get_children():
-                    values = self.requirements_tree.item(item, 'values')
-                    requirements.append({'name': values[0], 'hosts': values[1]})
-                current_state = {
-                    'requirements': requirements,
-                    'parent_cidr': self.planning_parent_entry.get().strip() if hasattr(self, 'planning_parent_entry') else '未知父网段',
-                    'split_cidr': action_message if action_message else f'子网规划: {len(requirements)}个子网'
-                }
+                  # 子网规划状态
+                  parent_cidr = self.planning_parent_entry.get().strip() if hasattr(self, 'planning_parent_entry') else ''
+                  if parent_cidr:  # 仅在有实际数据时才保存
+                      current_state = {
+                          'requirements': [{'values': self.requirements_tree.item(item, 'values')[1:]} for item in self.requirements_tree.get_children()],
+                          'parent_cidr': parent_cidr,
+                          'split_cidr': action_message if action_message else f'子网规划: {len(self.requirements_tree.get_children())}个子网'
+                      }
+                  else:
+                      current_state = None  # 不保存空状态
 
-        # 如果不是初始状态且有变更才添加
-        if hasattr(self, f'{tab_type}_history_stack'):
+        # 仅在有实际数据时才添加到历史
+        if current_state and hasattr(self, f'{tab_type}_history_stack'):
             # 移除当前位置之后的历史
             if history_index < len(history_stack) - 1:
                 history_stack = history_stack[:history_index + 1]
@@ -920,7 +929,22 @@ class IPSubnetSplitterApp:
                 self.planning_history_stack = history_stack
                 self.planning_history_index = history_index
             self.update_history_display(tab_type)
-            self.update_history_buttons(tab_type)
+            
+    def update_history_buttons(self, tab_type):
+        """更新撤销/重做按钮状态"""
+        # 根据tab_type获取对应的按钮和历史数据
+        if tab_type == 'split':
+            undo_btn = self.split_undo_btn
+            redo_btn = self.split_redo_btn
+            history_index = self.split_history_index
+            history_stack = self.split_history_stack
+        else:
+            undo_btn = self.planning_undo_btn
+            redo_btn = self.planning_redo_btn
+            history_index = self.planning_history_index
+            history_stack = self.planning_history_stack
+        undo_btn.config(state=tk.NORMAL if history_index > 0 else tk.DISABLED)
+        redo_btn.config(state=tk.NORMAL if history_index < len(history_stack) - 1 else tk.DISABLED)
 
     def update_history_display(self, tab_type):
         """更新历史记录显示"""
@@ -934,11 +958,13 @@ class IPSubnetSplitterApp:
             history_index = self.split_history_index if tab_type == 'split' else self.planning_history_index
             status = "当前" if i == history_index else ""
             parent_cidr = state.get('parent_cidr', '未知父网段')
-            split_cidr = state.get('split_cidr', '未知切分')
+            split_cidr = state.get('split_cidr', '未知切分段')
             history_listbox.insert(tk.END, f"{parent_cidr} | {split_cidr} {status}")
         if history_stack:
             history_listbox.selection_set(history_index)
             history_listbox.see(history_index)
+
+
 
     def update_history_buttons(self, tab_type):
         """更新撤销/重做按钮状态"""
@@ -956,6 +982,28 @@ class IPSubnetSplitterApp:
         undo_btn.config(state=tk.NORMAL if history_index > 0 else tk.DISABLED)
         redo_btn.config(state=tk.NORMAL if history_index < len(history_stack) - 1 else tk.DISABLED)
 
+    def split_undo_last_action(self):
+        """子网切分专用撤销方法"""
+        history_index = self.split_history_index
+        history_stack = self.split_history_stack
+
+        if history_index > 0:
+            self.split_history_index -= 1
+            self.restore_history_state('split')
+            self.update_history_display('split')
+            self.update_history_buttons('split')
+
+    def planning_undo_last_action(self):
+        """子网规划专用撤销方法"""
+        history_index = self.planning_history_index
+        history_stack = self.planning_history_stack
+
+        if history_index > 0:
+            self.planning_history_index -= 1
+            self.restore_history_state('planning')
+            self.update_history_display('planning')
+            self.update_history_buttons('planning')
+
     def undo_last_action(self, tab_type='split'):
         """撤销上一步操作"""
         # 根据tab_type获取对应的历史索引和堆栈
@@ -972,6 +1020,34 @@ class IPSubnetSplitterApp:
             else:
                 self.planning_history_index -= 1
             self.restore_history_state(tab_type)
+            self.update_history_display(tab_type)
+            self.update_history_buttons(tab_type)
+            self.update_history_display(tab_type)
+            self.update_history_buttons(tab_type)
+        self.update_history_buttons(tab_type)
+
+    def split_redo_last_action(self):
+        """子网切分专用重做方法 - 重新执行选中的历史记录，不产生新记录"""
+        history_index = self.split_history_index
+        history_stack = self.split_history_stack
+
+        if history_index < len(history_stack) - 1:
+            self.split_history_index += 1
+            # 重新执行切分，不添加到历史
+            self.restore_history_state('split')
+            self.update_history_display('split')
+            self.update_history_buttons('split')
+
+    def planning_redo_last_action(self):
+        """子网规划专用重做方法"""
+        history_index = self.planning_history_index
+        history_stack = self.planning_history_stack
+
+        if history_index < len(history_stack) - 1:
+            self.planning_history_index += 1
+            self.restore_history_state('planning')
+            self.update_history_display('planning')
+            self.update_history_buttons('planning')
 
     def redo_last_action(self, tab_type='split'):
         """重做上一步操作"""
@@ -999,41 +1075,27 @@ class IPSubnetSplitterApp:
             state = history_stack[history_index]
 
             if tab_type == 'split':
-                # 清空当前表格
-                for item in self.split_tree.get_children():
-                    self.split_tree.delete(item)
-                for item in self.remaining_tree.get_children():
-                    self.remaining_tree.delete(item)
-
-                # 恢复切分网段数据
-                for item_data in state['split_tree']:
-                    self.split_tree.insert('', tk.END, **item_data)
-
-                # 恢复剩余网段数据
-                for item_data in state['remaining_tree']:
-                    self.remaining_tree.insert('', tk.END, **item_data)
-
-                # 恢复图表数据
-                self.chart_canvas = state['chart_data']
-                self.draw_distribution_chart()
-
-                # 恢复输入框
+                # 设置输入框值
                 self.parent_cidr_var.set(state.get('parent_cidr', ''))
                 self.split_cidr_var.set(state.get('split_cidr', ''))
+                # 重新执行切分，不添加到历史
+                self.execute_split(skip_history=True)
             else:
                 # 清空需求列表
                 for item in self.requirements_tree.get_children():
                     self.requirements_tree.delete(item)
 
                 # 恢复需求数据
+                # Clear existing items
+                for item in self.requirements_tree.get_children():
+                    self.requirements_tree.delete(item)
+                
                 requirements = state.get('requirements', [])
-                for req in requirements:
-                    current_rows = len(self.requirements_tree.get_children())
-                    new_index = current_rows + 1
-                    tag = 'even' if new_index % 2 == 0 else 'odd'
-                    self.requirements_tree.insert('', tk.END, values=(req['name'], req['hosts']), tags=(tag,))
+                for item_data in requirements:
+                    self.requirements_tree.insert('', tk.END, values=item_data['values'])
 
-                # 更新斑马条纹
+                # 恢复后重新生成序号并更新样式
+                self.update_requirements_indices()
                 self.update_requirements_tree_zebra_stripes()
 
                 # 恢复父网段
@@ -1051,6 +1113,7 @@ class IPSubnetSplitterApp:
             self.main_frame, style=self.style, is_top_level=True
         )
         self.top_level_notebook.pack(fill=tk.BOTH, expand=True)
+        self.top_level_notebook.bind("<<NotebookTabChanged>>", self.on_top_level_tab_change)
 
         # 子网切分模块 - 使用默认样式以继承主窗体底色
         self.split_frame = ttk.Frame(
@@ -1089,6 +1152,18 @@ class IPSubnetSplitterApp:
         # 添加顶级标签页 - 使用不同颜色
         self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
+
+    def on_top_level_tab_change(self, event):
+        current_tab_type = self.get_current_tab_type()
+        self.update_history_buttons(current_tab_type)
+
+    def get_current_tab_type(self):
+        selected_tab_text = self.top_level_notebook.get_selected_tab()
+        if selected_tab_text == "子网切分":
+            return 'split'
+        elif selected_tab_text == "子网规划":
+            return 'planning'
+        return None
 
     def create_result_section(self):
         """创建结果显示区域"""
@@ -1974,15 +2049,12 @@ class IPSubnetSplitterApp:
         except Exception as e:
             messagebox.showerror("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
-    def execute_split(self):
+    def execute_split(self, skip_history=False):
         """执行切分操作"""
         parent = self.parent_entry.get().strip()
         split = self.split_entry.get().strip()
         # 保存当前状态用于历史记录
         current_state = {
-            'split_tree': [self.split_tree.item(item) for item in self.split_tree.get_children()],
-            'remaining_tree': [self.remaining_tree.item(item) for item in self.remaining_tree.get_children()],
-            'chart_data': self.chart_canvas,
             'parent_cidr': parent,
             'split_cidr': split
         }
@@ -2000,7 +2072,8 @@ class IPSubnetSplitterApp:
             return
 
         # 执行实际切分前保存当前状态
-        self.add_to_history(current_state, tab_type='split')
+        if not skip_history:
+            self.add_to_history(current_state, tab_type='split')
 
         # 验证CIDR格式
         import re
