@@ -348,10 +348,6 @@ class ColoredNotebook(ttk.Frame):
         
         # 更新当前激活的标签页索引
         self.active_tab = tab_index
-<<<<<<< HEAD
-=======
-        self.event_generate("<<NotebookTabChanged>>")
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         # 根据是否为顶级标签页应用不同的激活样式
         if self.is_top_level:
@@ -406,14 +402,6 @@ class ColoredNotebook(ttk.Frame):
         if self.tab_change_callback:
             self.tab_change_callback(tab_index)
 
-<<<<<<< HEAD
-=======
-    def get_selected_tab(self):
-        if self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
-            return self.tabs[self.active_tab]
-        return None
-
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
     def add(self, frame, text=""):
         """模拟ttk.Notebook的add方法"""
         # 这里我们不使用这个方法，而是使用add_tab方法
@@ -643,8 +631,6 @@ class IPSubnetSplitterApp:
         self.main_frame = ttk.Frame(root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-<<<<<<< HEAD
-=======
 
 
         # 初始化子网切分历史记录
@@ -659,7 +645,6 @@ class IPSubnetSplitterApp:
         self.planning_max_history = 20
         self.planning_history_listbox = None
 
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         # 再次提升关于链接的层级，确保在主框架之上
         self.about_label.lift()
 
@@ -672,54 +657,25 @@ class IPSubnetSplitterApp:
     def create_input_section(self):
         """创建输入区域 - 优化布局"""
 
-<<<<<<< HEAD
         input_frame = ttk.LabelFrame(self.main_frame, text="输入参数", padding="10")  # 减小内边距
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
+        ttk.Label(input_frame, text="父网段:", anchor="e", width=22).grid(
             row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-=======
-        # 创建输入参数和操作历史的父容器
-        input_history_container = ttk.Frame(self.main_frame)
-        input_history_container.pack(fill=tk.BOTH, expand=False, pady=(0, 8))
-        
-        # 输入参数容器
-        input_frame = ttk.LabelFrame(input_history_container, text="输入参数", padding=(10, 5))  # 左右0，上下5内边距
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=(0, 5))  # 左侧排列
-        self.create_history_panel(input_history_container, 'split')
-        input_frame.columnconfigure(0, weight=0, pad=0)
-        input_frame.columnconfigure(1, weight=0, pad=0)
-        input_frame.columnconfigure(2, weight=0, pad=0)
-
-        # 父网段
-        ttk.Label(input_frame, text="父网段:", anchor="w", width=8).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=0
-        )
-        vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
         # 切分网段
-<<<<<<< HEAD
-        ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
+        ttk.Label(input_frame, text="切分段:", anchor="e", width=22).grid(
             row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-=======
-        ttk.Label(input_frame, text="切分段:", anchor="w", width=8).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=0
-        )
-        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
             validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -727,22 +683,14 @@ class IPSubnetSplitterApp:
         # 按钮区域
         # 执行按钮
         self.execute_btn = ttk.Button(
-<<<<<<< HEAD
             input_frame, text="执行切分", command=self.execute_split, width=12
         )
         self.execute_btn.grid(
             row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
-=======
-            input_frame, text="执行切分", command=self.execute_split, width=8
-        )
-        self.execute_btn.grid(
-            row=0, column=2, padx=0, pady=5, sticky=tk.W
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
 
         # 清空按钮
         self.clear_btn = ttk.Button(
-<<<<<<< HEAD
             input_frame, text="清空结果", command=self.clear_result, width=12
         )
         self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
@@ -753,18 +701,6 @@ class IPSubnetSplitterApp:
         )
         self.export_btn.grid(
             row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
-=======
-            input_frame, text="清空结果", command=self.clear_result, width=8
-        )
-        self.clear_btn.grid(row=1, column=2, padx=0, pady=3, sticky=tk.W)
-
-        # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
-        self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=8
-        )
-        self.export_btn.grid(
-            row=0, column=2, rowspan=2, padx=0, pady=(5, 3), sticky=tk.W
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
 
     def validate_parent_cidr(self, text):
@@ -783,31 +719,14 @@ class IPSubnetSplitterApp:
         self.split_entry.config(foreground='black' if is_valid else 'red')
         return "1"
 
-<<<<<<< HEAD
-    def create_split_input_section(self):
+    def create_split_input_section(self, parent):
         """创建子网切分功能的输入区域"""
-        input_frame = ttk.LabelFrame(self.split_main_container, text="输入参数", padding="10")  # 减小内边距
+        input_frame = ttk.LabelFrame(parent, text="输入参数", padding="10")  # 减小内边距
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
+        ttk.Label(input_frame, text="父网段:", anchor="e", width=22).grid(
             row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
-=======
-    def create_split_input_section(self, parent):
-        """创建子网切分功能的输入区域"""
-        # 创建输入参数和操作历史的父容器
-        input_history_container = ttk.Frame(parent)
-        input_history_container.pack(fill=tk.BOTH, expand=False, pady=(0, 8))
-        
-        # 输入参数容器
-        input_frame = ttk.LabelFrame(input_history_container, text="输入参数", padding=(10, 5))  # 左右0，上下5内边距
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))  # 左侧排列
-        self.create_history_panel(input_history_container, 'split')
-
-        # 父网段
-        ttk.Label(input_frame, text="父网段:", anchor="w", width=8).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=0
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         def validate_cidr(text):
             import re
@@ -820,29 +739,17 @@ class IPSubnetSplitterApp:
             return is_valid
 
         vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
-<<<<<<< HEAD
         self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-=======
-        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
         # 切分网段
-<<<<<<< HEAD
-        ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
+        ttk.Label(input_frame, text="切分段:", anchor="e", width=22).grid(
             row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-=======
-        ttk.Label(input_frame, text="切分段:", anchor="w", width=8).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=0
-        )
-        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
             validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -850,11 +757,7 @@ class IPSubnetSplitterApp:
         # 按钮区域
         # 执行按钮
         self.execute_btn = ttk.Button(
-<<<<<<< HEAD
             input_frame, text="执行切分", command=self.execute_split, width=12
-=======
-            input_frame, text="执行切分", command=self.execute_split, width=8
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         self.execute_btn.grid(
             row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
@@ -862,21 +765,13 @@ class IPSubnetSplitterApp:
 
         # 清空按钮
         self.clear_btn = ttk.Button(
-<<<<<<< HEAD
             input_frame, text="清空结果", command=self.clear_result, width=12
-=======
-            input_frame, text="清空结果", command=self.clear_result, width=8
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
         self.export_btn = ttk.Button(
-<<<<<<< HEAD
             input_frame, text="导出结果", command=self.export_result, width=14
-=======
-            input_frame, text="导出结果", command=self.export_result, width=8
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         self.export_btn.grid(
             row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
@@ -926,29 +821,27 @@ class IPSubnetSplitterApp:
         elif tab_index == 2:
             self.draw_distribution_chart()
 
-<<<<<<< HEAD
-=======
     def create_history_panel(self, parent, tab_type):
         """创建历史记录面板 - tab_type: 'split'或'planning'"""
-        history_frame = ttk.LabelFrame(parent, text="操作记录" if tab_type == 'split' else "操作历史", padding=(5, 5))
-        history_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))  # 右侧排列，与输入参数容器同一父容器
+        history_frame = ttk.LabelFrame(parent, text="操作历史", padding=(5, 5))
+        history_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0, 0))
 
         # 创建按钮框架
         btn_frame = ttk.Frame(history_frame)
         btn_frame.pack(side=tk.RIGHT, padx=5, pady=5)
 
         # 撤销按钮
-        undo_btn = ttk.Button(btn_frame, text="撤销", command=self.split_undo_last_action if tab_type == 'split' else self.planning_undo_last_action, width=8)
-        undo_btn.pack(side=tk.TOP, pady=2)
+        undo_btn = ttk.Button(btn_frame, text="撤销", command=lambda: self.undo_last_action(tab_type))
+        undo_btn.pack(side=tk.LEFT, padx=2)
         undo_btn.config(state=tk.DISABLED)
 
         # 重做按钮
-        redo_btn = ttk.Button(btn_frame, text="重做", command=self.split_redo_last_action if tab_type == 'split' else self.planning_redo_last_action, width=8)
-        redo_btn.pack(side=tk.TOP, pady=2)
+        redo_btn = ttk.Button(btn_frame, text="重做", command=lambda: self.redo_last_action(tab_type))
+        redo_btn.pack(side=tk.LEFT, padx=2)
         redo_btn.config(state=tk.DISABLED)
 
         # 创建历史记录列表
-        history_listbox = tk.Listbox(history_frame, height=3, width=80)
+        history_listbox = tk.Listbox(history_frame, height=5, width=80)
         history_listbox.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.BOTH, expand=True)
 
         # 存储控件引用
@@ -971,30 +864,27 @@ class IPSubnetSplitterApp:
         # 如果没有提供状态，则保存当前状态
         if current_state is None:
             if tab_type == 'split':
-                # 简化历史记录，仅保存父网段和切分段数据
-                parent_cidr = self.parent_cidr_var.get().strip()
-                split_cidr = self.split_cidr_var.get().strip()
-                if parent_cidr and split_cidr:  # 仅在有实际数据时才保存
-                    current_state = {
-                        'parent_cidr': parent_cidr,
-                        'split_cidr': split_cidr
-                    }
-                else:
-                    current_state = None  # 不保存空状态
+                current_state = {
+                    'split_tree': [self.split_tree.item(item) for item in self.split_tree.get_children()],
+                    'remaining_tree': [self.remaining_tree.item(item) for item in self.remaining_tree.get_children()],
+                    'chart_data': self.chart_canvas,
+                    'parent_cidr': self.parent_cidr_var.get(),
+                    'split_cidr': self.split_cidr_var.get()
+                }
             else:
-                  # 子网规划状态
-                  parent_cidr = self.planning_parent_entry.get().strip() if hasattr(self, 'planning_parent_entry') else ''
-                  if parent_cidr:  # 仅在有实际数据时才保存
-                      current_state = {
-                          'requirements': [{'values': self.requirements_tree.item(item, 'values')[1:]} for item in self.requirements_tree.get_children()],
-                          'parent_cidr': parent_cidr,
-                          'split_cidr': action_message if action_message else f'子网规划: {len(self.requirements_tree.get_children())}个子网'
-                      }
-                  else:
-                      current_state = None  # 不保存空状态
+                # 子网规划状态
+                requirements = []
+                for item in self.requirements_tree.get_children():
+                    values = self.requirements_tree.item(item, 'values')
+                    requirements.append({'name': values[0], 'hosts': values[1]})
+                current_state = {
+                    'requirements': requirements,
+                    'parent_cidr': self.planning_parent_entry.get().strip() if hasattr(self, 'planning_parent_entry') else '未知父网段',
+                    'split_cidr': action_message if action_message else f'子网规划: {len(requirements)}个子网'
+                }
 
-        # 仅在有实际数据时才添加到历史
-        if current_state and hasattr(self, f'{tab_type}_history_stack'):
+        # 如果不是初始状态且有变更才添加
+        if hasattr(self, f'{tab_type}_history_stack'):
             # 移除当前位置之后的历史
             if history_index < len(history_stack) - 1:
                 history_stack = history_stack[:history_index + 1]
@@ -1015,22 +905,7 @@ class IPSubnetSplitterApp:
                 self.planning_history_stack = history_stack
                 self.planning_history_index = history_index
             self.update_history_display(tab_type)
-            
-    def update_history_buttons(self, tab_type):
-        """更新撤销/重做按钮状态"""
-        # 根据tab_type获取对应的按钮和历史数据
-        if tab_type == 'split':
-            undo_btn = self.split_undo_btn
-            redo_btn = self.split_redo_btn
-            history_index = self.split_history_index
-            history_stack = self.split_history_stack
-        else:
-            undo_btn = self.planning_undo_btn
-            redo_btn = self.planning_redo_btn
-            history_index = self.planning_history_index
-            history_stack = self.planning_history_stack
-        undo_btn.config(state=tk.NORMAL if history_index > 0 else tk.DISABLED)
-        redo_btn.config(state=tk.NORMAL if history_index < len(history_stack) - 1 else tk.DISABLED)
+            self.update_history_buttons(tab_type)
 
     def update_history_display(self, tab_type):
         """更新历史记录显示"""
@@ -1044,13 +919,11 @@ class IPSubnetSplitterApp:
             history_index = self.split_history_index if tab_type == 'split' else self.planning_history_index
             status = "当前" if i == history_index else ""
             parent_cidr = state.get('parent_cidr', '未知父网段')
-            split_cidr = state.get('split_cidr', '未知切分段')
+            split_cidr = state.get('split_cidr', '未知切分')
             history_listbox.insert(tk.END, f"{parent_cidr} | {split_cidr} {status}")
         if history_stack:
             history_listbox.selection_set(history_index)
             history_listbox.see(history_index)
-
-
 
     def update_history_buttons(self, tab_type):
         """更新撤销/重做按钮状态"""
@@ -1067,28 +940,6 @@ class IPSubnetSplitterApp:
             history_stack = self.planning_history_stack
         undo_btn.config(state=tk.NORMAL if history_index > 0 else tk.DISABLED)
         redo_btn.config(state=tk.NORMAL if history_index < len(history_stack) - 1 else tk.DISABLED)
-
-    def split_undo_last_action(self):
-        """子网切分专用撤销方法"""
-        history_index = self.split_history_index
-        history_stack = self.split_history_stack
-
-        if history_index > 0:
-            self.split_history_index -= 1
-            self.restore_history_state('split')
-            self.update_history_display('split')
-            self.update_history_buttons('split')
-
-    def planning_undo_last_action(self):
-        """子网规划专用撤销方法"""
-        history_index = self.planning_history_index
-        history_stack = self.planning_history_stack
-
-        if history_index > 0:
-            self.planning_history_index -= 1
-            self.restore_history_state('planning')
-            self.update_history_display('planning')
-            self.update_history_buttons('planning')
 
     def undo_last_action(self, tab_type='split'):
         """撤销上一步操作"""
@@ -1106,34 +957,6 @@ class IPSubnetSplitterApp:
             else:
                 self.planning_history_index -= 1
             self.restore_history_state(tab_type)
-            self.update_history_display(tab_type)
-            self.update_history_buttons(tab_type)
-            self.update_history_display(tab_type)
-            self.update_history_buttons(tab_type)
-        self.update_history_buttons(tab_type)
-
-    def split_redo_last_action(self):
-        """子网切分专用重做方法 - 重新执行选中的历史记录，不产生新记录"""
-        history_index = self.split_history_index
-        history_stack = self.split_history_stack
-
-        if history_index < len(history_stack) - 1:
-            self.split_history_index += 1
-            # 重新执行切分，不添加到历史
-            self.restore_history_state('split')
-            self.update_history_display('split')
-            self.update_history_buttons('split')
-
-    def planning_redo_last_action(self):
-        """子网规划专用重做方法"""
-        history_index = self.planning_history_index
-        history_stack = self.planning_history_stack
-
-        if history_index < len(history_stack) - 1:
-            self.planning_history_index += 1
-            self.restore_history_state('planning')
-            self.update_history_display('planning')
-            self.update_history_buttons('planning')
 
     def redo_last_action(self, tab_type='split'):
         """重做上一步操作"""
@@ -1161,27 +984,41 @@ class IPSubnetSplitterApp:
             state = history_stack[history_index]
 
             if tab_type == 'split':
-                # 设置输入框值
+                # 清空当前表格
+                for item in self.split_tree.get_children():
+                    self.split_tree.delete(item)
+                for item in self.remaining_tree.get_children():
+                    self.remaining_tree.delete(item)
+
+                # 恢复切分网段数据
+                for item_data in state['split_tree']:
+                    self.split_tree.insert('', tk.END, **item_data)
+
+                # 恢复剩余网段数据
+                for item_data in state['remaining_tree']:
+                    self.remaining_tree.insert('', tk.END, **item_data)
+
+                # 恢复图表数据
+                self.chart_canvas = state['chart_data']
+                self.draw_distribution_chart()
+
+                # 恢复输入框
                 self.parent_cidr_var.set(state.get('parent_cidr', ''))
                 self.split_cidr_var.set(state.get('split_cidr', ''))
-                # 重新执行切分，不添加到历史
-                self.execute_split(skip_history=True)
             else:
                 # 清空需求列表
                 for item in self.requirements_tree.get_children():
                     self.requirements_tree.delete(item)
 
                 # 恢复需求数据
-                # Clear existing items
-                for item in self.requirements_tree.get_children():
-                    self.requirements_tree.delete(item)
-                
                 requirements = state.get('requirements', [])
-                for item_data in requirements:
-                    self.requirements_tree.insert('', tk.END, values=item_data['values'])
+                for req in requirements:
+                    current_rows = len(self.requirements_tree.get_children())
+                    new_index = current_rows + 1
+                    tag = 'even' if new_index % 2 == 0 else 'odd'
+                    self.requirements_tree.insert('', tk.END, values=(req['name'], req['hosts']), tags=(tag,))
 
-                # 恢复后重新生成序号并更新样式
-                self.update_requirements_indices()
+                # 更新斑马条纹
                 self.update_requirements_tree_zebra_stripes()
 
                 # 恢复父网段
@@ -1192,7 +1029,6 @@ class IPSubnetSplitterApp:
             self.update_history_display(tab_type)
             self.update_history_buttons(tab_type)
 
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
     def create_top_level_notebook(self):
         """创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块"""
         # 创建一个自定义的笔记本控件来显示不同的功能模块
@@ -1200,10 +1036,6 @@ class IPSubnetSplitterApp:
             self.main_frame, style=self.style, is_top_level=True
         )
         self.top_level_notebook.pack(fill=tk.BOTH, expand=True)
-<<<<<<< HEAD
-=======
-        self.top_level_notebook.bind("<<NotebookTabChanged>>", self.on_top_level_tab_change)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         # 子网切分模块 - 使用默认样式以继承主窗体底色
         self.split_frame = ttk.Frame(
@@ -1214,13 +1046,6 @@ class IPSubnetSplitterApp:
         self.split_main_container = ttk.Frame(self.split_frame, padding="10")
         self.split_main_container.pack(fill=tk.BOTH, expand=True)
 
-<<<<<<< HEAD
-        # 创建子网切分功能的输入区域
-        self.create_split_input_section()
-
-        # 创建子网切分功能的结果区域
-        self.create_split_result_section()
-=======
         # 创建左右容器布局
         left_container = ttk.Frame(self.split_main_container)
         left_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -1237,7 +1062,6 @@ class IPSubnetSplitterApp:
 
         # 创建子网切分功能的结果区域
         self.create_split_result_section(left_container)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         # 子网规划模块
         self.planning_frame = ttk.Frame(
@@ -1251,21 +1075,6 @@ class IPSubnetSplitterApp:
         self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
 
-<<<<<<< HEAD
-=======
-    def on_top_level_tab_change(self, event):
-        current_tab_type = self.get_current_tab_type()
-        self.update_history_buttons(current_tab_type)
-
-    def get_current_tab_type(self):
-        selected_tab_text = self.top_level_notebook.get_selected_tab()
-        if selected_tab_text == "子网切分":
-            return 'split'
-        elif selected_tab_text == "子网规划":
-            return 'planning'
-        return None
-
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
     def create_result_section(self):
         """创建结果显示区域"""
         result_frame = ttk.LabelFrame(self.main_frame, text="切分结果", padding="10")
@@ -1321,15 +1130,9 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
 
-<<<<<<< HEAD
-    def create_split_result_section(self):
-        """创建子网切分功能的结果显示区域"""
-        result_frame = ttk.LabelFrame(self.split_main_container, text="切分结果", padding="10")
-=======
     def create_split_result_section(self, parent):
         """创建子网切分功能的结果显示区域"""
         result_frame = ttk.LabelFrame(parent, text="切分结果", padding="10")
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         # 调整底部外边距，将结果区域与窗体下边距缩小
         result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 5))
 
@@ -1446,21 +1249,14 @@ class IPSubnetSplitterApp:
         # 创建主框架
         main_planning_frame = ttk.Frame(self.planning_frame, padding="10")
         main_planning_frame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
-<<<<<<< HEAD
-=======
         # 创建子网规划历史记录面板
         self.create_history_panel(main_planning_frame, 'planning')
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         
         # 父网段输入区域
         parent_frame = ttk.LabelFrame(main_planning_frame, text="父网段设置", padding="10")
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
-<<<<<<< HEAD
-        ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
-=======
         ttk.Label(parent_frame, text="父网段:").pack(side=tk.LEFT, padx=(0, 10))
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         def validate_cidr(text):
             import re
             cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
@@ -1495,13 +1291,6 @@ class IPSubnetSplitterApp:
 
         # 子网需求表格
         self.requirements_tree = ttk.Treeview(
-<<<<<<< HEAD
-            inner_frame, columns=("name", "hosts"), show="headings", height=5  # 设置为5行高度
-        )
-        self.requirements_tree.heading("name", text="子网名称")
-        self.requirements_tree.heading("hosts", text="主机数量")
-        # 字段宽度等分设置
-=======
             inner_frame, columns=("index", "name", "hosts"), show="headings", height=5  # 添加序号列
         )
         self.requirements_tree.heading("index", text="序号")
@@ -1509,7 +1298,6 @@ class IPSubnetSplitterApp:
         self.requirements_tree.heading("hosts", text="主机数量")
         # 调整列宽，序号列固定宽度
         self.requirements_tree.column("index", width=50, minwidth=50, stretch=False)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         self.requirements_tree.column("name", width=125, minwidth=100, stretch=True)
         self.requirements_tree.column("hosts", width=125, minwidth=100, stretch=True)
         
@@ -1559,11 +1347,6 @@ class IPSubnetSplitterApp:
         self.execute_planning_btn.grid(row=3, column=0, sticky="ew", pady=(0, 0))
 
         # 添加示例数据 - 带斑马条纹标签
-<<<<<<< HEAD
-        self.requirements_tree.insert("", tk.END, values=("办公区", "200"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("服务器区", "50"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("研发部", "100"), tags=("odd",))
-=======
         # 插入示例数据时预留序号列位置
         self.requirements_tree.insert("", tk.END, values=("", "办公区", "200"), tags=("odd",))
         self.requirements_tree.insert("", tk.END, values=("", "服务器区", "50"), tags=("even",))
@@ -1571,7 +1354,6 @@ class IPSubnetSplitterApp:
         
         # 初始化序号
         self.update_requirements_indices()
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         
         # 配置斑马条纹样式
         self.requirements_tree.tag_configure("even", background="#d8d8d8")
@@ -1909,13 +1691,6 @@ class IPSubnetSplitterApp:
             current_rows = len(self.requirements_tree.get_children())
             new_index = current_rows + 1
             tag = "even" if new_index % 2 == 0 else "odd"
-<<<<<<< HEAD
-            self.requirements_tree.insert("", tk.END, values=(name, hosts), tags=(tag,))
-            
-            # 重新应用所有行的斑马条纹，确保一致性
-            self.update_requirements_tree_zebra_stripes()
-            
-=======
             # 插入时添加序号占位符
             # 插入基础数据，序号由update_requirements_indices统一管理
             self.requirements_tree.insert("", tk.END, values=(name, hosts), tags=(tag,))
@@ -1925,7 +1700,6 @@ class IPSubnetSplitterApp:
             # 重新应用所有行的斑马条纹，确保一致性
             self.update_requirements_tree_zebra_stripes()
             self.add_to_history(tab_type='planning', action_message=f"增加：{name}子网")
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
             temp_window.destroy()
 
         # 创建按钮并在按钮框架中居中
@@ -1943,14 +1717,6 @@ class IPSubnetSplitterApp:
             messagebox.showwarning("提示", "请先选择要删除的子网需求")
             return
 
-<<<<<<< HEAD
-        for item in selected_items:
-            self.requirements_tree.delete(item)
-        
-        # 删除后重新应用斑马条纹
-        self.update_requirements_tree_zebra_stripes()
-    
-=======
         # 收集所有删除的子网名称
         deleted_names = []
         for item in selected_items:
@@ -1987,7 +1753,6 @@ class IPSubnetSplitterApp:
                         current_values[0] = str(i)
                 self.requirements_tree.item(item, values=current_values)
 
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
     def update_requirements_tree_zebra_stripes(self):
         """更新子网需求表的斑马条纹"""
         for index, item in enumerate(self.requirements_tree.get_children(), start=1):
@@ -2104,11 +1869,7 @@ class IPSubnetSplitterApp:
         subnet_requirements = []
         for item in self.requirements_tree.get_children():
             values = self.requirements_tree.item(item, "values")
-<<<<<<< HEAD
-            subnet_requirements.append((values[0], int(values[1])))
-=======
             subnet_requirements.append((values[1], int(values[2])))
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         if not subnet_requirements:
             messagebox.showerror("错误", "请添加至少一个子网需求")
@@ -2178,12 +1939,9 @@ class IPSubnetSplitterApp:
             self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
 
             # 子网规划完成，不显示对话框提示
-<<<<<<< HEAD
-=======
             # 记录子网规划操作，显示规划的子网数量
             subnet_count = len(plan_result['allocated_subnets'])
             self.add_to_history(tab_type='planning', action_message=f"子网规划: {subnet_count}个子网")
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         except ValueError as e:
             error_msg = str(e)
@@ -2201,22 +1959,18 @@ class IPSubnetSplitterApp:
         except Exception as e:
             messagebox.showerror("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
-<<<<<<< HEAD
     def execute_split(self):
-        """执行切分操作"""
-        parent = self.parent_entry.get().strip()
-        split = self.split_entry.get().strip()
-=======
-    def execute_split(self, skip_history=False):
         """执行切分操作"""
         parent = self.parent_entry.get().strip()
         split = self.split_entry.get().strip()
         # 保存当前状态用于历史记录
         current_state = {
+            'split_tree': [self.split_tree.item(item) for item in self.split_tree.get_children()],
+            'remaining_tree': [self.remaining_tree.item(item) for item in self.remaining_tree.get_children()],
+            'chart_data': self.chart_canvas,
             'parent_cidr': parent,
             'split_cidr': split
         }
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         # 验证输入
         if not parent or not split:
@@ -2230,13 +1984,9 @@ class IPSubnetSplitterApp:
             self.split_tree.tag_configure("error", foreground="red")
             return
 
-<<<<<<< HEAD
-=======
         # 执行实际切分前保存当前状态
-        if not skip_history:
-            self.add_to_history(current_state, tab_type='split')
+        self.add_to_history(current_state, tab_type='split')
 
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         # 验证CIDR格式
         import re
         cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
@@ -3696,8 +3446,6 @@ class IPSubnetSplitterApp:
 
     def clear_result(self):
         """清空结果表格和图表"""
-<<<<<<< HEAD
-=======
         # 保存当前状态到历史记录
         current_state = {
             'split_tree': [self.split_tree.item(item) for item in self.split_tree.get_children()],
@@ -3706,7 +3454,6 @@ class IPSubnetSplitterApp:
         }
         self.add_to_history(current_state, tab_type='split')
 
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         # 清空切分网段信息表格
         for item in self.split_tree.get_children():
             self.split_tree.delete(item)
@@ -3830,44 +3577,22 @@ class IPSubnetSplitterApp:
         about_window.bind("<FocusIn>", lambda e: None)
         about_window.bind("<FocusOut>", lambda e: None)
 
-<<<<<<< HEAD
         # 为所有标签和按钮添加焦点样式，移除虚线
         self.style.configure("TLabel", focuscolor="none")
         self.style.configure("TButton", focuscolor="none", focuswidth=0)
         self.style.map("TButton", focuscolor=[("focus", "none")], focuswidth=[("focus", 0)])
-=======
-        # 为对话框创建专属样式类，避免影响全局样式
-        dialog_id = id(about_window)
-        dialog_label_style = f"AboutDialog{dialog_id}.TLabel"
-        dialog_button_style = f"AboutDialog{dialog_id}.TButton"
-
-        # 配置对话框专属标签样式
-        self.style.configure(dialog_label_style, focuscolor="none")
-
-        # 配置对话框专属按钮样式
-        self.style.configure(dialog_button_style, focuscolor="none", focuswidth=0)
-        self.style.map(dialog_button_style, focuscolor=[("focus", "none")], focuswidth=[("focus", 0)])
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
 
         # 标题区域
         title_frame = ttk.Frame(inner_frame)
         title_frame.pack(pady=(10, 8))
 
         # 添加应用名称作为主要标题
-<<<<<<< HEAD
         app_name_label = ttk.Label(title_frame, text=self.app_name, font=("微软雅黑", 16, "bold"))
-=======
-        app_name_label = ttk.Label(title_frame, text=self.app_name, font=("微软雅黑", 16, "bold"), style=dialog_label_style)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         app_name_label.pack()
 
         # 添加版本号
         version_label = ttk.Label(
-<<<<<<< HEAD
             title_frame, text=f"版本 {self.app_version}", font=("微软雅黑", 10)
-=======
-            title_frame, text=f"版本 {self.app_version}", font=("微软雅黑", 10), style=dialog_label_style
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         version_label.pack(pady=(1, 0))
 
@@ -3876,39 +3601,23 @@ class IPSubnetSplitterApp:
         info_frame.pack(pady=(0, 8))
 
         # 添加作者信息
-<<<<<<< HEAD
         author_label = ttk.Label(info_frame, text="作者：Ejones", font=("微软雅黑", 10))
-=======
-        author_label = ttk.Label(info_frame, text="作者：Ejones", font=("微软雅黑", 10), style=dialog_label_style)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         author_label.pack(pady=(0, 1))
 
         # 添加联系方式
         email_label = ttk.Label(
-<<<<<<< HEAD
             info_frame, text="邮箱：ejones.cn@hotmail.com", font=("微软雅黑", 10)
-=======
-            info_frame, text="邮箱：ejones.cn@hotmail.com", font=("微软雅黑", 10), style=dialog_label_style
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         email_label.pack()
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
         # 添加确定按钮
-<<<<<<< HEAD
         ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12)
-=======
-        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12, style=dialog_button_style)
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         ok_button.pack(pady=(0, 2))
 
         # 添加版权信息
         copyright_label = ttk.Label(
-<<<<<<< HEAD
             inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8)
-=======
-            inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8), style=dialog_label_style
->>>>>>> 6ebfbb8b74cc82adf8570d39d0aacd1c786d64c7
         )
         copyright_label.pack(pady=(2, 10))
 
