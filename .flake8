@@ -1,0 +1,18 @@
+[flake8]
+# 设置最大行长度
+max-line-length = 100
+
+# 忽略特定的文件或目录
+exclude = .git,__pycache__,build,dist,.venv
+
+# 忽略某些不相关的警告
+# E501: line too long
+# F401: unused import
+# W503: line break before binary operator
+ignore = E501,F401,W503
+
+# 启用扩展
+extend-ignore = D100,D101,D102,D103,D104,D105,D106,D107
+
+# 报告格式
+# format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s

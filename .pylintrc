@@ -1,0 +1,33 @@
+# Pylint configuration for IP Subnet Splitter Tool
+
+[MASTER]
+# 设置最大行长度
+max-line-length=100
+
+# 忽略特定的文件或目录
+exclude=dist,build,.venv
+
+# 启用扩展
+extensions=pylint.extensions.docparams
+
+[MESSAGES CONTROL]
+# 禁用某些不相关的警告
+# C0114: missing-module-docstring
+# C0115: missing-class-docstring
+# C0116: missing-function-docstring
+# R0903: too-few-public-methods
+disable=C0114,C0115,C0116,R0903
+
+[FORMAT]
+# 缩进设置
+indent-string='    '
+indent-after-paren=4
+
+[TYPECHECK]
+# 忽略某些类型检查警告
+# E1101: no-member
+disable=E1101
+
+[DOCUMENTATION]
+# 文档字符串风格
+accept-no-docstring=yes
