@@ -1654,19 +1654,26 @@ class IPSubnetSplitterApp:
             self.split_tree.delete(*self.split_tree.get_children())
             
             # 添加切分网段信息，同时设置斑马条纹标签
-            self.split_tree.insert("", tk.END, values=("父网段", parent), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("切分网段", split), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd",))
+            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("even",))
             self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd",))
 
             # 添加切分后的网段信息
             split_info = result["split_info"]
             self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("even",))
             self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd",))
+            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd",))
+            self.split_tree.insert(
+                "", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("even",)
+            )
             self.split_tree.insert(
                 "", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd",)
             )
-            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd",))
             
             # 配置斑马条纹样式
             self.split_tree.tag_configure("even", background="#d8d8d8")
