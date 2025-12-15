@@ -665,15 +665,15 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
             row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
-        def validate_cidr(text):
+        def validate_cidr(text, entry):
             is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
             if is_valid:
-                self.parent_entry.config(foreground='black')
+                entry.config(foreground='black')
             else:
-                self.parent_entry.config(foreground='red')
+                entry.config(foreground='red')
             return is_valid
 
-        vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
+        vcmd = (self.root.register(lambda p: validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
@@ -821,9 +821,11 @@ class IPSubnetSplitterApp:
         self.split_tree.column("value", width=250)
         self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         
-        # 配置斑马条纹样式
+        # 配置斑马条纹样式和信息标签样式
         self.split_tree.tag_configure("even", background="#d8d8d8")
         self.split_tree.tag_configure("odd", background="#ffffff")
+        self.split_tree.tag_configure("error", foreground="red")
+        self.split_tree.tag_configure("info", foreground="blue")
 
         # 剩余网段列表页面
         self.remaining_frame = ttk.Frame(
@@ -925,15 +927,7 @@ class IPSubnetSplitterApp:
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
         ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
-        def validate_cidr(text):
-            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-            if is_valid:
-                self.planning_parent_entry.config(foreground='black')
-            else:
-                self.planning_parent_entry.config(foreground='red')
-            return is_valid
-
-        vcmd = (self.root.register(validate_cidr), '%P')
+        vcmd = (self.root.register(lambda p: validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Entry(parent_frame, width=20,
             validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
@@ -1621,8 +1615,6 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",)
             )
-            # 设置错误标签样式
-            self.split_tree.tag_configure("error", foreground="red")
             return
 
         # 验证CIDR格式
@@ -1632,7 +1624,6 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            self.split_tree.tag_configure("error", foreground="red")
             messagebox.showerror("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
             return
         if not re.match(self.cidr_pattern, split):
@@ -1641,7 +1632,6 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            self.split_tree.tag_configure("error", foreground="red")
             messagebox.showerror("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
             return
 
@@ -1661,7 +1651,6 @@ class IPSubnetSplitterApp:
                 self.split_tree.insert(
                     "", tk.END, values=("错误", result["error"]), tags=("error",)
                 )
-                self.split_tree.tag_configure("error", foreground="red")
                 return
 
             # 显示切分网段信息表格
@@ -1737,11 +1726,9 @@ class IPSubnetSplitterApp:
                 message = error_msg
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", message), tags=("error",))
-            self.split_tree.tag_configure("error", foreground="red")
         except Exception as e:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
-            self.split_tree.tag_configure("error", foreground="red")
 
     def show_result(self, text, error=False, keep_data=False):
         """显示结果"""
@@ -1754,8 +1741,6 @@ class IPSubnetSplitterApp:
             self.split_tree.insert("", tk.END, values=("错误", text), tags=("error",))
         else:
             self.split_tree.insert("", tk.END, values=("信息", text), tags=("info",))
-        self.split_tree.tag_configure("error", foreground="red")
-        self.split_tree.tag_configure("info", foreground="blue")
 
     def prepare_chart_data(self, result, split_info, remaining_subnets):
         """准备图表数据"""
@@ -2325,65 +2310,8 @@ class IPSubnetSplitterApp:
                 import time
 
                 # 注册中文字体函数
-                def register_chinese_fonts():
-                    # 尝试查找系统中的中文字体
-                    font_path = None
-                    font_name = None
-
-                    # Windows系统字体路径
-                    if sys.platform == "win32":
-                        font_dir = "C:\\Windows\\Fonts"
-                        if os.path.exists(font_dir):
-                            # 检查常用中文字体（包含.ttf和.ttc格式）
-                            font_candidates = [
-                                ("simhei.ttf", "SimHei"),  # 黑体
-                                ("simsun.ttc", "SimSun"),  # 宋体
-                                ("msyh.ttf", "Microsoft YaHei"),  # 微软雅黑
-                                ("msyhbd.ttf", "Microsoft YaHei Bold"),  # 微软雅黑粗体
-                                ("msyhui.ttf", "Microsoft YaHei UI"),
-                                ("stsong.ttf", "STSong"),  # 华文宋体
-                                ("stheiti.ttf", "STHeiti"),  # 华文黑体
-                                ("stkaiti.ttf", "STKaiti"),  # 华文楷体
-                            ]
-
-                            # 查找所有可用的字体，优先使用黑体
-                            for font_file, font_family in font_candidates:
-                                potential_path = os.path.join(font_dir, font_file)
-                                if os.path.exists(potential_path):
-                                    font_path = potential_path
-                                    font_name = font_family
-                                    # 如果找到黑体，直接使用
-                                    if font_file.lower() == "simhei.ttf":
-                                        break
-
-                    # 如果找到中文字体，注册它
-                    if font_path:
-                        try:
-                            # 注册字体
-                            pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
-                            return True
-                        except Exception as e:
-                            print(f"注册字体失败: {e}")
-                            return False
-                    else:
-                        print("未找到可用的中文字体")
-                        return False
-
                 # 注册中文字体
-                has_chinese_font = register_chinese_fonts()
-
-                # 自定义页脚函数
-                def add_footer(canvas, doc):
-                    canvas.saveState()
-                    # 设置页脚字体
-                    if has_chinese_font:
-                        canvas.setFont("ChineseFont", 9)
-                    else:
-                        canvas.setFont("Helvetica", 9)
-                    # 添加页脚文本
-                    footer_text = f"导出时间: {time.strftime('%Y-%m-%d %H:%M:%S')} | 第 {doc.page} 页"
-                    canvas.drawString(2.5 * cm, 1.5 * cm, footer_text)
-                    canvas.restoreState()
+                self.has_chinese_font = self.register_chinese_fonts()
 
                 # 创建PDF文档，设置页边距
                 page_width, page_height = A4
@@ -2556,7 +2484,7 @@ class IPSubnetSplitterApp:
                     elements.append(Paragraph("无剩余网段信息", styles["Normal"]))
 
                 # 生成PDF，添加页脚
-                doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
+                doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
 
             elif file_ext == ".xlsx":
                 # Excel格式导出
@@ -2762,65 +2690,8 @@ class IPSubnetSplitterApp:
                 import time
 
                 # 注册中文字体函数
-                def register_chinese_fonts():
-                    # 尝试查找系统中的中文字体
-                    font_path = None
-                    font_name = None
-
-                    # Windows系统字体路径
-                    if sys.platform == "win32":
-                        font_dir = "C:\\Windows\\Fonts"
-                        if os.path.exists(font_dir):
-                            # 检查常用中文字体（包含.ttf和.ttc格式）
-                            font_candidates = [
-                                ("simhei.ttf", "SimHei"),  # 黑体
-                                ("simsun.ttc", "SimSun"),  # 宋体
-                                ("msyh.ttf", "Microsoft YaHei"),  # 微软雅黑
-                                ("msyhbd.ttf", "Microsoft YaHei Bold"),  # 微软雅黑粗体
-                                ("msyhui.ttf", "Microsoft YaHei UI"),
-                                ("stsong.ttf", "STSong"),  # 华文宋体
-                                ("stheiti.ttf", "STHeiti"),  # 华文黑体
-                                ("stkaiti.ttf", "STKaiti"),  # 华文楷体
-                            ]
-
-                            # 查找所有可用的字体，优先使用黑体
-                            for font_file, font_family in font_candidates:
-                                potential_path = os.path.join(font_dir, font_file)
-                                if os.path.exists(potential_path):
-                                    font_path = potential_path
-                                    font_name = font_family
-                                    # 如果找到黑体，直接使用
-                                    if font_file.lower() == "simhei.ttf":
-                                        break
-
-                    # 如果找到中文字体，注册它
-                    if font_path:
-                        try:
-                            # 注册字体
-                            pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
-                            return True
-                        except Exception as e:
-                            print(f"注册字体失败: {e}")
-                            return False
-                    else:
-                        print("未找到可用的中文字体")
-                        return False
-
                 # 注册中文字体
-                has_chinese_font = register_chinese_fonts()
-
-                # 自定义页脚函数
-                def add_footer(canvas, doc):
-                    canvas.saveState()
-                    # 设置页脚字体
-                    if has_chinese_font:
-                        canvas.setFont("ChineseFont", 9)
-                    else:
-                        canvas.setFont("Helvetica", 9)
-                    # 添加页脚文本
-                    footer_text = f"导出时间: {time.strftime('%Y-%m-%d %H:%M:%S')} | 第 {doc.page} 页"
-                    canvas.drawString(2.5 * cm, 1.5 * cm, footer_text)
-                    canvas.restoreState()
+                self.has_chinese_font = self.register_chinese_fonts()
 
                 # 创建PDF文档，设置页边距
                 page_width, page_height = A4
@@ -2981,7 +2852,7 @@ class IPSubnetSplitterApp:
                     elements.append(Paragraph("无剩余网段信息", normal_style))
 
                 # 生成PDF，添加页脚
-                doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
+                doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
 
             elif file_ext == ".xlsx":
                 # Excel格式导出
@@ -3087,6 +2958,64 @@ class IPSubnetSplitterApp:
         # 清空图表
         self.chart_canvas.delete("all")
         self.chart_data = None
+
+    def register_chinese_fonts(self):
+        """注册中文字体供PDF导出使用"""
+        # 尝试查找系统中的中文字体
+        font_path = None
+        font_name = None
+
+        # Windows系统字体路径
+        if sys.platform == "win32":
+            font_dir = "C:\\Windows\\Fonts"
+            if os.path.exists(font_dir):
+                # 检查常用中文字体（包含.ttf和.ttc格式）
+                font_candidates = [
+                    ("simhei.ttf", "SimHei"),  # 黑体
+                    ("simsun.ttc", "SimSun"),  # 宋体
+                    ("msyh.ttf", "Microsoft YaHei"),  # 微软雅黑
+                    ("msyhbd.ttf", "Microsoft YaHei Bold"),  # 微软雅黑粗体
+                    ("msyhui.ttf", "Microsoft YaHei UI"),
+                    ("stsong.ttf", "STSong"),  # 华文宋体
+                    ("stheiti.ttf", "STHeiti"),  # 华文黑体
+                    ("stkaiti.ttf", "STKaiti"),  # 华文楷体
+                ]
+
+                # 查找所有可用的字体，优先使用黑体
+                for font_file, font_family in font_candidates:
+                    potential_path = os.path.join(font_dir, font_file)
+                    if os.path.exists(potential_path):
+                        font_path = potential_path
+                        font_name = font_family
+                        # 如果找到黑体，直接使用
+                        if font_file.lower() == "simhei.ttf":
+                            break
+
+        # 如果找到中文字体，注册它
+        if font_path:
+            try:
+                # 注册字体
+                pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
+                return True
+            except Exception as e:
+                print(f"注册字体失败: {e}")
+                return False
+        else:
+            print("未找到可用的中文字体")
+            return False
+
+    def add_footer(self, canvas, doc):
+        """在PDF文档中添加页脚"""
+        canvas.saveState()
+        # 设置页脚字体
+        if getattr(self, 'has_chinese_font', False):
+            canvas.setFont("ChineseFont", 9)
+        else:
+            canvas.setFont("Helvetica", 9)
+        # 添加页脚文本
+        footer_text = f"导出时间: {time.strftime('%Y-%m-%d %H:%M:%S')} | 第 {doc.page} 页"
+        canvas.drawString(2.5 * cm, 1.5 * cm, footer_text)
+        canvas.restoreState()
 
     def create_about_link(self):
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮"""
