@@ -1056,11 +1056,13 @@ class IPSubnetSplitterApp:
 
         # 子网需求表格
         self.requirements_tree = ttk.Treeview(
-            inner_frame, columns=("name", "hosts"), show="headings", height=5  # 设置为5行高度
+            inner_frame, columns=("index", "name", "hosts"), show="headings", height=5  # 设置为5行高度，添加序号列
         )
+        self.requirements_tree.heading("index", text="序号")
         self.requirements_tree.heading("name", text="子网名称")
         self.requirements_tree.heading("hosts", text="主机数量")
-        # 字段宽度等分设置
+        # 字段宽度设置
+        self.requirements_tree.column("index", width=50, minwidth=50, stretch=False)
         self.requirements_tree.column("name", width=125, minwidth=100, stretch=True)
         self.requirements_tree.column("hosts", width=125, minwidth=100, stretch=True)
         
@@ -1110,9 +1112,12 @@ class IPSubnetSplitterApp:
         self.execute_planning_btn.grid(row=3, column=0, sticky="ew", pady=(0, 0))
 
         # 添加示例数据 - 带斑马条纹标签
-        self.requirements_tree.insert("", tk.END, values=("办公区", "200"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("服务器区", "50"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("研发部", "100"), tags=("odd",))
+        # 先插入不带序号的数据
+        self.requirements_tree.insert("", tk.END, values=("", "办公区", "200"), tags=("odd",))
+        self.requirements_tree.insert("", tk.END, values=("", "服务器区", "50"), tags=("even",))
+        self.requirements_tree.insert("", tk.END, values=("", "研发部", "100"), tags=("odd",))
+        # 调用方法更新序号
+        self.update_requirements_tree_zebra_stripes()
         
         # 配置斑马条纹样式
         self.requirements_tree.tag_configure("even", background="#d8d8d8")
@@ -1142,28 +1147,30 @@ class IPSubnetSplitterApp:
         )
         self.allocated_tree = ttk.Treeview(
             self.allocated_frame,
-            columns=("name", "cidr", "required", "available", "network", "netmask", "broadcast"),
+            columns=("index", "name", "cidr", "required", "available", "network", "netmask", "broadcast"),
             show="headings",
             height=5  # 设置为5行高度
         )
 
         # 设置列标题
+        self.allocated_tree.heading("index", text="序号")
         self.allocated_tree.heading("name", text="子网名称")
         self.allocated_tree.heading("cidr", text="CIDR")
-        self.allocated_tree.heading("required", text="需求主机数")
-        self.allocated_tree.heading("available", text="可用主机数")
+        self.allocated_tree.heading("required", text="需求数")
+        self.allocated_tree.heading("available", text="可用数")
         self.allocated_tree.heading("network", text="网络地址")
         self.allocated_tree.heading("netmask", text="子网掩码")
         self.allocated_tree.heading("broadcast", text="广播地址")
 
-        # 设置列宽，确保内容显示完整且所有列都启用拉伸以实现自适应
-        self.allocated_tree.column("name", width=120, minwidth=100, stretch=True)
-        self.allocated_tree.column("cidr", width=100, minwidth=90, stretch=True)
-        self.allocated_tree.column("required", width=70, minwidth=60, stretch=True)  # 调小需求主机数列宽
-        self.allocated_tree.column("available", width=70, minwidth=60, stretch=True)  # 调小可用主机数列宽
-        self.allocated_tree.column("network", width=80, minwidth=70, stretch=True)  # 进一步调小网络地址列宽
-        self.allocated_tree.column("netmask", width=110, minwidth=100, stretch=True)
-        self.allocated_tree.column("broadcast", width=110, minwidth=100, stretch=True)
+        # 设置列宽为自动，根据内容自动调整宽度
+        self.allocated_tree.column("index", width=0, minwidth=10, stretch=True)  # 序号列自动宽度
+        self.allocated_tree.column("name", width=0, minwidth=100, stretch=True)  # 子网名称列自动宽度
+        self.allocated_tree.column("cidr", width=0, minwidth=90, stretch=True)  # CIDR列自动宽度
+        self.allocated_tree.column("required", width=0, minwidth=30, stretch=True)  # 需求数列自动宽度
+        self.allocated_tree.column("available", width=0, minwidth=40, stretch=True)  # 可用数列自动宽度
+        self.allocated_tree.column("network", width=0, minwidth=70, stretch=True)  # 网络地址列自动宽度
+        self.allocated_tree.column("netmask", width=0, minwidth=100, stretch=True)  # 子网掩码列自动宽度
+        self.allocated_tree.column("broadcast", width=0, minwidth=100, stretch=True)  # 广播地址列自动宽度
 
         # 添加垂直滚动条
         allocated_v_scrollbar = ttk.Scrollbar(
@@ -1310,6 +1317,63 @@ class IPSubnetSplitterApp:
             # 如果发生错误，不影响程序运行
             pass
     
+    def auto_resize_columns(self, tree):
+        """自动调整表格列宽以适应内容
+        
+        Args:
+            tree: 要调整列宽的Treeview对象
+        """
+        # 创建一个临时标签用于测量文本宽度（使用默认字体或从root获取字体）
+        temp_label = tk.Label(self.root)
+        
+        # 为每列设置一个合理的默认最小宽度（基于列类型）
+        default_min_widths = {
+            '序号': 60,
+            '子网名称': 120,
+            'CIDR': 80,
+            '需求数': 70,
+            '可用数': 70,
+            '网络地址': 100,
+            '子网掩码': 100,
+            '广播地址': 100,
+            '起始IP': 100,
+            '结束IP': 100,
+            '剩余可用数': 100,
+            '网段': 120,
+            '大小': 80
+        }
+        
+        # 调整列宽以适应表头
+        for col in tree['columns']:
+            # 获取表头文本
+            header = tree.heading(col, 'text')
+            
+            # 设置临时标签文本并测量宽度
+            temp_label.config(text=header)
+            header_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
+            
+            # 获取列中内容的最大宽度
+            max_width = header_width
+            for item in tree.get_children():
+                value = tree.item(item, 'values')
+                if value and len(value) > list(tree['columns']).index(col):
+                    cell_value = str(value[list(tree['columns']).index(col)])
+                    # 设置临时标签文本并测量宽度
+                    temp_label.config(text=cell_value)
+                    cell_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
+                    if cell_width > max_width:
+                        max_width = cell_width
+            
+            # 应用默认最小宽度，如果计算出的宽度小于默认值
+            if header in default_min_widths and max_width < default_min_widths[header]:
+                max_width = default_min_widths[header]
+            
+            # 设置列宽
+            tree.column(col, width=max_width, stretch=True)
+        
+        # 销毁临时标签
+        temp_label.destroy()
+    
     def resize_tables(self):
         """调整表格列宽以适应容器大小并更新空行数"""
         try:
@@ -1325,42 +1389,13 @@ class IPSubnetSplitterApp:
                 
             # 仅调整规划结果区域的表格列宽，不影响子网需求区域
             if hasattr(self, 'planning_notebook') and hasattr(self.planning_notebook, 'content_area'):
-                # 获取content_area的当前宽度
-                container_width = self.planning_notebook.content_area.winfo_width()
-                
-                # 调整已分配子网表格
+                # 调整已分配子网表格，根据内容自动调整列宽
                 if hasattr(self, 'allocated_tree'):
-                    # 获取表格的可用宽度（容器宽度减去边距和滚动条宽度）
-                    tree_width = container_width - 40  # 减去边距和滚动条宽度
-                    
-                    # 计算每列的理想宽度
-                    columns = self.allocated_tree['columns']
-                    num_columns = len(columns)
-                    if num_columns > 0:
-                        # 平均分配宽度，保留一定边距
-                        avg_width = tree_width // num_columns - 2
-                        
-                        # 设置每列宽度
-                        for col in columns:
-                            # 强制设置列宽以适应容器
-                            self.allocated_tree.column(col, width=avg_width)
+                    self.auto_resize_columns(self.allocated_tree)
                 
-                # 调整剩余网段表格
+                # 调整剩余网段表格，根据内容自动调整列宽
                 if hasattr(self, 'planning_remaining_tree'):
-                    # 获取表格的可用宽度（容器宽度减去边距和滚动条宽度）
-                    tree_width = container_width - 40  # 减去边距和滚动条宽度
-                    
-                    # 计算每列的理想宽度
-                    columns = self.planning_remaining_tree['columns']
-                    num_columns = len(columns)
-                    if num_columns > 0:
-                        # 平均分配宽度，保留一定边距
-                        avg_width = tree_width // num_columns - 2
-                        
-                        # 设置每列宽度
-                        for col in columns:
-                            # 强制设置列宽以适应容器
-                            self.planning_remaining_tree.column(col, width=avg_width)
+                    self.auto_resize_columns(self.planning_remaining_tree)
         except Exception as e:
             # 忽略调整过程中的错误
             pass
@@ -1450,7 +1485,7 @@ class IPSubnetSplitterApp:
             current_rows = len(self.requirements_tree.get_children())
             new_index = current_rows + 1
             tag = "even" if new_index % 2 == 0 else "odd"
-            self.requirements_tree.insert("", tk.END, values=(name, hosts), tags=(tag,))
+            self.requirements_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
             
             # 重新应用所有行的斑马条纹，确保一致性
             self.update_requirements_tree_zebra_stripes()
@@ -1479,10 +1514,15 @@ class IPSubnetSplitterApp:
         self.update_requirements_tree_zebra_stripes()
     
     def update_requirements_tree_zebra_stripes(self):
-        """更新子网需求表的斑马条纹"""
+        """更新子网需求表的斑马条纹和序号"""
         for index, item in enumerate(self.requirements_tree.get_children(), start=1):
             tag = "even" if index % 2 == 0 else "odd"
-            self.requirements_tree.item(item, tags=(tag,))
+            # 获取当前行的值
+            values = list(self.requirements_tree.item(item, "values"))
+            # 更新序号
+            values[0] = index
+            # 设置新的值和标签
+            self.requirements_tree.item(item, values=values, tags=(tag,))
     
     def on_requirements_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能"""
@@ -1500,6 +1540,9 @@ class IPSubnetSplitterApp:
             
         # 将列标识转换为列索引（例如 #1 -> 0, #2 -> 1）
         column_index = int(column[1:]) - 1
+        # 不允许编辑序号列
+        if column_index == 0:
+            return
         column_name = self.requirements_tree["columns"][column_index]
         
         # 获取当前值
@@ -1594,7 +1637,7 @@ class IPSubnetSplitterApp:
         subnet_requirements = []
         for item in self.requirements_tree.get_children():
             values = self.requirements_tree.item(item, "values")
-            subnet_requirements.append((values[0], int(values[1])))
+            subnet_requirements.append((values[1], int(values[2])))
 
         if not subnet_requirements:
             messagebox.showerror("错误", "请添加至少一个子网需求")
@@ -1628,6 +1671,7 @@ class IPSubnetSplitterApp:
                     "",
                     tk.END,
                     values=(
+                        i,
                         subnet["name"],
                         subnet["cidr"],
                         subnet["required_hosts"],
@@ -1641,6 +1685,9 @@ class IPSubnetSplitterApp:
             # 配置斑马条纹样式 - 颜色继续调深
             self.allocated_tree.tag_configure("even", background="#d8d8d8")
             self.allocated_tree.tag_configure("odd", background="#ffffff")
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.allocated_tree)
 
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
@@ -1662,6 +1709,9 @@ class IPSubnetSplitterApp:
             # 配置斑马条纹样式 - 颜色继续调深
             self.planning_remaining_tree.tag_configure("even", background="#d8d8d8")
             self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.planning_remaining_tree)
 
             # 子网规划完成，不显示对话框提示
 
@@ -2990,8 +3040,8 @@ class IPSubnetSplitterApp:
                     # 计算表格宽度（页宽减去左右边距）
                     table_width = page_width - margins[0] - margins[1]
                     # 根据数据长度调整各列宽度，避免换行
-                    # 子网名称 | CIDR | 需求主机数 | 可用主机数 | 网络地址 | 子网掩码 | 广播地址
-                    col_widths = [100, 90, 60, 60, 80, 110, 80]  # 单位：pt (增加CIDR列宽到90pt)
+                    # 序号 | 子网名称 | CIDR | 需求数 | 可用数 | 网络地址 | 子网掩码 | 广播地址
+                    col_widths = [10, 100, 90, 30, 40, 80, 110, 80]  # 单位：pt (序号列宽10pt, 需求数列宽30pt, 可用数列宽40pt)
                     
                     allocated_table = Table(allocated_table_data, colWidths=col_widths)
                     allocated_table.setStyle(
