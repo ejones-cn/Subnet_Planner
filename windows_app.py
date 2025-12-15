@@ -444,6 +444,9 @@ class IPSubnetSplitterApp:
         # 应用程序信息
         self.app_name = "IP子网切分工具"
         self.app_version = get_version()
+        
+        # CIDR格式验证正则表达式
+        self.cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
 
         self.root = root
         self.root.title(f"IP子网切分工具 v{self.app_version}")
@@ -642,16 +645,14 @@ class IPSubnetSplitterApp:
 
 
     def validate_parent_cidr(self, text):
-        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
         text = text.strip()
-        is_valid = bool(re.match(cidr_pattern, text)) if text else True
+        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
         self.parent_entry.config(foreground='black' if is_valid else 'red')
         return "1"
 
     def validate_split_cidr_local(self, text):
-        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
         text = text.strip()
-        is_valid = bool(re.match(cidr_pattern, text)) if text else True
+        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
         self.split_entry.config(foreground='black' if is_valid else 'red')
         return "1"
 
@@ -665,8 +666,7 @@ class IPSubnetSplitterApp:
             row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
         def validate_cidr(text):
-            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
-            is_valid = bool(re.match(cidr_pattern, text)) if text else True
+            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
             if is_valid:
                 self.parent_entry.config(foreground='black')
             else:
@@ -918,9 +918,7 @@ class IPSubnetSplitterApp:
         
         ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
         def validate_cidr(text):
-            import re
-            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
-            is_valid = bool(re.match(cidr_pattern, text)) if text else True
+            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
             if is_valid:
                 self.planning_parent_entry.config(foreground='black')
             else:
@@ -1147,22 +1145,16 @@ class IPSubnetSplitterApp:
         for item in self.allocated_tree.get_children():
             self.allocated_tree.delete(item)
         # 删除了初始化时添加10行空行的代码
-        # 配置斑马条纹样式
-        self.allocated_tree.tag_configure("even", background="#d8d8d8")
-        self.allocated_tree.tag_configure("odd", background="#ffffff")
         
-        # 规划剩余网段表格 - 添加10行空数据，与height属性一致，确保充满整个表格区域
+        # 规划剩余网段表格 - 初始化时不添加空行
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
         # 删除了初始化时添加10行空行的代码
-        # 配置斑马条纹样式
-        self.planning_remaining_tree.tag_configure("even", background="#d8d8d8")
-        self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
         
     def initial_table_setup(self):
-        """在窗口完全渲染后初始化表格，确保获取准确的高度"""
+        """在窗口完全渲染后初始化表格"""
         try:
-            # 动态更新所有表格的空行数
+            # 更新表格的斑马条纹样式
             if hasattr(self, 'split_tree'):
                 self.calculate_and_update_empty_rows(self.split_tree, is_split_tree=True)
             if hasattr(self, 'remaining_tree'):
@@ -1175,39 +1167,16 @@ class IPSubnetSplitterApp:
             pass
     
     def calculate_and_update_empty_rows(self, tree, is_split_tree=False):
-        """调整表格的斑马条纹样式，不再添加空行
+        """调整表格的斑马条纹样式
         
         Args:
             tree: 要处理的Treeview对象
             is_split_tree: 是否为切分网段信息表格（有提示行）
         """
         try:
-            # 获取当前表格中的行数
-            current_rows = len(tree.get_children())
-            
-            # 如果是切分网段信息表格，需要考虑提示行
-            if is_split_tree:
-                # 提示行占1行
-                existing_data_rows = 1
-            else:
-                # 其他表格：
-                # - 子网需求表格：保留示例数据
-                if tree == getattr(self, 'requirements_tree', None):
-                    existing_data_rows = len(tree.get_children())
-                # - 其他表格
-                else:
-                    existing_data_rows = 0
-            
-            # 不添加任何空行
-            min_empty_rows = 0
-            
-            # 不再添加或删除空行，仅保留斑马条纹样式设置
-            
             # 重新应用斑马条纹样式（确保所有行都有正确的背景色）
-            # 使用稍微深一点的颜色，让斑马条纹更明显
             tree.tag_configure("even", background="#e0e0e0")
             tree.tag_configure("odd", background="#ffffff")
-            
         except Exception as e:
             # 如果发生错误，不影响程序运行
             pass
@@ -1516,15 +1485,14 @@ class IPSubnetSplitterApp:
 
     def execute_subnet_planning(self):
         """执行子网规划"""
+        global re
         # 获取父网段
         parent_cidr = self.planning_parent_entry.get().strip()
         if not parent_cidr:
             messagebox.showerror("错误", "请输入父网段")
             return
 
-        import re
-        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
-        if not re.match(cidr_pattern, parent_cidr):
+        if not re.match(self.cidr_pattern, parent_cidr):
             messagebox.showerror("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
             return
 
@@ -1613,7 +1581,6 @@ class IPSubnetSplitterApp:
         except ValueError as e:
             error_msg = str(e)
             if "not permitted" in error_msg and "Octet" in error_msg:
-                import re
                 match = re.search(r"Octet\D*(\d+)", error_msg)
                 if match:
                     octet = match.group(1)
@@ -1628,6 +1595,7 @@ class IPSubnetSplitterApp:
 
     def execute_split(self):
         """执行切分操作"""
+        global re
         parent = self.parent_entry.get().strip()
         split = self.split_entry.get().strip()
 
@@ -1644,9 +1612,7 @@ class IPSubnetSplitterApp:
             return
 
         # 验证CIDR格式
-        import re
-        cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
-        if not re.match(cidr_pattern, parent):
+        if not re.match(self.cidr_pattern, parent):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
@@ -1655,7 +1621,7 @@ class IPSubnetSplitterApp:
             self.split_tree.tag_configure("error", foreground="red")
             messagebox.showerror("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
             return
-        if not re.match(cidr_pattern, split):
+        if not re.match(self.cidr_pattern, split):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
