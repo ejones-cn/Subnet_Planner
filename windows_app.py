@@ -9,6 +9,7 @@
 import tkinter as tk
 import math
 import re
+import ipaddress
 from tkinter import ttk, filedialog, messagebox
 
 # 导入自定义模块
@@ -415,13 +416,11 @@ class IPSubnetSplitterApp:
             self.split_entry.config(style='Valid.TEntry')
             return True
         try:
-            import ipaddress
             ipaddress.IPv4Network(text, strict=False)
             self.split_entry.config(style='Valid.TEntry')
             return True
         except ImportError:
             # 回退到正则表达式验证
-            import re
             cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
             is_valid = bool(re.match(cidr_pattern, text))
             self.split_entry.config(foreground='black' if is_valid else 'red')
@@ -643,7 +642,6 @@ class IPSubnetSplitterApp:
 
 
     def validate_parent_cidr(self, text):
-        import re
         cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
         text = text.strip()
         is_valid = bool(re.match(cidr_pattern, text)) if text else True
@@ -651,7 +649,6 @@ class IPSubnetSplitterApp:
         return "1"
 
     def validate_split_cidr_local(self, text):
-        import re
         cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
         text = text.strip()
         is_valid = bool(re.match(cidr_pattern, text)) if text else True
@@ -668,7 +665,6 @@ class IPSubnetSplitterApp:
             row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
         def validate_cidr(text):
-            import re
             cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
             is_valid = bool(re.match(cidr_pattern, text)) if text else True
             if is_valid:
@@ -905,8 +901,7 @@ class IPSubnetSplitterApp:
         # 初始提示
         self.clear_result()
         
-        # 为所有Treeview添加表格线效果
-        self.add_gridlines_to_treeviews()
+        # Treeview表格线样式已在初始化时设置
         
         # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
         self.root.after(100, self.initial_table_setup)
@@ -2255,14 +2250,7 @@ class IPSubnetSplitterApp:
         self.draw_distribution_chart()
         # 重新绘制所有Treeview的表格线 - 使用ttk样式方案不需要手动绘制
 
-    def add_gridlines_to_treeviews(self):
-        """为所有Treeview添加网格线 - 简化方案"""
-        # 使用已有的ttk样式方案，确保表格线可见
-        pass  # 样式已在setup_treeview_style中设置
-    
-    def update_tree_borders(self):
-        """更新Treeview的边框 - 简化方案"""
-        pass  # 样式已在setup_treeview_style中设置
+
     
     def export_result(self):
         """导出结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
