@@ -781,9 +781,9 @@ class IPSubnetSplitterApp:
         # 创建子网切分功能的结果区域
         self.create_split_result_section()
 
-        # 子网规划模块
+        # 子网规划模块 - 使用默认样式以继承主窗体底色
         self.planning_frame = ttk.Frame(
-            self.top_level_notebook.content_area, style=self.top_level_notebook.get_light_pink_style()
+            self.top_level_notebook.content_area
         )
 
         # 设置子网规划功能的界面
@@ -1237,7 +1237,7 @@ class IPSubnetSplitterApp:
         # 调整列宽以适应表头
         for col in tree['columns']:
             # 获取表头文本
-            header = tree.heading(col, 'text')
+            header = tree.heading(col, 'text') or ''  # 确保header不是None
             
             # 设置临时标签文本并测量宽度
             temp_label.config(text=header)
@@ -1252,7 +1252,8 @@ class IPSubnetSplitterApp:
                     # 设置临时标签文本并测量宽度
                     temp_label.config(text=cell_value)
                     cell_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
-                    if cell_width > max_width:
+                    # 确保cell_width和max_width都是有效的数值
+                    if cell_width is not None and max_width is not None and cell_width > max_width:
                         max_width = cell_width
             
             # 应用默认最小宽度，如果计算出的宽度小于默认值
@@ -2225,8 +2226,24 @@ class IPSubnetSplitterApp:
 
 
     
-    def export_result(self):
-        """导出结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
+    def _export_data(self, data_source, title, success_msg, failure_msg):
+        """通用数据导出函数
+        
+        Args:
+            data_source: 字典，包含导出数据的源信息
+                - main_tree: 主数据表格控件
+                - main_headers: 主数据表格标题（可选）
+                - main_name: 主数据名称
+                - main_filter: 主数据过滤函数（可选）
+                - remaining_tree: 剩余数据表格控件
+                - remaining_name: 剩余数据名称
+                - pdf_title: PDF文档标题
+                - main_table_cols: PDF主表格列宽（可选）
+                - remaining_table_cols: PDF剩余表格列宽（可选）
+            title: 文件对话框标题
+            success_msg: 成功消息格式字符串
+            failure_msg: 失败消息格式字符串
+        """
         try:
             # 使用文件对话框，支持多种格式
             file_path = filedialog.asksaveasfilename(
@@ -2239,7 +2256,7 @@ class IPSubnetSplitterApp:
                     ("Excel文件", "*.xlsx"),
                     ("所有文件", "*.*"),
                 ],
-                title="保存子网切分结果",
+                title=title,
                 initialdir="",
             )
 
@@ -2248,390 +2265,31 @@ class IPSubnetSplitterApp:
 
             # 获取文件扩展名
             import os
-
             file_ext = os.path.splitext(file_path)[1].lower()
 
             # 准备数据
-            split_data = []
-            for item in self.split_tree.get_children():
-                values = self.split_tree.item(item, "values")
-                if values[0] not in ["提示", "错误", "-", "切分网段信息", "剩余网段信息"]:
-                    split_data.append(values)
-
+            main_data = []
+            main_tree = data_source["main_tree"]
+            main_filter = data_source.get("main_filter", None)
+            main_headers = data_source.get("main_headers")
+            
+            if main_headers is None:
+                main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
+            
+            for item in main_tree.get_children():
+                values = main_tree.item(item, "values")
+                if main_filter:
+                    if main_filter(values):
+                        main_data.append(values)
+                elif values:
+                    main_data.append(values)
+            
+            # 准备剩余数据
+            remaining_tree = data_source["remaining_tree"]
+            remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
             remaining_data = []
-            headers = [
-                self.remaining_tree.heading(col, "text") for col in self.remaining_tree["columns"]
-            ]
-            for item in self.remaining_tree.get_children():
-                values = self.remaining_tree.item(item, "values")
-                if values:
-                    remaining_data.append(dict(zip(headers, values)))
-
-            # 根据文件扩展名选择导出格式
-            if file_ext == ".json":
-                # JSON格式导出
-                import json
-
-                export_data = {"split_info": dict(split_data), "remaining_subnets": remaining_data}
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(export_data, f, ensure_ascii=False, indent=2)
-
-            elif file_ext == ".txt":
-                # 文本格式导出
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write("切分网段信息\n")
-                    f.write("=" * 50 + "\n")
-                    for item in self.split_tree.get_children():
-                        values = self.split_tree.item(item, "values")
-                        f.write(f"{values[0]:<20}: {values[1]}\n")
-
-                    f.write("\n\n剩余网段信息\n")
-                    f.write("=" * 50 + "\n")
-
-                    # 写入列标题
-                    for header in headers:
-                        f.write(f"{header:<15}")
-                    f.write("\n")
-                    f.write("-" * 50 + "\n")
-
-                    # 写入数据
-                    for item in self.remaining_tree.get_children():
-                        values = self.remaining_tree.item(item, "values")
-                        for value in values:
-                            f.write(f"{str(value):<15}")
-                        f.write("\n")
-
-            elif file_ext == ".pdf":
-                # PDF格式导出
-                from reportlab.lib.pagesizes import A4
-                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-                from reportlab.platypus import (
-                    SimpleDocTemplate,
-                    Table,
-                    TableStyle,
-                    Paragraph,
-                    Spacer,
-                    PageBreak,
-                )
-                from reportlab.lib import colors
-                from reportlab.pdfbase import pdfmetrics
-                from reportlab.pdfbase.ttfonts import TTFont
-                from reportlab.lib.units import cm
-                from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-                import os
-                import sys
-                import time
-
-                # 注册中文字体函数
-                # 注册中文字体
-                self.has_chinese_font = self.register_chinese_fonts()
-
-                # 创建PDF文档，设置页边距
-                page_width, page_height = A4
-                margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
-                doc = SimpleDocTemplate(
-                    file_path, 
-                    pagesize=A4,
-                    leftMargin=margins[0],
-                    rightMargin=margins[1],
-                    topMargin=margins[2],
-                    bottomMargin=margins[3],
-                    showBoundary=False
-                )
-                elements = []
-                styles = getSampleStyleSheet()
-
-                # 创建支持中文的标题样式
-                title_style = ParagraphStyle(
-                    "ChineseTitle",
-                    parent=styles["Title"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica-Bold",
-                    fontSize=20,
-                    textColor=colors.HexColor("#2c3e50"),  # 深蓝灰色
-                    alignment=TA_CENTER,  # 居中对齐
-                    spaceAfter=20,
-                )
-
-                # 创建支持中文的一级标题样式
-                heading2_style = ParagraphStyle(
-                    "ChineseHeading2",
-                    parent=styles["Heading2"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica-Bold",
-                    fontSize=16,
-                    textColor=colors.HexColor("#34495e"),  # 深灰色
-                    alignment=TA_LEFT,
-                    spaceBefore=20,
-                    spaceAfter=12,
-                )
-
-                # 创建支持中文的正文样式
-                normal_style = ParagraphStyle(
-                    "ChineseNormal",
-                    parent=styles["Normal"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica",
-                    fontSize=11,
-                    textColor=colors.HexColor("#34495e"),  # 深灰色
-                    spaceAfter=5,
-                )
-
-                # 创建支持中文的表格文本样式
-                table_text_style = ParagraphStyle(
-                    "ChineseTableText",
-                    parent=styles["Normal"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica",
-                    fontSize=10,
-                    alignment=TA_CENTER,  # 居中对齐
-                )
-
-                # 添加标题
-                elements.append(Paragraph("IP子网分割工具 - 计算结果", title_style))
-                elements.append(Spacer(1, 10))
-
-                # 添加导出时间信息
-                export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
-                elements.append(Paragraph(f"导出时间: {export_time}", normal_style))
-                elements.append(Spacer(1, 15))
-
-                # 添加切分网段信息
-                elements.append(Paragraph("切分网段信息", heading2_style))
-                split_table_data = [["项目", "值"]]
-                for item in self.split_tree.get_children():
-                    values = self.split_tree.item(item, "values")
-                    if values[0] not in ["提示", "错误", "-", "切分网段信息", "剩余网段信息"]:
-                        # 将表格中的中文文本用Paragraph包裹，使用支持中文的样式
-                        split_table_data.append([
-                            Paragraph(values[0], table_text_style),
-                            Paragraph(values[1], table_text_style)
-                        ])
-
-                if len(split_table_data) > 1:
-                    # 计算表格宽度（页宽减去左右边距）
-                    table_width = page_width - margins[0] - margins[1]
-                    # 设置列宽比例（项目列占30%，值列占70%）
-                    col_widths = [table_width * 0.3, table_width * 0.7]
-                    
-                    split_table = Table(split_table_data, colWidths=col_widths)
-                    split_table.setStyle(
-                        TableStyle(
-                            [
-                                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),  # 蓝色表头
-                                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                                ("ALIGN", (0, 0), (0, -1), "LEFT"),  # 第一列左对齐
-                                ("ALIGN", (1, 0), (-1, -1), "CENTER"),  # 其他列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
-                                ("FONTSIZE", (0, 0), (-1, 0), 12),
-                                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                                ("TOPPADDING", (0, 0), (-1, 0), 8),
-                                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),  # 浅灰色边框
-                                ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#3498db")),  # 蓝色外框
-                                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),  # 浅灰色背景
-                                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),  # 交替行颜色
-                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # 垂直居中
-                                ("LEFTPADDING", (0, 0), (-1, -1), 10),  # 左内边距
-                                ("RIGHTPADDING", (0, 0), (-1, -1), 10),  # 右内边距
-                                ("TOPPADDING", (0, 1), (-1, -1), 6),  # 上内边距
-                                ("BOTTOMPADDING", (0, 1), (-1, -1), 6),  # 下内边距
-                            ]
-                        )
-                    )
-                    elements.append(split_table)
-                else:
-                    elements.append(Paragraph("无切分网段信息", normal_style))
-
-                elements.append(Spacer(1, 20))
-
-                # 添加剩余网段信息
-                elements.append(Paragraph("剩余网段信息", heading2_style))
-                
-                # 调整表格文本样式，使用更小的字号以避免内容分行
-                small_table_text_style = ParagraphStyle(
-                    "ChineseSmallTableText",
-                    parent=styles["Normal"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica",
-                    fontSize=9,  # 稍微减小字号
-                    alignment=TA_CENTER,  # 居中对齐
-                )
-                
-                # 使用新的小字号样式创建表格数据
-                remaining_table_data = [[Paragraph(h, small_table_text_style) for h in headers]]
-                for item in self.remaining_tree.get_children():
-                    values = self.remaining_tree.item(item, "values")
-                    if values:
-                        # 将表格中的中文文本用Paragraph包裹，使用支持中文的样式
-                        remaining_table_data.append([
-                            Paragraph(str(v), small_table_text_style) for v in values
-                        ])
-
-                if len(remaining_table_data) > 1:
-                    # 计算表格宽度（页宽减去左右边距）
-                    table_width = page_width - margins[0] - margins[1]
-                    # 调整列宽：序号和可用地址数列宽度调小，其他列适当分配
-                    # 序号列: 40pt, CIDR: 80pt, 网络地址: 80pt, 子网掩码: 100pt, 通配符掩码: 90pt, 广播地址: 80pt, 可用地址数: 50pt
-                    col_widths = [40, 80, 80, 100, 90, 80, 50]
-                    
-                    remaining_table = Table(remaining_table_data, colWidths=col_widths)
-                    remaining_table.setStyle(
-                        TableStyle(
-                            [
-                                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#27ae60")),  # 绿色表头
-                                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                                ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # 所有列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
-                                ("FONTSIZE", (0, 0), (-1, 0), 11),
-                                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                                ("TOPPADDING", (0, 0), (-1, 0), 8),
-                                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),  # 浅灰色边框
-                                ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#27ae60")),  # 绿色外框
-                                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),  # 浅灰色背景
-                                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),  # 交替行颜色
-                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # 垂直居中
-                                ("LEFTPADDING", (0, 0), (-1, -1), 8),  # 左内边距
-                                ("RIGHTPADDING", (0, 0), (-1, -1), 8),  # 右内边距
-                                ("TOPPADDING", (0, 1), (-1, -1), 6),  # 上内边距
-                                ("BOTTOMPADDING", (0, 1), (-1, -1), 6),  # 下内边距
-                            ]
-                        )
-                    )
-                    elements.append(remaining_table)
-                else:
-                    elements.append(Paragraph("无剩余网段信息", styles["Normal"]))
-
-                # 生成PDF，添加页脚
-                doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
-
-            elif file_ext == ".xlsx":
-                # Excel格式导出
-                from openpyxl import Workbook
-                from openpyxl.styles import Font, Alignment
-
-                # 创建Excel工作簿
-                wb = Workbook()
-
-                # 添加切分网段信息工作表
-                ws1 = wb.active
-                ws1.title = "切分网段信息"
-
-                # 添加切分网段表头
-                ws1.append(["项目", "值"])
-
-                # 设置表头样式
-                for cell in ws1[1]:
-                    cell.font = Font(bold=True)
-                    cell.alignment = Alignment(horizontal="center")
-
-                # 添加切分网段数据
-                for item in self.split_tree.get_children():
-                    values = self.split_tree.item(item, "values")
-                    if values[0] not in ["提示", "错误", "-", "切分网段信息", "剩余网段信息"]:
-                        ws1.append(list(values))
-
-                # 调整列宽
-                ws1.column_dimensions["A"].width = 20
-                ws1.column_dimensions["B"].width = 50
-
-                # 添加剩余网段信息工作表
-                ws2 = wb.create_sheet(title="剩余网段信息")
-
-                # 添加剩余网段表头
-                ws2.append(headers)
-
-                # 设置表头样式
-                for cell in ws2[1]:
-                    cell.font = Font(bold=True)
-                    cell.alignment = Alignment(horizontal="center")
-
-                # 添加剩余网段数据
-                for item in self.remaining_tree.get_children():
-                    values = self.remaining_tree.item(item, "values")
-                    if values:
-                        ws2.append([str(v) for v in values])
-
-                # 调整列宽
-                for col, header in enumerate(headers, 1):
-                    ws2.column_dimensions[chr(64 + col)].width = 20
-
-                # 保存Excel文件
-                wb.save(file_path)
-
-            else:  # 默认CSV格式
-                # CSV格式导出，使用utf-8-sig编码解决中文乱码问题
-                with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
-                    # 写入切分网段信息
-                    f.write("切分网段信息,\n")
-                    f.write("项目,值\n")
-
-                    for item in self.split_tree.get_children():
-                        values = self.split_tree.item(item, "values")
-                        f.write(",".join(map(str, values)) + "\n")
-
-                    # 写入一个空行作为分隔
-                    f.write("\n")
-
-                    # 写入剩余网段信息
-                    f.write("剩余网段信息,\n")
-
-                    # 获取剩余网段表格的列标题
-                    headers = [
-                        self.remaining_tree.heading(col, "text")
-                        for col in self.remaining_tree["columns"]
-                    ]
-                    f.write(",".join(headers) + "\n")
-
-                    for item in self.remaining_tree.get_children():
-                        values = self.remaining_tree.item(item, "values")
-                        f.write(",".join(map(str, values)) + "\n")
-
-            # 显示导出成功信息，保留原有数据
-            self.show_result(f"结果已成功导出到: {file_path}", keep_data=True)
-
-        except Exception as e:
-            # 显示导出错误信息
-            self.show_result(f"导出失败: {str(e)}", error=True)
-
-    def export_planning_result(self):
-        """导出子网规划结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
-        try:
-            # 使用文件对话框，支持多种格式
-            file_path = filedialog.asksaveasfilename(
-                defaultextension=".csv",
-                filetypes=[
-                    ("CSV文件", "*.csv"),
-                    ("JSON文件", "*.json"),
-                    ("文本文件", "*.txt"),
-                    ("PDF文件", "*.pdf"),
-                    ("Excel文件", "*.xlsx"),
-                    ("所有文件", "*.*"),
-                ],
-                title="保存子网规划结果",
-                initialdir="",
-            )
-
-            if not file_path:
-                return  # 用户取消了保存
-
-            # 获取文件扩展名
-            import os
-
-            file_ext = os.path.splitext(file_path)[1].lower()
-
-            # 准备数据
-            # 获取已分配子网的列标题
-            allocated_headers = [
-                self.allocated_tree.heading(col, "text") for col in self.allocated_tree["columns"]
-            ]
-            allocated_data = []
-            for item in self.allocated_tree.get_children():
-                values = self.allocated_tree.item(item, "values")
-                if values:
-                    allocated_data.append(dict(zip(allocated_headers, values)))
-
-            # 获取剩余网段的列标题
-            remaining_headers = [
-                self.planning_remaining_tree.heading(col, "text") for col in self.planning_remaining_tree["columns"]
-            ]
-            remaining_data = []
-            for item in self.planning_remaining_tree.get_children():
-                values = self.planning_remaining_tree.item(item, "values")
+            for item in remaining_tree.get_children():
+                values = remaining_tree.item(item, "values")
                 if values:
                     remaining_data.append(dict(zip(remaining_headers, values)))
 
@@ -2639,45 +2297,57 @@ class IPSubnetSplitterApp:
             if file_ext == ".json":
                 # JSON格式导出
                 import json
-
-                export_data = {
-                    "allocated_subnets": allocated_data,
-                    "remaining_subnets": remaining_data
-                }
+                
+                if data_source["main_name"] == "切分网段信息":
+                    # 子网切分结果特殊处理
+                    export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
+                else:
+                    # 子网规划结果格式
+                    export_data = {
+                        f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
+                        "remaining_subnets": remaining_data
+                    }
+                    
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(export_data, f, ensure_ascii=False, indent=2)
 
             elif file_ext == ".txt":
                 # 文本格式导出
                 with open(file_path, "w", encoding="utf-8") as f:
-                    f.write("已分配子网信息\n")
+                    # 写入主数据
+                    f.write(f"{data_source['main_name']}\n")
                     f.write("=" * 80 + "\n")
 
-                    # 写入已分配子网列标题
-                    for header in allocated_headers:
-                        f.write(f"{header:<15}")
-                    f.write("\n")
-                    f.write("-" * 80 + "\n")
-
-                    # 写入已分配子网数据
-                    for item in self.allocated_tree.get_children():
-                        values = self.allocated_tree.item(item, "values")
-                        for value in values:
-                            f.write(f"{str(value):<15}")
+                    # 如果是键值对格式（如切分网段信息）
+                    if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
+                        for values in main_data:
+                            f.write(f"{values[0]:<20}: {values[1]}\n")
+                    else:
+                        # 写入列标题
+                        for header in main_headers:
+                            f.write(f"{header:<15}")
                         f.write("\n")
+                        f.write("-" * 80 + "\n")
 
-                    f.write("\n\n剩余网段信息\n")
+                        # 写入数据
+                        for values in main_data:
+                            for value in values:
+                                f.write(f"{str(value):<15}")
+                            f.write("\n")
+
+                    # 写入剩余数据
+                    f.write(f"\n\n{data_source['remaining_name']}\n")
                     f.write("=" * 80 + "\n")
 
-                    # 写入剩余网段列标题
+                    # 写入剩余数据列标题
                     for header in remaining_headers:
                         f.write(f"{header:<15}")
                     f.write("\n")
                     f.write("-" * 80 + "\n")
 
-                    # 写入剩余网段数据
-                    for item in self.planning_remaining_tree.get_children():
-                        values = self.planning_remaining_tree.item(item, "values")
+                    # 写入剩余数据
+                    for item in remaining_tree.get_children():
+                        values = remaining_tree.item(item, "values")
                         for value in values:
                             f.write(f"{str(value):<15}")
                         f.write("\n")
@@ -2702,7 +2372,6 @@ class IPSubnetSplitterApp:
                 import sys
                 import time
 
-                # 注册中文字体函数
                 # 注册中文字体
                 self.has_chinese_font = self.register_chinese_fonts()
 
@@ -2725,7 +2394,7 @@ class IPSubnetSplitterApp:
                 title_style = ParagraphStyle(
                     "ChineseTitle",
                     parent=styles["Title"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica-Bold",
+                    fontName="ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
                     fontSize=20,
                     textColor=colors.HexColor("#2c3e50"),  # 深蓝灰色
                     alignment=TA_CENTER,  # 居中对齐
@@ -2736,7 +2405,7 @@ class IPSubnetSplitterApp:
                 heading2_style = ParagraphStyle(
                     "ChineseHeading2",
                     parent=styles["Heading2"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica-Bold",
+                    fontName="ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
                     fontSize=16,
                     textColor=colors.HexColor("#34495e"),  # 深灰色
                     alignment=TA_LEFT,
@@ -2748,7 +2417,7 @@ class IPSubnetSplitterApp:
                 normal_style = ParagraphStyle(
                     "ChineseNormal",
                     parent=styles["Normal"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica",
+                    fontName="ChineseFont" if self.has_chinese_font else "Helvetica",
                     fontSize=11,
                     textColor=colors.HexColor("#34495e"),  # 深灰色
                     spaceAfter=5,
@@ -2758,13 +2427,13 @@ class IPSubnetSplitterApp:
                 table_text_style = ParagraphStyle(
                     "ChineseTableText",
                     parent=styles["Normal"],
-                    fontName="ChineseFont" if has_chinese_font else "Helvetica",
+                    fontName="ChineseFont" if self.has_chinese_font else "Helvetica",
                     fontSize=10,
                     alignment=TA_CENTER,  # 居中对齐
                 )
 
                 # 添加标题
-                elements.append(Paragraph("IP子网分割工具 - 子网规划结果", title_style))
+                elements.append(Paragraph(data_source["pdf_title"], title_style))
                 elements.append(Spacer(1, 10))
 
                 # 添加导出时间信息
@@ -2772,32 +2441,122 @@ class IPSubnetSplitterApp:
                 elements.append(Paragraph(f"导出时间: {export_time}", normal_style))
                 elements.append(Spacer(1, 15))
 
-                # 添加已分配子网信息
-                elements.append(Paragraph("已分配子网信息", heading2_style))
-                allocated_table_data = [[Paragraph(h, table_text_style) for h in allocated_headers]]
-                for item in self.allocated_tree.get_children():
-                    values = self.allocated_tree.item(item, "values")
-                    if values:
-                        # 将表格中的中文文本用Paragraph包裹，使用支持中文的样式
-                        allocated_table_data.append([
-                            Paragraph(str(v), table_text_style) for v in values
+                # 添加主数据信息
+                elements.append(Paragraph(data_source["main_name"], heading2_style))
+                
+                # 如果是键值对格式（如切分网段信息）
+                if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
+                    main_table_data = [["项目", "值"]]
+                    for values in main_data:
+                        main_table_data.append([
+                            Paragraph(str(values[0]) if values[0] is not None else "", table_text_style),
+                            Paragraph(str(values[1]) if values[1] is not None else "", table_text_style)
+                        ])
+                else:
+                    main_table_data = [[Paragraph(h, table_text_style) for h in main_headers]]
+                    for values in main_data:
+                        main_table_data.append([
+                            Paragraph(str(v) if v is not None else "", table_text_style) for v in values
                         ])
 
-                if len(allocated_table_data) > 1:
+                if len(main_table_data) > 1:
                     # 计算表格宽度（页宽减去左右边距）
                     table_width = page_width - margins[0] - margins[1]
-                    # 根据数据长度调整各列宽度，避免换行
-                    # 序号 | 子网名称 | CIDR | 需求数 | 可用数 | 网络地址 | 子网掩码 | 广播地址
-                    col_widths = [10, 100, 90, 30, 40, 80, 110, 80]  # 单位：pt (序号列宽10pt, 需求数列宽30pt, 可用数列宽40pt)
                     
-                    allocated_table = Table(allocated_table_data, colWidths=col_widths)
-                    allocated_table.setStyle(
+                    # 确定表格列数
+                    table_cols = len(main_table_data[0])
+                    
+                    # 使用指定的列宽或默认列宽
+                    col_widths = data_source.get("main_table_cols")
+                    if not col_widths or len(col_widths) != table_cols:
+                        if len(main_headers) == 2:  # 键值对格式
+                            col_widths = [table_width * 0.3, table_width * 0.7]
+                        else:
+                            # 默认平均分配列宽
+                            col_widths = [table_width / table_cols] * table_cols
+                    else:
+                        # 获取主表格列宽配置
+                        main_table_cols = data_source.get("main_table_cols")
+                        
+                        # 如果列宽配置为None或空列表，使用默认平均分配列宽
+                        if main_table_cols is None or main_table_cols == []:
+                            col_widths = [table_width / table_cols] * table_cols
+                        else:
+                            # 确保所有列宽值都是有效的数字
+                            col_widths = []
+                            for width in main_table_cols:
+                                try:
+                                    # 尝试将宽度转换为数字
+                                    numeric_width = float(width) if width is not None else table_width / table_cols
+                                    if numeric_width <= 0:
+                                        numeric_width = table_width / table_cols
+                                    col_widths.append(numeric_width)
+                                except (ValueError, TypeError):
+                                    # 如果转换失败，使用默认宽度
+                                    col_widths.append(table_width / table_cols)
+                            
+                            # 确保列宽数组长度与表格列数一致
+                            if len(col_widths) != table_cols:
+                                col_widths = [table_width / table_cols] * table_cols
+                    
+                    # 添加调试信息
+                    print(f"\n=== 主要表格调试信息 ===")
+                    print(f"表格数据行数: {len(main_table_data)}")
+                    print(f"表格列数: {table_cols}")
+                    print(f"原始列宽: {col_widths}")
+                    print(f"表格宽度: {table_width}")
+                    print(f"表头数量: {len(main_headers)}")
+                    
+                    if not col_widths or len(col_widths) != table_cols:
+                        if len(main_headers) == 2:
+                            print(f"键值对格式，使用3:7比例分配列宽")
+                        else:
+                            print(f"列宽数量不匹配，使用默认平均分配列宽")
+                    else:
+                        print(f"使用指定列宽，替换None值")
+                    
+                    print(f"最终列宽: {col_widths}")
+                    print(f"=== 主要表格调试信息结束 ===")
+                    
+                    # 添加详细的调试信息，检查Table构造函数的参数
+                    print(f"\n=== Table构造函数调试信息 ===")
+                    print(f"main_table_data类型: {type(main_table_data)}")
+                    print(f"main_table_data长度: {len(main_table_data)}")
+                    print(f"main_table_data[0]类型: {type(main_table_data[0])}")
+                    print(f"main_table_data[0]长度: {len(main_table_data[0])}")
+                    print(f"colWidths类型: {type(col_widths)}")
+                    print(f"colWidths长度: {len(col_widths)}")
+                    print(f"colWidths内容: {col_widths}")
+                    print(f"每个列宽的值和类型:")
+                    for i, width in enumerate(col_widths):
+                        print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
+                    
+                    # 确保所有列宽都是有效的数字
+                    valid_col_widths = []
+                    for width in col_widths:
+                        if width is None:
+                            valid_col_widths.append(100)  # 使用默认宽度
+                        elif not isinstance(width, (int, float)):
+                            try:
+                                valid_col_widths.append(float(width))
+                            except:
+                                valid_col_widths.append(100)
+                        elif width <= 0:
+                            valid_col_widths.append(100)
+                        else:
+                            valid_col_widths.append(width)
+                    
+                    print(f"有效列宽: {valid_col_widths}")
+                    
+                    # 创建Table对象
+                    main_table = Table(main_table_data, colWidths=valid_col_widths)
+                    main_table.setStyle(
                         TableStyle(
                             [
                                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),  # 蓝色表头
                                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # 所有列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
+                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
                                 ("FONTSIZE", (0, 0), (-1, 0), 11),
                                 ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                                 ("TOPPADDING", (0, 0), (-1, 0), 8),
@@ -2813,38 +2572,104 @@ class IPSubnetSplitterApp:
                             ]
                         )
                     )
-                    elements.append(allocated_table)
+                    elements.append(main_table)
                 else:
-                    elements.append(Paragraph("无已分配子网信息", normal_style))
+                    elements.append(Paragraph(f"无{data_source['main_name']}", normal_style))
 
                 elements.append(Spacer(1, 20))
 
                 # 添加剩余网段信息
-                elements.append(Paragraph("剩余网段信息", heading2_style))
+                elements.append(Paragraph(data_source["remaining_name"], heading2_style))
                 remaining_table_data = [[Paragraph(h, table_text_style) for h in remaining_headers]]
-                for item in self.planning_remaining_tree.get_children():
-                    values = self.planning_remaining_tree.item(item, "values")
+                for item in remaining_tree.get_children():
+                    values = remaining_tree.item(item, "values")
                     if values:
-                        # 将表格中的中文文本用Paragraph包裹，使用支持中文的样式
                         remaining_table_data.append([
-                            Paragraph(str(v), table_text_style) for v in values
+                            Paragraph(str(v) if v is not None else "", table_text_style) for v in values
                         ])
 
                 if len(remaining_table_data) > 1:
                     # 计算表格宽度（页宽减去左右边距）
                     table_width = page_width - margins[0] - margins[1]
-                    # 根据数据长度调整各列宽度，避免换行
-                    # 序号 | CIDR | 网络地址 | 子网掩码 | 广播地址 | 可用地址数
-                    col_widths = [40, 90, 80, 110, 80, 60]  # 单位：pt (增加CIDR列宽到90pt)
                     
-                    remaining_table = Table(remaining_table_data, colWidths=col_widths)
+                    # 确定表格列数
+                    table_cols = len(remaining_table_data[0])
+                    
+                    # 使用指定的列宽或默认列宽
+                    col_widths = data_source.get("remaining_table_cols")
+                    
+                    # 添加调试信息
+                    print(f"\n=== 剩余表格调试信息 ===")
+                    print(f"表格数据行数: {len(remaining_table_data)}")
+                    print(f"表格列数: {table_cols}")
+                    print(f"原始列宽: {col_widths}")
+                    print(f"表格宽度: {table_width}")
+                    
+                    if not col_widths or len(col_widths) != table_cols:
+                        print(f"列宽数量不匹配，使用默认平均分配列宽")
+                        # 默认平均分配列宽
+                        col_widths = [table_width / table_cols] * table_cols
+                    else:
+                        print(f"使用指定列宽，替换无效值")
+                        # 确保所有列宽值都是有效的数字
+                        col_widths = []
+                        for width in data_source.get("remaining_table_cols", []):
+                            try:
+                                # 尝试将宽度转换为数字
+                                numeric_width = float(width) if width is not None else table_width / table_cols
+                                if numeric_width <= 0:
+                                    numeric_width = table_width / table_cols
+                                col_widths.append(numeric_width)
+                            except (ValueError, TypeError):
+                                # 如果转换失败，使用默认宽度
+                                col_widths.append(table_width / table_cols)
+                        
+                        # 确保列宽数组长度与表格列数一致
+                        if len(col_widths) != table_cols:
+                            col_widths = [table_width / table_cols] * table_cols
+                    
+                    print(f"最终列宽: {col_widths}")
+                    print(f"=== 剩余表格调试信息结束 ===")
+                    
+                    # 添加详细的调试信息，检查Table构造函数的参数
+                    print(f"\n=== 剩余表格Table构造函数调试信息 ===")
+                    print(f"remaining_table_data类型: {type(remaining_table_data)}")
+                    print(f"remaining_table_data长度: {len(remaining_table_data)}")
+                    print(f"remaining_table_data[0]类型: {type(remaining_table_data[0])}")
+                    print(f"remaining_table_data[0]长度: {len(remaining_table_data[0])}")
+                    print(f"colWidths类型: {type(col_widths)}")
+                    print(f"colWidths长度: {len(col_widths)}")
+                    print(f"colWidths内容: {col_widths}")
+                    print(f"每个列宽的值和类型:")
+                    for i, width in enumerate(col_widths):
+                        print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
+                    
+                    # 确保所有列宽都是有效的数字
+                    valid_col_widths = []
+                    for width in col_widths:
+                        if width is None:
+                            valid_col_widths.append(100)  # 使用默认宽度
+                        elif not isinstance(width, (int, float)):
+                            try:
+                                valid_col_widths.append(float(width))
+                            except:
+                                valid_col_widths.append(100)
+                        elif width <= 0:
+                            valid_col_widths.append(100)
+                        else:
+                            valid_col_widths.append(width)
+                    
+                    print(f"有效列宽: {valid_col_widths}")
+                    
+                    # 创建Table对象
+                    remaining_table = Table(remaining_table_data, colWidths=valid_col_widths)
                     remaining_table.setStyle(
                         TableStyle(
                             [
                                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#27ae60")),  # 绿色表头
                                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # 所有列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
+                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
                                 ("FONTSIZE", (0, 0), (-1, 0), 11),
                                 ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                                 ("TOPPADDING", (0, 0), (-1, 0), 8),
@@ -2862,7 +2687,7 @@ class IPSubnetSplitterApp:
                     )
                     elements.append(remaining_table)
                 else:
-                    elements.append(Paragraph("无剩余网段信息", normal_style))
+                    elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
                 # 生成PDF，添加页脚
                 doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
@@ -2875,32 +2700,30 @@ class IPSubnetSplitterApp:
                 # 创建Excel工作簿
                 wb = Workbook()
 
-                # 添加已分配子网工作表
+                # 添加主数据工作表
                 ws1 = wb.active
-                ws1.title = "已分配子网"
+                ws1.title = data_source["main_name"]
 
-                # 添加已分配子网表头
-                ws1.append(allocated_headers)
+                # 添加主数据表头
+                ws1.append(main_headers)
 
                 # 设置表头样式
                 for cell in ws1[1]:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
-                # 添加已分配子网数据
-                for item in self.allocated_tree.get_children():
-                    values = self.allocated_tree.item(item, "values")
-                    if values:
-                        ws1.append(list(values))
+                # 添加主数据
+                for values in main_data:
+                    ws1.append(list(values))
 
                 # 调整列宽
-                for col, header in enumerate(allocated_headers, 1):
+                for col, header in enumerate(main_headers, 1):
                     ws1.column_dimensions[chr(64 + col)].width = 20
 
-                # 添加剩余网段工作表
-                ws2 = wb.create_sheet(title="剩余网段")
+                # 添加剩余数据工作表
+                ws2 = wb.create_sheet(title=data_source["remaining_name"])
 
-                # 添加剩余网段表头
+                # 添加剩余数据表头
                 ws2.append(remaining_headers)
 
                 # 设置表头样式
@@ -2908,9 +2731,9 @@ class IPSubnetSplitterApp:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
-                # 添加剩余网段数据
-                for item in self.planning_remaining_tree.get_children():
-                    values = self.planning_remaining_tree.item(item, "values")
+                # 添加剩余数据
+                for item in remaining_tree.get_children():
+                    values = remaining_tree.item(item, "values")
                     if values:
                         ws2.append([str(v) for v in values])
 
@@ -2924,33 +2747,74 @@ class IPSubnetSplitterApp:
             else:  # 默认CSV格式
                 # CSV格式导出，使用utf-8-sig编码解决中文乱码问题
                 with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
-                    # 写入已分配子网信息
-                    f.write("已分配子网信息,\n")
-                    f.write(",".join(allocated_headers) + "\n")
+                    # 写入主数据
+                    f.write(f"{data_source['main_name']},\n")
+                    f.write(",".join(main_headers) + "\n")
 
-                    for item in self.allocated_tree.get_children():
-                        values = self.allocated_tree.item(item, "values")
-                        if values:
-                            f.write(",".join(map(str, values)) + "\n")
+                    for values in main_data:
+                        f.write(",".join(map(str, values)) + "\n")
 
                     # 写入一个空行作为分隔
                     f.write("\n")
 
-                    # 写入剩余网段信息
-                    f.write("剩余网段信息,\n")
+                    # 写入剩余数据
+                    f.write(f"{data_source['remaining_name']},\n")
                     f.write(",".join(remaining_headers) + "\n")
 
-                    for item in self.planning_remaining_tree.get_children():
-                        values = self.planning_remaining_tree.item(item, "values")
-                        if values:
-                            f.write(",".join(map(str, values)) + "\n")
+                    for item in remaining_tree.get_children():
+                        values = remaining_tree.item(item, "values")
+                        f.write(",".join(map(str, values)) + "\n")
 
-            # 显示导出成功信息
-            self.show_result(f"规划结果已成功导出到: {file_path}", keep_data=True)
+            # 显示导出成功信息，保留原有数据
+            self.show_result(success_msg.format(file_path=file_path), keep_data=True)
 
         except Exception as e:
-            # 显示导出错误信息
-            self.show_result(f"导出失败: {str(e)}", error=True)
+                import traceback
+                # 显示导出错误信息和堆栈跟踪
+                error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
+                self.show_result(error_msg, error=True)
+    
+    def export_result(self):
+        """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
+        data_source = {
+            "main_tree": self.split_tree,
+            "main_name": "切分网段信息",
+            "main_filter": lambda values: values[0] not in ["提示", "错误", "-", "切分网段信息", "剩余网段信息"],
+            "main_headers": ["项目", "值"],
+            "remaining_tree": self.remaining_tree,
+            "remaining_name": "剩余网段信息",
+            "pdf_title": "IP子网分割工具 - 计算结果",
+            "main_table_cols": None,  # 使用默认列宽
+            "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50]  # 剩余网段表格列宽
+        }
+        
+        self._export_data(
+            data_source,
+            "保存子网切分结果",
+            "结果已成功导出到: {file_path}",
+            "导出失败: {error}"
+        )
+
+    def export_planning_result(self):
+        """导出子网规划结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
+        data_source = {
+            "main_tree": self.allocated_tree,
+            "main_name": "已分配子网信息",
+            "main_filter": None,  # 不需要过滤，直接导出所有数据
+            "main_headers": None,  # 自动从表格获取
+            "remaining_tree": self.planning_remaining_tree,
+            "remaining_name": "剩余网段信息",
+            "pdf_title": "IP子网分割工具 - 子网规划结果",
+            "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
+            "remaining_table_cols": [40, 90, 80, 110, 80, 60]  # 剩余网段表格列宽
+        }
+        
+        self._export_data(
+            data_source,
+            "保存子网规划结果",
+            "规划结果已成功导出到: {file_path}",
+            "导出失败: {error}"
+        )
 
     def clear_result(self):
         """清空结果表格和图表"""
@@ -2974,6 +2838,10 @@ class IPSubnetSplitterApp:
 
     def register_chinese_fonts(self):
         """注册中文字体供PDF导出使用"""
+        # 导入PDF相关模块
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        
         # 尝试查找系统中的中文字体
         font_path = None
         font_name = None
@@ -3019,6 +2887,9 @@ class IPSubnetSplitterApp:
 
     def add_footer(self, canvas, doc):
         """在PDF文档中添加页脚"""
+        import time
+        from reportlab.lib.units import cm
+        
         canvas.saveState()
         # 设置页脚字体
         if getattr(self, 'has_chinese_font', False):
