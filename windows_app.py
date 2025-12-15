@@ -3280,22 +3280,23 @@ class IPSubnetSplitterApp:
         about_window.bind("<FocusIn>", lambda e: None)
         about_window.bind("<FocusOut>", lambda e: None)
 
-        # 为所有标签和按钮添加焦点样式，移除虚线
-        self.style.configure("TLabel", focuscolor="none")
-        self.style.configure("TButton", focuscolor="none", focuswidth=0)
-        self.style.map("TButton", focuscolor=[("focus", "none")], focuswidth=[("focus", 0)])
+        # 为关于对话框中的标签和按钮添加焦点样式，移除虚线
+        # 创建对话框专用的样式，避免影响主窗口
+        self.style.configure("About.TLabel", focuscolor="none")
+        self.style.configure("About.TButton", focuscolor="none", focuswidth=0)
+        self.style.map("About.TButton", focuscolor=[("focus", "none")], focuswidth=[("focus", 0)])
 
         # 标题区域
         title_frame = ttk.Frame(inner_frame)
         title_frame.pack(pady=(10, 8))
 
         # 添加应用名称作为主要标题
-        app_name_label = ttk.Label(title_frame, text=self.app_name, font=("微软雅黑", 16, "bold"))
+        app_name_label = ttk.Label(title_frame, text=self.app_name, font=("微软雅黑", 16, "bold"), style="About.TLabel")
         app_name_label.pack()
 
         # 添加版本号
         version_label = ttk.Label(
-            title_frame, text=f"版本 {self.app_version}", font=("微软雅黑", 10)
+            title_frame, text=f"版本 {self.app_version}", font=("微软雅黑", 10), style="About.TLabel"
         )
         version_label.pack(pady=(1, 0))
 
@@ -3304,23 +3305,23 @@ class IPSubnetSplitterApp:
         info_frame.pack(pady=(0, 8))
 
         # 添加作者信息
-        author_label = ttk.Label(info_frame, text="作者：Ejones", font=("微软雅黑", 10))
+        author_label = ttk.Label(info_frame, text="作者：Ejones", font=("微软雅黑", 10), style="About.TLabel")
         author_label.pack(pady=(0, 1))
 
         # 添加联系方式
         email_label = ttk.Label(
-            info_frame, text="邮箱：ejones.cn@hotmail.com", font=("微软雅黑", 10)
+            info_frame, text="邮箱：ejones.cn@hotmail.com", font=("微软雅黑", 10), style="About.TLabel"
         )
         email_label.pack()
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
         # 添加确定按钮
-        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12)
+        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12, style="About.TButton")
         ok_button.pack(pady=(0, 2))
 
         # 添加版权信息
         copyright_label = ttk.Label(
-            inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8)
+            inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8), style="About.TLabel"
         )
         copyright_label.pack(pady=(2, 10))
 
