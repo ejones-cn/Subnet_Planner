@@ -754,7 +754,9 @@ class IPSubnetSplitterApp:
             self.adjust_remaining_tree_width()
         # 如果切换到网段分布图表标签页（索引为2），触发图表自适应
         elif tab_index == 2:
-            self.draw_distribution_chart()
+            # 确保图表Canvas已初始化再绘制
+            if hasattr(self, 'chart_canvas'):
+                self.draw_distribution_chart()
 
     def create_top_level_notebook(self):
         """创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块"""
@@ -2218,9 +2220,7 @@ class IPSubnetSplitterApp:
         self.adjust_remaining_tree_width()
         
         # 窗口大小变化时不需要重新配置斑马条纹，样式已在初始化时设置
-            
-        # 重新绘制图表以适应新的窗口大小
-        self.draw_distribution_chart()
+        # 图表将在 on_chart_resize 中单独处理，避免重复绘制
         # 重新绘制所有Treeview的表格线 - 使用ttk样式方案不需要手动绘制
 
 
