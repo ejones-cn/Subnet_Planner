@@ -1172,27 +1172,29 @@ class IPSubnetSplitterApp:
         try:
             # 更新表格的斑马条纹样式
             if hasattr(self, 'split_tree'):
-                self.calculate_and_update_empty_rows(self.split_tree, is_split_tree=True)
+                self.update_table_zebra_stripes(self.split_tree)
             if hasattr(self, 'remaining_tree'):
-                self.calculate_and_update_empty_rows(self.remaining_tree)
+                self.update_table_zebra_stripes(self.remaining_tree)
             if hasattr(self, 'allocated_tree'):
-                self.calculate_and_update_empty_rows(self.allocated_tree)
+                self.update_table_zebra_stripes(self.allocated_tree)
             if hasattr(self, 'planning_remaining_tree'):
-                self.calculate_and_update_empty_rows(self.planning_remaining_tree)
+                self.update_table_zebra_stripes(self.planning_remaining_tree)
         except Exception as e:
             pass
     
-    def calculate_and_update_empty_rows(self, tree, is_split_tree=False):
-        """调整表格的斑马条纹样式
+    def update_table_zebra_stripes(self, tree):
+        """更新表格的斑马条纹标签（仅更新行标签，不重新配置样式）
         
         Args:
             tree: 要处理的Treeview对象
-            is_split_tree: 是否为切分网段信息表格（有提示行）
         """
         try:
-            # 重新应用斑马条纹样式（确保所有行都有正确的背景色）
-            tree.tag_configure("even", background="#e0e0e0")
-            tree.tag_configure("odd", background="#ffffff")
+            # 只更新行标签，样式已在初始化时配置
+            for index, item in enumerate(tree.get_children(), start=1):
+                tag = "even" if index % 2 == 0 else "odd"
+                current_tags = tree.item(item, "tags")
+                if tag not in current_tags:
+                    tree.item(item, tags=(tag,))
         except Exception as e:
             # 如果发生错误，不影响程序运行
             pass
@@ -1259,13 +1261,13 @@ class IPSubnetSplitterApp:
         try:
             # 动态更新所有表格的空行数
             if hasattr(self, 'split_tree'):
-                self.calculate_and_update_empty_rows(self.split_tree, is_split_tree=True)
+                self.update_table_zebra_stripes(self.split_tree)
             if hasattr(self, 'remaining_tree'):
-                self.calculate_and_update_empty_rows(self.remaining_tree)
+                self.update_table_zebra_stripes(self.remaining_tree)
             if hasattr(self, 'allocated_tree'):
-                self.calculate_and_update_empty_rows(self.allocated_tree)
+                self.update_table_zebra_stripes(self.allocated_tree)
             if hasattr(self, 'planning_remaining_tree'):
-                self.calculate_and_update_empty_rows(self.planning_remaining_tree)
+                self.update_table_zebra_stripes(self.planning_remaining_tree)
                 
             # 仅调整规划结果区域的表格列宽，不影响子网需求区域
             if hasattr(self, 'planning_notebook') and hasattr(self.planning_notebook, 'content_area'):
@@ -2217,15 +2219,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.update_idletasks()
         self.adjust_remaining_tree_width()
         
-        # 动态更新所有表格的空行数，确保斑马条纹充满整个表格区域
-        if hasattr(self, 'split_tree'):
-            self.calculate_and_update_empty_rows(self.split_tree, is_split_tree=True)
-        if hasattr(self, 'remaining_tree'):
-            self.calculate_and_update_empty_rows(self.remaining_tree)
-        if hasattr(self, 'allocated_tree'):
-            self.calculate_and_update_empty_rows(self.allocated_tree)
-        if hasattr(self, 'planning_remaining_tree'):
-            self.calculate_and_update_empty_rows(self.planning_remaining_tree)
+        # 窗口大小变化时不需要重新配置斑马条纹，样式已在初始化时设置
             
         # 重新绘制图表以适应新的窗口大小
         self.draw_distribution_chart()
@@ -3081,14 +3075,14 @@ class IPSubnetSplitterApp:
             self.split_tree.delete(item)
         # 添加提示行
         self.split_tree.insert("", tk.END, values=("提示", "点击'执行切分'按钮开始操作..."), tags=('odd',))
-        # 使用动态计算功能添加适当数量的空行，确保斑马条纹充满整个表格区域
-        self.calculate_and_update_empty_rows(self.split_tree, is_split_tree=True)
+        # 更新切分网段表格的斑马条纹标签
+        self.update_table_zebra_stripes(self.split_tree)
 
         # 清空剩余网段列表表格
         for item in self.remaining_tree.get_children():
             self.remaining_tree.delete(item)
-        # 使用动态计算功能添加适当数量的空行，确保斑马条纹充满整个表格区域
-        self.calculate_and_update_empty_rows(self.remaining_tree)
+        # 更新剩余网段列表的斑马条纹标签
+        self.update_table_zebra_stripes(self.remaining_tree)
 
         # 清空图表
         self.chart_canvas.delete("all")
