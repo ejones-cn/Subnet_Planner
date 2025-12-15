@@ -822,10 +822,7 @@ class IPSubnetSplitterApp:
         self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         
         # 配置斑马条纹样式和信息标签样式
-        self.split_tree.tag_configure("even", background="#d8d8d8")
-        self.split_tree.tag_configure("odd", background="#ffffff")
-        self.split_tree.tag_configure("error", foreground="red")
-        self.split_tree.tag_configure("info", foreground="blue")
+        self.configure_treeview_styles(self.split_tree, include_special_tags=True)
 
         # 剩余网段列表页面
         self.remaining_frame = ttk.Frame(
@@ -855,8 +852,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
         
         # 配置斑马条纹样式
-        self.remaining_tree.tag_configure("even", background="#d8d8d8")
-        self.remaining_tree.tag_configure("odd", background="#ffffff")
+        self.configure_treeview_styles(self.remaining_tree)
 
         # 网段分布图表页面
         self.chart_frame = ttk.Frame(
@@ -1015,8 +1011,7 @@ class IPSubnetSplitterApp:
         self.update_requirements_tree_zebra_stripes()
         
         # 配置斑马条纹样式
-        self.requirements_tree.tag_configure("even", background="#d8d8d8")
-        self.requirements_tree.tag_configure("odd", background="#ffffff")
+        self.configure_treeview_styles(self.requirements_tree)
 
         # 删除原来的执行规划按钮容器
         # 按钮已移动到删除按钮下方
@@ -1085,8 +1080,7 @@ class IPSubnetSplitterApp:
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
         
         # 配置斑马条纹样式
-        self.allocated_tree.tag_configure("even", background="#d8d8d8")
-        self.allocated_tree.tag_configure("odd", background="#ffffff")
+        self.configure_treeview_styles(self.allocated_tree)
 
         # 剩余网段页面
         self.planning_remaining_frame = ttk.Frame(
@@ -1137,8 +1131,7 @@ class IPSubnetSplitterApp:
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
         
         # 配置斑马条纹样式
-        self.planning_remaining_tree.tag_configure("even", background="#d8d8d8")
-        self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
+        self.configure_treeview_styles(self.planning_remaining_tree)
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab("已分配子网", self.allocated_frame, "#e3f2fd")  # 浅蓝色
@@ -1176,6 +1169,26 @@ class IPSubnetSplitterApp:
         except Exception as e:
             pass
     
+    def configure_treeview_styles(self, tree, include_special_tags=False):
+        """配置Treeview控件的基本样式（斑马条纹、错误和信息标签）
+        
+        Args:
+            tree: 要配置的Treeview对象
+            include_special_tags: 是否包含错误和信息标签配置
+        """
+        try:
+            # 配置斑马条纹样式
+            tree.tag_configure("even", background="#d8d8d8")
+            tree.tag_configure("odd", background="#ffffff")
+            
+            # 如果需要，配置错误和信息标签
+            if include_special_tags:
+                tree.tag_configure("error", foreground="red")
+                tree.tag_configure("info", foreground="blue")
+        except Exception as e:
+            # 如果发生错误，不影响程序运行
+            pass
+
     def update_table_zebra_stripes(self, tree):
         """更新表格的斑马条纹标签（仅更新行标签，不重新配置样式）
         
