@@ -640,54 +640,7 @@ class IPSubnetSplitterApp:
         # 初始化图表数据
         self.chart_data = None
 
-    def create_input_section(self):
-        """创建输入区域 - 优化布局"""
 
-        input_frame = ttk.LabelFrame(self.main_frame, text="输入参数", padding="10")  # 减小内边距
-        input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
-
-        # 父网段
-        ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
-        )
-        vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-            validate='focusout', validatecommand=vcmd)
-        self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
-        self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
-
-        # 切分段
-        ttk.Label(input_frame, text="切分段", anchor="w", width=6).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=(0, 5)
-        )
-        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
-            validate='focusout', validatecommand=vcmd)
-        self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
-        self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
-
-        # 按钮区域
-        # 执行按钮
-        self.execute_btn = ttk.Button(
-            input_frame, text="执行切分", command=self.execute_split, width=12
-        )
-        self.execute_btn.grid(
-            row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
-        )
-
-        # 清空按钮
-        self.clear_btn = ttk.Button(
-            input_frame, text="清空结果", command=self.clear_result, width=12
-        )
-        self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
-
-        # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
-        self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=14
-        )
-        self.export_btn.grid(
-            row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
-        )
 
     def validate_parent_cidr(self, text):
         import re
@@ -842,60 +795,7 @@ class IPSubnetSplitterApp:
         self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
 
-    def create_result_section(self):
-        """创建结果显示区域"""
-        result_frame = ttk.LabelFrame(self.main_frame, text="切分结果", padding="10")
-        # 调整底部外边距，将结果区域与窗体下边距缩小
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 5))
 
-        # 创建一个自定义的笔记本控件来显示不同的结果页面
-        self.notebook = ColoredNotebook(
-            result_frame, style=self.style, tab_change_callback=self.on_tab_change
-        )
-        self.notebook.pack(fill=tk.BOTH, expand=True)
-
-        # 切分网段信息页面
-        self.split_info_frame = ttk.Frame(
-            self.notebook.content_area, padding="5", style=self.notebook.get_light_blue_style()
-        )
-
-        # 创建切分网段信息表格
-        self.split_tree = ttk.Treeview(
-            self.split_info_frame, columns=(
-                "item", "value"), show="headings", height=5
-        )
-        self.split_tree.heading("item", text="项目")
-        self.split_tree.heading("value", text="值")
-        # 设置合适的列宽
-        self.split_tree.column("item", width=100, minwidth=100, stretch=False)
-        self.split_tree.column("value", width=250)
-        self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
-
-        # 剩余网段列表页面
-        self.remaining_frame = ttk.Frame(
-            self.notebook.content_area, padding="5", style=self.notebook.get_light_green_style()
-        )
-
-        # 创建剩余网段信息表格
-        self.remaining_tree = ttk.Treeview(
-            self.remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
-            show="headings",
-            height=5
-        )
-        self.remaining_tree.heading("index", text="序号")
-        self.remaining_tree.heading("cidr", text="CIDR")
-        self.remaining_tree.heading("network", text="网络地址")
-        self.remaining_tree.heading("netmask", text="子网掩码")
-        self.remaining_tree.heading("wildcard", text="通配符掩码")
-        self.remaining_tree.heading("broadcast", text="广播地址")
-        self.remaining_tree.heading("usable", text="可用地址数")
-
-        # 设置列宽，使用minwidth替代width，让列可以自适应
-        self.remaining_tree.column("index", minwidth=35, width=35, stretch=False)
-        self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
