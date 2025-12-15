@@ -647,8 +647,8 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
-            row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
+        ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
+            row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_parent_cidr(p)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
@@ -656,9 +656,9 @@ class IPSubnetSplitterApp:
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
-        # 切分网段
-        ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
-            row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
+        # 切分段
+        ttk.Label(input_frame, text="切分段", anchor="w", width=6).grid(
+            row=1, column=0, sticky=tk.W, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
@@ -711,8 +711,8 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
-        ttk.Label(input_frame, text="父网段 (如: 10.0.0.0/8)", anchor="e", width=22).grid(
-            row=0, column=0, sticky=tk.E, pady=5, padx=(0, 15)
+        ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
+            row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
         def validate_cidr(text):
             import re
@@ -730,9 +730,9 @@ class IPSubnetSplitterApp:
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
-        # 切分网段
-        ttk.Label(input_frame, text="切分网段 (如: 10.21.60.0/23)", anchor="e", width=22).grid(
-            row=1, column=0, sticky=tk.E, pady=3, padx=(0, 15)
+        # 切分段
+        ttk.Label(input_frame, text="切分段", anchor="w", width=6).grid(
+            row=1, column=0, sticky=tk.W, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
