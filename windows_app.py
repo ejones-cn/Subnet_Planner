@@ -820,6 +820,10 @@ class IPSubnetSplitterApp:
         self.split_tree.column("item", width=100, minwidth=100, stretch=False)
         self.split_tree.column("value", width=250)
         self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # 配置斑马条纹样式
+        self.split_tree.tag_configure("even", background="#d8d8d8")
+        self.split_tree.tag_configure("odd", background="#ffffff")
 
         # 剩余网段列表页面
         self.remaining_frame = ttk.Frame(
@@ -847,6 +851,10 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
+        
+        # 配置斑马条纹样式
+        self.remaining_tree.tag_configure("even", background="#d8d8d8")
+        self.remaining_tree.tag_configure("odd", background="#ffffff")
 
         # 网段分布图表页面
         self.chart_frame = ttk.Frame(
@@ -1081,6 +1089,10 @@ class IPSubnetSplitterApp:
         
         self.allocated_tree.grid(row=0, column=0, sticky="nsew")
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # 配置斑马条纹样式
+        self.allocated_tree.tag_configure("even", background="#d8d8d8")
+        self.allocated_tree.tag_configure("odd", background="#ffffff")
 
         # 剩余网段页面
         self.planning_remaining_frame = ttk.Frame(
@@ -1129,6 +1141,10 @@ class IPSubnetSplitterApp:
         
         self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # 配置斑马条纹样式
+        self.planning_remaining_tree.tag_configure("even", background="#d8d8d8")
+        self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab("已分配子网", self.allocated_frame, "#e3f2fd")  # 浅蓝色
@@ -1545,9 +1561,7 @@ class IPSubnetSplitterApp:
                     ),
                     tags=tags
                 )
-            # 配置斑马条纹样式 - 颜色继续调深
-            self.allocated_tree.tag_configure("even", background="#d8d8d8")
-            self.allocated_tree.tag_configure("odd", background="#ffffff")
+            # 斑马条纹样式已在初始化时配置
             
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
@@ -1569,9 +1583,7 @@ class IPSubnetSplitterApp:
                     ),
                     tags=tags
                 )
-            # 配置斑马条纹样式 - 颜色继续调深
-            self.planning_remaining_tree.tag_configure("even", background="#d8d8d8")
-            self.planning_remaining_tree.tag_configure("odd", background="#ffffff")
+            # 斑马条纹样式已在初始化时配置
             
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.planning_remaining_tree)
@@ -1675,9 +1687,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("even",))
             self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd",))
             
-            # 配置斑马条纹样式
-            self.split_tree.tag_configure("even", background="#d8d8d8")
-            self.split_tree.tag_configure("odd", background="#ffffff")
+
 
             # 显示剩余网段列表表格
             if result["remaining_subnets_info"]:
@@ -1698,9 +1708,7 @@ class IPSubnetSplitterApp:
                         ),
                         tags=tags
                     )
-                # 配置斑马条纹样式 - 颜色继续调深
-                self.remaining_tree.tag_configure("even", background="#d8d8d8")
-                self.remaining_tree.tag_configure("odd", background="#ffffff")
+
             else:
                 self.remaining_tree.insert("", tk.END, values=(1, "无", "无", "无", "无", "无"))
 
