@@ -63,6 +63,10 @@ class ColoredNotebook(ttk.Frame):
         # 创建一个占位Frame，使用ttk.Frame并继承默认样式
         self.tab_bar_spacer = ttk.Frame(self.tab_bar_container)
         self.tab_bar_spacer.pack(side="left", fill="both", expand=True)
+        
+        # 创建右侧按钮容器 - 使用ttk.Frame并继承默认样式
+        self.tab_bar_right_buttons = ttk.Frame(self.tab_bar_container)
+        self.tab_bar_right_buttons.pack(side="right", fill="y")
 
         # 创建内容区域 - 移除箭头指向的灰色框线
         self.content_area = ttk.Frame(self, borderwidth=0, relief="flat")
@@ -617,27 +621,114 @@ class IPSubnetSplitterApp:
             foreground=[("selected", "white")]
         )
 
-        # 4. 输入框样式配置 - 用于CIDR验证颜色反馈
+        # 6. 输入框样式配置 - 用于CIDR验证颜色反馈
         self.style.configure("Valid.TEntry", foreground="black")
         self.style.configure("Invalid.TEntry", foreground="red")
 
-        # 5. 斑马条纹样式配置
+        # 7. 信息栏样式配置 - 紧凑设计，调大字体
+        # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
+        self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
+        self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
+        self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
+
+        # 信息栏框架样式 - 使用更明显的边框，确保左侧边框可见，添加明确背景色
+        # 修改边框样式：1px宽，#808080
+        self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
+        self.style.configure("SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
+        self.style.configure("ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
+        self.style.configure("InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
+
+        # 8. 斑马条纹样式配置
         # 在Treeview中通过标签(tags)实现斑马条纹效果
         # 注意：ttk.Style不直接支持斑马条纹，需要在插入行时使用tags
         print("Treeview表格线样式设置完成")
-
-        # 先在右上角添加关于链接按钮，确保它显示在标题栏右侧
-        self.create_about_link()
 
         # 创建主框架 - 调整内边距使其更加紧凑
         self.main_frame = ttk.Frame(root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 再次提升关于链接的层级，确保在主框架之上
-        self.about_label.lift()
-
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
+
+        # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
+        self.create_about_link()
+
+        # 为信息栏关闭按钮创建样式 - 优化高度，减小间隔
+        self.style.configure("InfoBarCloseButton.TButton", 
+                            font=(("微软雅黑", 8)),  # 减小字体大小
+                            foreground="#666666",
+                            focuscolor="none",
+                            focuswidth=0,
+                            padding=(2, 0),  # 进一步减少内边距，减小按钮宽度
+                            width=0,  # 宽度0，最小化按钮宽度
+                            borderwidth=0,
+                            relief="flat",
+                            background="#DCDAD5")  # 与信息栏背景色一致
+        self.style.map("InfoBarCloseButton.TButton", 
+                      focuscolor=[("focus", "none")],
+                      focuswidth=[("focus", 0)],
+                      background=[("active", "#e0e0e0")])
+
+        # 创建信息栏框架 - 直接放置在root窗口，位于顶部标签栏右侧红框位置
+        self.info_bar_frame = ttk.Frame(root, style="InfoBar.TFrame")
+        # 默认隐藏
+        self.info_bar_frame.place_forget()
+        
+        # 信息栏高度统一为37px，与place布局一致
+        self.info_bar_frame.configure(height=37)  # 统一高度为37px
+        
+        # 确保信息栏框架的grid布局配置正确
+        self.info_bar_frame.grid_rowconfigure(0, weight=1)  # 行填充整个高度
+        # 信息标签列占满所有剩余空间
+        self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 权重1，占据所有剩余空间
+        # 关闭按钮列固定宽度，不占据剩余空间
+        self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 权重0，固定宽度
+        
+        # 优化关闭按钮样式，减小宽度，确保文字能显示满信息框
+        self.style.configure("InfoBarCloseButton.TButton", 
+                            font=(("微软雅黑", 10)),  # 增大字号到10
+                            foreground="#666666",
+                            focuscolor="none",
+                            focuswidth=0,
+                            padding=(0, 0),  # 调整内边距为(1, 1)
+                            width=2,  # 减小宽度到2
+                            borderwidth=0,
+                            relief="flat",
+                            background="#DCDAD5")
+        self.style.map("InfoBarCloseButton.TButton", 
+                      focuscolor=[("focus", "none")],
+                      focuswidth=[("focus", 0)],
+                      background=[("active", "#e0e0e0")])
+        
+        # 改用grid布局，确保关闭按钮始终可见
+        # 重置grid配置
+        self.info_bar_frame.grid_rowconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 信息标签占主要空间
+        self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 关闭按钮固定宽度
+        
+        # 信息标签使用grid布局，不设置固定宽度，减小右侧内边距和边距，让文字更接近关闭按钮
+        # 调整padding，减小右侧内边距，让文字更接近右侧边缘
+        # padding格式：(left, top, right, bottom)
+        self.info_label = ttk.Label(self.info_bar_frame, text="", padding=(5, 5, 0, 5), anchor="w")  # 右侧内边距0px，减小间隔
+        # 减小右侧边距，从1px改为0px，让文字更接近关闭按钮
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)  # 右侧边距0px，减小间隔
+        
+        # 关闭按钮使用grid布局，减小左侧边距，让文字能更接近关闭按钮
+        self.info_close_btn = ttk.Button(self.info_bar_frame, text="✕", command=self.hide_info_bar, 
+                                       style="InfoBarCloseButton.TButton", cursor="hand2")
+        # 调整sticky参数为"ns"，确保垂直居中
+        # 减小左侧边距，从0改为0px，右侧边距6px
+        self.info_close_btn.grid(row=0, column=1, sticky="ns", padx=(0, 6), pady=5)  # 左侧边距0px，右侧边距6px
+        
+        # 确保信息标签显示在关闭按钮上层
+        self.info_label.lift(self.info_close_btn)
+        
+        # 初始化信息栏状态
+        self.info_bar_type = None  # 保存当前信息类型
+        self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
+        
+        # 确保信息标签显示在关闭按钮上层
+        self.info_label.lift(self.info_close_btn)
 
         # 初始化图表数据
         self.chart_data = None
@@ -709,7 +800,15 @@ class IPSubnetSplitterApp:
             input_frame, text="导出结果", command=self.export_result, width=14
         )
         self.export_btn.grid(
-            row=0, column=3, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
+            row=0, column=3, rowspan=2, padx=(0, 10), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
+        )
+        
+        # 信息栏测试按钮
+        self.test_info_btn = ttk.Button(
+            input_frame, text="信息栏测试", command=self.test_info_bar, width=14
+        )
+        self.test_info_btn.grid(
+            row=0, column=4, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
         )
 
     def create_button_section(self):
@@ -938,6 +1037,12 @@ class IPSubnetSplitterApp:
             validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
+        
+        # 信息栏测试按钮
+        self.planning_test_info_btn = ttk.Button(
+            parent_frame, text="信息栏测试", command=self.test_info_bar, width=14
+        )
+        self.planning_test_info_btn.pack(side=tk.RIGHT, padx=(10, 0))
         
 
 
@@ -1754,17 +1859,125 @@ class IPSubnetSplitterApp:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
 
-    def show_result(self, text, error=False, keep_data=False):
+    def hide_info_bar(self):
+        """隐藏信息栏"""
+        # 取消自动隐藏定时器
+        if self.info_auto_hide_id:
+            self.root.after_cancel(self.info_auto_hide_id)
+            self.info_auto_hide_id = None
+        # 隐藏信息栏 - 使用place_forget()
+        self.info_bar_frame.place_forget()
+        self.info_bar_type = None
+
+    def show_result(self, text, error=False, keep_data=False, info_type="info"):
         """显示结果"""
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
             self.clear_result()
 
-        # 在切分网段表格中显示信息
+        # 显示在信息栏中
+        # 取消之前的自动隐藏定时器
+        if self.info_auto_hide_id:
+            self.root.after_cancel(self.info_auto_hide_id)
+            self.info_auto_hide_id = None
+        
+        # 根据信息类型设置样式和图标，使用带框风格，保持一致
         if error:
-            self.split_tree.insert("", tk.END, values=("错误", text), tags=("error",))
+            label_style = "Error.TLabel"
+            frame_style = "ErrorInfoBar.TFrame"
+            icon = "❎ "  # 使用明确的带框叉号 (U+274E)
+            self.info_bar_type = "error"
         else:
-            self.split_tree.insert("", tk.END, values=("信息", text), tags=("info",))
+            label_style = "Success.TLabel"
+            frame_style = "SuccessInfoBar.TFrame"
+            icon = "✅ "  # 使用带框钩 (U+2705)，与带框叉风格一致
+            self.info_bar_type = "success"
+        
+        # 更新信息标签和框架样式
+        # 移除固定的文字长度限制，让文字能够显示满整个信息框
+        # 只在文字非常长的时候截断，确保文字能显示满信息框
+        max_text_length = 30  # 设置一个较大的限制，让文字能显示满信息框
+        if len(text) > max_text_length:
+            truncated_text = text[:max_text_length] + "..."  # 添加省略号
+        else:
+            truncated_text = text
+        
+        # 显示完整文本（带有图标）
+        self.info_label.config(text=icon + truncated_text, style=label_style)
+        self.info_bar_frame.configure(style=frame_style)
+        
+        # 显示信息栏 - 使用place布局，放置在顶部标签栏右侧红框位置，宽度适配子网规划到钉住按钮的距离
+        if self.info_bar_frame.winfo_manager() == "":
+            # 获取根窗口宽度
+            root_width = self.root.winfo_width()
+            # 计算信息栏宽度：窗口宽度 - 左侧235px - 右侧136px - 3px边距
+            # 调整宽度计算，确保信息栏有足够宽度
+            info_bar_width = root_width - 235 - 136 - 3  # 右侧偏移量改为136px
+            # 增加最小宽度，确保信息栏不会过窄
+            if info_bar_width < 300:  # 增加最小宽度为300px
+                info_bar_width = 300
+            # 恢复原始位置：顶部标签栏右侧，y=15，高度37px
+            self.info_bar_frame.place(x=235, y=15, width=info_bar_width, height=37)
+        else:
+            # 如果已经显示，确保位置和宽度正确
+            root_width = self.root.winfo_width()
+            # 同样的计算逻辑，使用新的右侧偏移量和边距
+            info_bar_width = root_width - 235 - 136 - 3  # 右侧偏移量改为136px
+            # 增加最小宽度，确保信息栏不会过窄
+            if info_bar_width < 300:  # 增加最小宽度为300px
+                info_bar_width = 300
+            # 恢复原始高度和位置
+            self.info_bar_frame.place_configure(x=235, y=15, width=info_bar_width, height=37)
+        
+        # 去掉自动隐藏功能，需要手动隐藏
+    
+    def test_info_bar(self):
+        """测试信息栏功能"""
+        # 创建测试窗口
+        test_window = tk.Toplevel(self.root)
+        test_window.title("信息栏测试")
+        test_window.resizable(False, False)
+        test_window.transient(self.root)
+        
+        # 计算居中位置
+        window_width = 300
+        window_height = 250  # 增加高度，确保所有内容都能显示
+        root_x = self.root.winfo_x()
+        root_y = self.root.winfo_y()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        x = root_x + (root_width - window_width) // 2
+        y = root_y + (root_height - window_height) // 2
+        test_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
+        # 创建主框架
+        main_frame = ttk.Frame(test_window, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加标题
+        title_label = ttk.Label(main_frame, text="信息栏测试", font=("微软雅黑", 12, "bold"))
+        title_label.pack(pady=(0, 20))
+        
+        # 添加测试按钮
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, expand=True)
+        
+        # 测试成功信息
+        success_btn = ttk.Button(button_frame, text="测试成功信息", command=lambda: self.show_result("这是一条成功信息", error=False))
+        success_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
+        
+        # 测试错误信息
+        error_btn = ttk.Button(button_frame, text="测试错误信息", command=lambda: self.show_result("这是一条错误信息", error=True))
+        error_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
+        
+        # 测试长信息
+        long_text = "这是一条很长的测试信息，用于测试信息栏是否能够正确显示多行文本或自动换行。我要更多用于测试信息栏是否能够正确显示多行文本或自动换行"
+        long_btn = ttk.Button(button_frame, text="测试长信息", command=lambda: self.show_result(long_text, error=False))
+        long_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
+        
+        # 关闭按钮
+        close_btn = ttk.Button(button_frame, text="关闭", command=test_window.destroy)
+        close_btn.pack(fill=tk.X, pady=(0, 5), ipady=5)  # 增加内边距
 
     def prepare_chart_data(self, result, split_info, remaining_subnets):
         """准备图表数据"""
@@ -2910,7 +3123,7 @@ class IPSubnetSplitterApp:
         canvas.restoreState()
 
     def create_about_link(self):
-        """在主窗体标题栏右侧（红框位置）创建关于链接按钮"""
+        """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""
         # 直接在root窗口创建关于链接，不使用框架
         # 使用普通tk.Label直接控制样式，确保悬停效果可靠
         
@@ -2921,15 +3134,18 @@ class IPSubnetSplitterApp:
         self.normal_fg_color = "#666666"
         border_color = "#cccccc"  # 更浅的灰色边框，视觉上更细
         
-        # 使用普通tk.Label创建标签，直接设置所有样式属性
+        # 初始化窗口置顶状态
+        self.is_pinned = False
+        
+        # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与子网标签一致
         self.about_label = tk.Label(
             self.root,
-            text="关于……",
-            font=('微软雅黑', 10, 'bold'),  # 字体加粗
+            text="关于…",
+            font=('微软雅黑', 10, 'bold'),  # 字体与子网标签激活状态一致，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
-            padx=10,  # 水平内边距
-            pady=5,  # 垂直内边距
+            padx=12,  # 水平内边距，与子网标签一致
+            pady=10,  # 增加垂直内边距，使其高度与左侧橙色标签一致
             bd=0,  # 取消默认边框
             relief="flat",  # 平坦样式
             highlightthickness=1,  # 高亮边框宽度，模拟边框
@@ -2938,24 +3154,81 @@ class IPSubnetSplitterApp:
             cursor="hand2"  # 鼠标指针为手形
         )
         
-        # 放置在窗口标题栏右侧位置
-        self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-30, y=15)
+        # 放置在窗口标题栏右侧位置，y坐标调整为与子网标签垂直居中对齐
+        # 根据左侧标签栏高度计算，垂直居中对齐
+        self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-24, y=13)  # y=8，垂直居中
         self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
         
         # 绑定鼠标事件实现悬停效果
         self.about_label.bind("<Enter>", self.on_about_link_enter)
         self.about_label.bind("<Leave>", self.on_about_link_leave)
         
+        # 创建钉住按钮，使用扁平化风格，直接添加到root窗口，高度与子网标签一致
+        self.pin_label = tk.Label(
+            self.root,
+            text="📌",
+            font=('微软雅黑', 10, 'bold'),  # 字体与子网标签激活状态一致，加粗
+            fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
+            bg=self.bg_color,  # 背景色与窗口完全一致
+            padx=12,  # 水平内边距，与子网标签一致
+            pady=10,  # 增加垂直内边距，使其高度与左侧橙色标签一致
+            bd=0,  # 无边框，扁平化风格
+            relief="flat",  # 平坦样式，扁平化风格
+            highlightthickness=1,  # 高亮边框宽度，模拟边框
+            highlightbackground=border_color,  # 边框颜色
+            highlightcolor=border_color,  # 边框颜色（确保一致性）
+            cursor="hand2"  # 鼠标指针为手形
+        )
+        
+        # 放置钉住按钮在橙色标题栏右侧，关于按钮左侧且不重叠，y坐标垂直居中对齐
+        self.pin_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-89, y=13)  # x=-90，更靠近关于按钮
+        self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
+        
+        # 绑定鼠标事件实现悬停效果
+        self.pin_label.bind("<Enter>", self.on_about_link_enter)
+        self.pin_label.bind("<Leave>", self.on_about_link_leave)
+        
     def on_about_link_enter(self, event):
-        """鼠标进入关于链接时的处理函数"""
-        # 直接修改标签的前景色和背景色
-        self.about_label.config(fg=self.hover_fg_color, bg=self.hover_bg_color)
+        """鼠标进入关于链接或钉住按钮时的处理函数"""
+        # 获取事件源，判断是哪个标签触发的事件
+        widget = event.widget
+        
+        # 修改标签的前景色和背景色
+        if widget == self.about_label:
+            self.about_label.config(fg=self.hover_fg_color, bg=self.hover_bg_color)
+        elif widget == self.pin_label:
+            self.pin_label.config(fg="#333333", bg=self.hover_bg_color)
         
     def on_about_link_leave(self, event):
-        """鼠标离开关于链接时的处理函数"""
+        """鼠标离开关于链接或钉住按钮时的处理函数"""
+        # 获取事件源，判断是哪个标签触发的事件
+        widget = event.widget
+        
         # 恢复标签的默认前景色和背景色
-        self.about_label.config(fg=self.normal_fg_color, bg=self.bg_color)
+        if widget == self.about_label:
+            self.about_label.config(fg=self.normal_fg_color, bg=self.bg_color)
+        elif widget == self.pin_label:
+            # 根据当前状态设置合适的颜色（扁平化风格，无relief属性）
+            if self.is_pinned:
+                self.pin_label.config(fg="#333333", bg="#e0e0e0")  # 深灰色文字，浅灰色背景
+            else:
+                self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
 
+    def toggle_pin_window(self):
+        """切换窗口置顶状态"""
+        # 切换置顶状态
+        self.is_pinned = not self.is_pinned
+        
+        # 设置窗口置顶属性
+        self.root.attributes("-topmost", self.is_pinned)
+        
+        # 更新钉住按钮的视觉效果（扁平化风格，使用颜色变化表示状态）
+        if self.is_pinned:
+            # 置顶状态：深色图标和文字
+            self.pin_label.config(fg="#333333", bg="#e0e0e0")  # 深灰色文字，浅灰色背景
+        else:
+            # 非置顶状态：浅色图标和文字
+            self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
 
     
     def show_about_dialog(self):
