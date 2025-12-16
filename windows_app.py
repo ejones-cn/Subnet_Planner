@@ -2649,11 +2649,19 @@ class IPSubnetSplitterApp:
 
                 # 创建PDF文档，设置页边距
                 print(f"创建PDF文档对象")
+                # 默认为横向页面，交换A4的宽度和高度
                 page_width, page_height = A4
+                use_landscape = True  # 使用横向页面
+                if use_landscape:
+                    page_width, page_height = page_height, page_width  # 交换宽度和高度实现横向
+                    print(f"使用横向页面，宽度: {page_width}, 高度: {page_height}")
+                else:
+                    print(f"使用纵向页面，宽度: {page_width}, 高度: {page_height}")
+                
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
                 doc = SimpleDocTemplate(
                     file_path, 
-                    pagesize=A4,
+                    pagesize=(page_width, page_height),  # 使用横向页面大小
                     leftMargin=margins[0],
                     rightMargin=margins[1],
                     topMargin=margins[2],
@@ -2791,6 +2799,25 @@ class IPSubnetSplitterApp:
                             col_widths = [table_width / table_cols] * table_cols
                         else:
                             col_widths = processed_col_widths
+                    
+                    # 计算自适应列宽
+                    print(f"\n=== 计算自适应列宽 ===")
+                    try:
+                        font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
+                        font_size = 10
+                        # 使用自适应列宽替换现有列宽
+                        print(f"  调用_calculate_auto_col_widths方法")
+                        auto_col_widths = self._calculate_auto_col_widths(main_table_data, font_name, font_size, table_width)
+                        print(f"自适应列宽: {auto_col_widths}")
+                        # 使用自适应列宽
+                        col_widths = auto_col_widths
+                    except Exception as e:
+                        print(f"  计算自适应列宽错误: {type(e).__name__}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # 如果自适应列宽计算失败，使用默认列宽
+                        col_widths = [table_width / table_cols] * table_cols
+                        print(f"  回退到默认列宽: {col_widths}")
                     
                     # 添加调试信息
                     print(f"\n=== 主要表格调试信息 ===")
@@ -2944,6 +2971,25 @@ class IPSubnetSplitterApp:
                             col_widths = [table_width / table_cols] * table_cols
                         else:
                             col_widths = processed_col_widths
+                    
+                    # 计算自适应列宽
+                    print(f"\n=== 计算剩余表格自适应列宽 ===")
+                    try:
+                        font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
+                        font_size = 10
+                        # 使用自适应列宽替换现有列宽
+                        print(f"  调用_calculate_auto_col_widths方法")
+                        auto_col_widths = self._calculate_auto_col_widths(remaining_table_data, font_name, font_size, table_width)
+                        print(f"自适应列宽: {auto_col_widths}")
+                        # 使用自适应列宽
+                        col_widths = auto_col_widths
+                    except Exception as e:
+                        print(f"  计算剩余表格自适应列宽错误: {type(e).__name__}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        # 如果自适应列宽计算失败，使用默认列宽
+                        col_widths = [table_width / table_cols] * table_cols
+                        print(f"  回退到默认列宽: {col_widths}")
                     
                     print(f"最终列宽: {col_widths}")
                     print(f"=== 剩余表格调试信息结束 ===")
@@ -3142,6 +3188,78 @@ class IPSubnetSplitterApp:
             "规划结果已成功导出到: {file_path}",
             "导出失败: {error}"
         )
+        
+    def _calculate_auto_col_widths(self, table_data, font_name, font_size, table_width):
+        """根据内容计算自适应列宽
+        
+        Args:
+            table_data: 表格数据，包含Paragraph对象的列表
+            font_name: 字体名称
+            font_size: 字体大小
+            table_width: 表格可用宽度
+            
+        Returns:
+            list: 每列的自适应宽度
+        """
+        # 初始化每列的最大宽度
+        print(f"  表格数据行数: {len(table_data)}")
+        table_cols = len(table_data[0]) if table_data else 0
+        print(f"  表格列数: {table_cols}")
+        max_col_widths = [0] * table_cols
+        min_col_width = 50  # 最小列宽
+        
+        # 遍历所有行和列，计算每列的最大宽度
+        for row in table_data:
+            for col_idx, cell in enumerate(row):
+                # 获取单元格文本内容
+                if hasattr(cell, 'getPlainText'):
+                    # 处理Paragraph对象，获取实际文本
+                    text = cell.getPlainText()
+                elif hasattr(cell, 'text'):
+                    # 处理其他可能有text属性的对象
+                    text = cell.text
+                else:
+                    # 直接转换为字符串
+                    text = str(cell)
+                
+                print(f"  单元格内容: {text}, 长度: {len(text)}")
+                
+                # 计算文本宽度，中文和英文使用不同的宽度系数
+                # 中文每个字符约12像素，英文每个字符约6像素
+                text_width = 0
+                for char in text:
+                    if ord(char) > 127:  # 中文字符
+                        text_width += 12
+                    else:  # 英文字符
+                        text_width += 6
+                
+                # 添加左右内边距（各8像素）
+                text_width += 16
+                
+                print(f"  计算的文本宽度: {text_width}")
+                
+                # 更新该列的最大宽度
+                if text_width > max_col_widths[col_idx]:
+                    max_col_widths[col_idx] = text_width
+        
+        # 确保最小宽度
+        for i in range(len(max_col_widths)):
+            if max_col_widths[i] < min_col_width:
+                max_col_widths[i] = min_col_width
+        
+        # 计算总宽度
+        total_width = sum(max_col_widths)
+        print(f"  计算总宽度: {total_width}, 可用表格宽度: {table_width}")
+        
+        # 如果总宽度超过页面宽度，按比例缩放
+        if total_width > table_width:
+            scale_factor = table_width / total_width
+            print(f"  总宽度超过页面宽度，应用缩放因子: {scale_factor}")
+            for i in range(len(max_col_widths)):
+                max_col_widths[i] *= scale_factor
+        
+        print(f"  最终自适应列宽: {max_col_widths}")
+        return max_col_widths
 
     def clear_result(self):
         """清空结果表格和图表"""
