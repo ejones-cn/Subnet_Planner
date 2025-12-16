@@ -2620,6 +2620,10 @@ class IPSubnetSplitterApp:
 
             elif file_ext == ".pdf":
                 # PDF格式导出
+                print(f"\n=== PDF导出调试信息 ===")
+                print(f"文件路径: {file_path}")
+                print(f"文件扩展名: {file_ext}")
+                print(f"进入PDF导出分支")
                 from reportlab.lib.pagesizes import A4
                 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
                 from reportlab.platypus import (
@@ -2639,9 +2643,12 @@ class IPSubnetSplitterApp:
                 import time
 
                 # 注册中文字体
+                print(f"调用register_chinese_fonts()")
                 self.has_chinese_font = self.register_chinese_fonts()
+                print(f"中文字体注册结果: {self.has_chinese_font}")
 
                 # 创建PDF文档，设置页边距
+                print(f"创建PDF文档对象")
                 page_width, page_height = A4
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
                 doc = SimpleDocTemplate(
@@ -2653,8 +2660,10 @@ class IPSubnetSplitterApp:
                     bottomMargin=margins[3],
                     showBoundary=False
                 )
+                print(f"PDF文档对象创建成功")
                 elements = []
                 styles = getSampleStyleSheet()
+                print(f"创建样式表成功")
 
                 # 创建支持中文的标题样式
                 title_style = ParagraphStyle(
@@ -2734,6 +2743,29 @@ class IPSubnetSplitterApp:
                     
                     # 使用指定的列宽或默认列宽
                     col_widths = data_source.get("main_table_cols")
+                    
+                    # 处理字符串格式的列宽配置，如"1:1:1:1:1:1:1:1:1"
+                    if isinstance(col_widths, str):
+                        try:
+                            # 尝试将字符串按冒号分割并转换为数字列表
+                            col_ratios = [float(w) for w in col_widths.split(":")]
+                            # 如果所有比例值都很小（< 10），将其解释为比例而不是直接宽度
+                            if all(ratio < 10 for ratio in col_ratios):
+                                # 计算总比例
+                                total_ratio = sum(col_ratios)
+                                if total_ratio > 0:
+                                    # 根据比例分配实际宽度
+                                    col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios]
+                                else:
+                                    # 如果总比例为0，使用默认列宽
+                                    col_widths = None
+                            else:
+                                # 否则直接使用转换后的宽度
+                                col_widths = col_ratios
+                        except (ValueError, TypeError):
+                            # 如果转换失败，使用默认列宽
+                            col_widths = None
+                    
                     if not col_widths or len(col_widths) != table_cols:
                         if len(main_headers) == 2:  # 键值对格式
                             col_widths = [table_width * 0.3, table_width * 0.7]
@@ -2741,29 +2773,24 @@ class IPSubnetSplitterApp:
                             # 默认平均分配列宽
                             col_widths = [table_width / table_cols] * table_cols
                     else:
-                        # 获取主表格列宽配置
-                        main_table_cols = data_source.get("main_table_cols")
+                        # 确保所有列宽值都是有效的数字且大于0
+                        processed_col_widths = []
+                        for width in col_widths:
+                            try:
+                                # 尝试将宽度转换为数字
+                                numeric_width = float(width) if width is not None else table_width / table_cols
+                                if numeric_width <= 10:  # 如果宽度太小，使用默认宽度
+                                    numeric_width = table_width / table_cols
+                                processed_col_widths.append(numeric_width)
+                            except (ValueError, TypeError):
+                                # 如果转换失败，使用默认宽度
+                                processed_col_widths.append(table_width / table_cols)
                         
-                        # 如果列宽配置为None或空列表，使用默认平均分配列宽
-                        if main_table_cols is None or main_table_cols == []:
+                        # 确保列宽数组长度与表格列数一致
+                        if len(processed_col_widths) != table_cols:
                             col_widths = [table_width / table_cols] * table_cols
                         else:
-                            # 确保所有列宽值都是有效的数字
-                            col_widths = []
-                            for width in main_table_cols:
-                                try:
-                                    # 尝试将宽度转换为数字
-                                    numeric_width = float(width) if width is not None else table_width / table_cols
-                                    if numeric_width <= 0:
-                                        numeric_width = table_width / table_cols
-                                    col_widths.append(numeric_width)
-                                except (ValueError, TypeError):
-                                    # 如果转换失败，使用默认宽度
-                                    col_widths.append(table_width / table_cols)
-                            
-                            # 确保列宽数组长度与表格列数一致
-                            if len(col_widths) != table_cols:
-                                col_widths = [table_width / table_cols] * table_cols
+                            col_widths = processed_col_widths
                     
                     # 添加调试信息
                     print(f"\n=== 主要表格调试信息 ===")
@@ -2864,6 +2891,28 @@ class IPSubnetSplitterApp:
                     # 使用指定的列宽或默认列宽
                     col_widths = data_source.get("remaining_table_cols")
                     
+                    # 处理字符串格式的列宽配置，如"1:1:1:1:1:1:1"
+                    if isinstance(col_widths, str):
+                        try:
+                            # 尝试将字符串按冒号分割并转换为数字列表
+                            col_ratios = [float(w) for w in col_widths.split(":")]
+                            # 如果所有比例值都很小（< 10），将其解释为比例而不是直接宽度
+                            if all(ratio < 10 for ratio in col_ratios):
+                                # 计算总比例
+                                total_ratio = sum(col_ratios)
+                                if total_ratio > 0:
+                                    # 根据比例分配实际宽度
+                                    col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios]
+                                else:
+                                    # 如果总比例为0，使用默认列宽
+                                    col_widths = None
+                            else:
+                                # 否则直接使用转换后的宽度
+                                col_widths = col_ratios
+                        except (ValueError, TypeError):
+                            # 如果转换失败，使用默认列宽
+                            col_widths = None
+                    
                     # 添加调试信息
                     print(f"\n=== 剩余表格调试信息 ===")
                     print(f"表格数据行数: {len(remaining_table_data)}")
@@ -2877,22 +2926,24 @@ class IPSubnetSplitterApp:
                         col_widths = [table_width / table_cols] * table_cols
                     else:
                         print(f"使用指定列宽，替换无效值")
-                        # 确保所有列宽值都是有效的数字
-                        col_widths = []
-                        for width in data_source.get("remaining_table_cols", []):
+                        # 确保所有列宽值都是有效的数字且大于0
+                        processed_col_widths = []
+                        for width in col_widths:
                             try:
                                 # 尝试将宽度转换为数字
                                 numeric_width = float(width) if width is not None else table_width / table_cols
-                                if numeric_width <= 0:
+                                if numeric_width <= 10:  # 如果宽度太小，使用默认宽度
                                     numeric_width = table_width / table_cols
-                                col_widths.append(numeric_width)
+                                processed_col_widths.append(numeric_width)
                             except (ValueError, TypeError):
                                 # 如果转换失败，使用默认宽度
-                                col_widths.append(table_width / table_cols)
+                                processed_col_widths.append(table_width / table_cols)
                         
                         # 确保列宽数组长度与表格列数一致
-                        if len(col_widths) != table_cols:
+                        if len(processed_col_widths) != table_cols:
                             col_widths = [table_width / table_cols] * table_cols
+                        else:
+                            col_widths = processed_col_widths
                     
                     print(f"最终列宽: {col_widths}")
                     print(f"=== 剩余表格调试信息结束 ===")
@@ -2956,7 +3007,15 @@ class IPSubnetSplitterApp:
                     elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
                 # 生成PDF，添加页脚
-                doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
+                print(f"开始生成PDF文档...")
+                try:
+                    doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
+                    print(f"PDF文档生成成功")
+                except Exception as e:
+                    print(f"PDF文档生成失败: {type(e).__name__}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                print(f"=== PDF导出调试信息结束 ===")
 
             elif file_ext == ".xlsx":
                 # Excel格式导出
@@ -3033,12 +3092,14 @@ class IPSubnetSplitterApp:
 
             # 显示导出成功信息，保留原有数据
             self.show_result(success_msg.format(file_path=file_path), keep_data=True)
+            return file_path  # 返回导出的文件路径
 
         except Exception as e:
                 import traceback
                 # 显示导出错误信息和堆栈跟踪
                 error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
                 self.show_result(error_msg, error=True)
+                return None  # 导出失败时返回None
     
     def export_result(self):
         """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
@@ -3104,7 +3165,9 @@ class IPSubnetSplitterApp:
 
     def register_chinese_fonts(self):
         """注册中文字体供PDF导出使用"""
-        # 导入PDF相关模块
+        # 导入所需模块
+        import sys
+        import os
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         

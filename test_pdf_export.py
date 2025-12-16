@@ -59,10 +59,22 @@ def test_pdf_export():
     # 创建模拟数据源
     data_source = {
         "main_tree": planning_result_tree,
-        "main_table_cols": "1:1:1:1:1:1:1:1:1",
+        "main_name": "已分配子网",
         "remaining_tree": remaining_result_tree,
+        "remaining_name": "剩余网段",
+        "pdf_title": "子网规划结果",
+        "main_table_cols": "1:1:1:1:1:1:1:1:1",
         "remaining_table_cols": "1:1:1:1:1:1:1"
     }
+    
+    # 模拟文件对话框选择
+    import tkinter.filedialog
+    original_asksaveasfilename = tkinter.filedialog.asksaveasfilename
+    
+    def mock_asksaveasfilename(**kwargs):
+        return temp_file
+    
+    tkinter.filedialog.asksaveasfilename = mock_asksaveasfilename
     
     try:
         # 执行导出
@@ -83,6 +95,8 @@ def test_pdf_export():
         traceback.print_exc()
         return False
     finally:
+        # 恢复原始函数
+        tkinter.filedialog.asksaveasfilename = original_asksaveasfilename
         root.destroy()
 
 if __name__ == "__main__":
