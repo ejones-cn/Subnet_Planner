@@ -1894,13 +1894,58 @@ class IPSubnetSplitterApp:
             self.info_bar_type = "success"
         
         # 更新信息标签和框架样式
-        # 移除固定的文字长度限制，让文字能够显示满整个信息框
-        # 只在文字非常长的时候截断，确保文字能显示满信息框
-        max_text_length = 30  # 设置一个较大的限制，让文字能显示满信息框
-        if len(text) > max_text_length:
-            truncated_text = text[:max_text_length] + "..."  # 添加省略号
-        else:
-            truncated_text = text
+        # 基于像素宽度的文本截断算法，解决英文不等宽问题
+        # 使用tkinter的Font.measure方法计算实际显示宽度
+        
+        # 创建字体对象，用于测量文本宽度
+        import tkinter.font as tkfont
+        font = tkfont.Font(font=(("微软雅黑", 9)))
+        
+        # 计算字符串的实际像素宽度
+        def calculate_pixel_width(text):
+            return font.measure(text)
+        
+        # 基于像素宽度的截断函数
+        def truncate_text_by_pixel(text, max_pixel_width):
+            # 先尝试显示完整文本
+            full_width = calculate_pixel_width(text)
+            if full_width <= max_pixel_width:
+                return text
+            
+            # 二分查找合适的截断位置
+            low = 0
+            high = len(text)
+            best_length = 0
+            
+            while low <= high:
+                mid = (low + high) // 2
+                current_text = text[:mid]
+                current_width = calculate_pixel_width(current_text)
+                
+                if current_width <= max_pixel_width:
+                    best_length = mid
+                    low = mid + 1
+                else:
+                    high = mid - 1
+            
+            # 确保截断后的文本不会过长
+            truncated = text[:best_length]
+            # 计算省略号的宽度
+            ellipsis_width = calculate_pixel_width("...")
+            
+            # 调整截断位置，确保加上省略号后不会超过最大宽度
+            while best_length > 0:
+                truncated = text[:best_length]
+                truncated_width = calculate_pixel_width(truncated) + ellipsis_width
+                if truncated_width <= max_pixel_width:
+                    return truncated + "..."
+                best_length -= 1
+            
+            return "..."
+        
+        # 设置最大像素宽度
+        max_pixel_width = 374  # 根据信息栏宽度调整
+        truncated_text = truncate_text_by_pixel(text, max_pixel_width)
         
         # 显示完整文本（带有图标）
         self.info_label.config(text=icon + truncated_text, style=label_style)
