@@ -220,11 +220,11 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
                     
                     # 验证是否可以使用该前缀长度创建子网
                     try:
-                        subnets_list = list(available.subnets(new_prefix=new_prefix))
-                        if not subnets_list:
+                        # 只获取第一个子网，不需要生成所有子网，避免处理大网段时程序卡顿
+                        subnets_gen = available.subnets(new_prefix=new_prefix)
+                        new_subnet = next(subnets_gen, None)
+                        if not new_subnet:
                             return {"error": f"无法为 {required['name']} 创建前缀长度为 {new_prefix} 的子网"}
-                        
-                        new_subnet = subnets_list[0]
                         
                         # 确保生成的子网有有效的前缀长度
                         if not (0 <= new_subnet.prefixlen <= 32):
