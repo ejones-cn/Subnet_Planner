@@ -27,7 +27,6 @@ Thumbs.db
 logs/
 
 # 构建输出
-dist/
 build/
 *.egg-info/
 
