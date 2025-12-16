@@ -925,6 +925,14 @@ class IPSubnetSplitterApp:
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
         ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
+        # 定义CIDR验证函数，与子网切分模块保持一致
+        def validate_cidr(text, entry):
+            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
+            if is_valid:
+                entry.config(foreground='black')
+            else:
+                entry.config(foreground='red')
+            return is_valid
         vcmd = (self.root.register(lambda p: validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Entry(parent_frame, width=20,
             validate='focusout', validatecommand=vcmd)
