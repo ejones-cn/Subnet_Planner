@@ -1,0 +1,81 @@
+# 项目清理计划
+
+## 1. 无用文件列表
+
+### 测试文件 (已完成测试，不再需要)
+- `test_cidr_validation.py` - CIDR验证功能测试
+- `test_info_bar.py` - 信息栏功能测试
+- `test_info_bar_integration.py` - 信息栏集成测试
+- `test_large_network.py` - 大网段子网规划测试
+- `test_pdf_export.py` - PDF导出功能测试
+- `test_subnet_functions.py` - 子网功能测试
+
+### 文档文件 (项目说明文档，可选择性保留)
+- `IMPLEMENTATION_SUMMARY.md` - 实现摘要
+- `打包脚本功能更新说明.md` - 打包脚本说明
+- `数字签名使用说明.md` - 数字签名说明
+- `解决方案说明.md` - 解决方案说明
+
+### 脚本文件 (辅助脚本，不再需要)
+- `code_review.bat` - 代码审查脚本
+
+
+### 构建输出目录 (可选择性保留)
+- `dist/` - 包含已构建的可执行文件
+  - `dist/icon.ico` - 应用图标
+  - `dist/IP子网分割工具.exe` - 已打包的应用程序
+
+## 2. 保留文件列表
+- `create_backup.py` - 备份创建脚本
+- `ENHANCEMENT_PLAN.md` - 项目增强计划
+
+### 核心代码文件
+- `ip_subnet_calculator.py` - 子网计算核心功能
+- `windows_app.py` - Windows应用界面
+- `web_app.py` - Web应用界面
+- `version.py` - 版本管理
+
+### 配置文件
+- `.flake8` - 代码风格配置
+- `.pylintrc` - 代码质量检查配置
+- `pyproject.toml` - 项目配置
+- `requirements.txt` - 依赖管理
+
+### 资源文件
+- `icon.ico` - 应用图标
+- `icon.svg` - 应用图标源文件
+
+### 许可证和说明
+- `LICENSE` - 项目许可证
+- `README.md` - 项目说明
+
+### 实用脚本
+- `bump_version.py` - 版本号更新脚本
+- `install_deps.bat` - 依赖安装脚本
+- `run_app.bat` - 应用运行脚本
+- `run_web_app.bat` - Web应用运行脚本
+- `simple_pack.py` - 简易打包脚本
+- `update_web_app_version.py` - Web应用版本更新脚本
+- `verify_versions.py` - 版本验证脚本
+
+## 3. 清理建议
+
+1. **建议删除**：所有测试文件和辅助脚本
+2. **可选删除**：项目文档文件
+3. **谨慎删除**：`dist`目录（包含已构建的可执行文件）
+
+## 4. 清理命令
+
+如需自动清理，可运行以下命令：
+
+```powershell
+# 删除测试文件
+Remove-Item test_*.py -Force
+
+# 删除辅助脚本
+Remove-Item code_review.bat -Force
+
+# 删除文档文件 (可选)
+Remove-Item ENHANCEMENT_PLAN.md, IMPLEMENTATION_SUMMARY.md, *.md -Force
+
+```
