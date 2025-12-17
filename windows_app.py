@@ -721,47 +721,59 @@ class IPSubnetSplitterApp:
         input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 3))  # 单独控制上下边距：左10, 上5, 右10, 下5
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
+        # 配置grid行列，减小间距
+        input_frame.grid_columnconfigure(0, minsize=50, weight=0)  # 标签列固定最小宽度
+        input_frame.grid_columnconfigure(1, weight=0)  # 文本框列固定宽度，不拉伸
+        input_frame.grid_columnconfigure(2, weight=0, minsize=5)  # 文本框和按钮之间的间隔列，减小到5px
+        input_frame.grid_columnconfigure(3, weight=0)  # 按钮列固定宽度
+        input_frame.grid_columnconfigure(4, weight=0)  # 按钮列固定宽度
+        input_frame.grid_columnconfigure(5, weight=1)  # 右侧填充列，确保整个区域靠左对齐
+        
+        # 配置行权重，减小行高
+        input_frame.grid_rowconfigure(0, weight=0)  # 第0行权重0，不拉伸
+        input_frame.grid_rowconfigure(1, weight=0)  # 第1行权重0，不拉伸
+
         # 父网段
-        ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
-            row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
+        ttk.Label(input_frame, text="父网段", anchor="w").grid(
+            row=0, column=0, sticky=tk.W, pady=(3, 1), padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
-        self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
+        self.parent_entry.grid(row=0, column=1, padx=0, pady=(3, 1), sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
         # 切分段
-        ttk.Label(input_frame, text="切分段", anchor="w", width=6).grid(
-            row=1, column=0, sticky=tk.W, pady=3, padx=(0, 5)
+        ttk.Label(input_frame, text="切分段", anchor="w").grid(
+            row=1, column=0, sticky=tk.W, pady=(1, 3), padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
-        self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
+        self.split_entry.grid(row=1, column=1, padx=0, pady=(1, 3), sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
         # 按钮区域
-        # 执行按钮
+        # 执行按钮 - 减小高度
         self.execute_btn = ttk.Button(
             input_frame, text="执行切分", command=self.execute_split, width=7
         )
         self.execute_btn.grid(
-            row=0, column=2, padx=(10, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
+            row=0, column=3, padx=(2, 3), pady=(3, 1), sticky=tk.E + tk.W
         )
 
-        # 清空按钮
+        # 清空按钮 - 减小高度
         self.clear_btn = ttk.Button(
             input_frame, text="清空结果", command=self.clear_result, width=7
         )
-        self.clear_btn.grid(row=1, column=2, padx=(10, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+        self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=(1, 3), sticky=tk.E + tk.W)
 
-        # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
+        # 导出按钮 - 减小高度
         self.export_btn = ttk.Button(
             input_frame, text="导出结果", command=self.export_result, width=8
         )
         self.export_btn.grid(
-            row=0, column=3, rowspan=2, padx=(0, 10), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
+            row=0, column=4, rowspan=2, padx=(3, 10), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
         )
         
         # 信息栏测试按钮
@@ -976,7 +988,7 @@ class IPSubnetSplitterApp:
         
         ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
-        self.planning_parent_entry = ttk.Entry(parent_frame, width=16,
+        self.planning_parent_entry = ttk.Entry(parent_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
