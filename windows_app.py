@@ -437,9 +437,6 @@ class IPSubnetSplitterApp:
         # 对于validatecommand，返回"1"表示有效
         return "1" if is_valid else False
 
-    def validate_split_cidr(self, text):
-        return self.validate_cidr(text, self.split_entry, style_based=True)
-
     def __init__(self, root):
         # 导入版本管理模块
         import sys
@@ -573,11 +570,6 @@ class IPSubnetSplitterApp:
                 font=[("selected", ("微软雅黑", 10, "bold")), ("!selected", ("微软雅黑", 10, "normal"))]  # 选中时加粗，非选中时正常
             )  # 非选中时的文字颜色
 
-            # 添加内容框架样式，使内容区域颜色与激活标签保持一致
-            self.style.configure("LightBlue.TFrame", background="#f5f9ff")  # 更浅的蓝色背景
-            self.style.configure("LightGreen.TFrame", background="#f5fff7")  # 更浅的绿色背景
-            self.style.configure("LightPurple.TFrame", background="#fcf5ff")  # 更浅的紫色背景
-
             print("标签样式设置完成")
 
         except Exception as e:
@@ -651,22 +643,6 @@ class IPSubnetSplitterApp:
 
         # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
-
-        # 为信息栏关闭按钮创建样式 - 优化高度，减小间隔
-        self.style.configure("InfoBarCloseButton.TButton", 
-                            font=(("微软雅黑", 8)),  # 减小字体大小
-                            foreground="#666666",
-                            focuscolor="none",
-                            focuswidth=0,
-                            padding=(2, 0),  # 进一步减少内边距，减小按钮宽度
-                            width=0,  # 宽度0，最小化按钮宽度
-                            borderwidth=0,
-                            relief="flat",
-                            background="#DCDAD5")  # 与信息栏背景色一致
-        self.style.map("InfoBarCloseButton.TButton", 
-                      focuscolor=[("focus", "none")],
-                      focuswidth=[("focus", 0)],
-                      background=[("active", "#e0e0e0")])
 
         # 创建信息栏框架 - 直接放置在root窗口，位于顶部标签栏右侧红框位置
         self.info_bar_frame = ttk.Frame(root, style="InfoBar.TFrame")
@@ -749,15 +725,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="父网段", anchor="w", width=6).grid(
             row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
-        def validate_cidr(text, entry):
-            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-            if is_valid:
-                entry.config(foreground='black')
-            else:
-                entry.config(foreground='red')
-            return is_valid
-
-        vcmd = (self.root.register(lambda p: validate_cidr(p, self.parent_entry)), '%P')
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
@@ -1013,15 +981,7 @@ class IPSubnetSplitterApp:
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
         ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
-        # 定义CIDR验证函数，与子网切分模块保持一致
-        def validate_cidr(text, entry):
-            is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-            if is_valid:
-                entry.config(foreground='black')
-            else:
-                entry.config(foreground='red')
-            return is_valid
-        vcmd = (self.root.register(lambda p: validate_cidr(p, self.planning_parent_entry)), '%P')
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Entry(parent_frame, width=20,
             validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
