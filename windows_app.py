@@ -414,30 +414,33 @@ class ColoredNotebook(ttk.Frame):
 
 
 class IPSubnetSplitterApp:
-    def validate_split_cidr(self, text):
+    def validate_cidr(self, text, entry=None, style_based=False):
+        """通用CIDR验证函数
+        
+        Args:
+            text: 要验证的CIDR字符串
+            entry: 可选的输入框对象，用于显示验证结果
+            style_based: 是否使用样式来显示验证结果，否则使用前景色
+            
+        Returns:
+            验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
+        """
         text = text.strip()
-        if not text:
-            self.split_entry.config(style='Valid.TEntry')
-            return True
-        try:
-            ipaddress.IPv4Network(text, strict=False)
-            self.split_entry.config(style='Valid.TEntry')
-            return True
-        except ImportError:
-            # 回退到正则表达式验证
-            cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
-            is_valid = bool(re.match(cidr_pattern, text))
-            self.split_entry.config(foreground='black' if is_valid else 'red')
-            return "1"
-        except ValueError:
-            self.split_entry.config(style='Invalid.TEntry')
-            return False
+        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
+        
+        if entry:
+            if style_based:
+                entry.config(style='Valid.TEntry' if is_valid else 'Invalid.TEntry')
+            else:
+                entry.config(foreground='black' if is_valid else 'red')
+        
+        # 对于validatecommand，返回"1"表示有效
+        return "1" if is_valid else False
+
+    def validate_split_cidr(self, text):
+        return self.validate_cidr(text, self.split_entry, style_based=True)
 
     def __init__(self, root):
-        # 创建自定义样式
-        self.style = ttk.Style()
-        self.style.configure('Valid.TEntry', foreground='black')
-        self.style.configure('Invalid.TEntry', foreground='red')
         # 导入版本管理模块
         import sys
         import os
@@ -621,10 +624,6 @@ class IPSubnetSplitterApp:
             foreground=[("selected", "white")]
         )
 
-        # 6. 输入框样式配置 - 用于CIDR验证颜色反馈
-        self.style.configure("Valid.TEntry", foreground="black")
-        self.style.configure("Invalid.TEntry", foreground="red")
-
         # 7. 信息栏样式配置 - 紧凑设计，调大字体
         # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
         self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
@@ -736,16 +735,10 @@ class IPSubnetSplitterApp:
 
 
     def validate_parent_cidr(self, text):
-        text = text.strip()
-        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-        self.parent_entry.config(foreground='black' if is_valid else 'red')
-        return "1"
+        return self.validate_cidr(text, self.parent_entry)
 
     def validate_split_cidr_local(self, text):
-        text = text.strip()
-        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-        self.split_entry.config(foreground='black' if is_valid else 'red')
-        return "1"
+        return self.validate_cidr(text, self.split_entry)
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
@@ -810,10 +803,6 @@ class IPSubnetSplitterApp:
         self.test_info_btn.grid(
             row=0, column=4, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
         )
-
-    def create_button_section(self):
-        """创建按钮区域 (已合并到输入区域中)"""
-        pass
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
@@ -1284,6 +1273,44 @@ class IPSubnetSplitterApp:
         except Exception as e:
             pass
     
+    def create_treeview(self, parent, columns, show="headings", height=5, include_special_tags=False):
+        """创建并配置Treeview表格
+        
+        Args:
+            parent: 父容器
+            columns: 列定义列表
+            show: 显示模式
+            height: 表格高度
+            include_special_tags: 是否包含错误和信息标签配置
+            
+        Returns:
+            tuple: (treeview对象, 垂直滚动条对象)
+        """
+        # 创建Treeview对象
+        tree = ttk.Treeview(parent, columns=columns, show=show, height=height)
+        
+        # 配置斑马条纹样式
+        self.configure_treeview_styles(tree, include_special_tags)
+        
+        return tree
+    
+    def configure_treeview_scrollbar(self, parent, tree, side=tk.RIGHT):
+        """为Treeview添加垂直滚动条
+        
+        Args:
+            parent: 父容器
+            tree: Treeview对象
+            side: 滚动条位置
+            
+        Returns:
+            垂直滚动条对象
+        """
+        # 添加垂直滚动条
+        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        return scrollbar
+    
     def configure_treeview_styles(self, tree, include_special_tags=False):
         """配置Treeview控件的基本样式（斑马条纹、错误和信息标签）
         
@@ -1304,19 +1331,28 @@ class IPSubnetSplitterApp:
             # 如果发生错误，不影响程序运行
             pass
 
-    def update_table_zebra_stripes(self, tree):
-        """更新表格的斑马条纹标签（仅更新行标签，不重新配置样式）
+    def update_table_zebra_stripes(self, tree, update_index=False):
+        """更新表格的斑马条纹标签
         
         Args:
             tree: 要处理的Treeview对象
+            update_index: 是否更新序号列（适用于包含序号的表格）
         """
         try:
             # 只更新行标签，样式已在初始化时配置
             for index, item in enumerate(tree.get_children(), start=1):
                 tag = "even" if index % 2 == 0 else "odd"
-                current_tags = tree.item(item, "tags")
-                if tag not in current_tags:
-                    tree.item(item, tags=(tag,))
+                
+                if update_index:
+                    # 更新序号列
+                    values = list(tree.item(item, "values"))
+                    values[0] = index
+                    tree.item(item, values=values, tags=(tag,))
+                else:
+                    # 只更新斑马条纹标签
+                    current_tags = tree.item(item, "tags")
+                    if tag not in current_tags:
+                        tree.item(item, tags=(tag,))
         except Exception as e:
             # 如果发生错误，不影响程序运行
             pass
@@ -1420,22 +1456,10 @@ class IPSubnetSplitterApp:
         # 先隐藏对话框，避免定位过程中的闪现
         temp_window.withdraw()
 
-        # 计算居中位置（相对于主窗口，不包含标题栏）
+        # 计算居中位置并设置对话框的尺寸和位置
         window_width = 320
         window_height = 220
-        # 获取主窗口的位置和尺寸
-        root_x = self.root.winfo_x()
-        root_y = self.root.winfo_y()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-        # 计算对话框的居中位置（不包含主窗口标题栏）
-        # 通常标题栏高度约为30像素，可以调整
-        title_bar_height = 30
-        x = root_x + (root_width - window_width) // 2
-        y = root_y + title_bar_height + (root_height - title_bar_height - window_height) // 2
-        
-        # 一次性设置对话框的尺寸和位置
-        temp_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        self.center_window(temp_window, window_width, window_height)
         
         # 显示对话框
         temp_window.deiconify()
@@ -1505,6 +1529,28 @@ class IPSubnetSplitterApp:
         save_button.pack(side=tk.LEFT, padx=(0, 15))
         cancel_button.pack(side=tk.LEFT)
 
+    def center_window(self, window, width, height):
+        """将窗口居中显示在主窗口中
+        
+        Args:
+            window: 要居中的窗口对象
+            width: 窗口宽度
+            height: 窗口高度
+        """
+        # 获取主窗口的位置和尺寸
+        root_x = self.root.winfo_x()
+        root_y = self.root.winfo_y()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        
+        # 计算对话框的居中位置（不包含主窗口标题栏）
+        title_bar_height = 30  # 通常标题栏高度约为30像素
+        x = root_x + (root_width - width) // 2
+        y = root_y + title_bar_height + (root_height - title_bar_height - height) // 2
+        
+        # 一次性设置对话框的尺寸和位置
+        window.geometry(f"{width}x{height}+{x}+{y}")
+    
     def delete_subnet_requirement(self):
         """删除选中的子网需求，并重新应用斑马条纹"""
         selected_items = self.requirements_tree.selection()
@@ -1520,14 +1566,7 @@ class IPSubnetSplitterApp:
     
     def update_requirements_tree_zebra_stripes(self):
         """更新子网需求表的斑马条纹和序号"""
-        for index, item in enumerate(self.requirements_tree.get_children(), start=1):
-            tag = "even" if index % 2 == 0 else "odd"
-            # 获取当前行的值
-            values = list(self.requirements_tree.item(item, "values"))
-            # 更新序号
-            values[0] = index
-            # 设置新的值和标签
-            self.requirements_tree.item(item, values=values, tags=(tag,))
+        self.update_table_zebra_stripes(self.requirements_tree, update_index=True)
     
     def on_requirements_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能"""
@@ -1626,7 +1665,6 @@ class IPSubnetSplitterApp:
 
     def execute_subnet_planning(self):
         """执行子网规划"""
-        global re
         # 获取父网段
         parent_cidr = self.planning_parent_entry.get().strip()
         if not parent_cidr:
@@ -1732,7 +1770,6 @@ class IPSubnetSplitterApp:
 
     def execute_split(self):
         """执行切分操作"""
-        global re
         parent = self.parent_entry.get().strip()
         split = self.split_entry.get().strip()
 
@@ -1844,7 +1881,6 @@ class IPSubnetSplitterApp:
         except ValueError as e:
             error_msg = str(e)
             if "not permitted" in error_msg and "Octet" in error_msg:
-                import re
                 match = re.search(r"Octet\D*(\d+)", error_msg)
                 if match:
                     octet = match.group(1)
