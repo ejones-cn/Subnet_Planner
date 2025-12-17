@@ -834,7 +834,8 @@ class IPSubnetSplitterApp:
 
         # 子网规划模块 - 使用默认样式以继承主窗体底色
         self.planning_frame = ttk.Frame(
-            self.top_level_notebook.content_area
+            self.top_level_notebook.content_area,
+            padding="10"  # 添加padding，替代main_planning_frame的作用
         )
 
         # 设置子网规划功能的界面
@@ -967,12 +968,10 @@ class IPSubnetSplitterApp:
 
     def setup_planning_page(self):
         """设置子网规划功能的界面"""
-        # 创建主框架
-        main_planning_frame = ttk.Frame(self.planning_frame, padding="10")
-        main_planning_frame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
+        # 直接使用self.planning_frame，移除中间层main_planning_frame
         
         # 父网段输入区域
-        parent_frame = ttk.LabelFrame(main_planning_frame, text="父网段设置", padding="10")
+        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
         ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
@@ -991,7 +990,7 @@ class IPSubnetSplitterApp:
 
 
         # 子网需求区域
-        requirements_frame = ttk.LabelFrame(main_planning_frame, text="子网需求", padding="10")
+        requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding="10")
         requirements_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))  # 改为垂直和水平填充，允许扩展
 
         # 内部容器框架，用于组织表格和按钮
@@ -1076,7 +1075,7 @@ class IPSubnetSplitterApp:
         # 按钮已移动到删除按钮下方
 
         # 规划结果区域
-        result_frame = ttk.LabelFrame(main_planning_frame, text="规划结果", padding="10")
+        result_frame = ttk.LabelFrame(self.planning_frame, text="规划结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
 
         # 创建笔记本控件显示规划结果
