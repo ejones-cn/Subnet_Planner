@@ -733,42 +733,42 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(0, weight=0)  # 第0行权重0，不拉伸
         input_frame.grid_rowconfigure(1, weight=0)  # 第1行权重0，不拉伸
 
-        # 父网段
+        # 父网段 - 统一pady和sticky
         ttk.Label(input_frame, text="父网段", anchor="w").grid(
-            row=0, column=0, sticky=tk.W, pady=(3, 1), padx=(0, 5)
+            row=0, column=0, sticky=tk.W + tk.N + tk.S, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
-        self.parent_entry.grid(row=0, column=1, padx=0, pady=(3, 1), sticky=tk.W)
+        self.parent_entry.grid(row=0, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
-        # 切分段
+        # 切分段 - 统一pady和sticky
         ttk.Label(input_frame, text="切分段", anchor="w").grid(
-            row=1, column=0, sticky=tk.W, pady=(1, 3), padx=(0, 5)
+            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
-        self.split_entry.grid(row=1, column=1, padx=0, pady=(1, 3), sticky=tk.W)
+        self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
         # 按钮区域
-        # 执行按钮 - 减小高度
+        # 执行按钮 - 统一pady设置
         self.execute_btn = ttk.Button(
             input_frame, text="执行切分", command=self.execute_split, width=7
         )
         self.execute_btn.grid(
-            row=0, column=3, padx=(2, 3), pady=(3, 1), sticky=tk.E + tk.W
+            row=0, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
         )
 
-        # 清空按钮 - 减小高度
+        # 清空按钮 - 统一pady设置
         self.clear_btn = ttk.Button(
             input_frame, text="清空结果", command=self.clear_result, width=7
         )
-        self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=(1, 3), sticky=tk.E + tk.W)
+        self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
-        # 导出按钮 - 减小高度
+        # 导出按钮 - 统一pady设置
         self.export_btn = ttk.Button(
             input_frame, text="导出结果", command=self.export_result, width=8
         )
@@ -835,7 +835,7 @@ class IPSubnetSplitterApp:
         self.top_level_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 子网切分模块 - 使用默认样式以继承主窗体底色
-        # 直接创建主容器，不再需要中间的split_frame
+        # 创建子网切分模块主容器
         self.split_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
 
         # 创建子网切分功能的输入区域
