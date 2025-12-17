@@ -1,0 +1,7 @@
+输入参数的内边距代码位于 `windows_app.py:721` 行，在 `create_split_input_section` 方法中：
+
+```python
+input_frame = ttk.LabelFrame(self.split_main_container, text="输入参数", padding="10")  # 减小内边距
+```
+
+这行代码创建了一个标记为"输入参数"的LabelFrame，并设置了其padding属性为"10"，这就是输入参数区域的内边距设置。

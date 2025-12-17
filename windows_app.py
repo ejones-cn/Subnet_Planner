@@ -718,7 +718,7 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
-        input_frame = ttk.LabelFrame(self.split_main_container, text="输入参数", padding="10")  # 减小内边距
+        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 3))  # 单独控制上下边距：左10, 上5, 右10, 下5
         input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
 
         # 父网段
@@ -726,7 +726,7 @@ class IPSubnetSplitterApp:
             row=0, column=0, sticky=tk.W, pady=5, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.parent_entry.grid(row=0, column=1, padx=0, pady=5, sticky=tk.W)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
@@ -736,7 +736,7 @@ class IPSubnetSplitterApp:
             row=1, column=0, sticky=tk.W, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=32, font=("微软雅黑", 10),
+        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
             validate='focusout', validatecommand=vcmd)
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -744,33 +744,33 @@ class IPSubnetSplitterApp:
         # 按钮区域
         # 执行按钮
         self.execute_btn = ttk.Button(
-            input_frame, text="执行切分", command=self.execute_split, width=12
+            input_frame, text="执行切分", command=self.execute_split, width=7
         )
         self.execute_btn.grid(
-            row=0, column=2, padx=(15, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
+            row=0, column=2, padx=(10, 8), pady=5, sticky=tk.N + tk.S + tk.E + tk.W
         )
 
         # 清空按钮
         self.clear_btn = ttk.Button(
-            input_frame, text="清空结果", command=self.clear_result, width=12
+            input_frame, text="清空结果", command=self.clear_result, width=7
         )
-        self.clear_btn.grid(row=1, column=2, padx=(15, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+        self.clear_btn.grid(row=1, column=2, padx=(10, 8), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 导出按钮 - 调整高度，使其与执行切分和清空结果按钮总的显示高度一致
         self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=14
+            input_frame, text="导出结果", command=self.export_result, width=8
         )
         self.export_btn.grid(
             row=0, column=3, rowspan=2, padx=(0, 10), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
         )
         
         # 信息栏测试按钮
-        self.test_info_btn = ttk.Button(
-            input_frame, text="信息栏测试", command=self.test_info_bar, width=14
-        )
-        self.test_info_btn.grid(
-            row=0, column=4, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
-        )
+        # self.test_info_btn = ttk.Button(
+        #     input_frame, text="信息栏测试", command=self.test_info_bar, width=14
+        # )
+        # self.test_info_btn.grid(
+        #     row=0, column=4, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
+        # )
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
@@ -823,13 +823,8 @@ class IPSubnetSplitterApp:
         self.top_level_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 子网切分模块 - 使用默认样式以继承主窗体底色
-        self.split_frame = ttk.Frame(
-            self.top_level_notebook.content_area
-        )
-        
-        # 添加一个完全占满页面的主容器，与子网规划页面一致的内边距
-        self.split_main_container = ttk.Frame(self.split_frame, padding="10")
-        self.split_main_container.pack(fill=tk.BOTH, expand=True)
+        # 直接创建主容器，不再需要中间的split_frame
+        self.split_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
 
         # 创建子网切分功能的输入区域
         self.create_split_input_section()
@@ -853,7 +848,7 @@ class IPSubnetSplitterApp:
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
-        result_frame = ttk.LabelFrame(self.split_main_container, text="切分结果", padding="10")
+        result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
         # 调整底部外边距，将结果区域与窗体下边距缩小
         result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 5))
 
@@ -980,18 +975,18 @@ class IPSubnetSplitterApp:
         parent_frame = ttk.LabelFrame(main_planning_frame, text="父网段设置", padding="10")
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
         
-        ttk.Label(parent_frame, text="父网段 (CIDR格式):").pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
-        self.planning_parent_entry = ttk.Entry(parent_frame, width=20,
+        self.planning_parent_entry = ttk.Entry(parent_frame, width=16,
             validate='focusout', validatecommand=vcmd)
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
         
         # 信息栏测试按钮
-        self.planning_test_info_btn = ttk.Button(
-            parent_frame, text="信息栏测试", command=self.test_info_bar, width=14
-        )
-        self.planning_test_info_btn.pack(side=tk.RIGHT, padx=(10, 0))
+        # self.planning_test_info_btn = ttk.Button(
+        #     parent_frame, text="信息栏测试", command=self.test_info_bar, width=14
+        # )
+        # self.planning_test_info_btn.pack(side=tk.RIGHT, padx=(10, 0))
         
 
 
