@@ -142,7 +142,7 @@ class ColoredNotebook(ttk.Frame):
             if not bg_color or bg_color.startswith("system."):
                 bg_color = self.winfo_toplevel().cget("bg")
 
-        except Exception as e:
+        except Exception:
             # 如果获取失败，尝试获取窗口背景色作为备选
             bg_color = self.winfo_toplevel().cget("bg")
 
@@ -218,14 +218,14 @@ class ColoredNotebook(ttk.Frame):
                             if child_bg and not child_bg.startswith("system."):
                                 bg_color = child_bg
                                 break
-                    except:
+                    except Exception:
                         continue
 
             # 如果无法从子组件获取背景色，尝试直接从父容器获取
             if not bg_color or bg_color.startswith("system."):
                 try:
                     bg_color = self.master.cget("background")
-                except:
+                except Exception:
                     pass
 
             # 如果还是无法获取背景色，使用默认的背景色
@@ -242,7 +242,7 @@ class ColoredNotebook(ttk.Frame):
             self.tab_bar_spacer.configure(style=temp_style_name)
             self.content_area.configure(style=temp_style_name)
 
-        except Exception as e:
+        except Exception:
             # 发生错误时，不设置自定义背景色，使用默认样式
             pass
 
@@ -461,17 +461,12 @@ class IPSubnetSplitterApp:
         self.style = ttk.Style()
 
         # 检查当前主题
-        current_theme = self.style.theme_use()
 
         # 添加更详细的调试信息
         try:
-            # 获取当前可用的主题
-            available_themes = self.style.theme_names()
             # 尝试设置为clam主题（这个主题通常支持更多自定义样式）
             self.style.theme_use("clam")
-            # 验证主题是否设置成功
-            current_theme = self.style.theme_use()
-        except Exception as e:
+        except Exception:
             pass
 
         self.style.configure("TLabel", font=("微软雅黑", 10))
@@ -579,7 +574,7 @@ class IPSubnetSplitterApp:
 
             print("标签样式设置完成")
 
-        except Exception as e:
+        except Exception:
             pass
 
         # 为不同标签页的内容区域设置不同的背景色
@@ -1228,7 +1223,7 @@ class IPSubnetSplitterApp:
                 self.update_table_zebra_stripes(self.allocated_tree)
             if hasattr(self, 'planning_remaining_tree'):
                 self.update_table_zebra_stripes(self.planning_remaining_tree)
-        except Exception as e:
+        except Exception:
             pass
 
     def create_treeview(self, parent, columns, show="headings", height=5, include_special_tags=False):
@@ -1285,7 +1280,7 @@ class IPSubnetSplitterApp:
             if include_special_tags:
                 tree.tag_configure("error", foreground="red")
                 tree.tag_configure("info", foreground="blue")
-        except Exception as e:
+        except Exception:
             # 如果发生错误，不影响程序运行
             pass
 
@@ -1311,7 +1306,7 @@ class IPSubnetSplitterApp:
                     current_tags = tree.item(item, "tags")
                     if tag not in current_tags:
                         tree.item(item, tags=(tag,))
-        except Exception as e:
+        except Exception:
             # 如果发生错误，不影响程序运行
             pass
 
@@ -1395,7 +1390,7 @@ class IPSubnetSplitterApp:
                 # 调整剩余网段表格，根据内容自动调整列宽
                 if hasattr(self, 'planning_remaining_tree'):
                     self.auto_resize_columns(self.planning_remaining_tree)
-        except Exception as e:
+        except Exception:
             # 忽略调整过程中的错误
             pass
 
@@ -2082,7 +2077,7 @@ class IPSubnetSplitterApp:
 
             # 按起始地址排序
             self.chart_data["networks"].sort(key=lambda x: x["start"])
-        except Exception as e:
+        except Exception:
             # 如果出现任何错误，就不绘制图表
             self.chart_data = None
 
@@ -2133,7 +2128,7 @@ class IPSubnetSplitterApp:
 
             # 绘制主文字
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
-        except Exception as e:
+        except Exception:
             # 出错时直接绘制文字，不添加描边
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
 
@@ -2175,7 +2170,6 @@ class IPSubnetSplitterApp:
             margin_left = 50
             margin_right = 80
             margin_top = 50
-            margin_bottom = 80
 
             # 计算可用绘图区域宽度
             chart_width = width - margin_left - margin_right
@@ -2559,10 +2553,10 @@ class IPSubnetSplitterApp:
 
             elif file_ext == ".pdf":
                 # PDF格式导出
-                print(f"\n=== PDF导出调试信息 ===")
+                print("\n=== PDF导出调试信息 ===")
                 print(f"文件路径: {file_path}")
                 print(f"文件扩展名: {file_ext}")
-                print(f"进入PDF导出分支")
+                print("进入PDF导出分支")
                 from reportlab.lib.pagesizes import A4
                 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
                 from reportlab.platypus import (
@@ -2582,12 +2576,12 @@ class IPSubnetSplitterApp:
                 import time
 
                 # 注册中文字体
-                print(f"调用register_chinese_fonts()")
+                print("调用register_chinese_fonts()")
                 self.has_chinese_font = self.register_chinese_fonts()
                 print(f"中文字体注册结果: {self.has_chinese_font}")
 
                 # 创建PDF文档，设置页边距
-                print(f"创建PDF文档对象")
+                print("创建PDF文档对象")
                 # 默认为横向页面，交换A4的宽度和高度
                 page_width, page_height = A4
                 use_landscape = True  # 使用横向页面
@@ -2607,10 +2601,10 @@ class IPSubnetSplitterApp:
                     bottomMargin=margins[3],
                     showBoundary=False,
                 )
-                print(f"PDF文档对象创建成功")
+                print("PDF文档对象创建成功")
                 elements = []
                 styles = getSampleStyleSheet()
-                print(f"创建样式表成功")
+                print("创建样式表成功")
 
                 # 创建支持中文的标题样式
                 title_style = ParagraphStyle(
@@ -2742,12 +2736,12 @@ class IPSubnetSplitterApp:
                             col_widths = processed_col_widths
 
                     # 计算自适应列宽
-                    print(f"\n=== 计算自适应列宽 ===")
+                    print("\n=== 计算自适应列宽 ===")
                     try:
                         font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
                         font_size = 10
                         # 使用自适应列宽替换现有列宽
-                        print(f"  调用_calculate_auto_col_widths方法")
+                        print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
                             main_table_data, font_name, font_size, table_width
                         )
@@ -2764,7 +2758,7 @@ class IPSubnetSplitterApp:
                         print(f"  回退到默认列宽: {col_widths}")
 
                     # 添加调试信息
-                    print(f"\n=== 主要表格调试信息 ===")
+                    print("\n=== 主要表格调试信息 ===")
                     print(f"表格数据行数: {len(main_table_data)}")
                     print(f"表格列数: {table_cols}")
                     print(f"原始列宽: {col_widths}")
@@ -2773,17 +2767,17 @@ class IPSubnetSplitterApp:
 
                     if not col_widths or len(col_widths) != table_cols:
                         if len(main_headers) == 2:
-                            print(f"键值对格式，使用3:7比例分配列宽")
+                            print("键值对格式，使用3:7比例分配列宽")
                         else:
-                            print(f"列宽数量不匹配，使用默认平均分配列宽")
+                            print("列宽数量不匹配，使用默认平均分配列宽")
                     else:
-                        print(f"使用指定列宽，替换None值")
+                        print("使用指定列宽，替换None值")
 
                     print(f"最终列宽: {col_widths}")
-                    print(f"=== 主要表格调试信息结束 ===")
+                    print("=== 主要表格调试信息结束 ===")
 
                     # 添加详细的调试信息，检查Table构造函数的参数
-                    print(f"\n=== Table构造函数调试信息 ===")
+                    print("\n=== Table构造函数调试信息 ===")
                     print(f"main_table_data类型: {type(main_table_data)}")
                     print(f"main_table_data长度: {len(main_table_data)}")
                     print(f"main_table_data[0]类型: {type(main_table_data[0])}")
@@ -2791,7 +2785,7 @@ class IPSubnetSplitterApp:
                     print(f"colWidths类型: {type(col_widths)}")
                     print(f"colWidths长度: {len(col_widths)}")
                     print(f"colWidths内容: {col_widths}")
-                    print(f"每个列宽的值和类型:")
+                    print("每个列宽的值和类型:")
                     for i, width in enumerate(col_widths):
                         print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
 
@@ -2803,7 +2797,7 @@ class IPSubnetSplitterApp:
                         elif not isinstance(width, (int, float)):
                             try:
                                 valid_col_widths.append(float(width))
-                            except:
+                            except Exception:
                                 valid_col_widths.append(100)
                         elif width <= 0:
                             valid_col_widths.append(100)
@@ -2895,18 +2889,18 @@ class IPSubnetSplitterApp:
                             col_widths = None
 
                     # 添加调试信息
-                    print(f"\n=== 剩余表格调试信息 ===")
+                    print("\n=== 剩余表格调试信息 ===")
                     print(f"表格数据行数: {len(remaining_table_data)}")
                     print(f"表格列数: {table_cols}")
                     print(f"原始列宽: {col_widths}")
                     print(f"表格宽度: {table_width}")
 
                     if not col_widths or len(col_widths) != table_cols:
-                        print(f"列宽数量不匹配，使用默认平均分配列宽")
+                        print("列宽数量不匹配，使用默认平均分配列宽")
                         # 默认平均分配列宽
                         col_widths = [table_width / table_cols] * table_cols
                     else:
-                        print(f"使用指定列宽，替换无效值")
+                        print("使用指定列宽，替换无效值")
                         # 确保所有列宽值都是有效的数字且大于0
                         processed_col_widths = []
                         for width in col_widths:
@@ -2927,12 +2921,12 @@ class IPSubnetSplitterApp:
                             col_widths = processed_col_widths
 
                     # 计算自适应列宽
-                    print(f"\n=== 计算剩余表格自适应列宽 ===")
+                    print("\n=== 计算剩余表格自适应列宽 ===")
                     try:
                         font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
                         font_size = 10
                         # 使用自适应列宽替换现有列宽
-                        print(f"  调用_calculate_auto_col_widths方法")
+                        print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
                             remaining_table_data, font_name, font_size, table_width
                         )
@@ -2949,10 +2943,10 @@ class IPSubnetSplitterApp:
                         print(f"  回退到默认列宽: {col_widths}")
 
                     print(f"最终列宽: {col_widths}")
-                    print(f"=== 剩余表格调试信息结束 ===")
+                    print("=== 剩余表格调试信息结束 ===")
 
                     # 添加详细的调试信息，检查Table构造函数的参数
-                    print(f"\n=== 剩余表格Table构造函数调试信息 ===")
+                    print("\n=== 剩余表格Table构造函数调试信息 ===")
                     print(f"remaining_table_data类型: {type(remaining_table_data)}")
                     print(f"remaining_table_data长度: {len(remaining_table_data)}")
                     print(f"remaining_table_data[0]类型: {type(remaining_table_data[0])}")
@@ -2960,7 +2954,7 @@ class IPSubnetSplitterApp:
                     print(f"colWidths类型: {type(col_widths)}")
                     print(f"colWidths长度: {len(col_widths)}")
                     print(f"colWidths内容: {col_widths}")
-                    print(f"每个列宽的值和类型:")
+                    print("每个列宽的值和类型:")
                     for i, width in enumerate(col_widths):
                         print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
 
@@ -2972,7 +2966,7 @@ class IPSubnetSplitterApp:
                         elif not isinstance(width, (int, float)):
                             try:
                                 valid_col_widths.append(float(width))
-                            except:
+                            except Exception:
                                 valid_col_widths.append(100)
                         elif width <= 0:
                             valid_col_widths.append(100)
@@ -3020,16 +3014,16 @@ class IPSubnetSplitterApp:
                     elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
                 # 生成PDF，添加页脚
-                print(f"开始生成PDF文档...")
+                print("开始生成PDF文档...")
                 try:
                     doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
-                    print(f"PDF文档生成成功")
+                    print("PDF文档生成成功")
                 except Exception as e:
                     print(f"PDF文档生成失败: {type(e).__name__}: {e}")
                     import traceback
 
                     traceback.print_exc()
-                print(f"=== PDF导出调试信息结束 ===")
+                print("=== PDF导出调试信息结束 ===")
 
             elif file_ext == ".xlsx":
                 # Excel格式导出
@@ -3250,7 +3244,6 @@ class IPSubnetSplitterApp:
 
         # 尝试查找系统中的中文字体
         font_path = None
-        font_name = None
 
         # Windows系统字体路径
         if sys.platform == "win32":
@@ -3273,7 +3266,7 @@ class IPSubnetSplitterApp:
                     potential_path = os.path.join(font_dir, font_file)
                     if os.path.exists(potential_path):
                         font_path = potential_path
-                        font_name = font_family
+
                         # 如果找到黑体，直接使用
                         if font_file.lower() == "simhei.ttf":
                             break
