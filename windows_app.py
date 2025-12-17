@@ -718,8 +718,8 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
-        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 3))  # 单独控制上下边距：左10, 上5, 右10, 下5
-        input_frame.pack(fill=tk.X, pady=(0, 8))  # 减少底部外边距
+        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 8))  # 单独控制上下边距：左10, 上5, 右10, 下5
+        input_frame.pack(fill=tk.NONE, expand=False, pady=(0, 8), anchor=tk.W)  # 不撑满窗体，上下排列，靠左对齐
 
         # 配置grid行列，减小间距
         input_frame.grid_columnconfigure(0, minsize=50, weight=0)  # 标签列固定最小宽度
