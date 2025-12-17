@@ -22,11 +22,11 @@ class ColoredNotebook(ttk.Frame):
         super().__init__(master, **kwargs)
         # 标识是否为顶级标签页
         self.is_top_level = is_top_level
-        
+
         # 确保框架能够填充父容器的空间
         self.pack_propagate(True)
         self.grid_propagate(True)
-        
+
         # 绑定大小变化事件，确保内容区域能正确调整大小
         self.bind('<Configure>', self.on_configure)
 
@@ -34,17 +34,17 @@ class ColoredNotebook(ttk.Frame):
         self.style = style
         # 保存标签页切换回调函数
         self.tab_change_callback = tab_change_callback
-        
+
         # 为每个实例生成唯一ID，用于创建唯一的样式名称
         self.unique_id = id(self)
-        
+
         # 为每个Notebook实例创建唯一的样式名称
         self.light_blue_style = f"LightBlue{self.unique_id}.TFrame"
         self.light_green_style = f"LightGreen{self.unique_id}.TFrame"
         self.light_orange_style = f"LightOrange{self.unique_id}.TFrame"
         self.light_purple_style = f"LightPurple{self.unique_id}.TFrame"
         self.light_pink_style = f"LightPink{self.unique_id}.TFrame"
-        
+
         # 初始化这些样式
         self.style.configure(self.light_blue_style, background="#e3f2fd")
         self.style.configure(self.light_green_style, background="#e8f5e9")
@@ -63,7 +63,7 @@ class ColoredNotebook(ttk.Frame):
         # 创建一个占位Frame，使用ttk.Frame并继承默认样式
         self.tab_bar_spacer = ttk.Frame(self.tab_bar_container)
         self.tab_bar_spacer.pack(side="left", fill="both", expand=True)
-        
+
         # 创建右侧按钮容器 - 使用ttk.Frame并继承默认样式
         self.tab_bar_right_buttons = ttk.Frame(self.tab_bar_container)
         self.tab_bar_right_buttons.pack(side="right", fill="y")
@@ -71,58 +71,58 @@ class ColoredNotebook(ttk.Frame):
         # 创建内容区域 - 移除箭头指向的灰色框线
         self.content_area = ttk.Frame(self, borderwidth=0, relief="flat")
         self.content_area.pack(side="top", fill="both", expand=True, padx=0, pady=0)
-        
+
         # 确保content_area能完全填充笔记本控件的空间
         self.content_area.pack_propagate(True)
         self.content_area.grid_propagate(True)
-  
+
         # 标签配置
         self.tabs = []
         self.active_tab = None
-    
+
     def get_tab_bar_container(self):
         """获取标签栏容器"""
         return self.tab_bar_container
-    
+
     def get_tab_bar_right_buttons(self):
         """获取右侧按钮容器"""
         return self.tab_bar_right_buttons
-        
+
     def get_light_blue_style(self):
         """获取浅蓝色样式名称"""
         return self.light_blue_style
-        
+
     def get_light_green_style(self):
         """获取浅绿色样式名称"""
         return self.light_green_style
-        
+
     def get_light_orange_style(self):
         """获取浅橙色样式名称"""
         return self.light_orange_style
-        
+
     def get_light_purple_style(self):
         """获取浅紫色样式名称"""
         return self.light_purple_style
-    
+
     def get_light_pink_style(self):
         """获取淡粉色样式名称"""
         return self.light_pink_style
-    
+
     def on_configure(self, event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         # 确保content_area能完全填充笔记本控件的空间
         if hasattr(self, 'content_area'):
             # 更新content_area的大小
             self.content_area.pack_configure(fill='both', expand=True)
-            
+
             # 触发内容区域的重绘
             self.content_area.update_idletasks()
-            
+
             # 如果有选中的标签，确保其内容框架也能正确调整大小
             if hasattr(self, 'active_tab') and self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
                 selected_tab = self.tabs[self.active_tab]
                 selected_tab["content"].pack_configure(fill='both', expand=True)
-            
+
             # 更新背景色以匹配result_frame
             self._update_background_to_result_frame_color()
 
@@ -205,7 +205,7 @@ class ColoredNotebook(ttk.Frame):
             # 直接获取父容器的背景色，而不是通过style.lookup
             # 对于ttk组件，我们需要先获取其内部的label或content组件
             bg_color = None
-            
+
             # 尝试多种方式获取父容器的背景色
             if hasattr(self.master, 'winfo_children'):
                 # 获取父容器的子组件
@@ -220,14 +220,14 @@ class ColoredNotebook(ttk.Frame):
                                 break
                     except:
                         continue
-            
+
             # 如果无法从子组件获取背景色，尝试直接从父容器获取
             if not bg_color or bg_color.startswith("system."):
                 try:
                     bg_color = self.master.cget("background")
                 except:
                     pass
-            
+
             # 如果还是无法获取背景色，使用默认的背景色
             if not bg_color or bg_color.startswith("system."):
                 bg_color = self.style.lookup("TFrame", "background")
@@ -235,7 +235,7 @@ class ColoredNotebook(ttk.Frame):
             # 使用style来设置ttk.Frame的背景色，为每个实例创建唯一的样式名称
             temp_style_name = f"TempColoredNotebookStyle{self.unique_id}.TFrame"
             self.style.configure(temp_style_name, background=bg_color)
-            
+
             # 应用样式到所有ttk.Frame组件
             self.tab_bar_container.configure(style=temp_style_name)
             self.tab_bar.configure(style=temp_style_name)
@@ -260,9 +260,9 @@ class ColoredNotebook(ttk.Frame):
             "padx": 12,
             "pady": 5,
             "font": ("微软雅黑", 10, "normal"),
-            "width": 10  # 设置固定宽度，确保所有标签宽度一致
+            "width": 10,  # 设置固定宽度，确保所有标签宽度一致
         }
-        
+
         # 根据是否为顶级标签页设置不同的文字颜色和鼠标按下状态颜色
         if self.is_top_level:
             # 顶级标签页：默认深灰色文字，鼠标按下时更亮的橙色背景和深灰色文字
@@ -288,16 +288,16 @@ class ColoredNotebook(ttk.Frame):
             else:  # 默认
                 button_params["activebackground"] = "#e1bee7"  # 之前的激活状态颜色
             button_params["activeforeground"] = "#333333"  # 深灰色文字
-        
+
         button = tk.Button(self.tab_bar, **button_params)
-        
+
         # 保存按钮对应的标签索引和颜色信息，以便在事件处理中使用
         button.tab_index = len(self.tabs)
         button.tab_color = color
-        
+
         # 绑定标签页切换事件
         button.bind("<Button-1>", lambda e, t=len(self.tabs): self.select_tab(t))
-        
+
         # 只有内部标签页需要为鼠标按下/释放添加内容区域背景色变化效果
         if not self.is_top_level:
             # 绑定鼠标按下事件 - 更新内容区域背景色为按下状态颜色
@@ -316,7 +316,7 @@ class ColoredNotebook(ttk.Frame):
             # 确保所有标签页都应用正确的样式
             current_active_tab = getattr(self, "active_tab", 0)
             self.select_tab(current_active_tab)
-        
+
         # 更新背景色以匹配result_frame
         self._update_background_to_result_frame_color()
 
@@ -328,7 +328,7 @@ class ColoredNotebook(ttk.Frame):
         # 隐藏所有内容
         for tab in self.tabs:
             tab["content"].pack_forget()
-            
+
             # 根据是否为顶级标签页应用不同的非激活样式
             if self.is_top_level:
                 # 顶级标签页非激活状态：灰底深灰色文字不加粗
@@ -350,7 +350,7 @@ class ColoredNotebook(ttk.Frame):
         # 显示选中的标签内容
         selected_tab = self.tabs[tab_index]
         selected_tab["content"].pack(fill="both", expand=True, padx=0, pady=0)
-        
+
         # 更新当前激活的标签页索引
         self.active_tab = tab_index
 
@@ -358,10 +358,10 @@ class ColoredNotebook(ttk.Frame):
         if self.is_top_level:
             # 顶级标签页激活状态：橙底黑字并加粗
             selected_tab["button"].config(
-                relief="flat", 
+                relief="flat",
                 bg="#ff9800",  # 橙色背景
                 font=("微软雅黑", 10, "bold"),  # 加粗字体
-                foreground="#000000"  # 黑色文字
+                foreground="#000000",  # 黑色文字
             )
         else:
             # 内部标签页激活状态：使用更亮的颜色（之前的鼠标按下颜色）
@@ -416,24 +416,24 @@ class ColoredNotebook(ttk.Frame):
 class IPSubnetSplitterApp:
     def validate_cidr(self, text, entry=None, style_based=False):
         """通用CIDR验证函数
-        
+
         Args:
             text: 要验证的CIDR字符串
             entry: 可选的输入框对象，用于显示验证结果
             style_based: 是否使用样式来显示验证结果，否则使用前景色
-            
+
         Returns:
             验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
         """
         text = text.strip()
         is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
-        
+
         if entry:
             if style_based:
                 entry.config(style='Valid.TEntry' if is_valid else 'Invalid.TEntry')
             else:
                 entry.config(foreground='black' if is_valid else 'red')
-        
+
         # 对于validatecommand，返回"1"表示有效
         return "1" if is_valid else False
 
@@ -448,7 +448,7 @@ class IPSubnetSplitterApp:
         # 应用程序信息
         self.app_name = "IP子网切分工具"
         self.app_version = get_version()
-        
+
         # CIDR格式验证正则表达式
         self.cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
 
@@ -499,9 +499,7 @@ class IPSubnetSplitterApp:
             # 使用更细的边框，确保区域分割清晰但不突兀
             self.style.configure("TLabelframe", borderwidth=1, relief="groove")
             # 增大LabelFrame标题的字体大小
-            self.style.configure(
-                "TLabelframe.Label", borderwidth=0, relief="flat", font=("微软雅黑", 12)
-            )
+            self.style.configure("TLabelframe.Label", borderwidth=0, relief="flat", font=("微软雅黑", 12))
 
             # 移除对所有标签的基础样式配置，避免干扰特定标签样式
             # 直接为每个标签样式配置完整的样式属性
@@ -525,7 +523,10 @@ class IPSubnetSplitterApp:
                     ("!selected", "#e3f2fd"),
                 ],  # 非选中时的背景色
                 foreground=[("selected", "white"), ("!selected", "#1976d2")],  # 选中时白色文字
-                font=[("selected", ("微软雅黑", 10, "bold")), ("!selected", ("微软雅黑", 10, "normal"))]  # 选中时加粗，非选中时正常
+                font=[
+                    ("selected", ("微软雅黑", 10, "bold")),
+                    ("!selected", ("微软雅黑", 10, "normal")),
+                ],  # 选中时加粗，非选中时正常
             )  # 非选中时的文字颜色
 
             # 绿色标签样式 - 剩余网段列表
@@ -546,7 +547,10 @@ class IPSubnetSplitterApp:
                     ("!selected", "#e8f5e9"),
                 ],  # 非选中时的背景色
                 foreground=[("selected", "white"), ("!selected", "#388e3c")],  # 选中时白色文字
-                font=[("selected", ("微软雅黑", 10, "bold")), ("!selected", ("微软雅黑", 10, "normal"))]  # 选中时加粗，非选中时正常
+                font=[
+                    ("selected", ("微软雅黑", 10, "bold")),
+                    ("!selected", ("微软雅黑", 10, "normal")),
+                ],  # 选中时加粗，非选中时正常
             )  # 非选中时的文字颜色
 
             # 紫色标签样式 - 网段分布图表
@@ -567,7 +571,10 @@ class IPSubnetSplitterApp:
                     ("!selected", "#f3e5f5"),
                 ],  # 非选中时的背景色
                 foreground=[("selected", "white"), ("!selected", "#7b1fa2")],  # 选中时白色文字
-                font=[("selected", ("微软雅黑", 10, "bold")), ("!selected", ("微软雅黑", 10, "normal"))]  # 选中时加粗，非选中时正常
+                font=[
+                    ("selected", ("微软雅黑", 10, "bold")),
+                    ("!selected", ("微软雅黑", 10, "normal")),
+                ],  # 选中时加粗，非选中时正常
             )  # 非选中时的文字颜色
 
             print("标签样式设置完成")
@@ -582,10 +589,10 @@ class IPSubnetSplitterApp:
 
         # 为Treeview添加表格线样式配置 - Windows系统专用解决方案
         # 在Windows上强制显示表格线的最终解决方案
-        
+
         # 使用最基本、最兼容的样式设置
         # 在Windows系统上，简单的样式设置反而更可靠
-        
+
         # 1. 基础Treeview样式设置 - 修复表格线显示问题
         # 将background设置为与偶数行相同的颜色，这样当没有足够的行时，
         # 背景色看起来就像是斑马条纹的延续，解决斑马条纹不能充满空白区域的问题
@@ -597,37 +604,43 @@ class IPSubnetSplitterApp:
             rowheight=28,  # 行高
             padding=(1, 1),  # 1px内边距，让边框显示
             bordercolor="#c0c0c0",
-            borderwidth=1
+            borderwidth=1,
         )
-        
+
         # 2. 表头样式设置
         self.style.configure(
-            "TTreeview.Heading",
-            background="#1976d2",
-            foreground="white",
-            font=("微软雅黑", 10, "bold"),
-            padding=(5, 3)
+            "TTreeview.Heading", background="#1976d2", foreground="white", font=("微软雅黑", 10, "bold"), padding=(5, 3)
         )
 
         # 3. 选中状态设置
-        self.style.map(
-            "TTreeview",
-            background=[("selected", "#2196f3")],
-            foreground=[("selected", "white")]
-        )
+        self.style.map("TTreeview", background=[("selected", "#2196f3")], foreground=[("selected", "white")])
 
         # 7. 信息栏样式配置 - 紧凑设计，调大字体
         # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
-        self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
-        self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
-        self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5")
+        self.style.configure(
+            "Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+        )
+        self.style.configure(
+            "Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+        )
+        self.style.configure(
+            "Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+        )
 
         # 信息栏框架样式 - 使用更明显的边框，确保左侧边框可见，添加明确背景色
         # 修改边框样式：1px宽，#808080
-        self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
-        self.style.configure("SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
-        self.style.configure("ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
-        self.style.configure("InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5")
+        self.style.configure(
+            "InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+        )
+        self.style.configure(
+            "SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+        )
+        self.style.configure(
+            "ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+        )
+        self.style.configure(
+            "InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+        )
 
         # 8. 斑马条纹样式配置
         # 在Treeview中通过标签(tags)实现斑马条纹效果
@@ -648,67 +661,76 @@ class IPSubnetSplitterApp:
         self.info_bar_frame = ttk.Frame(root, style="InfoBar.TFrame")
         # 默认隐藏
         self.info_bar_frame.place_forget()
-        
+
         # 信息栏高度统一为37px，与place布局一致
         self.info_bar_frame.configure(height=37)  # 统一高度为37px
-        
+
         # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)  # 行填充整个高度
         # 信息标签列占满所有剩余空间
         self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 权重1，占据所有剩余空间
         # 关闭按钮列固定宽度，不占据剩余空间
         self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 权重0，固定宽度
-        
+
         # 优化关闭按钮样式，减小宽度，确保文字能显示满信息框
-        self.style.configure("InfoBarCloseButton.TButton", 
-                            font=(("微软雅黑", 10)),  # 增大字号到10
-                            foreground="#666666",
-                            focuscolor="none",
-                            focuswidth=0,
-                            padding=(0, 0),  # 调整内边距为(1, 1)
-                            width=2,  # 减小宽度到2
-                            borderwidth=0,
-                            relief="flat",
-                            background="#DCDAD5")
-        self.style.map("InfoBarCloseButton.TButton", 
-                      focuscolor=[("focus", "none")],
-                      focuswidth=[("focus", 0)],
-                      background=[("active", "#e0e0e0")])
-        
+        self.style.configure(
+            "InfoBarCloseButton.TButton",
+            font=(("微软雅黑", 10)),  # 增大字号到10
+            foreground="#666666",
+            focuscolor="none",
+            focuswidth=0,
+            padding=(0, 0),  # 调整内边距为(1, 1)
+            width=2,  # 减小宽度到2
+            borderwidth=0,
+            relief="flat",
+            background="#DCDAD5",
+        )
+        self.style.map(
+            "InfoBarCloseButton.TButton",
+            focuscolor=[("focus", "none")],
+            focuswidth=[("focus", 0)],
+            background=[("active", "#e0e0e0")],
+        )
+
         # 改用grid布局，确保关闭按钮始终可见
         # 重置grid配置
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 信息标签占主要空间
         self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 关闭按钮固定宽度
-        
+
         # 信息标签使用grid布局，不设置固定宽度，减小右侧内边距和边距，让文字更接近关闭按钮
         # 调整padding，减小右侧内边距，让文字更接近右侧边缘
         # padding格式：(left, top, right, bottom)
-        self.info_label = ttk.Label(self.info_bar_frame, text="", padding=(5, 5, 0, 5), anchor="w")  # 右侧内边距0px，减小间隔
+        self.info_label = ttk.Label(
+            self.info_bar_frame, text="", padding=(5, 5, 0, 5), anchor="w"
+        )  # 右侧内边距0px，减小间隔
         # 减小右侧边距，从1px改为0px，让文字更接近关闭按钮
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)  # 右侧边距0px，减小间隔
-        
+
         # 关闭按钮使用grid布局，减小左侧边距，让文字能更接近关闭按钮
-        self.info_close_btn = ttk.Button(self.info_bar_frame, text="✕", command=self.hide_info_bar, 
-                                       style="InfoBarCloseButton.TButton", cursor="hand2")
+        self.info_close_btn = ttk.Button(
+            self.info_bar_frame,
+            text="✕",
+            command=self.hide_info_bar,
+            style="InfoBarCloseButton.TButton",
+            cursor="hand2",
+        )
         # 调整sticky参数为"ns"，确保垂直居中
         # 减小左侧边距，从0改为0px，右侧边距6px
         self.info_close_btn.grid(row=0, column=1, sticky="ns", padx=(0, 6), pady=5)  # 左侧边距0px，右侧边距6px
-        
+
         # 确保信息标签显示在关闭按钮上层
         self.info_label.lift(self.info_close_btn)
-        
+
         # 初始化信息栏状态
         self.info_bar_type = None  # 保存当前信息类型
         self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
-        
+
         # 确保信息标签显示在关闭按钮上层
         self.info_label.lift(self.info_close_btn)
 
         # 初始化图表数据
         self.chart_data = None
-
-
 
     def validate_parent_cidr(self, text):
         return self.validate_cidr(text, self.parent_entry)
@@ -718,7 +740,9 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
-        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 5, 5, 5))  # 单独控制各边内边距：左10, 上5, 右5, 下5
+        input_frame = ttk.LabelFrame(
+            self.split_frame, text="输入参数", padding=(10, 5, 5, 5)
+        )  # 单独控制各边内边距：左10, 上5, 右5, 下5
         input_frame.pack(fill=tk.NONE, expand=False, pady=(0, 8), anchor=tk.W)  # 不撑满窗体，上下排列，靠左对齐
 
         # 配置grid行列，减小间距
@@ -728,7 +752,7 @@ class IPSubnetSplitterApp:
         input_frame.grid_columnconfigure(3, weight=0)  # 按钮列固定宽度
         input_frame.grid_columnconfigure(4, weight=0)  # 按钮列固定宽度
         input_frame.grid_columnconfigure(5, weight=1)  # 右侧填充列，确保整个区域靠左对齐
-        
+
         # 配置行权重，减小行高
         input_frame.grid_rowconfigure(0, weight=0)  # 第0行权重0，不拉伸
         input_frame.grid_rowconfigure(1, weight=0)  # 第1行权重0，不拉伸
@@ -738,8 +762,9 @@ class IPSubnetSplitterApp:
             row=0, column=0, sticky=tk.W + tk.N + tk.S, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
-        self.parent_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
-            validate='focusout', validatecommand=vcmd)
+        self.parent_entry = ttk.Entry(
+            input_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
+        )
         self.parent_entry.grid(row=0, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
@@ -748,34 +773,25 @@ class IPSubnetSplitterApp:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=3, padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
-        self.split_entry = ttk.Entry(input_frame, width=16, font=("微软雅黑", 10),
-            validate='focusout', validatecommand=vcmd)
+        self.split_entry = ttk.Entry(
+            input_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
+        )
         self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
         # 按钮区域
         # 执行按钮 - 统一pady设置
-        self.execute_btn = ttk.Button(
-            input_frame, text="执行切分", command=self.execute_split, width=7
-        )
-        self.execute_btn.grid(
-            row=0, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
-        )
+        self.execute_btn = ttk.Button(input_frame, text="执行切分", command=self.execute_split, width=7)
+        self.execute_btn.grid(row=0, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 清空按钮 - 统一pady设置
-        self.clear_btn = ttk.Button(
-            input_frame, text="清空结果", command=self.clear_result, width=7
-        )
+        self.clear_btn = ttk.Button(input_frame, text="清空结果", command=self.clear_result, width=7)
         self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
         # 导出按钮 - 统一pady设置
-        self.export_btn = ttk.Button(
-            input_frame, text="导出结果", command=self.export_result, width=8
-        )
-        self.export_btn.grid(
-            row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
-        )
-        
+        self.export_btn = ttk.Button(input_frame, text="导出结果", command=self.export_result, width=8)
+        self.export_btn.grid(row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+
         # 信息栏测试按钮
         # self.test_info_btn = ttk.Button(
         #     input_frame, text="信息栏测试", command=self.test_info_bar, width=14
@@ -829,9 +845,7 @@ class IPSubnetSplitterApp:
     def create_top_level_notebook(self):
         """创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块"""
         # 创建一个自定义的笔记本控件来显示不同的功能模块
-        self.top_level_notebook = ColoredNotebook(
-            self.main_frame, style=self.style, is_top_level=True
-        )
+        self.top_level_notebook = ColoredNotebook(self.main_frame, style=self.style, is_top_level=True)
         self.top_level_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 子网切分模块 - 使用默认样式以继承主窗体底色
@@ -846,8 +860,7 @@ class IPSubnetSplitterApp:
 
         # 子网规划模块 - 使用默认样式以继承主窗体底色
         self.planning_frame = ttk.Frame(
-            self.top_level_notebook.content_area,
-            padding="10"  # 添加padding，替代main_planning_frame的作用
+            self.top_level_notebook.content_area, padding="10"  # 添加padding，替代main_planning_frame的作用
         )
 
         # 设置子网规划功能的界面
@@ -857,8 +870,6 @@ class IPSubnetSplitterApp:
         self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
 
-
-
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
         result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
@@ -866,9 +877,7 @@ class IPSubnetSplitterApp:
         result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 5))
 
         # 创建一个自定义的笔记本控件来显示不同的结果页面
-        self.notebook = ColoredNotebook(
-            result_frame, style=self.style, tab_change_callback=self.on_tab_change
-        )
+        self.notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_tab_change)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
         # 切分网段信息页面
@@ -877,16 +886,14 @@ class IPSubnetSplitterApp:
         )
 
         # 创建切分网段信息表格
-        self.split_tree = ttk.Treeview(
-            self.split_info_frame, columns=("item", "value"), show="headings", height=5
-        )
+        self.split_tree = ttk.Treeview(self.split_info_frame, columns=("item", "value"), show="headings", height=5)
         self.split_tree.heading("item", text="项目")
         self.split_tree.heading("value", text="值")
         # 设置合适的列宽
         self.split_tree.column("item", width=100, minwidth=100, stretch=False)
         self.split_tree.column("value", width=250)
         self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         # 配置斑马条纹样式和信息标签样式
         self.configure_treeview_styles(self.split_tree, include_special_tags=True)
 
@@ -900,7 +907,7 @@ class IPSubnetSplitterApp:
             self.remaining_frame,
             columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
-            height=5
+            height=5,
         )
         self.remaining_tree.heading("index", text="序号")
         self.remaining_tree.heading("cidr", text="CIDR")
@@ -916,7 +923,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
-        
+
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.remaining_tree)
 
@@ -939,9 +946,7 @@ class IPSubnetSplitterApp:
         self.chart_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # 创建Canvas用于绘制柱状图，移除pady边距以避免显示灰色背景
-        self.chart_canvas = tk.Canvas(
-            scroll_frame, bg="white", yscrollcommand=self.chart_scrollbar.set
-        )
+        self.chart_canvas = tk.Canvas(scroll_frame, bg="white", yscrollcommand=self.chart_scrollbar.set)
         self.chart_canvas.pack(fill=tk.BOTH, expand=True, pady=0)
 
         # 配置滚动条
@@ -972,34 +977,33 @@ class IPSubnetSplitterApp:
 
         # 初始提示
         self.clear_result()
-        
+
         # Treeview表格线样式已在初始化时设置
-        
+
         # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
         self.root.after(100, self.initial_table_setup)
 
     def setup_planning_page(self):
         """设置子网规划功能的界面"""
         # 直接使用self.planning_frame，移除中间层main_planning_frame
-        
+
         # 父网段输入区域
         parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
         parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
-        
+
         ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
-        self.planning_parent_entry = ttk.Entry(parent_frame, width=16, font=("微软雅黑", 10),
-            validate='focusout', validatecommand=vcmd)
+        self.planning_parent_entry = ttk.Entry(
+            parent_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
+        )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
-        
+
         # 信息栏测试按钮
         # self.planning_test_info_btn = ttk.Button(
         #     parent_frame, text="信息栏测试", command=self.test_info_bar, width=14
         # )
         # self.planning_test_info_btn.pack(side=tk.RIGHT, padx=(10, 0))
-        
-
 
         # 子网需求区域
         requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding="10")
@@ -1008,7 +1012,7 @@ class IPSubnetSplitterApp:
         # 内部容器框架，用于组织表格和按钮
         inner_frame = ttk.Frame(requirements_frame)
         inner_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # 设置grid布局
         inner_frame.grid_rowconfigure(0, weight=1)
         inner_frame.grid_columnconfigure(0, weight=1)
@@ -1026,19 +1030,17 @@ class IPSubnetSplitterApp:
         self.requirements_tree.column("index", width=50, minwidth=50, stretch=False)
         self.requirements_tree.column("name", width=125, minwidth=100, stretch=True)
         self.requirements_tree.column("hosts", width=125, minwidth=100, stretch=True)
-        
+
         # 绑定双击事件以实现编辑功能
         self.requirements_tree.bind("<Double-1>", self.on_requirements_tree_double_click)
-        
+
         # 放置表格
         self.requirements_tree.grid(row=0, column=0, sticky="nsew", padx=(0, 0))
 
         # 添加滚动条，确保只作用于表格
-        requirements_scrollbar = ttk.Scrollbar(
-            inner_frame, orient=tk.VERTICAL, command=self.requirements_tree.yview
-        )
+        requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL, command=self.requirements_tree.yview)
         self.requirements_tree.configure(yscroll=requirements_scrollbar.set)
-        
+
         # 放置滚动条
         requirements_scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 10))
 
@@ -1047,7 +1049,7 @@ class IPSubnetSplitterApp:
         button_frame.grid(row=0, column=2, sticky="nsew")
         # 设置按钮框架的最小宽度，确保两个按钮大小一致
         button_frame.configure(width=70)
-        
+
         # 按钮框架内部布局
         button_frame.grid_rowconfigure(0, weight=0)
         button_frame.grid_rowconfigure(1, weight=0)
@@ -1058,18 +1060,16 @@ class IPSubnetSplitterApp:
         # 添加按钮
         add_btn = ttk.Button(button_frame, text="添加", command=self.add_subnet_requirement)
         add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 5))
-        
+
         # 删除按钮
         delete_btn = ttk.Button(button_frame, text="删除", command=self.delete_subnet_requirement)
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
-        
+
         # 空白填充
         ttk.Frame(button_frame).grid(row=2, column=0, sticky="nsew")
-        
+
         # 执行子网规划按钮，位于底部
-        self.execute_planning_btn = ttk.Button(
-            button_frame, text="规划子网", command=self.execute_subnet_planning
-        )
+        self.execute_planning_btn = ttk.Button(button_frame, text="规划子网", command=self.execute_subnet_planning)
         self.execute_planning_btn.grid(row=3, column=0, sticky="ew", pady=(0, 0))
 
         # 添加示例数据 - 带斑马条纹标签
@@ -1079,7 +1079,7 @@ class IPSubnetSplitterApp:
         self.requirements_tree.insert("", tk.END, values=("", "研发部", "100"), tags=("odd",))
         # 调用方法更新序号
         self.update_requirements_tree_zebra_stripes()
-        
+
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.requirements_tree)
 
@@ -1095,9 +1095,7 @@ class IPSubnetSplitterApp:
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 导出规划按钮 - 使用 place 布局手动控制位置
-        export_planning_btn = ttk.Button(
-            result_frame, text="导出规划", command=self.export_planning_result
-        )
+        export_planning_btn = ttk.Button(result_frame, text="导出规划", command=self.export_planning_result)
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
 
@@ -1109,7 +1107,7 @@ class IPSubnetSplitterApp:
             self.allocated_frame,
             columns=("index", "name", "cidr", "required", "available", "network", "netmask", "broadcast"),
             show="headings",
-            height=5  # 设置为5行高度
+            height=5,  # 设置为5行高度
         )
 
         # 设置列标题
@@ -1136,19 +1134,17 @@ class IPSubnetSplitterApp:
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL, command=self.allocated_tree.yview
         )
-        
+
         # 配置表格使用滚动条（仅垂直）
-        self.allocated_tree.configure(
-            yscrollcommand=allocated_v_scrollbar.set
-        )
+        self.allocated_tree.configure(yscrollcommand=allocated_v_scrollbar.set)
 
         # 重新布局表格和滚动条，使用grid布局实现自适应
         self.allocated_frame.grid_rowconfigure(0, weight=1)
         self.allocated_frame.grid_columnconfigure(0, weight=1)
-        
+
         self.allocated_tree.grid(row=0, column=0, sticky="nsew")
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
-        
+
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.allocated_tree)
 
@@ -1158,11 +1154,9 @@ class IPSubnetSplitterApp:
         )
         self.planning_remaining_tree = ttk.Treeview(
             self.planning_remaining_frame,
-            columns=(
-                "index", "cidr", "network", "netmask", "broadcast", "usable"
-            ),
+            columns=("index", "cidr", "network", "netmask", "broadcast", "usable"),
             show="headings",
-            height=5  # 设置为5行高度
+            height=5,  # 设置为5行高度
         )
 
         # 设置列标题
@@ -1176,7 +1170,9 @@ class IPSubnetSplitterApp:
         # 设置列宽，所有列都启用拉伸以实现自适应
         self.planning_remaining_tree.column("index", width=40, minwidth=30, stretch=True)
         self.planning_remaining_tree.column("cidr", width=120, minwidth=100, stretch=True)
-        self.planning_remaining_tree.column("network", width=80, minwidth=70, stretch=True)  # 调小网络地址列宽并启用拉伸
+        self.planning_remaining_tree.column(
+            "network", width=80, minwidth=70, stretch=True
+        )  # 调小网络地址列宽并启用拉伸
         self.planning_remaining_tree.column("netmask", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
@@ -1187,43 +1183,39 @@ class IPSubnetSplitterApp:
             orient=tk.VERTICAL,
             command=self.planning_remaining_tree.yview,
         )
-        
+
         # 配置表格使用滚动条（仅垂直）
-        self.planning_remaining_tree.configure(
-            yscrollcommand=remaining_v_scrollbar.set
-        )
+        self.planning_remaining_tree.configure(yscrollcommand=remaining_v_scrollbar.set)
 
         # 重新布局表格和滚动条，使用grid布局实现自适应
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
         self.planning_remaining_frame.grid_columnconfigure(0, weight=1)
-        
+
         self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
-        
+
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.planning_remaining_tree)
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab("已分配子网", self.allocated_frame, "#e3f2fd")  # 浅蓝色
-        self.planning_notebook.add_tab(
-            "剩余网段", self.planning_remaining_frame, "#e8f5e9"
-        )  # 浅绿色
-        
+        self.planning_notebook.add_tab("剩余网段", self.planning_remaining_frame, "#e8f5e9")  # 浅绿色
+
         # 添加窗口大小变化事件处理，确保表格能自适应宽度
         self.planning_notebook.content_area.bind('<Configure>', lambda e: self.resize_tables())
-        
+
         # 为规划模块表格添加空行或示例数据，显示斑马条纹效果
         # 子网需求表格 - 保留示例数据，确保有数据
         # 已分配子网表格 - 初始化时不添加空行
         for item in self.allocated_tree.get_children():
             self.allocated_tree.delete(item)
         # 删除了初始化时添加10行空行的代码
-        
+
         # 规划剩余网段表格 - 初始化时不添加空行
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
         # 删除了初始化时添加10行空行的代码
-        
+
     def initial_table_setup(self):
         """在窗口完全渲染后初始化表格"""
         try:
@@ -1238,48 +1230,48 @@ class IPSubnetSplitterApp:
                 self.update_table_zebra_stripes(self.planning_remaining_tree)
         except Exception as e:
             pass
-    
+
     def create_treeview(self, parent, columns, show="headings", height=5, include_special_tags=False):
         """创建并配置Treeview表格
-        
+
         Args:
             parent: 父容器
             columns: 列定义列表
             show: 显示模式
             height: 表格高度
             include_special_tags: 是否包含错误和信息标签配置
-            
+
         Returns:
             tuple: (treeview对象, 垂直滚动条对象)
         """
         # 创建Treeview对象
         tree = ttk.Treeview(parent, columns=columns, show=show, height=height)
-        
+
         # 配置斑马条纹样式
         self.configure_treeview_styles(tree, include_special_tags)
-        
+
         return tree
-    
+
     def configure_treeview_scrollbar(self, parent, tree, side=tk.RIGHT):
         """为Treeview添加垂直滚动条
-        
+
         Args:
             parent: 父容器
             tree: Treeview对象
             side: 滚动条位置
-            
+
         Returns:
             垂直滚动条对象
         """
         # 添加垂直滚动条
         scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-        
+
         return scrollbar
-    
+
     def configure_treeview_styles(self, tree, include_special_tags=False):
         """配置Treeview控件的基本样式（斑马条纹、错误和信息标签）
-        
+
         Args:
             tree: 要配置的Treeview对象
             include_special_tags: 是否包含错误和信息标签配置
@@ -1288,7 +1280,7 @@ class IPSubnetSplitterApp:
             # 配置斑马条纹样式
             tree.tag_configure("even", background="#d8d8d8")
             tree.tag_configure("odd", background="#ffffff")
-            
+
             # 如果需要，配置错误和信息标签
             if include_special_tags:
                 tree.tag_configure("error", foreground="red")
@@ -1299,7 +1291,7 @@ class IPSubnetSplitterApp:
 
     def update_table_zebra_stripes(self, tree, update_index=False):
         """更新表格的斑马条纹标签
-        
+
         Args:
             tree: 要处理的Treeview对象
             update_index: 是否更新序号列（适用于包含序号的表格）
@@ -1308,7 +1300,7 @@ class IPSubnetSplitterApp:
             # 只更新行标签，样式已在初始化时配置
             for index, item in enumerate(tree.get_children(), start=1):
                 tag = "even" if index % 2 == 0 else "odd"
-                
+
                 if update_index:
                     # 更新序号列
                     values = list(tree.item(item, "values"))
@@ -1322,16 +1314,16 @@ class IPSubnetSplitterApp:
         except Exception as e:
             # 如果发生错误，不影响程序运行
             pass
-    
+
     def auto_resize_columns(self, tree):
         """自动调整表格列宽以适应内容
-        
+
         Args:
             tree: 要调整列宽的Treeview对象
         """
         # 创建一个临时标签用于测量文本宽度（使用默认字体或从root获取字体）
         temp_label = tk.Label(self.root)
-        
+
         # 为每列设置一个合理的默认最小宽度（基于列类型）
         default_min_widths = {
             '序号': 60,
@@ -1346,18 +1338,18 @@ class IPSubnetSplitterApp:
             '结束IP': 100,
             '剩余可用数': 100,
             '网段': 120,
-            '大小': 80
+            '大小': 80,
         }
-        
+
         # 调整列宽以适应表头
         for col in tree['columns']:
             # 获取表头文本
             header = tree.heading(col, 'text') or ''  # 确保header不是None
-            
+
             # 设置临时标签文本并测量宽度
             temp_label.config(text=header)
             header_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
-            
+
             # 获取列中内容的最大宽度
             max_width = header_width
             for item in tree.get_children():
@@ -1370,17 +1362,17 @@ class IPSubnetSplitterApp:
                     # 确保cell_width和max_width都是有效的数值
                     if cell_width is not None and max_width is not None and cell_width > max_width:
                         max_width = cell_width
-            
+
             # 应用默认最小宽度，如果计算出的宽度小于默认值
             if header in default_min_widths and max_width < default_min_widths[header]:
                 max_width = default_min_widths[header]
-            
+
             # 设置列宽
             tree.column(col, width=max_width, stretch=True)
-        
+
         # 销毁临时标签
         temp_label.destroy()
-    
+
     def resize_tables(self):
         """调整表格列宽以适应容器大小并更新空行数"""
         try:
@@ -1393,22 +1385,19 @@ class IPSubnetSplitterApp:
                 self.update_table_zebra_stripes(self.allocated_tree)
             if hasattr(self, 'planning_remaining_tree'):
                 self.update_table_zebra_stripes(self.planning_remaining_tree)
-                
+
             # 仅调整规划结果区域的表格列宽，不影响子网需求区域
             if hasattr(self, 'planning_notebook') and hasattr(self.planning_notebook, 'content_area'):
                 # 调整已分配子网表格，根据内容自动调整列宽
                 if hasattr(self, 'allocated_tree'):
                     self.auto_resize_columns(self.allocated_tree)
-                
+
                 # 调整剩余网段表格，根据内容自动调整列宽
                 if hasattr(self, 'planning_remaining_tree'):
                     self.auto_resize_columns(self.planning_remaining_tree)
         except Exception as e:
             # 忽略调整过程中的错误
             pass
-
-
-
 
     def add_subnet_requirement(self):
         """添加子网需求"""
@@ -1426,14 +1415,14 @@ class IPSubnetSplitterApp:
         window_width = 320
         window_height = 220
         self.center_window(temp_window, window_width, window_height)
-        
+
         # 显示对话框
         temp_window.deiconify()
 
         # 创建主内容框架，设置合适的内边距
         main_frame = ttk.Frame(temp_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # 设置主框架的列权重，使用3列布局，中间列放表单内容，左右列留白用于居中
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=0)
@@ -1481,23 +1470,23 @@ class IPSubnetSplitterApp:
             new_index = current_rows + 1
             tag = "even" if new_index % 2 == 0 else "odd"
             self.requirements_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
-            
+
             # 重新应用所有行的斑马条纹，确保一致性
             self.update_requirements_tree_zebra_stripes()
-            
+
             temp_window.destroy()
 
         # 创建按钮并在按钮框架中居中
         save_button = ttk.Button(button_frame, text="保存", command=save_requirement, width=10)
         cancel_button = ttk.Button(button_frame, text="取消", command=temp_window.destroy, width=10)
-        
+
         # 使用pack布局让按钮在按钮框架中居中显示
         save_button.pack(side=tk.LEFT, padx=(0, 15))
         cancel_button.pack(side=tk.LEFT)
 
     def center_window(self, window, width, height):
         """将窗口居中显示在主窗口中
-        
+
         Args:
             window: 要居中的窗口对象
             width: 窗口宽度
@@ -1508,15 +1497,15 @@ class IPSubnetSplitterApp:
         root_y = self.root.winfo_y()
         root_width = self.root.winfo_width()
         root_height = self.root.winfo_height()
-        
+
         # 计算对话框的居中位置（不包含主窗口标题栏）
         title_bar_height = 30  # 通常标题栏高度约为30像素
         x = root_x + (root_width - width) // 2
         y = root_y + title_bar_height + (root_height - title_bar_height - height) // 2
-        
+
         # 一次性设置对话框的尺寸和位置
         window.geometry(f"{width}x{height}+{x}+{y}")
-    
+
     def delete_subnet_requirement(self):
         """删除选中的子网需求，并重新应用斑马条纹"""
         selected_items = self.requirements_tree.selection()
@@ -1526,86 +1515,86 @@ class IPSubnetSplitterApp:
 
         for item in selected_items:
             self.requirements_tree.delete(item)
-        
+
         # 删除后重新应用斑马条纹
         self.update_requirements_tree_zebra_stripes()
-    
+
     def update_requirements_tree_zebra_stripes(self):
         """更新子网需求表的斑马条纹和序号"""
         self.update_table_zebra_stripes(self.requirements_tree, update_index=True)
-    
+
     def on_requirements_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能"""
         # 获取双击位置的信息
         region = self.requirements_tree.identify_region(event.x, event.y)
         if region != "cell":
             return
-            
+
         # 获取双击的行和列
         item = self.requirements_tree.identify_row(event.y)
         column = self.requirements_tree.identify_column(event.x)
-        
+
         if not item or not column:
             return
-            
+
         # 将列标识转换为列索引（例如 #1 -> 0, #2 -> 1）
         column_index = int(column[1:]) - 1
         # 不允许编辑序号列
         if column_index == 0:
             return
         column_name = self.requirements_tree["columns"][column_index]
-        
+
         # 获取当前值
         current_value = self.requirements_tree.item(item, "values")[column_index]
-        
+
         # 获取单元格的坐标和大小
         x, y, width, height = self.requirements_tree.bbox(item, column)
-        
+
         # 创建编辑框
-        self.edit_entry = ttk.Entry(self.requirements_tree, width=width//10)  # 估算字符宽度
+        self.edit_entry = ttk.Entry(self.requirements_tree, width=width // 10)  # 估算字符宽度
         self.edit_entry.insert(0, current_value)
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
-        
+
         # 放置编辑框在单元格上
         self.edit_entry.place(x=x, y=y, width=width, height=height)
-        
+
         # 保存当前编辑的信息
         self.current_edit_item = item
         self.current_edit_column = column_name
         self.current_edit_column_index = column_index
-        
+
         # 绑定事件
         self.edit_entry.bind("<FocusOut>", self.on_edit_focus_out)
         self.edit_entry.bind("<Return>", self.on_edit_enter)
-        self.edit_entry.bind("<Escape>", self.on_edit_escape)    
-    
+        self.edit_entry.bind("<Escape>", self.on_edit_escape)
+
     def on_edit_focus_out(self, event):
         """编辑框失去焦点时保存数据"""
         self.save_edit()
-    
+
     def on_edit_enter(self, event):
         """按下Enter键时保存数据"""
         self.save_edit()
-    
+
     def on_edit_escape(self, event):
         """按下Escape键时取消编辑"""
         self.edit_entry.destroy()
         del self.current_edit_item
         del self.current_edit_column
         del self.current_edit_column_index
-    
+
     def save_edit(self):
         """保存编辑的数据"""
         if hasattr(self, 'current_edit_item'):
             # 获取新值
             new_value = self.edit_entry.get().strip()
-            
+
             # 验证数据
             if not new_value:
                 messagebox.showerror("错误", "输入不能为空")
                 return
-            
+
             if self.current_edit_column == "hosts":
                 try:
                     hosts = int(new_value)
@@ -1615,15 +1604,15 @@ class IPSubnetSplitterApp:
                 except ValueError:
                     messagebox.showerror("错误", "主机数量必须是整数")
                     return
-            
+
             # 更新Treeview数据
             values = list(self.requirements_tree.item(self.current_edit_item, "values"))
             values[self.current_edit_column_index] = new_value
             self.requirements_tree.item(self.current_edit_item, values=values)
-            
+
             # 销毁编辑框
             self.edit_entry.destroy()
-            
+
             # 清理临时属性
             del self.current_edit_item
             del self.current_edit_column
@@ -1655,10 +1644,10 @@ class IPSubnetSplitterApp:
             # 执行子网规划
             # 转换子网需求格式以匹配函数参数要求
             formatted_requirements = [{'name': name, 'hosts': hosts} for name, hosts in subnet_requirements]
-            
+
             # 调用子网规划函数
             plan_result = suggest_subnet_planning(parent_cidr, formatted_requirements)
-            
+
             # 检查是否有错误
             if 'error' in plan_result:
                 messagebox.showerror("错误", f"子网规划失败: {plan_result['error']}")
@@ -1688,10 +1677,10 @@ class IPSubnetSplitterApp:
                         subnet["info"]["netmask"],
                         subnet["info"]["broadcast"],
                     ),
-                    tags=tags
+                    tags=tags,
                 )
             # 斑马条纹样式已在初始化时配置
-            
+
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
 
@@ -1704,16 +1693,16 @@ class IPSubnetSplitterApp:
                     tk.END,
                     values=(
                         i,
-                        plan_result['remaining_subnets'][i-1],
+                        plan_result['remaining_subnets'][i - 1],
                         subnet["network"],
                         subnet["netmask"],
                         subnet["broadcast"],
                         subnet["usable_addresses"],  # 修正为正确的字段名
                     ),
-                    tags=tags
+                    tags=tags,
                 )
             # 斑马条纹样式已在初始化时配置
-            
+
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.planning_remaining_tree)
 
@@ -1744,9 +1733,7 @@ class IPSubnetSplitterApp:
             # 清空表格并显示错误信息
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
-            self.split_tree.insert(
-                "", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",)
-            )
+            self.split_tree.insert("", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",))
             return
 
         # 验证CIDR格式
@@ -1780,14 +1767,12 @@ class IPSubnetSplitterApp:
             if "error" in result:
                 # 显示错误信息
                 self.split_tree.delete(*self.split_tree.get_children())
-                self.split_tree.insert(
-                    "", tk.END, values=("错误", result["error"]), tags=("error",)
-                )
+                self.split_tree.insert("", tk.END, values=("错误", result["error"]), tags=("error",))
                 return
 
             # 显示切分网段信息表格
             self.split_tree.delete(*self.split_tree.get_children())
-            
+
             # 添加切分网段信息，同时设置斑马条纹标签
             self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd",))
             self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("even",))
@@ -1801,16 +1786,10 @@ class IPSubnetSplitterApp:
             self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd",))
             self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("even",))
             self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd",))
-            self.split_tree.insert(
-                "", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("even",)
-            )
-            self.split_tree.insert(
-                "", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd",)
-            )
+            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("even",))
+            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd",))
             self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("even",))
             self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd",))
-            
-
 
             # 显示剩余网段列表表格
             if result["remaining_subnets_info"]:
@@ -1829,7 +1808,7 @@ class IPSubnetSplitterApp:
                             network["broadcast"],
                             network["usable_addresses"],
                         ),
-                        tags=tags
+                        tags=tags,
                     )
 
             else:
@@ -1882,7 +1861,7 @@ class IPSubnetSplitterApp:
         if self.info_auto_hide_id:
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
-        
+
         # 根据信息类型设置样式和图标，使用带框风格，保持一致
         if error:
             label_style = "Error.TLabel"
@@ -1894,47 +1873,48 @@ class IPSubnetSplitterApp:
             frame_style = "SuccessInfoBar.TFrame"
             icon = "✅ "  # 使用带框钩 (U+2705)，与带框叉风格一致
             self.info_bar_type = "success"
-        
+
         # 更新信息标签和框架样式
         # 基于像素宽度的文本截断算法，解决英文不等宽问题
         # 使用tkinter的Font.measure方法计算实际显示宽度
-        
+
         # 创建字体对象，用于测量文本宽度
         import tkinter.font as tkfont
+
         font = tkfont.Font(font=(("微软雅黑", 9)))
-        
+
         # 计算字符串的实际像素宽度
         def calculate_pixel_width(text):
             return font.measure(text)
-        
+
         # 基于像素宽度的截断函数
         def truncate_text_by_pixel(text, max_pixel_width):
             # 先尝试显示完整文本
             full_width = calculate_pixel_width(text)
             if full_width <= max_pixel_width:
                 return text
-            
+
             # 二分查找合适的截断位置
             low = 0
             high = len(text)
             best_length = 0
-            
+
             while low <= high:
                 mid = (low + high) // 2
                 current_text = text[:mid]
                 current_width = calculate_pixel_width(current_text)
-                
+
                 if current_width <= max_pixel_width:
                     best_length = mid
                     low = mid + 1
                 else:
                     high = mid - 1
-            
+
             # 确保截断后的文本不会过长
             truncated = text[:best_length]
             # 计算省略号的宽度
             ellipsis_width = calculate_pixel_width("...")
-            
+
             # 调整截断位置，确保加上省略号后不会超过最大宽度
             while best_length > 0:
                 truncated = text[:best_length]
@@ -1942,17 +1922,17 @@ class IPSubnetSplitterApp:
                 if truncated_width <= max_pixel_width:
                     return truncated + "..."
                 best_length -= 1
-            
+
             return "..."
-        
+
         # 设置最大像素宽度
         max_pixel_width = 374  # 根据信息栏宽度调整
         truncated_text = truncate_text_by_pixel(text, max_pixel_width)
-        
+
         # 显示完整文本（带有图标）
         self.info_label.config(text=icon + truncated_text, style=label_style)
         self.info_bar_frame.configure(style=frame_style)
-        
+
         # 显示信息栏 - 使用place布局，放置在顶部标签栏右侧红框位置，宽度适配子网规划到钉住按钮的距离
         if self.info_bar_frame.winfo_manager() == "":
             # 获取根窗口宽度
@@ -1975,9 +1955,9 @@ class IPSubnetSplitterApp:
                 info_bar_width = 300
             # 恢复原始高度和位置
             self.info_bar_frame.place_configure(x=235, y=15, width=info_bar_width, height=37)
-        
+
         # 去掉自动隐藏功能，需要手动隐藏
-    
+
     def test_info_bar(self):
         """测试信息栏功能"""
         # 创建测试窗口
@@ -1985,7 +1965,7 @@ class IPSubnetSplitterApp:
         test_window.title("信息栏测试")
         test_window.resizable(False, False)
         test_window.transient(self.root)
-        
+
         # 计算居中位置
         window_width = 300
         window_height = 250  # 增加高度，确保所有内容都能显示
@@ -1996,32 +1976,36 @@ class IPSubnetSplitterApp:
         x = root_x + (root_width - window_width) // 2
         y = root_y + (root_height - window_height) // 2
         test_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        
+
         # 创建主框架
         main_frame = ttk.Frame(test_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # 添加标题
         title_label = ttk.Label(main_frame, text="信息栏测试", font=("微软雅黑", 12, "bold"))
         title_label.pack(pady=(0, 20))
-        
+
         # 添加测试按钮
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, expand=True)
-        
+
         # 测试成功信息
-        success_btn = ttk.Button(button_frame, text="测试成功信息", command=lambda: self.show_result("这是一条成功信息", error=False))
+        success_btn = ttk.Button(
+            button_frame, text="测试成功信息", command=lambda: self.show_result("这是一条成功信息", error=False)
+        )
         success_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-        
+
         # 测试错误信息
-        error_btn = ttk.Button(button_frame, text="测试错误信息", command=lambda: self.show_result("这是一条错误信息", error=True))
+        error_btn = ttk.Button(
+            button_frame, text="测试错误信息", command=lambda: self.show_result("这是一条错误信息", error=True)
+        )
         error_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-        
+
         # 测试长信息
         long_text = "这是一条很长的测试信息，用于测试信息栏是否能够正确显示多行文本或自动换行。我要更多用于测试信息栏是否能够正确显示多行文本或自动换行"
         long_btn = ttk.Button(button_frame, text="测试长信息", command=lambda: self.show_result(long_text, error=False))
         long_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-        
+
         # 关闭按钮
         close_btn = ttk.Button(button_frame, text="关闭", command=test_window.destroy)
         close_btn.pack(fill=tk.X, pady=(0, 5), ipady=5)  # 增加内边距
@@ -2142,18 +2126,10 @@ class IPSubnetSplitterApp:
             offset = 1  # 描边偏移量
 
             # 绘制4个方向的描边
-            self.chart_canvas.create_text(
-                x - offset, y, text=text, font=font, anchor=anchor, fill=stroke_color
-            )
-            self.chart_canvas.create_text(
-                x + offset, y, text=text, font=font, anchor=anchor, fill=stroke_color
-            )
-            self.chart_canvas.create_text(
-                x, y - offset, text=text, font=font, anchor=anchor, fill=stroke_color
-            )
-            self.chart_canvas.create_text(
-                x, y + offset, text=text, font=font, anchor=anchor, fill=stroke_color
-            )
+            self.chart_canvas.create_text(x - offset, y, text=text, font=font, anchor=anchor, fill=stroke_color)
+            self.chart_canvas.create_text(x + offset, y, text=text, font=font, anchor=anchor, fill=stroke_color)
+            self.chart_canvas.create_text(x, y - offset, text=text, font=font, anchor=anchor, fill=stroke_color)
+            self.chart_canvas.create_text(x, y + offset, text=text, font=font, anchor=anchor, fill=stroke_color)
 
             # 绘制主文字
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
@@ -2213,9 +2189,7 @@ class IPSubnetSplitterApp:
             networks = self.chart_data.get("networks", [])
             if not networks:
                 # 没有网段时显示提示
-                self.chart_canvas.create_text(
-                    width / 2, canvas_height / 2, text="无网段数据", font=("微软雅黑", 12)
-                )
+                self.chart_canvas.create_text(width / 2, canvas_height / 2, text="无网段数据", font=("微软雅黑", 12))
                 return
 
             # 不绘制主标题，父网段和切分网段同等地位显示
@@ -2243,9 +2217,7 @@ class IPSubnetSplitterApp:
 
             # 确保背景色覆盖整个滚动区域，而不仅仅是初始可见区域
             background_height = max(required_height, canvas_height)
-            self.chart_canvas.create_rectangle(
-                0, 0, width, background_height, fill="#333333", outline="", width=0
-            )
+            self.chart_canvas.create_rectangle(0, 0, width, background_height, fill="#333333", outline="", width=0)
 
             # 设置Canvas滚动区域
             self.chart_canvas.config(scrollregion=(0, 0, width, background_height))
@@ -2253,15 +2225,11 @@ class IPSubnetSplitterApp:
             # 绘制父网段
             parent_range = parent_info.get("range", 1)
             log_value = max(log_min, math.log10(parent_range))
-            bar_width = max(
-                min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width
-            )
+            bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
 
             # 绘制父网段条（使用明显的深灰色）
             color = "#636e72"  # 明显的深灰色
-            self.chart_canvas.create_rectangle(
-                x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0
-            )
+            self.chart_canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             # 绘制父网段信息
             usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
@@ -2272,17 +2240,13 @@ class IPSubnetSplitterApp:
             text_y = y + bar_height / 2
             font = ("微软雅黑", 11, "bold")  # 使用粗体提高可读性
             # 使用带描边的文字绘制方法
-            self.draw_text_with_stroke(
-                segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-            )
+            self.draw_text_with_stroke(segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
             # 可用地址数 - 使用带描边的文字绘制，提高可见度
             address_text = f"可用地址数: {usable_addresses:,}"
             text_x = x + 250
             # 使用带描边的文字绘制方法
-            self.draw_text_with_stroke(
-                address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-            )
+            self.draw_text_with_stroke(address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
             y += bar_height + padding
 
@@ -2292,15 +2256,11 @@ class IPSubnetSplitterApp:
                 # 使用对数比例尺计算宽度（参考Web版）
                 network_range = network.get("range", 1)
                 log_value = max(log_min, math.log10(network_range))
-                bar_width = max(
-                    min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width
-                )
+                bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
 
                 # 绘制切分网段条（明显的蓝色）
                 color = "#4a7eb4"  # 明显的蓝色
-                self.chart_canvas.create_rectangle(
-                    x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0
-                )
+                self.chart_canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
                 # 绘制网段信息（参考Web版布局）
                 name = network.get("name", "")
@@ -2312,24 +2272,18 @@ class IPSubnetSplitterApp:
                 text_y = y + bar_height / 2
                 font = ("微软雅黑", 11, "bold")  # 使用粗体提高可读性
                 # 使用带描边的文字绘制方法
-                self.draw_text_with_stroke(
-                    segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-                )
+                self.draw_text_with_stroke(segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
                 # 可用地址数 - 使用带描边的文字绘制，提高可见度
                 address_text = f"可用地址数: {usable_addresses:,}"
                 text_x = x + 250
                 # 使用带描边的文字绘制方法
-                self.draw_text_with_stroke(
-                    address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-                )
+                self.draw_text_with_stroke(address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
                 y += bar_height + padding
 
                 # 添加切分网段和剩余网段之间的虚线分割
-                self.chart_canvas.create_line(
-                    x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1
-                )
+                self.chart_canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
 
             # 绘制剩余网段标题
             y += 20  # 额外间距
@@ -2375,18 +2329,14 @@ class IPSubnetSplitterApp:
                 # 使用对数比例尺计算宽度
                 network_range = network.get("range", 1)
                 log_value = max(log_min, math.log10(network_range))
-                bar_width = max(
-                    min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width
-                )
+                bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
 
                 # 为每个剩余网段选择不同颜色（参考Web版）
                 color_index = i % len(subnet_colors)
                 color = subnet_colors[color_index]
 
                 # 绘制剩余网段条
-                self.chart_canvas.create_rectangle(
-                    x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0
-                )
+                self.chart_canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
                 # 绘制网段信息
                 name = network.get("name", "")
@@ -2398,38 +2348,28 @@ class IPSubnetSplitterApp:
                 text_y = y + bar_height / 2
                 font = ("微软雅黑", 9, "bold")  # 使用粗体提高可读性
                 # 使用带描边的文字绘制方法
-                self.draw_text_with_stroke(
-                    segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-                )
+                self.draw_text_with_stroke(segment_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
                 # 可用地址数 - 使用带描边的文字绘制，提高可见度
                 address_text = f"可用地址数: {usable_addresses:,}"
                 text_x = x + 250
                 # 使用带描边的文字绘制方法
-                self.draw_text_with_stroke(
-                    address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff"
-                )
+                self.draw_text_with_stroke(address_text, text_x, text_y, font, anchor=tk.W, fill="#ffffff")
 
                 y += bar_height + padding
 
             # 添加剩余网段和图例之间的虚线分割
-            self.chart_canvas.create_line(
-                x, y, x + chart_width, y, fill="#cccccc", dash=(5, 2), width=1
-            )
+            self.chart_canvas.create_line(x, y, x + chart_width, y, fill="#cccccc", dash=(5, 2), width=1)
 
             # 绘制图例（参考Web版）
             legend_y = y + 15
-            self.chart_canvas.create_text(
-                x, legend_y, text="图例:", font=("微软雅黑", 11), anchor=tk.W, fill="#ffffff"
-            )
+            self.chart_canvas.create_text(x, legend_y, text="图例:", font=("微软雅黑", 11), anchor=tk.W, fill="#ffffff")
 
             # 增加图例文字与图例图形之间的间距
             legend_items_y = legend_y + 25
 
             # 父网段图例
-            self.chart_canvas.create_rectangle(
-                x, legend_items_y, x + 20, legend_items_y + 15, fill="#636e72"
-            )
+            self.chart_canvas.create_rectangle(x, legend_items_y, x + 20, legend_items_y + 15, fill="#636e72")
             self.chart_canvas.create_text(
                 x + 30,
                 legend_items_y + 6,
@@ -2440,9 +2380,7 @@ class IPSubnetSplitterApp:
             )
 
             # 切分网段图例
-            self.chart_canvas.create_rectangle(
-                x + 100, legend_items_y, x + 120, legend_items_y + 12, fill="#4a7eb4"
-            )
+            self.chart_canvas.create_rectangle(x + 100, legend_items_y, x + 120, legend_items_y + 12, fill="#4a7eb4")
             self.chart_canvas.create_text(
                 x + 130,
                 legend_items_y + 6,
@@ -2487,16 +2425,14 @@ class IPSubnetSplitterApp:
         # 确保表格能够自适应窗口宽度
         self.remaining_tree.update_idletasks()
         self.adjust_remaining_tree_width()
-        
+
         # 窗口大小变化时不需要重新配置斑马条纹，样式已在初始化时设置
         # 图表将在 on_chart_resize 中单独处理，避免重复绘制
         # 重新绘制所有Treeview的表格线 - 使用ttk样式方案不需要手动绘制
 
-
-    
     def _export_data(self, data_source, title, success_msg, failure_msg):
         """通用数据导出函数
-        
+
         Args:
             data_source: 字典，包含导出数据的源信息
                 - main_tree: 主数据表格控件
@@ -2533,6 +2469,7 @@ class IPSubnetSplitterApp:
 
             # 获取文件扩展名
             import os
+
             file_ext = os.path.splitext(file_path)[1].lower()
 
             # 准备数据
@@ -2540,10 +2477,10 @@ class IPSubnetSplitterApp:
             main_tree = data_source["main_tree"]
             main_filter = data_source.get("main_filter", None)
             main_headers = data_source.get("main_headers")
-            
+
             if main_headers is None:
                 main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
-            
+
             for item in main_tree.get_children():
                 values = main_tree.item(item, "values")
                 if main_filter:
@@ -2551,7 +2488,7 @@ class IPSubnetSplitterApp:
                         main_data.append(values)
                 elif values:
                     main_data.append(values)
-            
+
             # 准备剩余数据
             remaining_tree = data_source["remaining_tree"]
             remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
@@ -2565,7 +2502,7 @@ class IPSubnetSplitterApp:
             if file_ext == ".json":
                 # JSON格式导出
                 import json
-                
+
                 if data_source["main_name"] == "切分网段信息":
                     # 子网切分结果特殊处理
                     export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
@@ -2573,9 +2510,9 @@ class IPSubnetSplitterApp:
                     # 子网规划结果格式
                     export_data = {
                         f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
-                        "remaining_subnets": remaining_data
+                        "remaining_subnets": remaining_data,
                     }
-                    
+
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(export_data, f, ensure_ascii=False, indent=2)
 
@@ -2659,16 +2596,16 @@ class IPSubnetSplitterApp:
                     print(f"使用横向页面，宽度: {page_width}, 高度: {page_height}")
                 else:
                     print(f"使用纵向页面，宽度: {page_width}, 高度: {page_height}")
-                
+
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
                 doc = SimpleDocTemplate(
-                    file_path, 
+                    file_path,
                     pagesize=(page_width, page_height),  # 使用横向页面大小
                     leftMargin=margins[0],
                     rightMargin=margins[1],
                     topMargin=margins[2],
                     bottomMargin=margins[3],
-                    showBoundary=False
+                    showBoundary=False,
                 )
                 print(f"PDF文档对象创建成功")
                 elements = []
@@ -2728,32 +2665,34 @@ class IPSubnetSplitterApp:
 
                 # 添加主数据信息
                 elements.append(Paragraph(data_source["main_name"], heading2_style))
-                
+
                 # 如果是键值对格式（如切分网段信息）
                 if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
                     main_table_data = [["项目", "值"]]
                     for values in main_data:
-                        main_table_data.append([
-                            Paragraph(str(values[0]) if values[0] is not None else "", table_text_style),
-                            Paragraph(str(values[1]) if values[1] is not None else "", table_text_style)
-                        ])
+                        main_table_data.append(
+                            [
+                                Paragraph(str(values[0]) if values[0] is not None else "", table_text_style),
+                                Paragraph(str(values[1]) if values[1] is not None else "", table_text_style),
+                            ]
+                        )
                 else:
                     main_table_data = [[Paragraph(h, table_text_style) for h in main_headers]]
                     for values in main_data:
-                        main_table_data.append([
-                            Paragraph(str(v) if v is not None else "", table_text_style) for v in values
-                        ])
+                        main_table_data.append(
+                            [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
+                        )
 
                 if len(main_table_data) > 1:
                     # 计算表格宽度（页宽减去左右边距）
                     table_width = page_width - margins[0] - margins[1]
-                    
+
                     # 确定表格列数
                     table_cols = len(main_table_data[0])
-                    
+
                     # 使用指定的列宽或默认列宽
                     col_widths = data_source.get("main_table_cols")
-                    
+
                     # 处理字符串格式的列宽配置，如"1:1:1:1:1:1:1:1:1"
                     if isinstance(col_widths, str):
                         try:
@@ -2775,7 +2714,7 @@ class IPSubnetSplitterApp:
                         except (ValueError, TypeError):
                             # 如果转换失败，使用默认列宽
                             col_widths = None
-                    
+
                     if not col_widths or len(col_widths) != table_cols:
                         if len(main_headers) == 2:  # 键值对格式
                             col_widths = [table_width * 0.3, table_width * 0.7]
@@ -2795,13 +2734,13 @@ class IPSubnetSplitterApp:
                             except (ValueError, TypeError):
                                 # 如果转换失败，使用默认宽度
                                 processed_col_widths.append(table_width / table_cols)
-                        
+
                         # 确保列宽数组长度与表格列数一致
                         if len(processed_col_widths) != table_cols:
                             col_widths = [table_width / table_cols] * table_cols
                         else:
                             col_widths = processed_col_widths
-                    
+
                     # 计算自适应列宽
                     print(f"\n=== 计算自适应列宽 ===")
                     try:
@@ -2809,18 +2748,21 @@ class IPSubnetSplitterApp:
                         font_size = 10
                         # 使用自适应列宽替换现有列宽
                         print(f"  调用_calculate_auto_col_widths方法")
-                        auto_col_widths = self._calculate_auto_col_widths(main_table_data, font_name, font_size, table_width)
+                        auto_col_widths = self._calculate_auto_col_widths(
+                            main_table_data, font_name, font_size, table_width
+                        )
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
                         col_widths = auto_col_widths
                     except Exception as e:
                         print(f"  计算自适应列宽错误: {type(e).__name__}: {e}")
                         import traceback
+
                         traceback.print_exc()
                         # 如果自适应列宽计算失败，使用默认列宽
                         col_widths = [table_width / table_cols] * table_cols
                         print(f"  回退到默认列宽: {col_widths}")
-                    
+
                     # 添加调试信息
                     print(f"\n=== 主要表格调试信息 ===")
                     print(f"表格数据行数: {len(main_table_data)}")
@@ -2828,7 +2770,7 @@ class IPSubnetSplitterApp:
                     print(f"原始列宽: {col_widths}")
                     print(f"表格宽度: {table_width}")
                     print(f"表头数量: {len(main_headers)}")
-                    
+
                     if not col_widths or len(col_widths) != table_cols:
                         if len(main_headers) == 2:
                             print(f"键值对格式，使用3:7比例分配列宽")
@@ -2836,10 +2778,10 @@ class IPSubnetSplitterApp:
                             print(f"列宽数量不匹配，使用默认平均分配列宽")
                     else:
                         print(f"使用指定列宽，替换None值")
-                    
+
                     print(f"最终列宽: {col_widths}")
                     print(f"=== 主要表格调试信息结束 ===")
-                    
+
                     # 添加详细的调试信息，检查Table构造函数的参数
                     print(f"\n=== Table构造函数调试信息 ===")
                     print(f"main_table_data类型: {type(main_table_data)}")
@@ -2852,7 +2794,7 @@ class IPSubnetSplitterApp:
                     print(f"每个列宽的值和类型:")
                     for i, width in enumerate(col_widths):
                         print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
-                    
+
                     # 确保所有列宽都是有效的数字
                     valid_col_widths = []
                     for width in col_widths:
@@ -2867,9 +2809,9 @@ class IPSubnetSplitterApp:
                             valid_col_widths.append(100)
                         else:
                             valid_col_widths.append(width)
-                    
+
                     print(f"有效列宽: {valid_col_widths}")
-                    
+
                     # 创建Table对象
                     main_table = Table(main_table_data, colWidths=valid_col_widths)
                     main_table.setStyle(
@@ -2878,14 +2820,24 @@ class IPSubnetSplitterApp:
                                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),  # 蓝色表头
                                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # 所有列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
+                                (
+                                    "FONTNAME",
+                                    (0, 0),
+                                    (-1, 0),
+                                    "ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
+                                ),
                                 ("FONTSIZE", (0, 0), (-1, 0), 11),
                                 ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                                 ("TOPPADDING", (0, 0), (-1, 0), 8),
                                 ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),  # 浅灰色边框
                                 ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#3498db")),  # 蓝色外框
                                 ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),  # 浅灰色背景
-                                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),  # 交替行颜色
+                                (
+                                    "ROWBACKGROUNDS",
+                                    (0, 1),
+                                    (-1, -1),
+                                    [colors.white, colors.HexColor("#f0f4f8")],
+                                ),  # 交替行颜色
                                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # 垂直居中
                                 ("LEFTPADDING", (0, 0), (-1, -1), 8),  # 左内边距
                                 ("RIGHTPADDING", (0, 0), (-1, -1), 8),  # 右内边距
@@ -2906,20 +2858,20 @@ class IPSubnetSplitterApp:
                 for item in remaining_tree.get_children():
                     values = remaining_tree.item(item, "values")
                     if values:
-                        remaining_table_data.append([
-                            Paragraph(str(v) if v is not None else "", table_text_style) for v in values
-                        ])
+                        remaining_table_data.append(
+                            [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
+                        )
 
                 if len(remaining_table_data) > 1:
                     # 计算表格宽度（页宽减去左右边距）
                     table_width = page_width - margins[0] - margins[1]
-                    
+
                     # 确定表格列数
                     table_cols = len(remaining_table_data[0])
-                    
+
                     # 使用指定的列宽或默认列宽
                     col_widths = data_source.get("remaining_table_cols")
-                    
+
                     # 处理字符串格式的列宽配置，如"1:1:1:1:1:1:1"
                     if isinstance(col_widths, str):
                         try:
@@ -2941,14 +2893,14 @@ class IPSubnetSplitterApp:
                         except (ValueError, TypeError):
                             # 如果转换失败，使用默认列宽
                             col_widths = None
-                    
+
                     # 添加调试信息
                     print(f"\n=== 剩余表格调试信息 ===")
                     print(f"表格数据行数: {len(remaining_table_data)}")
                     print(f"表格列数: {table_cols}")
                     print(f"原始列宽: {col_widths}")
                     print(f"表格宽度: {table_width}")
-                    
+
                     if not col_widths or len(col_widths) != table_cols:
                         print(f"列宽数量不匹配，使用默认平均分配列宽")
                         # 默认平均分配列宽
@@ -2967,13 +2919,13 @@ class IPSubnetSplitterApp:
                             except (ValueError, TypeError):
                                 # 如果转换失败，使用默认宽度
                                 processed_col_widths.append(table_width / table_cols)
-                        
+
                         # 确保列宽数组长度与表格列数一致
                         if len(processed_col_widths) != table_cols:
                             col_widths = [table_width / table_cols] * table_cols
                         else:
                             col_widths = processed_col_widths
-                    
+
                     # 计算自适应列宽
                     print(f"\n=== 计算剩余表格自适应列宽 ===")
                     try:
@@ -2981,21 +2933,24 @@ class IPSubnetSplitterApp:
                         font_size = 10
                         # 使用自适应列宽替换现有列宽
                         print(f"  调用_calculate_auto_col_widths方法")
-                        auto_col_widths = self._calculate_auto_col_widths(remaining_table_data, font_name, font_size, table_width)
+                        auto_col_widths = self._calculate_auto_col_widths(
+                            remaining_table_data, font_name, font_size, table_width
+                        )
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
                         col_widths = auto_col_widths
                     except Exception as e:
                         print(f"  计算剩余表格自适应列宽错误: {type(e).__name__}: {e}")
                         import traceback
+
                         traceback.print_exc()
                         # 如果自适应列宽计算失败，使用默认列宽
                         col_widths = [table_width / table_cols] * table_cols
                         print(f"  回退到默认列宽: {col_widths}")
-                    
+
                     print(f"最终列宽: {col_widths}")
                     print(f"=== 剩余表格调试信息结束 ===")
-                    
+
                     # 添加详细的调试信息，检查Table构造函数的参数
                     print(f"\n=== 剩余表格Table构造函数调试信息 ===")
                     print(f"remaining_table_data类型: {type(remaining_table_data)}")
@@ -3008,7 +2963,7 @@ class IPSubnetSplitterApp:
                     print(f"每个列宽的值和类型:")
                     for i, width in enumerate(col_widths):
                         print(f"  列{i}: 值={width}, 类型={type(width)}, 是否为None={width is None}")
-                    
+
                     # 确保所有列宽都是有效的数字
                     valid_col_widths = []
                     for width in col_widths:
@@ -3023,9 +2978,9 @@ class IPSubnetSplitterApp:
                             valid_col_widths.append(100)
                         else:
                             valid_col_widths.append(width)
-                    
+
                     print(f"有效列宽: {valid_col_widths}")
-                    
+
                     # 创建Table对象
                     remaining_table = Table(remaining_table_data, colWidths=valid_col_widths)
                     remaining_table.setStyle(
@@ -3034,14 +2989,24 @@ class IPSubnetSplitterApp:
                                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#27ae60")),  # 绿色表头
                                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),  # 所有列居中对齐
-                                ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
+                                (
+                                    "FONTNAME",
+                                    (0, 0),
+                                    (-1, 0),
+                                    "ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
+                                ),
                                 ("FONTSIZE", (0, 0), (-1, 0), 11),
                                 ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
                                 ("TOPPADDING", (0, 0), (-1, 0), 8),
                                 ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),  # 浅灰色边框
                                 ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#27ae60")),  # 绿色外框
                                 ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),  # 浅灰色背景
-                                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),  # 交替行颜色
+                                (
+                                    "ROWBACKGROUNDS",
+                                    (0, 1),
+                                    (-1, -1),
+                                    [colors.white, colors.HexColor("#f0f4f8")],
+                                ),  # 交替行颜色
                                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),  # 垂直居中
                                 ("LEFTPADDING", (0, 0), (-1, -1), 8),  # 左内边距
                                 ("RIGHTPADDING", (0, 0), (-1, -1), 8),  # 右内边距
@@ -3062,6 +3027,7 @@ class IPSubnetSplitterApp:
                 except Exception as e:
                     print(f"PDF文档生成失败: {type(e).__name__}: {e}")
                     import traceback
+
                     traceback.print_exc()
                 print(f"=== PDF导出调试信息结束 ===")
 
@@ -3143,12 +3109,13 @@ class IPSubnetSplitterApp:
             return file_path  # 返回导出的文件路径
 
         except Exception as e:
-                import traceback
-                # 显示导出错误信息和堆栈跟踪
-                error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
-                self.show_result(error_msg, error=True)
-                return None  # 导出失败时返回None
-    
+            import traceback
+
+            # 显示导出错误信息和堆栈跟踪
+            error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
+            self.show_result(error_msg, error=True)
+            return None  # 导出失败时返回None
+
     def export_result(self):
         """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
         data_source = {
@@ -3160,15 +3127,10 @@ class IPSubnetSplitterApp:
             "remaining_name": "剩余网段信息",
             "pdf_title": "IP子网分割工具 - 计算结果",
             "main_table_cols": None,  # 使用默认列宽
-            "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50]  # 剩余网段表格列宽
+            "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],  # 剩余网段表格列宽
         }
-        
-        self._export_data(
-            data_source,
-            "保存子网切分结果",
-            "结果已成功导出到: {file_path}",
-            "导出失败: {error}"
-        )
+
+        self._export_data(data_source, "保存子网切分结果", "结果已成功导出到: {file_path}", "导出失败: {error}")
 
     def export_planning_result(self):
         """导出子网规划结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
@@ -3181,25 +3143,20 @@ class IPSubnetSplitterApp:
             "remaining_name": "剩余网段信息",
             "pdf_title": "IP子网分割工具 - 子网规划结果",
             "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
-            "remaining_table_cols": [40, 90, 80, 110, 80, 60]  # 剩余网段表格列宽
+            "remaining_table_cols": [40, 90, 80, 110, 80, 60],  # 剩余网段表格列宽
         }
-        
-        self._export_data(
-            data_source,
-            "保存子网规划结果",
-            "规划结果已成功导出到: {file_path}",
-            "导出失败: {error}"
-        )
-        
+
+        self._export_data(data_source, "保存子网规划结果", "规划结果已成功导出到: {file_path}", "导出失败: {error}")
+
     def _calculate_auto_col_widths(self, table_data, font_name, font_size, table_width):
         """根据内容计算自适应列宽
-        
+
         Args:
             table_data: 表格数据，包含Paragraph对象的列表
             font_name: 字体名称
             font_size: 字体大小
             table_width: 表格可用宽度
-            
+
         Returns:
             list: 每列的自适应宽度
         """
@@ -3209,7 +3166,7 @@ class IPSubnetSplitterApp:
         print(f"  表格列数: {table_cols}")
         max_col_widths = [0] * table_cols
         min_col_width = 50  # 最小列宽
-        
+
         # 遍历所有行和列，计算每列的最大宽度
         for row in table_data:
             for col_idx, cell in enumerate(row):
@@ -3223,9 +3180,9 @@ class IPSubnetSplitterApp:
                 else:
                     # 直接转换为字符串
                     text = str(cell)
-                
+
                 print(f"  单元格内容: {text}, 长度: {len(text)}")
-                
+
                 # 计算文本宽度，中文和英文使用不同的宽度系数
                 # 中文每个字符约12像素，英文每个字符约6像素
                 text_width = 0
@@ -3234,32 +3191,32 @@ class IPSubnetSplitterApp:
                         text_width += 12
                     else:  # 英文字符
                         text_width += 6
-                
+
                 # 添加左右内边距（各8像素）
                 text_width += 16
-                
+
                 print(f"  计算的文本宽度: {text_width}")
-                
+
                 # 更新该列的最大宽度
                 if text_width > max_col_widths[col_idx]:
                     max_col_widths[col_idx] = text_width
-        
+
         # 确保最小宽度
         for i in range(len(max_col_widths)):
             if max_col_widths[i] < min_col_width:
                 max_col_widths[i] = min_col_width
-        
+
         # 计算总宽度
         total_width = sum(max_col_widths)
         print(f"  计算总宽度: {total_width}, 可用表格宽度: {table_width}")
-        
+
         # 如果总宽度超过页面宽度，按比例缩放
         if total_width > table_width:
             scale_factor = table_width / total_width
             print(f"  总宽度超过页面宽度，应用缩放因子: {scale_factor}")
             for i in range(len(max_col_widths)):
                 max_col_widths[i] *= scale_factor
-        
+
         print(f"  最终自适应列宽: {max_col_widths}")
         return max_col_widths
 
@@ -3290,7 +3247,7 @@ class IPSubnetSplitterApp:
         import os
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
-        
+
         # 尝试查找系统中的中文字体
         font_path = None
         font_name = None
@@ -3338,7 +3295,7 @@ class IPSubnetSplitterApp:
         """在PDF文档中添加页脚"""
         import time
         from reportlab.lib.units import cm
-        
+
         canvas.saveState()
         # 设置页脚字体
         if getattr(self, 'has_chinese_font', False):
@@ -3354,17 +3311,17 @@ class IPSubnetSplitterApp:
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""
         # 直接在root窗口创建关于链接，不使用框架
         # 使用普通tk.Label直接控制样式，确保悬停效果可靠
-        
+
         # 获取窗口背景色以确保完全一致
         self.bg_color = self.root.cget("background")
         self.hover_bg_color = "#e0e0e0"  # 更浅的灰色背景，柔和过渡
         self.hover_fg_color = "#333333"  # 深灰色文字，保持可读性
         self.normal_fg_color = "#666666"
         border_color = "#cccccc"  # 更浅的灰色边框，视觉上更细
-        
+
         # 初始化窗口置顶状态
         self.is_pinned = False
-        
+
         # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与子网标签一致
         self.about_label = tk.Label(
             self.root,
@@ -3379,18 +3336,18 @@ class IPSubnetSplitterApp:
             highlightthickness=1,  # 高亮边框宽度，模拟边框
             highlightbackground=border_color,  # 边框颜色
             highlightcolor=border_color,  # 边框颜色（确保一致性）
-            cursor="hand2"  # 鼠标指针为手形
+            cursor="hand2",  # 鼠标指针为手形
         )
-        
+
         # 放置在窗口标题栏右侧位置，y坐标调整为与子网标签垂直居中对齐
         # 根据左侧标签栏高度计算，垂直居中对齐
         self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-24, y=13)  # y=8，垂直居中
         self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
-        
+
         # 绑定鼠标事件实现悬停效果
         self.about_label.bind("<Enter>", self.on_about_link_enter)
         self.about_label.bind("<Leave>", self.on_about_link_leave)
-        
+
         # 创建钉住按钮，使用扁平化风格，直接添加到root窗口，高度与子网标签一致
         self.pin_label = tk.Label(
             self.root,
@@ -3405,33 +3362,33 @@ class IPSubnetSplitterApp:
             highlightthickness=1,  # 高亮边框宽度，模拟边框
             highlightbackground=border_color,  # 边框颜色
             highlightcolor=border_color,  # 边框颜色（确保一致性）
-            cursor="hand2"  # 鼠标指针为手形
+            cursor="hand2",  # 鼠标指针为手形
         )
-        
+
         # 放置钉住按钮在橙色标题栏右侧，关于按钮左侧且不重叠，y坐标垂直居中对齐
         self.pin_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-89, y=13)  # x=-90，更靠近关于按钮
         self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
-        
+
         # 绑定鼠标事件实现悬停效果
         self.pin_label.bind("<Enter>", self.on_about_link_enter)
         self.pin_label.bind("<Leave>", self.on_about_link_leave)
-        
+
     def on_about_link_enter(self, event):
         """鼠标进入关于链接或钉住按钮时的处理函数"""
         # 获取事件源，判断是哪个标签触发的事件
         widget = event.widget
-        
+
         # 修改标签的前景色和背景色
         if widget == self.about_label:
             self.about_label.config(fg=self.hover_fg_color, bg=self.hover_bg_color)
         elif widget == self.pin_label:
             self.pin_label.config(fg="#333333", bg=self.hover_bg_color)
-        
+
     def on_about_link_leave(self, event):
         """鼠标离开关于链接或钉住按钮时的处理函数"""
         # 获取事件源，判断是哪个标签触发的事件
         widget = event.widget
-        
+
         # 恢复标签的默认前景色和背景色
         if widget == self.about_label:
             self.about_label.config(fg=self.normal_fg_color, bg=self.bg_color)
@@ -3446,10 +3403,10 @@ class IPSubnetSplitterApp:
         """切换窗口置顶状态"""
         # 切换置顶状态
         self.is_pinned = not self.is_pinned
-        
+
         # 设置窗口置顶属性
         self.root.attributes("-topmost", self.is_pinned)
-        
+
         # 更新钉住按钮的视觉效果（扁平化风格，使用颜色变化表示状态）
         if self.is_pinned:
             # 置顶状态：深色图标和文字
@@ -3458,7 +3415,6 @@ class IPSubnetSplitterApp:
             # 非置顶状态：浅色图标和文字
             self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
 
-    
     def show_about_dialog(self):
         """显示关于对话框"""
         # 创建对话框窗口
@@ -3489,14 +3445,12 @@ class IPSubnetSplitterApp:
 
         # 一次性设置对话框的尺寸和位置
         about_window.geometry("{}x{}+{}+{}".format(dialog_width, dialog_height, x, y))
-        
+
         # 显示对话框
         about_window.deiconify()
 
         # 创建内容框架，移除所有边框和焦点指示
-        content_frame = ttk.Frame(
-            about_window, padding=(15, 0, 15, 0), relief="flat", borderwidth=0
-        )
+        content_frame = ttk.Frame(about_window, padding=(15, 0, 15, 0), relief="flat", borderwidth=0)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建上下占位框架实现内容垂直居中
@@ -3559,8 +3513,6 @@ class IPSubnetSplitterApp:
             inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8), style="About.TLabel"
         )
         copyright_label.pack(pady=(2, 10))
-
-
 
 
 if __name__ == "__main__":
