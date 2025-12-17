@@ -718,7 +718,7 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
-        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 8))  # 单独控制上下边距：左10, 上5, 右10, 下5
+        input_frame = ttk.LabelFrame(self.split_frame, text="输入参数", padding=(10, 5, 5, 5))  # 单独控制各边内边距：左10, 上5, 右5, 下5
         input_frame.pack(fill=tk.NONE, expand=False, pady=(0, 8), anchor=tk.W)  # 不撑满窗体，上下排列，靠左对齐
 
         # 配置grid行列，减小间距
@@ -773,7 +773,7 @@ class IPSubnetSplitterApp:
             input_frame, text="导出结果", command=self.export_result, width=8
         )
         self.export_btn.grid(
-            row=0, column=4, rowspan=2, padx=(3, 10), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
+            row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W
         )
         
         # 信息栏测试按钮
