@@ -1791,15 +1791,23 @@ class IPSubnetSplitterApp:
             
             # 如果不是从历史记录重新执行，则将操作记录到历史列表
             if not from_history:
-                # 添加到历史记录
-                record = {
-                    'parent': parent,
-                    'split': split
-                }
-                self.history_records.append(record)
+                # 检查是否已存在相同的记录
+                duplicate_exists = False
+                for existing_record in self.history_records:
+                    if existing_record['parent'] == parent and existing_record['split'] == split:
+                        duplicate_exists = True
+                        break
                 
-                # 更新历史记录列表
-                self.update_history_tree()
+                # 如果不存在相同记录，则添加到历史记录
+                if not duplicate_exists:
+                    record = {
+                        'parent': parent,
+                        'split': split
+                    }
+                    self.history_records.append(record)
+                    
+                    # 更新历史记录列表
+                    self.update_history_tree()
 
         except ValueError as e:
             error_msg = str(e)
