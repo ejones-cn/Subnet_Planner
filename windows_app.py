@@ -661,7 +661,7 @@ class IPSubnetSplitterApp:
             self.history_tree.insert(
                 "", 
                 tk.END, 
-                values=(i, record['parent'], record['split'], record['time']),
+                values=(i, record['parent'], record['split']),
                 tags=tags
             )
     
@@ -701,7 +701,7 @@ class IPSubnetSplitterApp:
         
         # 创建输入参数面板
         input_frame = ttk.LabelFrame(
-            input_history_frame, text="输入参数", padding=(10, 5, 5, 5)
+            input_history_frame, text="输入参数", padding=(10, 10, 10, 10)
         )  # 单独控制各边内边距：左10, 上5, 右5, 下5
         input_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))  # 靠左放置，垂直填充
 
@@ -728,15 +728,16 @@ class IPSubnetSplitterApp:
         self.parent_entry.grid(row=0, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
 
-        # 切分段 - 统一pady和sticky
+        # 切分段 - 统一pady和sticky，往上移一点点
         ttk.Label(input_frame, text="切分段", anchor="w").grid(
-            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=3, padx=(0, 5)
+            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=(5, 3), padx=(0, 5)
         )
         vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
         self.split_entry = ttk.Entry(
-            input_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
+            input_frame, width=16, font=(
+            "微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
-        self.split_entry.grid(row=1, column=1, padx=0, pady=3, sticky=tk.W + tk.N + tk.S)
+        self.split_entry.grid(row=1, column=1, padx=0, pady=(5, 3), sticky=tk.W + tk.N + tk.S)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
 
         # 按钮区域
@@ -744,45 +745,48 @@ class IPSubnetSplitterApp:
         self.execute_btn = ttk.Button(input_frame, text="执行切分", command=self.execute_split, width=7)
         self.execute_btn.grid(row=0, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
 
-        # 清空按钮 - 统一pady设置
+        # 清空按钮 - 统一pady设置，往上移一点点
         self.clear_btn = ttk.Button(input_frame, text="清空结果", command=self.clear_result, width=7)
-        self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+        self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W)
 
-        # 导出按钮 - 统一pady设置
+        # 导出按钮 - 统一pady设置，往右移一点
         self.export_btn = ttk.Button(input_frame, text="导出结果", command=self.export_result, width=8)
-        self.export_btn.grid(row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+        self.export_btn.grid(row=0, column=4, rowspan=2, padx=(8, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)  # 增加左侧内边距，向右移动
         
         # 创建历史记录面板，与输入参数面板同级
-        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 5, 5))
+        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 10, 3))
         history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
         
-        # 创建历史记录列表，添加操作时间字段
-        self.history_tree = ttk.Treeview(history_frame, columns=('id', 'parent', 'split', 'time'), show='headings', height=4)
-        self.history_tree.heading('id', text='序号')
-        self.history_tree.heading('parent', text='父网段')
-        self.history_tree.heading('split', text='切分段')
-        self.history_tree.heading('time', text='操作时间')
+        # 创建历史记录列表，去掉表头，显示4行
+        self.history_tree = ttk.Treeview(history_frame, columns=('id', 'parent', 'split'), show='', height=4)
         
         # 设置列宽
         self.history_tree.column('id', width=50, stretch=False)
-        self.history_tree.column('parent', width=120, stretch=True)
-        self.history_tree.column('split', width=120, stretch=True)
-        self.history_tree.column('time', width=150, stretch=True)
+        self.history_tree.column('parent', width=60, stretch=True)
+        self.history_tree.column('split', width=60, stretch=True)
         
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.history_tree)
+        
+        # 移除内部框架，直接使用grid布局管理组件
+        
+        # 配置grid布局，增加一列用于按钮
+        history_frame.grid_rowconfigure(0, weight=0)  # 表格行固定高度，正好显示4行
+        history_frame.grid_columnconfigure(0, weight=1)  # 表格列可扩展
+        history_frame.grid_columnconfigure(1, weight=0)  # 滚动条列不可扩展
+        history_frame.grid_columnconfigure(2, weight=0)  # 按钮列不可扩展
         
         # 添加垂直滚动条
         history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
         self.history_tree.configure(yscrollcommand=history_scroll.set)
         
-        # 布局历史记录列表和滚动条
-        self.history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=5)
-        history_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+        # 使用grid布局精确控制位置
+        self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=5, padx=(0, 2))  # 表格在第0行第0列，占据主要空间
+        history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)  # 滚动条在第0行第1列，仅垂直填充
         
-        # 创建重新切分按钮
-        self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split)
-        self.reexecute_btn.pack(side=tk.BOTTOM, pady=(5, 0), fill=tk.X)  # 底部放置，水平填充
+        # 创建重新切分按钮，放到表格右侧，与导出结果按钮大小一致
+        self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split, width=8)  # 设置按钮宽度与导出结果按钮一致
+        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NS, pady=5, padx=(5, 2))  # 按钮在第0行第2列，垂直居中
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
@@ -1807,13 +1811,10 @@ class IPSubnetSplitterApp:
             
             # 如果不是从历史记录重新执行，则将操作记录到历史列表
             if not from_history:
-                # 导入datetime模块获取当前时间
-                import datetime
-                # 添加到历史记录，包含操作时间
+                # 添加到历史记录
                 record = {
                     'parent': parent,
-                    'split': split,
-                    'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    'split': split
                 }
                 self.history_records.append(record)
                 
