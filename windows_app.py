@@ -678,7 +678,6 @@ class IPSubnetSplitterApp:
         record_str = item_values[0]
         # 移除序号部分，保留后面的网段信息
         # 使用更灵活的分割方式，处理不同数量的空格
-        import re
         # 匹配序号后的网段信息，例如："1.  10.0.0.8/5 | 10.21.60.0/23" -> "10.0.0.8/5 | 10.21.60.0/23"
         match = re.match(r'^\d+\.\s+(.*)$', record_str)
         if not match:
@@ -2701,8 +2700,6 @@ class IPSubnetSplitterApp:
                         col_widths = auto_col_widths
                     except Exception as e:
                         print(f"  计算自适应列宽错误: {type(e).__name__}: {e}")
-                        import traceback
-
                         traceback.print_exc()
                         # 如果自适应列宽计算失败，使用默认列宽
                         col_widths = [table_width / table_cols] * table_cols
@@ -3027,8 +3024,6 @@ class IPSubnetSplitterApp:
                         print(f"提取到剩余网段: {remaining_networks}")
                         
                         # 生成chart_data
-                        from ip_subnet_calculator import get_subnet_info, ip_to_int
-                        
                         parent_info = get_subnet_info(parent_cidr)
                         if "error" not in parent_info:
                             parent_start = ip_to_int(parent_info.get("network", "0.0.0.0"))
@@ -3121,7 +3116,6 @@ class IPSubnetSplitterApp:
                         if not canvas_capture_success:
                             print("使用PIL直接绘制图表作为备选方案")
                             from PIL import ImageDraw, ImageFont
-                            import math
                             
                             # 准备图表数据
                             parent_info = chart_data.get("parent", {})
@@ -3593,7 +3587,6 @@ class IPSubnetSplitterApp:
                             self.has_chinese_font = self.register_chinese_fonts()
                     except Exception as e:
                         print(f"处理中文字体失败: {e}")
-                        import traceback
                         traceback.print_exc()
                     
                     # 移除未定义的add_footer回调
