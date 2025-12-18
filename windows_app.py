@@ -647,11 +647,11 @@ class IPSubnetSplitterApp:
             self.history_tree.delete(item)
         
         # 重新插入所有历史记录
-        for i, record in enumerate(self.history_records, 1):
+        for index, history_record in enumerate(self.history_records, 1):
             # 设置斑马条纹标签
-            tags = ("even",) if i % 2 == 0 else ("odd",)
+            tags = ("even",) if index % 2 == 0 else ("odd",)
             # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
-            formatted_record = f"{i}. {record['parent']}  |  {record['split']}"
+            formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
             self.history_tree.insert(
                 "", 
                 tk.END, 
@@ -1583,12 +1583,12 @@ class IPSubnetSplitterApp:
     def execute_subnet_planning(self):
         """执行子网规划"""
         # 获取父网段
-        parent_cidr = self.planning_parent_entry.get().strip()
-        if not parent_cidr:
+        parent = self.planning_parent_entry.get().strip()
+        if not parent:
             messagebox.showerror("错误", "请输入父网段")
             return
 
-        if not re.match(self.cidr_pattern, parent_cidr):
+        if not re.match(self.cidr_pattern, parent):
             messagebox.showerror("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
             return
 
@@ -1608,7 +1608,7 @@ class IPSubnetSplitterApp:
             formatted_requirements = [{'name': name, 'hosts': hosts} for name, hosts in subnet_requirements]
 
             # 调用子网规划函数
-            plan_result = suggest_subnet_planning(parent_cidr, formatted_requirements)
+            plan_result = suggest_subnet_planning(parent, formatted_requirements)
 
             # 检查是否有错误
             if 'error' in plan_result:
@@ -1800,11 +1800,11 @@ class IPSubnetSplitterApp:
                 
                 # 如果不存在相同记录，则添加到历史记录
                 if not duplicate_exists:
-                    record = {
+                    split_record = {
                         'parent': parent,
                         'split': split
                     }
-                    self.history_records.append(record)
+                    self.history_records.append(split_record)
                     
                     # 更新历史记录列表
                     self.update_history_tree()
@@ -1967,7 +1967,7 @@ class IPSubnetSplitterApp:
                     "start": parent_start,
                     "end": parent_end,
                     "range": parent_range,
-                    "name": parent_info.get("cidr", parent_cidr),
+                    "name": parent_info.get("cidr", parent),
                     "color": "#f3e5f5",  # 浅紫色背景
                 },
                 "networks": [],
@@ -1999,7 +1999,7 @@ class IPSubnetSplitterApp:
                 "#ffeb3b",
                 "#607d8b",
             ]  # 现代化颜色列表
-            for i, subnet in enumerate(remaining_subnets):
+            for index, subnet in enumerate(remaining_subnets):
                 subnet_start = ip_to_int(subnet.get("network", "0.0.0.0"))
                 subnet_end = ip_to_int(subnet.get("broadcast", "0.0.0.0"))
                 self.chart_data["networks"].append(
@@ -2008,7 +2008,7 @@ class IPSubnetSplitterApp:
                         "end": subnet_end,
                         "range": subnet_end - subnet_start + 1,
                         "name": subnet.get("cidr", ""),
-                        "color": colors[i % len(colors)],  # 循环使用颜色
+                        "color": colors[index % len(colors)],  # 循环使用颜色
                         "type": "remaining",
                     }
                 )
@@ -2102,7 +2102,7 @@ class IPSubnetSplitterApp:
 
             # 获取父网段信息
             parent_info = self.chart_data.get("parent", {})
-            parent_cidr = parent_info.get("name", "")
+            parent = parent_info.get("name", "")
             parent_range = parent_info.get("range", 1)
 
             # 获取网段列表
@@ -2122,12 +2122,12 @@ class IPSubnetSplitterApp:
             # 柱状图配置 - 调整为更紧凑的显示
             bar_height = 30
             padding = 10
-            x = margin_left
-            y = margin_top
+            x_pos = margin_left
+            y_pos = margin_top
 
             # 动态设置Canvas高度
             required_height = (
-                y  # 起始位置
+                y_pos  # 起始位置
                 + (bar_height + padding)  # 父网段
                 + (bar_height + padding)  # 切分网段
                 + 40  # 剩余网段标题
@@ -2368,6 +2368,7 @@ class IPSubnetSplitterApp:
             success_msg: 成功消息格式字符串
             failure_msg: 失败消息格式字符串
         """
+        import traceback
         try:
             # 使用文件对话框，支持多种格式
             file_path = filedialog.asksaveasfilename(
@@ -2932,14 +2933,14 @@ class IPSubnetSplitterApp:
                 else:
                     elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
-                # 生成PDF，添加页脚
+                # 生成PDF
                 print("开始生成PDF文档...")
                 try:
-                    doc.build(elements, onFirstPage=self.add_footer, onLaterPages=self.add_footer)
+                    # 移除未定义的add_footer回调
+                    doc.build(elements)
                     print("PDF文档生成成功")
                 except Exception as e:
                     print(f"PDF文档生成失败: {type(e).__name__}: {e}")
-
                     traceback.print_exc()
                 print("=== PDF导出调试信息结束 ===")
 
@@ -2949,72 +2950,72 @@ class IPSubnetSplitterApp:
                 from openpyxl.styles import Font, Alignment
 
                 # 创建Excel工作簿
-                wb = Workbook()
+                workbook = Workbook()
 
                 # 添加主数据工作表
-                ws1 = wb.active
-                ws1.title = data_source["main_name"]
+                main_sheet = workbook.active
+                main_sheet.title = data_source["main_name"]
 
                 # 添加主数据表头
-                ws1.append(main_headers)
+                main_sheet.append(main_headers)
 
                 # 设置表头样式
-                for cell in ws1[1]:
+                for cell in main_sheet[1]:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
                 # 添加主数据
-                for values in main_data:
-                    ws1.append(list(values))
+                for row_data in main_data:
+                    main_sheet.append(list(row_data))
 
                 # 调整列宽
-                for col, header in enumerate(main_headers, 1):
-                    ws1.column_dimensions[chr(64 + col)].width = 20
+                for col_index, header in enumerate(main_headers, 1):
+                    main_sheet.column_dimensions[chr(64 + col_index)].width = 20
 
                 # 添加剩余数据工作表
-                ws2 = wb.create_sheet(title=data_source["remaining_name"])
+                remaining_sheet = workbook.create_sheet(title=data_source["remaining_name"])
 
                 # 添加剩余数据表头
-                ws2.append(remaining_headers)
+                remaining_sheet.append(remaining_headers)
 
                 # 设置表头样式
-                for cell in ws2[1]:
+                for cell in remaining_sheet[1]:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
                 # 添加剩余数据
-                for item in remaining_tree.get_children():
-                    values = remaining_tree.item(item, "values")
-                    if values:
-                        ws2.append([str(v) for v in values])
+                for tree_item in remaining_tree.get_children():
+                    row_values = remaining_tree.item(tree_item, "values")
+                    if row_values:
+                        remaining_sheet.append([str(v) for v in row_values])
 
                 # 调整列宽
-                for col, header in enumerate(remaining_headers, 1):
-                    ws2.column_dimensions[chr(64 + col)].width = 20
+                for col_index, header in enumerate(remaining_headers, 1):
+                    remaining_sheet.column_dimensions[chr(64 + col_index)].width = 20
 
                 # 保存Excel文件
-                wb.save(file_path)
+                workbook.save(file_path)
 
             else:  # 默认CSV格式
                 # CSV格式导出，使用utf-8-sig编码解决中文乱码问题
-                with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
+                with open(file_path, "w", newline="", encoding="utf-8-sig") as csv_file:
                     # 写入主数据
-                    f.write(f"{data_source['main_name']},\n")
-                    f.write(",".join(main_headers) + "\n")
+                    csv_file.write(f"{data_source['main_name']},\n")
+                    csv_file.write(",".join(main_headers) + "\n")
 
-                    for values in main_data:
-                        f.write(",".join(map(str, values)) + "\n")
+                    for row_data in main_data:
+                        csv_file.write(",".join(map(str, row_data)) + "\n")
 
                     # 写入一个空行作为分隔
-                    f.write("\n")
+                    csv_file.write("\n")
 
                     # 写入剩余数据
-                    f.write(f"{data_source['remaining_name']},\n")
-                    f.write(",".join(remaining_headers) + "\n")
+                    csv_file.write(f"{data_source['remaining_name']},\n")
+                    csv_file.write(",".join(remaining_headers) + "\n")
 
-                    for item in remaining_tree.get_children():
-                        values = remaining_tree.item(item, "values")
-                        f.write(",".join(map(str, values)) + "\n")
+                    for tree_item in remaining_tree.get_children():
+                        row_values = remaining_tree.item(tree_item, "values")
+                        csv_file.write(",".join(map(str, row_values)) + "\n")
 
             # 显示导出成功信息，保留原有数据
             self.show_result(success_msg.format(file_path=file_path), keep_data=True)
