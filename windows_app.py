@@ -51,6 +51,36 @@ class ColoredNotebook(ttk.Frame):
         self.style.configure(self.light_purple_style, background="#f3e5f5")
         self.style.configure(self.light_pink_style, background="#fce4ec")
 
+        # 颜色映射字典，用于优化重复的条件判断
+        self.color_styles = {
+            "#e3f2fd": self.light_blue_style,  # 蓝色标签
+            "#e8f5e9": self.light_green_style,  # 绿色标签
+            "#fff3e0": self.light_orange_style,  # 橙色标签
+            "#f3e5f5": self.light_purple_style,  # 紫色标签
+            "#fce4ec": self.light_pink_style,  # 粉色标签
+            "#e0f2f1": self.light_blue_style,  # 青色标签
+        }
+
+        # 鼠标按下时的激活颜色映射
+        self.mouse_down_colors = {
+            "#e3f2fd": "#bbdefb",  # 蓝色标签
+            "#e8f5e9": "#c8e6c9",  # 绿色标签
+            "#fff3e0": "#ffe0b2",  # 橙色标签
+            "#f3e5f5": "#e1bee7",  # 紫色标签
+            "#fce4ec": "#f8bbd0",  # 粉色标签
+            "#e0f2f1": "#b2dfdb",  # 青色标签
+        }
+
+        # 鼠标释放时的激活颜色映射
+        self.mouse_up_colors = {
+            "#e3f2fd": "#90caf9",  # 蓝色标签
+            "#e8f5e9": "#a5d6a7",  # 绿色标签
+            "#fff3e0": "#ffcc80",  # 橙色标签
+            "#f3e5f5": "#ce93d8",  # 紫色标签
+            "#fce4ec": "#f48fb1",  # 粉色标签
+            "#e0f2f1": "#80deea",  # 青色标签
+        }
+
         # 创建标签栏容器，使用ttk.Frame并继承默认样式
         self.tab_bar_container = ttk.Frame(self)
         self.tab_bar_container.pack(side="top", fill="x")
@@ -111,48 +141,20 @@ class ColoredNotebook(ttk.Frame):
         # 只有当前按下的标签页是激活标签页时才更新内容区域背景色
         if hasattr(self, "active_tab") and button.tab_index == self.active_tab:
             # 根据标签颜色设置内容区域背景色为按下状态颜色（使用之前的激活颜色，较暗）
-            if color == "#e3f2fd":  # 蓝色标签
-                active_color = "#bbdefb"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_blue_style, background=active_color)
-            elif color == "#e8f5e9":  # 绿色标签
-                active_color = "#c8e6c9"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_green_style, background=active_color)
-            elif color == "#fff3e0":  # 橙色标签
-                active_color = "#ffe0b2"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_orange_style, background=active_color)
-            elif color == "#f3e5f5":  # 紫色标签
-                active_color = "#e1bee7"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_purple_style, background=active_color)
-            elif color == "#fce4ec":  # 粉色标签
-                active_color = "#f8bbd0"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_pink_style, background=active_color)
-            elif color == "#e0f2f1":  # 青色标签
-                active_color = "#b2dfdb"  # 按下状态颜色（较暗）
-                self.style.configure(self.light_blue_style, background=active_color)
+            active_color = self.mouse_down_colors.get(color, "#e1bee7")
+            # 获取对应的样式名称
+            style_name = self.color_styles.get(color, self.light_blue_style)
+            self.style.configure(style_name, background=active_color)
 
     def _on_tab_mouse_up(self, button, color):
         """当鼠标释放标签页时，恢复内容区域背景色为激活状态颜色"""
         # 只有当前释放的标签页是激活标签页时才更新内容区域背景色
         if hasattr(self, "active_tab") and button.tab_index == self.active_tab:
             # 根据标签颜色设置内容区域背景色为激活状态颜色（使用更亮的颜色）
-            if color == "#e3f2fd":  # 蓝色标签
-                active_color = "#90caf9"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_blue_style, background=active_color)
-            elif color == "#e8f5e9":  # 绿色标签
-                active_color = "#a5d6a7"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_green_style, background=active_color)
-            elif color == "#fff3e0":  # 橙色标签
-                active_color = "#ffcc80"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_orange_style, background=active_color)
-            elif color == "#f3e5f5":  # 紫色标签
-                active_color = "#ce93d8"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_purple_style, background=active_color)
-            elif color == "#fce4ec":  # 粉色标签
-                active_color = "#f48fb1"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_pink_style, background=active_color)
-            elif color == "#e0f2f1":  # 青色标签
-                active_color = "#80deea"  # 激活状态颜色（更亮）
-                self.style.configure(self.light_blue_style, background=active_color)
+            active_color = self.mouse_up_colors.get(color, "#ce93d8")
+            # 获取对应的样式名称
+            style_name = self.color_styles.get(color, self.light_blue_style)
+            self.style.configure(style_name, background=active_color)
 
     def _update_background_to_result_frame_color(self):
         """更新标签栏背景色以匹配result_frame"""
@@ -228,20 +230,7 @@ class ColoredNotebook(ttk.Frame):
             # 内部标签页：默认深灰色文字，鼠标按下时使用比选中状态更亮的颜色和深灰色文字
             button_params["foreground"] = "#333333"  # 默认深灰色文字
             # 为内部标签页设置鼠标按下状态颜色（现在使用之前的激活状态颜色，较暗）
-            if color == "#e3f2fd":  # 蓝色标签
-                button_params["activebackground"] = "#bbdefb"  # 之前的激活状态颜色
-            elif color == "#e8f5e9":  # 绿色标签
-                button_params["activebackground"] = "#c8e6c9"  # 之前的激活状态颜色
-            elif color == "#fff3e0":  # 橙色标签
-                button_params["activebackground"] = "#ffe0b2"  # 之前的激活状态颜色
-            elif color == "#f3e5f5":  # 紫色标签
-                button_params["activebackground"] = "#e1bee7"  # 之前的激活状态颜色
-            elif color == "#fce4ec":  # 粉色标签
-                button_params["activebackground"] = "#f8bbd0"  # 之前的激活状态颜色
-            elif color == "#e0f2f1":  # 青色标签
-                button_params["activebackground"] = "#b2dfdb"  # 之前的激活状态颜色
-            else:  # 默认
-                button_params["activebackground"] = "#e1bee7"  # 之前的激活状态颜色
+            button_params["activebackground"] = self.mouse_down_colors.get(color, "#e1bee7")
             button_params["activeforeground"] = "#333333"  # 深灰色文字
 
         button = tk.Button(self.tab_bar, **button_params)
@@ -317,20 +306,7 @@ class ColoredNotebook(ttk.Frame):
             )
         else:
             # 内部标签页激活状态：使用更亮的颜色（之前的鼠标按下颜色）
-            if selected_tab["color"] == "#e3f2fd":  # 蓝色标签
-                selected_color = "#90caf9"  # 更亮的颜色
-            elif selected_tab["color"] == "#e8f5e9":  # 绿色标签
-                selected_color = "#a5d6a7"  # 更亮的颜色
-            elif selected_tab["color"] == "#fff3e0":  # 橙色标签
-                selected_color = "#ffcc80"  # 更亮的颜色
-            elif selected_tab["color"] == "#f3e5f5":  # 紫色标签
-                selected_color = "#ce93d8"  # 更亮的颜色
-            elif selected_tab["color"] == "#fce4ec":  # 粉色标签
-                selected_color = "#f48fb1"  # 更亮的颜色
-            elif selected_tab["color"] == "#e0f2f1":  # 青色标签
-                selected_color = "#80deea"  # 更亮的颜色
-            else:  # 默认
-                selected_color = "#ce93d8"  # 更亮的颜色
+            selected_color = self.mouse_up_colors.get(selected_tab["color"], "#ce93d8")
 
             selected_tab["button"].config(
                 relief="flat", bg=selected_color, font=("微软雅黑", 10, "bold"), foreground="#000000"
@@ -339,16 +315,9 @@ class ColoredNotebook(ttk.Frame):
         # 更新对应内容框架样式的背景色，使其与选中标签的颜色保持一致
         # 只有内部标签页需要更新样式，顶级标签页不需要
         if not self.is_top_level:
-            if selected_tab["color"] == "#e3f2fd":  # 蓝色标签
-                self.style.configure(self.light_blue_style, background=selected_color)
-            elif selected_tab["color"] == "#e8f5e9":  # 绿色标签
-                self.style.configure(self.light_green_style, background=selected_color)
-            elif selected_tab["color"] == "#fff3e0":  # 橙色标签
-                self.style.configure(self.light_orange_style, background=selected_color)
-            elif selected_tab["color"] == "#f3e5f5":  # 紫色标签
-                self.style.configure(self.light_purple_style, background=selected_color)
-            elif selected_tab["color"] == "#fce4ec":  # 粉色标签
-                self.style.configure(self.light_pink_style, background=selected_color)
+            # 获取对应的样式名称
+            style_name = self.color_styles.get(selected_tab["color"], self.light_blue_style)
+            self.style.configure(style_name, background=selected_color)
 
         # 更新背景色以匹配result_frame
         self._update_background_to_result_frame_color()
