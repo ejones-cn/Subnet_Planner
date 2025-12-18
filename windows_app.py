@@ -235,9 +235,8 @@ class ColoredNotebook(ttk.Frame):
 
         button = tk.Button(self.tab_bar, **button_params)
 
-        # 保存按钮对应的标签索引和颜色信息，以便在事件处理中使用
+        # 保存按钮对应的标签索引，以便在事件处理中使用
         button.tab_index = len(self.tabs)
-        button.tab_color = color
 
         # 绑定标签页切换事件
         button.bind("<Button-1>", lambda e, t=len(self.tabs): self.select_tab(t))
@@ -326,10 +325,7 @@ class ColoredNotebook(ttk.Frame):
         if self.tab_change_callback:
             self.tab_change_callback(tab_index)
 
-    def add(self, _, __=""):
-        """模拟ttk.Notebook的add方法"""
-        # 这里我们不使用这个方法，而是使用add_tab方法
-        pass
+
 
 
 class IPSubnetSplitterApp:
@@ -630,7 +626,6 @@ class IPSubnetSplitterApp:
         self.info_close_btn.grid(row=0, column=1, sticky="ns", padx=(0, 6), pady=5)  # 左侧边距0px，右侧边距6px
 
         # 初始化信息栏状态
-        self.info_bar_type = None  # 保存当前信息类型
         self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
 
         # 确保信息标签显示在关闭按钮上层
@@ -641,9 +636,6 @@ class IPSubnetSplitterApp:
         
         # 初始化历史记录
         self.history_records = []
-
-    def validate_parent_cidr(self, text):
-        return self.validate_cidr(text, self.parent_entry)
 
     def validate_split_cidr_local(self, text):
         return self.validate_cidr(text, self.split_entry)
@@ -682,12 +674,19 @@ class IPSubnetSplitterApp:
         if not item_values:
             return
         
-        # 解析格式化的记录字符串："1.  10.0.0.8/5 | 10.21.60.0/23"
+        # 解析格式化的记录字符串："1. 10.0.0.8/5 | 10.21.60.0/23"
         record_str = item_values[0]
         # 移除序号部分，保留后面的网段信息
-        network_part = record_str.split('.  ')[1] if '.  ' in record_str else record_str
-        # 分割父网段和切分段
-        parts = network_part.split(' | ')
+        # 使用更灵活的分割方式，处理不同数量的空格
+        import re
+        # 匹配序号后的网段信息，例如："1.  10.0.0.8/5 | 10.21.60.0/23" -> "10.0.0.8/5 | 10.21.60.0/23"
+        match = re.match(r'^\d+\.\s+(.*)$', record_str)
+        if not match:
+            return
+        network_part = match.group(1)
+        
+        # 分割父网段和切分段，处理不同数量的空格
+        parts = re.split(r'\s*\|\s*', network_part)
         if len(parts) < 2:
             return
         
@@ -1230,43 +1229,7 @@ class IPSubnetSplitterApp:
         except Exception:
             pass
 
-    def create_treeview(self, parent, columns, show="headings", height=5, include_special_tags=False):
-        """创建并配置Treeview表格
 
-        Args:
-            parent: 父容器
-            columns: 列定义列表
-            show: 显示模式
-            height: 表格高度
-            include_special_tags: 是否包含错误和信息标签配置
-
-        Returns:
-            tuple: (treeview对象, 垂直滚动条对象)
-        """
-        # 创建Treeview对象
-        tree = ttk.Treeview(parent, columns=columns, show=show, height=height)
-
-        # 配置斑马条纹样式
-        self.configure_treeview_styles(tree, include_special_tags)
-
-        return tree
-
-    def configure_treeview_scrollbar(self, parent, tree, _=tk.RIGHT):
-        """为Treeview添加垂直滚动条
-
-        Args:
-            parent: 父容器
-            tree: Treeview对象
-            side: 滚动条位置
-
-        Returns:
-            垂直滚动条对象
-        """
-        # 添加垂直滚动条
-        scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-
-        return scrollbar
 
     def configure_treeview_styles(self, tree, include_special_tags=False):
         """配置Treeview控件的基本样式（斑马条纹、错误和信息标签）
@@ -1863,7 +1826,6 @@ class IPSubnetSplitterApp:
             self.info_auto_hide_id = None
         # 隐藏信息栏 - 使用place_forget()
         self.info_bar_frame.place_forget()
-        self.info_bar_type = None
 
     def show_result(self, text, error=False, keep_data=False, _="info"):
         """显示结果"""
@@ -1882,12 +1844,10 @@ class IPSubnetSplitterApp:
             label_style = "Error.TLabel"
             frame_style = "ErrorInfoBar.TFrame"
             icon = "❎ "  # 使用明确的带框叉号 (U+274E)
-            self.info_bar_type = "error"
         else:
             label_style = "Success.TLabel"
             frame_style = "SuccessInfoBar.TFrame"
             icon = "✅ "  # 使用带框钩 (U+2705)，与带框叉风格一致
-            self.info_bar_type = "success"
 
         # 更新信息标签和框架样式
         # 基于像素宽度的文本截断算法，解决英文不等宽问题
@@ -1973,57 +1933,7 @@ class IPSubnetSplitterApp:
 
         # 去掉自动隐藏功能，需要手动隐藏
 
-    def test_info_bar(self):
-        """测试信息栏功能"""
-        # 创建测试窗口
-        test_window = tk.Toplevel(self.root)
-        test_window.title("信息栏测试")
-        test_window.resizable(False, False)
-        test_window.transient(self.root)
 
-        # 计算居中位置
-        window_width = 300
-        window_height = 250  # 增加高度，确保所有内容都能显示
-        root_x = self.root.winfo_x()
-        root_y = self.root.winfo_y()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-        x = root_x + (root_width - window_width) // 2
-        y = root_y + (root_height - window_height) // 2
-        test_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-        # 创建主框架
-        main_frame = ttk.Frame(test_window, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # 添加标题
-        title_label = ttk.Label(main_frame, text="信息栏测试", font=("微软雅黑", 12, "bold"))
-        title_label.pack(pady=(0, 20))
-
-        # 添加测试按钮
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, expand=True)
-
-        # 测试成功信息
-        success_btn = ttk.Button(
-            button_frame, text="测试成功信息", command=lambda: self.show_result("这是一条成功信息", error=False)
-        )
-        success_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-
-        # 测试错误信息
-        error_btn = ttk.Button(
-            button_frame, text="测试错误信息", command=lambda: self.show_result("这是一条错误信息", error=True)
-        )
-        error_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-
-        # 测试长信息
-        long_text = "这是一条很长的测试信息，用于测试信息栏是否能够正确显示多行文本或自动换行。我要更多用于测试信息栏是否能够正确显示多行文本或自动换行"
-        long_btn = ttk.Button(button_frame, text="测试长信息", command=lambda: self.show_result(long_text, error=False))
-        long_btn.pack(fill=tk.X, pady=(0, 10), ipady=5)  # 增加内边距
-
-        # 关闭按钮
-        close_btn = ttk.Button(button_frame, text="关闭", command=test_window.destroy)
-        close_btn.pack(fill=tk.X, pady=(0, 5), ipady=5)  # 增加内边距
 
     def prepare_chart_data(self, result, split_info, remaining_subnets):
         """准备图表数据"""
@@ -2152,19 +2062,7 @@ class IPSubnetSplitterApp:
             # 出错时直接绘制文字，不添加描边
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
 
-    def draw_text_without_stroke(self, text, x, y, font, anchor=tk.W, fill="#ffffff"):
-        """高效绘制不带描边的文字
 
-        Args:
-            text: 要绘制的文字
-            x: 起始x坐标
-            y: 起始y坐标
-            font: 字体设置
-            anchor: 文字锚点
-            fill: 文字颜色
-        """
-        # 直接绘制文字，不添加描边
-        self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
 
     def draw_distribution_chart(self):
         """绘制网段分布柱状图 - 参考Web版本的呈现方式"""
@@ -3273,7 +3171,7 @@ class IPSubnetSplitterApp:
                 ]
 
                 # 查找所有可用的字体，优先使用黑体
-                for font_file, font_family in font_candidates:
+                for font_file, _ in font_candidates:
                     potential_path = os.path.join(font_dir, font_file)
                     if os.path.exists(potential_path):
                         font_path = potential_path
@@ -3295,21 +3193,7 @@ class IPSubnetSplitterApp:
             print("未找到可用的中文字体")
             return False
 
-    def add_pdf_footer(self, canvas, doc):
-        """在PDF文档中添加页脚"""
-        import time
-        from reportlab.lib.units import cm
 
-        canvas.saveState()
-        # 设置页脚字体
-        if getattr(self, 'has_chinese_font', False):
-            canvas.setFont("ChineseFont", 9)
-        else:
-            canvas.setFont("Helvetica", 9)
-        # 添加页脚文本
-        footer_text = f"导出时间: {time.strftime('%Y-%m-%d %H:%M:%S')} | 第 {doc.page} 页"
-        canvas.drawString(2.5 * cm, 1.5 * cm, footer_text)
-        canvas.restoreState()
 
     def create_about_link(self):
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""
