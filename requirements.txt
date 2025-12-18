@@ -2,6 +2,7 @@
 flask
 reportlab
 openpyxl
+pillow
 
 # Code review tools
 pylint

@@ -2295,7 +2295,7 @@ class IPSubnetSplitterApp:
                 x + 30,
                 legend_items_y + 6,
                 text="父网段",
-                font=("微软雅黑", 9),
+                font= ("微软雅黑", 9),
                 anchor=tk.W,
                 fill="#ffffff",
             )
@@ -2506,21 +2506,18 @@ class IPSubnetSplitterApp:
                 self.has_chinese_font = self.register_chinese_fonts()
                 print(f"中文字体注册结果: {self.has_chinese_font}")
 
-                # 创建PDF文档，设置页边距
+                # 创建PDF文档，使用BaseDocTemplate以支持多页面模板
                 print("创建PDF文档对象")
-                # 默认为横向页面，交换A4的宽度和高度
-                page_width, page_height = A4
-                use_landscape = True  # 使用横向页面
-                if use_landscape:
-                    page_width, page_height = page_height, page_width  # 交换宽度和高度实现横向
-                    print(f"使用横向页面，宽度: {page_width}, 高度: {page_height}")
-                else:
-                    print(f"使用纵向页面，宽度: {page_width}, 高度: {page_height}")
-
+                from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
+                from reportlab.lib.pagesizes import A4, landscape
+                
+                # 设置页面边距
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
-                doc = SimpleDocTemplate(
+                
+                # 创建BaseDocTemplate，默认使用横向A4
+                doc = BaseDocTemplate(
                     file_path,
-                    pagesize=(page_width, page_height),  # 使用横向页面大小
+                    pagesize=landscape(A4),  # 默认横向
                     leftMargin=margins[0],
                     rightMargin=margins[1],
                     topMargin=margins[2],
@@ -2528,6 +2525,36 @@ class IPSubnetSplitterApp:
                     showBoundary=False,
                 )
                 print("PDF文档对象创建成功")
+                
+                # 创建页面模板
+                # 1. 横向页面模板
+                landscape_width, landscape_height = landscape(A4)
+                landscape_frame = Frame(
+                    margins[0],
+                    margins[3],
+                    landscape_width - margins[0] - margins[1],
+                    landscape_height - margins[2] - margins[3],
+                    id='landscape_frame'
+                )
+                landscape_template = PageTemplate(id='landscape', frames=[landscape_frame])
+                
+                # 2. 纵向页面模板
+                portrait_width, portrait_height = A4  # A4默认纵向
+                portrait_frame = Frame(
+                    margins[0],
+                    margins[3],
+                    portrait_width - margins[0] - margins[1],
+                    portrait_height - margins[2] - margins[3],
+                    id='portrait_frame'
+                )
+                portrait_template = PageTemplate(id='portrait', frames=[portrait_frame], pagesize=A4)
+                
+                # 添加页面模板
+                doc.addPageTemplates([landscape_template, portrait_template])
+                
+                # 定义页面尺寸变量，初始使用横向页面尺寸
+                page_width, page_height = landscape_width, landscape_height
+                
                 elements = []
                 styles = getSampleStyleSheet()
                 print("创建样式表成功")
@@ -2934,9 +2961,641 @@ class IPSubnetSplitterApp:
                 else:
                     elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
+                # 检查是否有网段分布图数据
+                print(f"=== 网段分布图调试信息 ===")
+                print(f"hasattr(self, 'chart_data'): {hasattr(self, 'chart_data')}")
+                print(f"self.chart_data: {self.chart_data if hasattr(self, 'chart_data') else '未定义'}")
+                
+                # 从导出数据中提取父网段和子网信息，生成chart_data
+                chart_data = None
+                
+                # 检查是否已有chart_data
+                if hasattr(self, 'chart_data') and self.chart_data is not None and isinstance(self.chart_data, dict):
+                    chart_data = self.chart_data
+                else:
+                    print("没有找到chart_data，尝试从导出数据中生成")
+                    
+                    # 尝试从main_data中提取父网段信息
+                    parent_cidr = None
+                    print(f"main_data内容: {main_data}")
+                    
+                    # 遍历main_data查找父网段信息
+                    for row in main_data:
+                        print(f"检查行: {row}")
+                        if len(row) >= 2:
+                            if row[0] == "父网段":
+                                parent_cidr = row[1]
+                                break
+                            # 检查其他可能的父网段字段名
+                            elif "父网段" in str(row[0]) or "父网络" in str(row[0]):
+                                parent_cidr = row[1]
+                                break
+                            # 检查第一行是否包含父网段信息
+                            elif row[0] and isinstance(row[0], str) and "/" in str(row[0]):
+                                parent_cidr = row[0]
+                                break
+                    
+                    if parent_cidr:
+                        print(f"从导出数据中提取到父网段: {parent_cidr}")
+                    else:
+                        # 如果直接找不到父网段，尝试从main_tree中获取
+                        print("直接从main_data中找不到父网段，尝试从main_tree中获取")
+                        for item in main_tree.get_children():
+                            values = main_tree.item(item, "values")
+                            print(f"检查树节点: {values}")
+                            if values and len(values) >= 2:
+                                if values[0] == "父网段":
+                                    parent_cidr = values[1]
+                                    break
+                        if parent_cidr:
+                            print(f"从main_tree中提取到父网段: {parent_cidr}")
+                        
+                        # 从remaining_tree中提取剩余网段信息
+                        remaining_networks = []
+                        for item in remaining_tree.get_children():
+                            values = remaining_tree.item(item, "values")
+                            if values and len(values) >= 1:
+                                remaining_networks.append(values[0])
+                        
+                        # 从main_data中提取切分网段信息
+                        split_networks = []
+                        for row in main_data:
+                            if len(row) >= 2 and row[0] == "切分网段":
+                                split_networks.append(row[1])
+                        
+                        print(f"提取到切分网段: {split_networks}")
+                        print(f"提取到剩余网段: {remaining_networks}")
+                        
+                        # 生成chart_data
+                        from ip_subnet_calculator import get_subnet_info, ip_to_int
+                        
+                        parent_info = get_subnet_info(parent_cidr)
+                        if "error" not in parent_info:
+                            parent_start = ip_to_int(parent_info.get("network", "0.0.0.0"))
+                            parent_end = ip_to_int(parent_info.get("broadcast", "0.0.0.0"))
+                            parent_range = parent_end - parent_start + 1
+                            
+                            chart_data = {
+                                "parent": {
+                                    "start": parent_start,
+                                    "end": parent_end,
+                                    "range": parent_range,
+                                    "name": parent_info.get("cidr", parent_cidr),
+                                    "color": "#f3e5f5",
+                                },
+                                "networks": [],
+                            }
+                            
+                            # 添加切分网段
+                            for split_cidr in split_networks:
+                                split_info = get_subnet_info(split_cidr)
+                                if "error" not in split_info:
+                                    split_start = ip_to_int(split_info.get("network", "0.0.0.0"))
+                                    split_end = ip_to_int(split_info.get("broadcast", "0.0.0.0"))
+                                    split_range = split_end - split_start + 1
+                                    chart_data["networks"].append({
+                                        "start": split_start,
+                                        "end": split_end,
+                                        "range": split_range,
+                                        "name": split_info.get("cidr", split_cidr),
+                                        "color": "#2196f3",
+                                        "type": "split",
+                                    })
+                            
+                            # 添加剩余网段
+                            for remaining_cidr in remaining_networks:
+                                remaining_info = get_subnet_info(remaining_cidr)
+                                if "error" not in remaining_info:
+                                    remaining_start = ip_to_int(remaining_info.get("network", "0.0.0.0"))
+                                    remaining_end = ip_to_int(remaining_info.get("broadcast", "0.0.0.0"))
+                                    remaining_range = remaining_end - remaining_start + 1
+                                    chart_data["networks"].append({
+                                        "start": remaining_start,
+                                        "end": remaining_end,
+                                        "range": remaining_range,
+                                        "name": remaining_info.get("cidr", remaining_cidr),
+                                        "color": "#5e9c6a",
+                                        "type": "remaining",
+                                    })
+                            
+                            print(f"成功生成chart_data，包含 {len(chart_data['networks'])} 个网段")
+                
+                # 简化检测条件，确保能正确检测到图表数据
+                has_chart_data = chart_data is not None and isinstance(chart_data, dict)
+                has_networks = has_chart_data and 'networks' in chart_data and len(chart_data['networks']) > 0
+                
+                print(f"has_chart_data: {has_chart_data}")
+                print(f"has_networks: {has_networks}")
+                
+                if has_chart_data and has_networks:
+                    print("检测到有效网段分布图数据，准备添加到PDF")
+                    from reportlab.platypus import Image
+                    import io
+                    import os
+                    from PIL import Image as PILImage
+                    
+                    try:
+                        # 直接使用应用中已经绘制好的图表，而不是重新生成
+                        print("直接使用应用中已经绘制好的网段分布图")
+                        
+                        # 确保图表已经绘制
+                        self.draw_distribution_chart()
+                        
+                        # 处理图表页面，确保竖排A4
+                        from reportlab.platypus import PageBreak, KeepTogether
+                        from io import BytesIO
+                        
+                        # 1. 切换到纵向页面模板，准备添加图表
+                        elements.append(NextPageTemplate('portrait'))
+                        elements.append(PageBreak())
+                        
+                        # 2. 初始化pil_image
+                        pil_image = None
+                        high_res_width = 2480
+                        high_res_height = 3508
+                        
+                        # 3. 尝试使用Canvas捕获方式（高质量）- 暂时禁用，确保使用PIL直接绘制
+                        canvas_capture_success = False  # 强制使用PIL直接绘制，确保文字垂直居中对齐
+                        
+                        # 4. 直接使用PIL绘制图表，确保文字垂直居中对齐
+                        if not canvas_capture_success:
+                            print("使用PIL直接绘制图表作为备选方案")
+                            from PIL import ImageDraw, ImageFont
+                            import math
+                            
+                            # 准备图表数据
+                            parent_info = chart_data.get("parent", {})
+                            parent_cidr = parent_info.get("name", "Parent Network")
+                            parent_range = parent_info.get("range", 1)
+                            networks = chart_data.get("networks", [])
+                            
+                            # 动态计算图表所需的总高度，根据网段数量调整
+                            # 基础高度：标题、父网段、切分网段、剩余网段标题、图例等
+                            # 增加基础高度，确保图例部分能够完整显示
+                            base_height = 280 + 100 + 100 + 150 + 300  # 基础元素高度，增加100像素用于完整显示图例
+                            
+                            # 计算所有网段所需的总高度
+                            split_networks = [net for net in networks if net.get("type") == "split"]
+                            remaining_networks = [net for net in networks if net.get("type") != "split"]
+                            total_networks = len(split_networks) + len(remaining_networks)
+                            
+                            # 每个网段占用的高度：bar_height + padding
+                            segment_height = 100 + 34  # 100是bar_height，34是padding
+                            
+                            # 计算总高度
+                            required_height = base_height + total_networks * segment_height
+                            
+                            # 确保高度至少为原始A4高度
+                            dynamic_high_res_height = max(high_res_height, required_height)
+                            print(f"动态计算图表高度: 基础高度={base_height}, 网段数量={total_networks}, 总高度={required_height}, 最终高度={dynamic_high_res_height}")
+                            
+                            # 创建动态高度的高分辨率图像
+                            pil_image = PILImage.new('RGB', (high_res_width, dynamic_high_res_height), color='#333333')
+                            draw = ImageDraw.Draw(pil_image)
+                            
+                            # 确保中文正常显示，使用更可靠的字体加载逻辑
+                            font = None
+                            bold_font = None
+                            font_loaded = False
+                            
+                            try:
+                                import os
+                                system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
+                                
+                                # 尝试多种中文字体，确保成功加载
+                                font_candidates = [
+                                    ('msyh.ttc', 36, '微软雅黑'),  # 增大字体大小
+                                    ('simhei.ttf', 36, '黑体'),      # 增大字体大小
+                                    ('simsun.ttc', 34, '宋体'),      # 增大字体大小
+                                    ('simkai.ttf', 34, '楷体')       # 增大字体大小
+                                ]
+                                
+                                for font_file, font_size, font_name in font_candidates:
+                                    font_path = os.path.join(system_font_dir, font_file)
+                                    if os.path.exists(font_path):
+                                        try:
+                                            font = ImageFont.truetype(font_path, font_size)
+                                            bold_font = ImageFont.truetype(font_path, font_size + 4)
+                                            font_loaded = True
+                                            print(f"成功加载{font_name}字体: {font_path}，字号: {font_size}")
+                                            break
+                                        except Exception as e:
+                                            print(f"尝试加载{font_name}失败: {e}")
+                                            continue
+                                
+                                if not font_loaded:
+                                    # 尝试使用PIL的默认中文字体支持
+                                    font = ImageFont.load_default()
+                                    bold_font = ImageFont.load_default()
+                                    print("使用默认字体，可能不支持中文")
+                            except Exception as e:
+                                print(f"加载中文字体失败: {e}")
+                                font = ImageFont.load_default()
+                                bold_font = ImageFont.load_default()
+                            
+                            # 设置图表参数，根据用户要求调整
+                            margin_left = 180  # 增加左边距，为文字留出更多空间
+                            margin_right = 100
+                            margin_top = 280  # 增加上边距，使标题与图表之间有一行字的距离
+                            margin_bottom = 150
+                            chart_width = high_res_width - margin_left - margin_right
+                            chart_x = margin_left
+                            chart_y = margin_top
+                            
+                            # 使用对数比例尺
+                            log_max = math.log10(parent_range)
+                            log_min = 3
+                            
+                            # 调整参数：
+                            # 1. 柱状图宽度放大50% (80 → 120)
+                            min_bar_width = 120
+                            # 2. 间隔调小30% (48 → 34)
+                            padding = 34  # 48 * 0.7 = 33.6，取整为34
+                            # 3. 增加柱状图高度，为文字留出更多空间
+                            bar_height = 100
+                            
+                            # 绘制标题 - 调大300%后再调小30% (108 → 76)
+                            title = "网段分布图"
+                            # 创建合适大小的标题字体
+                            title_font_size = 76  # 108 * 0.7 = 75.6，取整为76
+                            title_font = None
+                            try:
+                                import os
+                                system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
+                                title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
+                                if os.path.exists(title_font_path):
+                                    title_font = ImageFont.truetype(title_font_path, title_font_size)
+                                else:
+                                    title_font = bold_font
+                            except:
+                                title_font = bold_font
+                            
+                            title_bbox = draw.textbbox((0, 0), title, font=title_font)
+                            title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
+                            title_y = 100
+                            draw.text((title_x, title_y), title, fill="#ffffff", font=title_font)
+                            
+                            y = margin_top
+                            
+                            # 绘制父网段
+                            log_value = max(log_min, math.log10(parent_range))
+                            bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                            parent_color = "#636e72"
+                            draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=parent_color, outline=None, width=0)
+                            
+                            usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
+                            segment_text = f"父网段: {parent_cidr}"
+                            address_text = f"可用地址数: {usable_addresses:,}"
+                            
+                            # 文字调整：放大1倍后再调小30% (72 → 50)
+                            text_font_size = 50  # 72 * 0.7 = 50.4，取整为50
+                            text_font = None
+                            bold_text_font = None
+                            try:
+                                import os
+                                system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
+                                font_path = os.path.join(system_font_dir, 'msyh.ttc')
+                                if os.path.exists(font_path):
+                                    text_font = ImageFont.truetype(font_path, text_font_size)
+                                    bold_text_font = ImageFont.truetype(font_path, text_font_size + 6)  # 50 + 6 = 56
+                                else:
+                                    text_font = font
+                                    bold_text_font = bold_font
+                            except:
+                                text_font = font
+                                bold_text_font = bold_font
+                            
+                            # 简单可靠的文字垂直居中算法，确保中文文字在视觉上居中
+                            def get_centered_y(box_y, box_height, text_bbox, font):
+                                """计算文字垂直居中的y坐标，确保中文文字在视觉上居中"""
+                                # 用户反馈文字仍然偏低，调整为容器中心位置减去20像素，让文字继续往上移动
+                                # 由于PIL的y轴向下递增，降低y值可以让文字上移
+                                text_y = box_y + box_height // 2 - 38
+                                return text_y
+                            
+                            # 可用地址数再往右移动5个中文字符的位置 (750 → 900)
+                            # 每个中文字符宽度约为字体大小的0.5倍，5个中文字符约125px，总共移动10个字符
+                            address_x = 900
+                            
+                            # 绘制父网段
+                            log_value = max(log_min, math.log10(parent_range))
+                            bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                            parent_color = "#636e72"
+                            draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=parent_color, outline=None, width=0)
+                            
+                            usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
+                            segment_text = f"父网段: {parent_cidr}"
+                            address_text = f"可用地址数: {usable_addresses:,}"
+                            
+                            # 父网段文字垂直居中
+                            segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
+                            segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
+                            address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
+                            address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
+                            
+                            draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=bold_text_font)
+                            draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=bold_text_font)
+                            
+                            y += bar_height + padding
+                            
+                            # 绘制切分网段
+                            split_networks = [net for net in networks if net.get("type") == "split"]
+                            for i, network in enumerate(split_networks):
+                                network_range = network.get("range", 1)
+                                log_value = max(log_min, math.log10(network_range))
+                                bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                                split_color = "#4a7eb4"
+                                draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=split_color, outline=None, width=0)
+                                
+                                name = network.get("name", "")
+                                usable_addresses = network_range - 2 if network_range > 2 else network_range
+                                segment_text = f"切分网段: {name}"
+                                address_text = f"可用地址数: {usable_addresses:,}"
+                                
+                                # 切分网段文字垂直居中
+                                segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
+                                segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
+                                address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
+                                address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
+                                
+                                draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=bold_text_font)
+                                draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=bold_text_font)
+                                
+                                y += bar_height + padding
+                                
+                                if i == len(split_networks) - 1:
+                                    draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
+                            
+                            # 绘制剩余网段标题 - 增加间距，防止被盖住
+                            y += 80  # 增加间距，解决文字被盖住的问题
+                            remaining_count = len([net for net in networks if net.get("type") != "split"])
+                            title_text = f"剩余网段 ({remaining_count} 个):"
+                            
+                            # 剩余网段标题垂直居中
+                            title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
+                            title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
+                            draw.text((chart_x, title_text_y), title_text, fill="#ffffff", font=bold_text_font)
+                            y += 100  # 增加间距，使剩余网段柱状图下移一行字的距离
+                            
+                            # 为剩余网段分配高区分度的柔和配色方案
+                            subnet_colors = [
+                                "#5e9c6a",
+                                "#db6679",
+                                "#f0ab55",
+                                "#8b6cb8",
+                                "#5b8fd9",
+                                "#3c70d8",
+                                "#e68838",
+                                "#a04132",
+                                "#6a9da8",
+                                "#87c569",
+                                "#6d8de8",
+                                "#c16fa0",
+                                "#a99bc6",
+                                "#a44d69",
+                                "#b9d0f8",
+                                "#5d4ea5",
+                                "#f5ad8c",
+                                "#5b8fd9",
+                                "#db6679",
+                                "#a6c589",
+                            ]
+                            
+                            # 绘制剩余网段
+                            remaining_networks = [net for net in networks if net.get("type") != "split"]
+                            for i, network in enumerate(remaining_networks):
+                                network_range = network.get("range", 1)
+                                log_value = max(log_min, math.log10(network_range))
+                                bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                                color_index = i % len(subnet_colors)
+                                color = subnet_colors[color_index]
+                                draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=color, outline=None, width=0)
+                                
+                                name = network.get("name", "")
+                                usable_addresses = network_range - 2 if network_range > 2 else network_range
+                                segment_text = f"网段 {i + 1}: {name}"
+                                address_text = f"可用地址数: {usable_addresses:,}"
+                                
+                                # 剩余网段文字垂直居中
+                                segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
+                                segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)
+                                address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
+                                address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
+                                
+                                draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=text_font)
+                                draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=text_font)
+                                
+                                y += bar_height + padding
+                            
+                            # 绘制图例
+                            y += 80  # 减少间距，使图例上移
+                            legend_title = "图例说明"
+                            # 文字垂直居中
+                            legend_title_bbox = draw.textbbox((0, 0), legend_title, font=bold_text_font)
+                            legend_title_y = y + (bar_height - (legend_title_bbox[3] - legend_title_bbox[1])) // 2
+                            draw.text((chart_x, legend_title_y), legend_title, fill="#ffffff", font=bold_text_font)
+                            y += 100  # 减少间距，使图例项与标题保持更合适的距离
+                            
+                            legend_y = y
+                            # 调整图例大小，适应文字大小变化
+                            legend_item_height = 60  # 图例项高度
+                            legend_block_size = 40  # 颜色块大小
+                            item_spacing = 20  # 项目间距
+                            
+                            # 彻底解决图例垂直对齐问题，考虑文字基线特性
+                            legend_container_y = legend_y
+                            legend_container_height = legend_item_height
+                            
+                            # 为中文优化的垂直居中函数，考虑文字基线
+                            def get_centered_text_y(container_y, container_height, text_bbox):
+                                """计算文字垂直居中的y坐标，考虑中文基线特性"""
+                                text_height = text_bbox[3] - text_bbox[1]
+                                # 中文基线大约在文字高度的0.8处，需要调整y坐标
+                                # 计算容器中心
+                                container_center = container_y + container_height // 2
+                                # 文字垂直居中需要考虑基线，调整文字y坐标
+                                # 根据实际效果，将文字上移30%，使视觉上垂直居中
+                                text_y = container_center - text_height // 2 - int(text_height * 0.30)  # 上移30%
+                                return text_y
+                            
+                            # 1. 父网段图例
+                            parent_x = chart_x
+                            parent_color = "#636e72"
+                            parent_label = "父网段"
+                            
+                            # 父网段颜色块和文字垂直居中
+                            parent_block_size = 40
+                            parent_text_font = text_font
+                            parent_label_bbox = draw.textbbox((0, 0), parent_label, font=parent_text_font)
+                            
+                            # 精确计算垂直居中位置
+                            parent_block_y = legend_container_y + (legend_container_height - parent_block_size) // 2
+                            parent_label_y = get_centered_text_y(legend_container_y, legend_container_height, parent_label_bbox)
+                            
+                            draw.rectangle([parent_x, parent_block_y, parent_x + parent_block_size, parent_block_y + parent_block_size], fill=parent_color, outline=None, width=0)
+                            draw.text((parent_x + parent_block_size + 25, parent_label_y), parent_label, fill="#ffffff", font=parent_text_font)
+                            
+                            # 2. 切分网段图例
+                            # 增大父网段与切分网段之间的间距
+                            split_x = parent_x + 300  # 大幅增加间距
+                            split_color = "#4a7eb4"
+                            split_label = "切分网段"
+                            
+                            # 切分网段颜色块和文字垂直居中
+                            split_block_size = 40
+                            split_text_font = text_font
+                            split_label_bbox = draw.textbbox((0, 0), split_label, font=split_text_font)
+                            
+                            # 精确计算垂直居中位置
+                            split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
+                            split_label_y = get_centered_text_y(legend_container_y, legend_container_height, split_label_bbox)
+                            
+                            draw.rectangle([split_x, split_block_y, split_x + split_block_size, split_block_y + split_block_size], fill=split_color, outline=None, width=0)
+                            draw.text((split_x + split_block_size + 25, split_label_y), split_label, fill="#ffffff", font=split_text_font)
+                            
+                            # 3. 剩余网段图例（多色显示，匹配应用程序）
+                            # 大幅增大切分网段与剩余网段之间的间距
+                            remaining_x = split_x + 320  # 大幅增加间距，解决挤在一起的问题
+                            remaining_label = "剩余网段(多色)"
+                            
+                            # 显示多彩示例，匹配高区分度配色方案
+                            legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
+                            remaining_block_size = 30  # 减小剩余网段彩色块大小，避免拥挤
+                            remaining_block_gap = 25  # 增大剩余网段彩色块间距
+                            
+                            # 剩余网段彩色块和文字垂直居中
+                            remaining_text_font = text_font
+                            remaining_label_bbox = draw.textbbox((0, 0), remaining_label, font=remaining_text_font)
+                            
+                            # 精确计算垂直居中位置
+                            remaining_block_y = legend_container_y + (legend_container_height - remaining_block_size) // 2
+                            remaining_label_y = get_centered_text_y(legend_container_y, legend_container_height, remaining_label_bbox)
+                            
+                            # 绘制多个彩色块
+                            for j, color in enumerate(legend_colors):
+                                draw.rectangle([
+                                    remaining_x + j * (remaining_block_size + remaining_block_gap),
+                                    remaining_block_y,
+                                    remaining_x + j * (remaining_block_size + remaining_block_gap) + remaining_block_size,
+                                    remaining_block_y + remaining_block_size
+                                ], fill=color, outline=None, width=0)
+                            
+                            # 绘制剩余网段文字，大幅增加彩色块与文字之间的间距（从30增加到40）
+                            draw.text((
+                                remaining_x + len(legend_colors) * (remaining_block_size + remaining_block_gap) + 40,
+                                remaining_label_y
+                            ), remaining_label, fill="#ffffff", font=text_font)
+                            
+                            
+                            print("成功使用备选方案创建网段分布图")
+                            
+                            # 保存图像为高DPI PNG
+                            img_byte_arr = BytesIO()
+                            pil_image.save(img_byte_arr, format='PNG', dpi=(300, 300))
+                            img_byte_arr.seek(0)  # 重置文件指针
+                            print(f"成功保存高DPI PNG图像，尺寸: {pil_image.size}, DPI: 300")
+                        
+                        # 6. 计算图像在PDF中的合适尺寸
+                        from reportlab.lib.pagesizes import A4
+                        portrait_width, portrait_height = A4
+                        
+                        # 使用动态计算的图像高度
+                        actual_image_height = dynamic_high_res_height if 'dynamic_high_res_height' in locals() else high_res_height
+                        
+                        # 计算图像在PDF中的最佳尺寸，保持宽高比
+                        # 对于多网段图表，我们优先考虑可读性，适当调整图像大小
+                        print(f"原始图像尺寸: {high_res_width}x{actual_image_height} px, DPI: 300")
+                        
+                        # 计算PDF可用空间，确保图像不超过页面框架
+                        # 从错误信息看，可用框架高度约为688点，我们使用这个值作为参考
+                        available_width = portrait_width - margins[0] - margins[1] - 20
+                        available_height = 680  # 增加可用高度，确保图表能完整显示
+                        
+                        print(f"PDF可用空间: {available_width:.1f}x{available_height:.1f}点")
+                        
+                        # 计算PDF中图像的最佳尺寸，保持宽高比，确保图表能完整显示
+                        image_ratio = high_res_width / actual_image_height
+                        
+                        # 优先考虑图表的可读性，使用更大的高度
+                        final_pdf_height = available_height
+                        final_pdf_width = final_pdf_height * image_ratio
+                        
+                        # 如果宽度超过可用宽度，则按宽度缩放
+                        if final_pdf_width > available_width:
+                            final_pdf_width = available_width
+                            final_pdf_height = final_pdf_width / image_ratio
+                        
+                        # 计算实际DPI：1点=1/72英寸
+                        actual_dpi = high_res_width / (final_pdf_width / 72.0)
+                        print(f"图像在PDF中的尺寸: {final_pdf_width:.1f}x{final_pdf_height:.1f}点，实际DPI: {actual_dpi:.1f}")
+                        
+                        # 9. 只添加图像，不添加额外的标题文字
+                        # 图表本身已经包含了"网段分布图"标题，所以不需要在PDF页面上重复显示
+                        chart_elements = []
+                        
+                        # 对于高图表，我们允许其跨页显示，确保完整性
+                        # 如果图像高度超过页面高度，ReportLab会自动将其拆分到多页
+                        chart_elements.append(Image(img_byte_arr, width=final_pdf_width, height=final_pdf_height))
+                        
+                        # 不使用KeepTogether，允许图表跨页显示，确保完整性
+                        elements.extend(chart_elements)
+                        
+                        # 10. 切换回横向页面模板，准备添加后续内容
+                        elements.append(NextPageTemplate('landscape'))
+                        elements.append(PageBreak())
+                        
+                        print("网段分布图成功添加到PDF")
+                    except Exception as e:
+                        print(f"添加网段分布图到PDF失败: {type(e).__name__}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    finally:
+                        # 延迟清理临时文件，避免权限问题
+                        print("延迟清理临时文件...")
+                        # 不立即删除，避免ReportLab在使用中
+                        # 在PDF生成后由系统自动清理
+                else:
+                    print("没有检测到有效网段分布图数据，跳过添加")
+                    if has_chart_data:
+                        print(f"chart_data内容: {self.chart_data}")
+                    if hasattr(self, 'chart_data') and self.chart_data is not None:
+                        print(f"networks数量: {len(self.chart_data['networks']) if 'networks' in self.chart_data else 0}")
+                
                 # 生成PDF
                 print("开始生成PDF文档...")
                 try:
+                    # 确保中文支持
+                    from reportlab.pdfbase import pdfmetrics
+                    from reportlab.pdfbase.ttfonts import TTFont
+                    
+                    # 注册中文字体，确保与register_chinese_fonts方法一致
+                    try:
+                        # 使用已注册的ChineseFont，确保字体名称一致
+                        print(f"使用已注册的中文字体，has_chinese_font: {self.has_chinese_font}")
+                        if self.has_chinese_font:
+                            # 确认ChineseFont已经注册
+                            if 'ChineseFont' in pdfmetrics.getRegisteredFontNames():
+                                print("ChineseFont已成功注册，使用该字体")
+                                # 确保所有样式使用正确的字体名称
+                                title_style.fontName = 'ChineseFont'
+                                heading2_style.fontName = 'ChineseFont'
+                                normal_style.fontName = 'ChineseFont'
+                                table_text_style.fontName = 'ChineseFont'
+                                print("已更新所有样式使用ChineseFont字体")
+                            else:
+                                print("ChineseFont未注册，重新注册")
+                                # 重新注册中文字体
+                                self.has_chinese_font = self.register_chinese_fonts()
+                                if self.has_chinese_font:
+                                    print("重新注册中文字体成功")
+                        else:
+                            print("未注册中文字体，尝试重新注册")
+                            self.has_chinese_font = self.register_chinese_fonts()
+                    except Exception as e:
+                        print(f"处理中文字体失败: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    
                     # 移除未定义的add_footer回调
                     doc.build(elements)
                     print("PDF文档生成成功")

@@ -944,33 +944,51 @@ HTML_TEMPLATE = '''
                 }
             }
             
-            // 功能选项卡切换
-            document.querySelectorAll('.tabs button[data-target]').forEach(button => {
-                button.addEventListener('click', () => {
-                    // 保存当前表单数据
-                    saveFormData();
-                    
-                    // 移除所有激活状态
+            // 通用标签页激活函数
+            function activateTab(button, targetId, isToolTab = true) {
+                // 移除所有激活状态
+                if (isToolTab) {
                     document.querySelectorAll('.tabs button[data-target]').forEach(btn => {
                         btn.classList.remove('active');
                     });
                     document.querySelectorAll('.tool-content').forEach(content => {
                         content.classList.remove('active');
                     });
-                    
-                    // 添加当前激活状态
-                    const targetId = button.getAttribute('data-target');
-                    button.classList.add('active');
-                    
-                    const targetTab = document.getElementById(targetId);
+                } else {
+                    document.querySelectorAll('.result-tab').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                }
+                
+                // 添加当前激活状态
+                button.classList.add('active');
+                const targetTab = document.getElementById(targetId);
+                if (targetTab) {
                     targetTab.classList.add('active');
+                }
+                
+                // 如果是工具标签页，保存状态和数据
+                if (isToolTab) {
+                    // 恢复目标页面的表单数据
+                    restoreFormData(targetId);
+                }
+            }
+            
+            // 功能选项卡切换
+            document.querySelectorAll('.tabs button[data-target]').forEach(button => {
+                button.addEventListener('click', () => {
+                    // 保存当前表单数据
+                    saveFormData();
+                    
+                    const targetId = button.getAttribute('data-target');
+                    activateTab(button, targetId, true);
                     
                     // 更新当前激活的标签页
                     currentActiveTab = targetId;
                     localStorage.setItem('currentActiveTab', currentActiveTab);
-                    
-                    // 恢复目标页面的表单数据
-                    restoreFormData(targetId);
                 });
             });
             
@@ -978,24 +996,12 @@ HTML_TEMPLATE = '''
             document.addEventListener('DOMContentLoaded', function() {
                 // 如果有保存的当前激活标签页，恢复它
                 if (currentActiveTab) {
-                    // 移除所有激活状态
-                    document.querySelectorAll('.tabs button[data-target]').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    document.querySelectorAll('.tool-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    
-                    // 添加当前激活状态
+                    // 恢复工具标签页
                     const button = document.querySelector(`.tabs button[data-target="${currentActiveTab}"]`);
                     const targetTab = document.getElementById(currentActiveTab);
                     
                     if (button && targetTab) {
-                        button.classList.add('active');
-                        targetTab.classList.add('active');
-                        
-                        // 恢复目标页面的表单数据
-                        restoreFormData(currentActiveTab);
+                        activateTab(button, currentActiveTab, true);
                     }
                 }
                 
@@ -1029,26 +1035,8 @@ HTML_TEMPLATE = '''
             
             // 内层结果标签页切换函数（仅影响切分结果内部的标签页）
             function openResultTab(evt, tabName) {
-                // 移除所有标签页内容的激活状态
-                var allTabContents = document.querySelectorAll('.tab-content');
-                for (var i = 0; i < allTabContents.length; i++) {
-                    allTabContents[i].classList.remove("active");
-                }
-                
-                // 移除所有标签页按钮的激活状态
-                var allTabButtons = document.querySelectorAll('.result-tab');
-                for (var j = 0; j < allTabButtons.length; j++) {
-                    allTabButtons[j].classList.remove("active");
-                }
-                
-                // 添加当前标签页内容的激活状态
-                var targetTabContent = document.getElementById(tabName);
-                if (targetTabContent) {
-                    targetTabContent.classList.add("active");
-                }
-                
-                // 添加当前标签页按钮的激活状态
-                evt.currentTarget.classList.add("active");
+                // 使用通用标签页激活函数
+                activateTab(evt.currentTarget, tabName, false);
                 
                 // 如果切换到图表标签页，重新绘制图表
                 if (tabName === 'subnet-chart') {
@@ -1114,6 +1102,7 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     # 默认值设置为None，只有当表单提交包含特定字段时才更新
@@ -1126,6 +1115,35 @@ def index():
     host_counts = []
     active_tab = request.form.get('currentActiveTab', request.args.get('active_tab', 'subnet-split'))  # 默认显示子网切分标签页
 
+    # 辅助函数：过滤和转换子网需求数据
+    def process_subnet_requirements(names, hosts):
+        """过滤和转换子网需求数据，返回过滤后的名称和主机数列表"""
+        filtered_names = []
+        filtered_hosts = []
+        valid = True
+        
+        for i in range(len(hosts)):
+            host_count = hosts[i]
+            if isinstance(host_count, str):
+                host_count = host_count.strip()
+            
+            if not host_count:
+                continue
+                
+            name = names[i] if i < len(names) else f"子网{i + 1}"
+            if isinstance(name, str):
+                name = name.strip()
+            
+            try:
+                filtered_hosts.append(int(host_count))
+                filtered_names.append(name)
+            except ValueError:
+                valid = False
+                break
+        
+        return filtered_names, filtered_hosts, valid
+    
+    
     if request.method == "POST":
         # 尝试获取所有表单数据
         all_form_data = request.form.get('allFormData')
@@ -1148,20 +1166,9 @@ def index():
                     if 'plan-parent' in plan_data:
                         plan_parent = plan_data['plan-parent']
                     if 'subnet-name' in plan_data and 'subnet-hosts' in plan_data:
-                        subnet_names = plan_data['subnet-name']
-                        host_counts = plan_data['subnet-hosts']
-                        # 过滤空值并转换为整数
-                        filtered_names = []
-                        filtered_hosts = []
-                        for name, host_count in zip(subnet_names, host_counts):
-                            if host_count and str(host_count).strip():
-                                try:
-                                    filtered_names.append(name)
-                                    filtered_hosts.append(int(host_count))
-                                except ValueError:
-                                    pass
-                        subnet_names = filtered_names
-                        host_counts = filtered_hosts
+                        subnet_names, host_counts, _ = process_subnet_requirements(
+                            plan_data['subnet-name'], plan_data['subnet-hosts']
+                        )
             except json.JSONDecodeError:
                 pass
         
@@ -1180,20 +1187,10 @@ def index():
             
             # 如果表单中有新的输入，使用新的输入
             if subnet_names_input and host_counts_input:
-                # 过滤掉空字符串并转换为整数
-                filtered_names = []
-                filtered_hosts = []
-                valid = True
-                for i in range(len(host_counts_input)):
-                    host_count = host_counts_input[i].strip()
-                    name = subnet_names_input[i].strip() if i < len(subnet_names_input) else f"子网{i+1}"
-                    if host_count:
-                        try:
-                            filtered_hosts.append(int(host_count))
-                            filtered_names.append(name)
-                        except ValueError:
-                            valid = False
-                            break
+                # 使用辅助函数处理子网需求数据
+                filtered_names, filtered_hosts, valid = process_subnet_requirements(
+                    subnet_names_input, host_counts_input
+                )
                 
                 # 如果所有输入都是有效的，构造required_subnets参数并调用函数
                 if valid:
@@ -1202,9 +1199,7 @@ def index():
                     host_counts = filtered_hosts
                     
                     # 构造required_subnets参数：列表中的每个元素是包含name和hosts字段的字典
-                    required_subnets = []
-                    for name, hosts in zip(subnet_names, host_counts):
-                        required_subnets.append({"name": name, "hosts": hosts})
+                    required_subnets = [{"name": name, "hosts": hosts} for name, hosts in zip(subnet_names, host_counts)]
                     
                     # 调用子网规划建议函数
                     plan_result = suggest_subnet_planning(plan_parent, required_subnets)
@@ -1224,6 +1219,7 @@ def index():
     # 将 subnet_names 和 host_counts 组合成列表传递给模板
     subnet_requirements = list(zip(subnet_names, host_counts)) if subnet_names and host_counts else []
     return render_template_string(HTML_TEMPLATE, parent=parent, split=split, result=result, plan_result=plan_result, plan_parent=plan_parent, subnet_requirements=subnet_requirements, version=__version__, active_tab=active_tab)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
