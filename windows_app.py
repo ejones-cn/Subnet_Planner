@@ -741,7 +741,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="切分段", anchor="w").grid(
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=(5, 3), padx=(0, 5)
         )
-        vcmd = (self.root.register(lambda p: self.validate_split_cidr_local(p)), '%P')
+        vcmd = (self.root.register(self.validate_split_cidr_local), '%P')
         self.split_entry = ttk.Entry(
             input_frame, width=16, font=(
             "微软雅黑", 10), validate='focusout', validatecommand=vcmd
@@ -2101,7 +2101,6 @@ class IPSubnetSplitterApp:
 
             # 获取父网段信息
             parent_info = self.chart_data.get("parent", {})
-            parent = parent_info.get("name", "")
             parent_range = parent_info.get("range", 1)
 
             # 获取网段列表
@@ -2294,7 +2293,7 @@ class IPSubnetSplitterApp:
                 x + 30,
                 legend_items_y + 6,
                 text="父网段",
-                font= ("微软雅黑", 9),
+                font=("微软雅黑", 9),
                 anchor=tk.W,
                 fill="#ffffff",
             )
@@ -2551,8 +2550,8 @@ class IPSubnetSplitterApp:
                 # 添加页面模板
                 doc.addPageTemplates([landscape_template, portrait_template])
                 
-                # 定义页面尺寸变量，初始使用横向页面尺寸
-                page_width, page_height = landscape_width, landscape_height
+                # 定义页面宽度变量，初始使用横向页面尺寸
+                page_width = landscape_width
                 
                 elements = []
                 styles = getSampleStyleSheet()
@@ -2959,7 +2958,7 @@ class IPSubnetSplitterApp:
                     elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
                 # 检查是否有网段分布图数据
-                print(f"=== 网段分布图调试信息 ===")
+                print("=== 网段分布图调试信息 ===")
                 print(f"hasattr(self, 'chart_data'): {hasattr(self, 'chart_data')}")
                 print(f"self.chart_data: {self.chart_data if hasattr(self, 'chart_data') else '未定义'}")
                 
@@ -3221,7 +3220,7 @@ class IPSubnetSplitterApp:
                                     title_font = ImageFont.truetype(title_font_path, title_font_size)
                                 else:
                                     title_font = bold_font
-                            except:
+                            except Exception:
                                 title_font = bold_font
                             
                             title_bbox = draw.textbbox((0, 0), title, font=title_font)
@@ -3255,7 +3254,7 @@ class IPSubnetSplitterApp:
                                 else:
                                     text_font = font
                                     bold_text_font = bold_font
-                            except:
+                            except Exception:
                                 text_font = font
                                 bold_text_font = bold_font
                             
