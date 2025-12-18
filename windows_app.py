@@ -658,10 +658,12 @@ class IPSubnetSplitterApp:
         for i, record in enumerate(self.history_records, 1):
             # 设置斑马条纹标签
             tags = ("even",) if i % 2 == 0 else ("odd",)
+            # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
+            formatted_record = f"{i}. {record['parent']}  |  {record['split']}"
             self.history_tree.insert(
                 "", 
                 tk.END, 
-                values=(i, record['parent'], record['split']),
+                values=(formatted_record,),
                 tags=tags
             )
     
@@ -677,12 +679,21 @@ class IPSubnetSplitterApp:
         selected_item = selected_items[0]
         item_values = self.history_tree.item(selected_item, "values")
         
-        if len(item_values) < 3:
+        if not item_values:
+            return
+        
+        # 解析格式化的记录字符串："1.  10.0.0.8/5 | 10.21.60.0/23"
+        record_str = item_values[0]
+        # 移除序号部分，保留后面的网段信息
+        network_part = record_str.split('.  ')[1] if '.  ' in record_str else record_str
+        # 分割父网段和切分段
+        parts = network_part.split(' | ')
+        if len(parts) < 2:
             return
         
         # 提取父网段和切分段
-        parent = item_values[1]
-        split = item_values[2]
+        parent = parts[0]
+        split = parts[1]
         
         # 填充到输入框
         self.parent_entry.delete(0, tk.END)
@@ -758,12 +769,10 @@ class IPSubnetSplitterApp:
         history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
         
         # 创建历史记录列表，去掉表头，显示4行
-        self.history_tree = ttk.Treeview(history_frame, columns=('id', 'parent', 'split'), show='', height=4)
+        self.history_tree = ttk.Treeview(history_frame, columns=('record'), show='', height=4)
         
         # 设置列宽
-        self.history_tree.column('id', width=50, stretch=False)
-        self.history_tree.column('parent', width=60, stretch=True)
-        self.history_tree.column('split', width=60, stretch=True)
+        self.history_tree.column('record', width=180, stretch=True)
         
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.history_tree)
@@ -784,9 +793,17 @@ class IPSubnetSplitterApp:
         self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=5, padx=(0, 2))  # 表格在第0行第0列，占据主要空间
         history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)  # 滚动条在第0行第1列，仅垂直填充
         
-        # 创建重新切分按钮，放到表格右侧，与导出结果按钮大小一致
-        self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split, width=8)  # 设置按钮宽度与导出结果按钮一致
-        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NS, pady=5, padx=(5, 2))  # 按钮在第0行第2列，垂直居中
+        # 配置更紧凑的按钮样式，减小内部文字间距
+        self.style.configure("CompactText.TButton", 
+                            font=("微软雅黑", 10),
+                            padding=(2, 0, 2, 0))  # 减小垂直内边距
+        
+        # 创建重新切分按钮，使用紧凑样式
+        self.reexecute_btn = ttk.Button(history_frame, text="重\n新\n切\n分", 
+                                       command=self.reexecute_split, 
+                                       width=4, 
+                                       style="CompactText.TButton")
+        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NS, pady=5, padx=(5, 2))
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
