@@ -8,56 +8,71 @@ import re
 import os
 
 # 导入版本管理模块
-from version import get_version
+from version import get_version as get_windows_version
+from web_version import get_version as get_web_version
 
-app_version = get_version()
-print(f"当前版本号应该是: v{app_version}")
-print("=" * 50)
+# 获取两个版本号
+windows_version = get_windows_version()
+web_version = get_web_version()
 
-# 检查README.md
+print("=" * 60)
+print("IP子网切分工具版本验证")
+print("=" * 60)
+
+# Windows版版本验证
+print(f"Windows版当前版本号: v{windows_version}")
+print("-" * 40)
+
+# 检查README.md (Windows版)
 with open("README.md", "r", encoding="utf-8") as f:
     readme_content = f.read()
 match = re.search(r"# IP子网切分工具 v(\d+\.\d+\.\d+)", readme_content)
 if match:
     readme_version = match.group(1)
     print(f"README.md 版本: v{readme_version}")
-    print(f"状态: {'✓ 正确' if readme_version == app_version else '✗ 不一致'}")
+    print(f"状态: {'✓ 正确' if readme_version == windows_version else '✗ 不一致'}")
 else:
     print("README.md 版本: 未找到")
     print("状态: ✗ 错误")
 
-print("-" * 50)
+print("-" * 40)
 
-# 检查ip_subnet_calculator.py
+# 检查ip_subnet_calculator.py (Windows版)
 import ip_subnet_calculator
 
 print(f"ip_subnet_calculator.py 版本: v{ip_subnet_calculator.__version__}")
-print(f"状态: {'✓ 正确' if ip_subnet_calculator.__version__ == app_version else '✗ 不一致'}")
+print(f"状态: {'✓ 正确' if ip_subnet_calculator.__version__ == windows_version else '✗ 不一致'}")
 
-print("-" * 50)
+print("-" * 40)
 
-# 检查web_app.py
-with open("web_app.py", "r", encoding="utf-8") as f:
-    web_app_content = f.read()
-matches = re.findall(r"v(\d+\.\d+\.\d+)", web_app_content)
-if matches:
-    # 获取所有匹配的版本号
-    versions = set(matches)
-    if len(versions) == 1 and versions.pop() == app_version:
-        print("web_app.py 版本: 所有版本号一致")
-        print(f"状态: ✓ 正确")
-    else:
-        print(f"web_app.py 版本: 发现多个版本号 {versions}")
-        print("状态: ✗ 不一致")
-else:
-    print("web_app.py 版本: 未找到")
-    print("状态: ✗ 错误")
-
-print("-" * 50)
-
-# 检查version.py
-print(f"version.py 版本: v{app_version}")
+# 检查version.py (Windows版)
+print(f"version.py 版本: v{windows_version}")
 print(f"状态: ✓ 正确")
 
-print("=" * 50)
+print("\n" + "=" * 60)
+
+# Web版版本验证
+print(f"Web版当前版本号: v{web_version}")
+print("-" * 40)
+
+# 检查web_app.py (Web版)
+# 检查是否正确导入了web_version模块
+with open("web_app.py", "r", encoding="utf-8") as f:
+    web_app_content = f.read()
+
+# 检查版本导入语句是否正确
+if "from web_version import __version__" in web_app_content:
+    print("web_app.py 版本: 正确导入了web_version模块")
+    print(f"状态: ✓ 正确")
+else:
+    print("web_app.py 版本: 未正确导入web_version模块")
+    print("状态: ✗ 错误")
+
+print("-" * 40)
+
+# 检查web_version.py (Web版)
+print(f"web_version.py 版本: v{web_version}")
+print(f"状态: ✓ 正确")
+
+print("=" * 60)
 print("验证完成！")

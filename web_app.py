@@ -2,7 +2,7 @@ from flask import Flask, request, render_template_string
 import ipaddress
 import json
 from ip_subnet_calculator import split_subnet, suggest_subnet_planning
-from version import __version__
+from web_version import __version__
 
 app = Flask(__name__)
 

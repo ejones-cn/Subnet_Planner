@@ -638,19 +638,72 @@ class IPSubnetSplitterApp:
 
         # 初始化图表数据
         self.chart_data = None
+        
+        # 初始化历史记录
+        self.history_records = []
 
     def validate_parent_cidr(self, text):
         return self.validate_cidr(text, self.parent_entry)
 
     def validate_split_cidr_local(self, text):
         return self.validate_cidr(text, self.split_entry)
+    
+    def update_history_tree(self):
+        """更新历史记录列表"""
+        # 清空现有历史记录
+        for item in self.history_tree.get_children():
+            self.history_tree.delete(item)
+        
+        # 重新插入所有历史记录
+        for i, record in enumerate(self.history_records, 1):
+            # 设置斑马条纹标签
+            tags = ("even",) if i % 2 == 0 else ("odd",)
+            self.history_tree.insert(
+                "", 
+                tk.END, 
+                values=(i, record['parent'], record['split'], record['time']),
+                tags=tags
+            )
+    
+    def reexecute_split(self):
+        """从历史记录重新执行切分操作"""
+        # 获取选中的历史记录
+        selected_items = self.history_tree.selection()
+        if not selected_items:
+            messagebox.showinfo("提示", "请选择一条历史记录")
+            return
+        
+        # 获取选中项的值
+        selected_item = selected_items[0]
+        item_values = self.history_tree.item(selected_item, "values")
+        
+        if len(item_values) < 3:
+            return
+        
+        # 提取父网段和切分段
+        parent = item_values[1]
+        split = item_values[2]
+        
+        # 填充到输入框
+        self.parent_entry.delete(0, tk.END)
+        self.parent_entry.insert(0, parent)
+        self.split_entry.delete(0, tk.END)
+        self.split_entry.insert(0, split)
+        
+        # 执行切分，设置from_history=True，不记入历史
+        self.execute_split(from_history=True)
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
+        # 创建一个主框架，用于放置输入参数面板和历史记录面板
+        input_history_frame = ttk.Frame(self.split_frame)
+        input_history_frame.pack(fill=tk.X, expand=False, pady=(0, 8), anchor=tk.W)  # 撑满宽度，上下排列，靠左对齐
+        
+        # 创建输入参数面板
         input_frame = ttk.LabelFrame(
-            self.split_frame, text="输入参数", padding=(10, 5, 5, 5)
+            input_history_frame, text="输入参数", padding=(10, 5, 5, 5)
         )  # 单独控制各边内边距：左10, 上5, 右5, 下5
-        input_frame.pack(fill=tk.NONE, expand=False, pady=(0, 8), anchor=tk.W)  # 不撑满窗体，上下排列，靠左对齐
+        input_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))  # 靠左放置，垂直填充
 
         # 配置grid行列，减小间距
         input_frame.grid_columnconfigure(0, minsize=50, weight=0)  # 标签列固定最小宽度
@@ -698,6 +751,38 @@ class IPSubnetSplitterApp:
         # 导出按钮 - 统一pady设置
         self.export_btn = ttk.Button(input_frame, text="导出结果", command=self.export_result, width=8)
         self.export_btn.grid(row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
+        
+        # 创建历史记录面板，与输入参数面板同级
+        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 5, 5))
+        history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
+        
+        # 创建历史记录列表，添加操作时间字段
+        self.history_tree = ttk.Treeview(history_frame, columns=('id', 'parent', 'split', 'time'), show='headings', height=4)
+        self.history_tree.heading('id', text='序号')
+        self.history_tree.heading('parent', text='父网段')
+        self.history_tree.heading('split', text='切分段')
+        self.history_tree.heading('time', text='操作时间')
+        
+        # 设置列宽
+        self.history_tree.column('id', width=50, stretch=False)
+        self.history_tree.column('parent', width=120, stretch=True)
+        self.history_tree.column('split', width=120, stretch=True)
+        self.history_tree.column('time', width=150, stretch=True)
+        
+        # 配置斑马条纹样式
+        self.configure_treeview_styles(self.history_tree)
+        
+        # 添加垂直滚动条
+        history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
+        self.history_tree.configure(yscrollcommand=history_scroll.set)
+        
+        # 布局历史记录列表和滚动条
+        self.history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=5)
+        history_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+        
+        # 创建重新切分按钮
+        self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split)
+        self.reexecute_btn.pack(side=tk.BOTTOM, pady=(5, 0), fill=tk.X)  # 底部放置，水平填充
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
@@ -1616,8 +1701,12 @@ class IPSubnetSplitterApp:
         except Exception as e:
             messagebox.showerror("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
-    def execute_split(self):
-        """执行切分操作"""
+    def execute_split(self, from_history=False):
+        """执行切分操作
+        
+        Args:
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+        """
         parent = self.parent_entry.get().strip()
         split = self.split_entry.get().strip()
 
@@ -1715,6 +1804,21 @@ class IPSubnetSplitterApp:
 
             # 绘制图表
             self.draw_distribution_chart()
+            
+            # 如果不是从历史记录重新执行，则将操作记录到历史列表
+            if not from_history:
+                # 导入datetime模块获取当前时间
+                import datetime
+                # 添加到历史记录，包含操作时间
+                record = {
+                    'parent': parent,
+                    'split': split,
+                    'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                self.history_records.append(record)
+                
+                # 更新历史记录列表
+                self.update_history_tree()
 
         except ValueError as e:
             error_msg = str(e)

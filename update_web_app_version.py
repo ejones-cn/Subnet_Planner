@@ -6,8 +6,8 @@
 
 import re
 
-# 导入版本管理模块
-from version import get_version
+# 导入Web版版本管理模块
+from web_version import get_version
 
 app_version = get_version()
 
