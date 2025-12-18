@@ -79,14 +79,6 @@ class ColoredNotebook(ttk.Frame):
         self.tabs = []
         self.active_tab = None
 
-    def get_tab_bar_container(self):
-        """获取标签栏容器"""
-        return self.tab_bar_container
-
-    def get_tab_bar_right_buttons(self):
-        """获取右侧按钮容器"""
-        return self.tab_bar_right_buttons
-
     def get_light_blue_style(self):
         """获取浅蓝色样式名称"""
         return self.light_blue_style
@@ -95,17 +87,9 @@ class ColoredNotebook(ttk.Frame):
         """获取浅绿色样式名称"""
         return self.light_green_style
 
-    def get_light_orange_style(self):
-        """获取浅橙色样式名称"""
-        return self.light_orange_style
-
     def get_light_purple_style(self):
         """获取浅紫色样式名称"""
         return self.light_purple_style
-
-    def get_light_pink_style(self):
-        """获取浅粉色样式名称"""
-        return self.light_pink_style
 
     def on_configure(self, _):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
@@ -121,34 +105,6 @@ class ColoredNotebook(ttk.Frame):
             if hasattr(self, 'active_tab') and self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
                 selected_tab = self.tabs[self.active_tab]
                 selected_tab["content"].pack_configure(fill='both', expand=True)
-
-            # 更新背景色以匹配result_frame
-            self._update_background_to_result_frame_color()
-
-    def _update_background_color(self):
-        """更新标签栏背景色以匹配父容器"""
-        # 获取标签栏容器的父组件（result_frame）的背景色
-        # 由于ttk组件的背景色获取方式与tk组件不同，我们需要特殊处理
-        try:
-            # 使用self.master获取父容器对象
-            if hasattr(self.master, "winfo_bg"):
-                bg_color = self.master.winfo_bg()
-            else:
-                # 如果是ttk组件，尝试使用style.lookup获取背景色
-                bg_color = self.style.lookup(self.master.winfo_class(), "background")
-
-            # 如果获取的是系统默认颜色名称，转换为实际颜色值
-            if not bg_color or bg_color.startswith("system."):
-                bg_color = self.winfo_toplevel().cget("bg")
-
-        except Exception:
-            # 如果获取失败，尝试获取窗口背景色作为备选
-            bg_color = self.winfo_toplevel().cget("bg")
-
-        # 将背景色应用到所有相关组件
-        self.tab_bar_container.config(bg=bg_color)
-        self.tab_bar.config(bg=bg_color)
-        self.tab_bar_spacer.config(bg=bg_color)
 
     def _on_tab_mouse_down(self, button, color):
         """当鼠标按下标签页时，更新内容区域背景色为按下状态颜色"""
@@ -315,9 +271,6 @@ class ColoredNotebook(ttk.Frame):
             # 确保所有标签页都应用正确的样式
             current_active_tab = getattr(self, "active_tab", 0)
             self.select_tab(current_active_tab)
-
-        # 更新背景色以匹配result_frame
-        self._update_background_to_result_frame_color()
 
     def select_tab(self, tab_index):
         """选中一个标签"""
@@ -575,12 +528,6 @@ class IPSubnetSplitterApp:
 
         except Exception:
             pass
-
-        # 为不同标签页的内容区域设置不同的背景色
-        self.style.configure("LightBlue.TFrame", background="#e3f2fd")  # 浅蓝色 - 切分网段信息
-        self.style.configure("LightGreen.TFrame", background="#e8f5e9")  # 浅绿色 - 剩余网段列表
-        self.style.configure("LightPurple.TFrame", background="#f3e5f5")  # 浅紫色 - 网段分布图表
-
         # 为Treeview添加表格线样式配置 - Windows系统专用解决方案
         # 在Windows上强制显示表格线的最终解决方案
 
