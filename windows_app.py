@@ -2665,8 +2665,6 @@ class IPSubnetSplitterApp:
                     # 计算自适应列宽
                     print("\n=== 计算自适应列宽 ===")
                     try:
-                        font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
-                        font_size = 10
                         # 使用自适应列宽替换现有列宽
                         print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
@@ -2850,8 +2848,6 @@ class IPSubnetSplitterApp:
                     # 计算自适应列宽
                     print("\n=== 计算剩余表格自适应列宽 ===")
                     try:
-                        font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
-                        font_size = 10
                         # 使用自适应列宽替换现有列宽
                         print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
