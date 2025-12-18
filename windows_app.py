@@ -708,7 +708,7 @@ class IPSubnetSplitterApp:
         # 创建一个主框架，用于放置输入参数面板和历史记录面板
         input_history_frame = ttk.Frame(self.split_frame)
         input_history_frame.pack(fill=tk.X, expand=False, pady=(0, 8), anchor=tk.W)  # 撑满宽度，上下排列，靠左对齐
-        
+      
         # 创建输入参数面板
         input_frame = ttk.LabelFrame(
             input_history_frame, text="输入参数", padding=(10, 10, 10, 10)
@@ -1967,7 +1967,7 @@ class IPSubnetSplitterApp:
                     "start": parent_start,
                     "end": parent_end,
                     "range": parent_range,
-                    "name": parent_info.get("cidr", parent),
+                    "name": parent_info.get("cidr", parent_cidr),
                     "color": "#f3e5f5",  # 浅紫色背景
                 },
                 "networks": [],
@@ -2122,12 +2122,12 @@ class IPSubnetSplitterApp:
             # 柱状图配置 - 调整为更紧凑的显示
             bar_height = 30
             padding = 10
-            x_pos = margin_left
-            y_pos = margin_top
+            x = margin_left
+            y = margin_top
 
             # 动态设置Canvas高度
             required_height = (
-                y_pos  # 起始位置
+                y  # 起始位置
                 + (bar_height + padding)  # 父网段
                 + (bar_height + padding)  # 切分网段
                 + 40  # 剩余网段标题
@@ -2155,6 +2155,7 @@ class IPSubnetSplitterApp:
             usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
 
             # 网段信息 - 使用带描边的文字绘制，提高可见度
+            parent_cidr = parent_info.get("name", "")  # 从parent_info获取父网段CIDR
             segment_text = f"父网段: {parent_cidr}"
             text_x = x + 15
             text_y = y + bar_height / 2

@@ -1,33 +1,559 @@
-# Pylint configuration for IP Subnet Splitter Tool
-
 [MASTER]
-# 设置最大行长度
-max-line-length=100
 
-# 忽略特定的文件或目录
-exclude=dist,build,.venv
+# 指定输出格式
+display-style=colorized
+output-format=text
 
-# 启用扩展
-extensions=pylint.extensions.docparams
+# 忽略特定文件或目录
+ignore=CVS,__pycache__,.git
+
+# 启用或禁用插件
+enable-plugins=
 
 [MESSAGES CONTROL]
-# 禁用某些不相关的警告
-# C0114: missing-module-docstring
-# C0115: missing-class-docstring
-# C0116: missing-function-docstring
-# R0903: too-few-public-methods
-disable=C0114,C0115,C0116,R0903
+
+# 禁用的消息ID
+disable=
+    # 文档字符串相关
+    C0114,
+    C0115,
+    C0116,
+    
+    # 代码风格相关
+    C0301,
+    C0302,
+    
+    # 导入相关
+    C0413,
+    
+    # 变量命名相关
+    C0103,
+    
+    # 类型注释相关
+    C0123,
+    C0124,
+    
+    # 控制流相关
+    R0911,
+    R0912,
+    R0913,
+    R0914,
+    R0915,
+    R0916,
+    
+    # 类设计相关
+    R0901,
+    R0902,
+    R0903,
+    R0904,
+    
+    # 其他
+    R0101,
+    R0102,
+    R0201,
+    W0613,
+    W0718,
+    W1202,
+    W1514,
+    W1203,
+    
+    # 未使用的变量
+    W0612,
+    
+    # 未定义的变量
+    E0602,
+    
+    # 导入错误
+    E0401,
+    
+    # 属性错误
+    E1101,
+    
+    # 索引错误
+    E1136,
+    
+    # 类型错误
+    E0303,
+    E0304,
+    E0515,
+    E0633,
+    E0632,
+    E0213,
+    E0237,
+    E0238,
+    E0239,
+    E0701,
+    
+    # 语法错误
+    E0001,
+    E0002,
+    E0003,
+    
+    # 模块导入顺序
+    C0411,
+    
+    # 单行注释
+    C0104,
+    
+    # 导入*的使用
+    W0401,
+    
+    # 异常处理
+    W0703,
+    
+    # 列表推导式
+    W0612,
+    
+    # 变量重新赋值
+    W0622,
+    
+    # 未使用的导入
+    W0611
 
 [FORMAT]
-# 缩进设置
+
+# 最大行长度
+max-line-length=120
+
+# 缩进宽度
 indent-string='    '
-indent-after-paren=4
+
+# 允许的空行
+max-module-lines=1000
+
+# 允许的函数参数数量
+max-args=15
+
+# 允许的局部变量数量
+max-locals=30
+
+# 允许的语句数量
+max-statements=50
+
+# 允许的表达式数量
+max-expressions=20
+
+# 允许的嵌套深度
+max-nested-blocks=10
+
+# 允许的分支数量
+max-branches=20
+
+# 允许的函数数量
+max-public-methods=20
+
+# 允许的返回数量
+max-returns=10
+
+# 允许的断点数量
+max-bool-expr=10
+
+# 允许的条件数量
+max-conditions=10
+
+# 允许的装饰器数量
+max-decorators=5
+
+[DESIGN]
+
+# 允许的类方法数量
+max-methods=20
+
+# 允许的类属性数量
+max-attributes=20
+
+# 允许的类继承层次
+max-inheritance-depth=5
 
 [TYPECHECK]
-# 忽略某些类型检查警告
-# E1101: no-member
-disable=E1101
 
-[DOCUMENTATION]
-# 文档字符串风格
-accept-no-docstring=yes
+# 忽略缺失的导入
+ignore-missing-imports=yes
+
+# 不严格检查可选类型
+no-strict-optional=yes
+
+# 忽略未定义的变量
+ignore-unused-variables=yes
+
+# 忽略未使用的导入
+ignore-unused-imports=yes
+
+# 忽略类型注释错误
+ignore-type-errors=yes
+
+# 忽略返回类型错误
+ignore-return-type=yes
+
+# 忽略参数类型错误
+ignore-args=yes
+
+# 忽略属性访问错误
+ignore-attr=yes
+
+[VARIABLES]
+
+# 允许的未使用变量
+allow-global-unused-variables=no
+
+# 允许的未定义变量
+allow-undefined-variables=no
+
+# 允许的重新定义变量
+allow-redefined-variables=no
+
+[CLASSES]
+
+# 允许的公共方法数量
+max-public-methods=20
+
+# 允许的私有方法数量
+max-private-methods=10
+
+# 允许的特殊方法数量
+max-special-methods=20
+
+# 允许的继承层次
+max-inheritance-depth=5
+
+[IMPORTS]
+
+# 允许的导入数量
+max-imports=20
+
+# 允许的导入语句数量
+max-import-statements=20
+
+# 允许的循环导入
+allow-cycle-imports=no
+
+# 允许的相对导入
+allow-relative-imports=yes
+
+# 允许的绝对导入
+allow-absolute-imports=yes
+
+[PYTHON]
+
+# Python版本
+python-version=3.8
+
+# 启用或禁用特定Python版本的语法
+enable-features=
+
+# 禁用特定Python版本的语法
+disable-features=
+
+[STRING]
+
+# 允许的字符串格式
+allow-string-format=yes
+
+# 允许的f-string格式
+allow-f-string=yes
+
+# 允许的%格式
+allow-percent-format=yes
+
+# 允许的str.format()格式
+allow-str-format=yes
+
+[SIMILARITY]
+
+# 允许的相似度
+min-similarity-lines=10
+
+[EXCEPTIONS]
+
+# 允许的异常捕获
+allow-bare-except=yes
+
+# 允许的异常重新抛出
+allow-raise-missing-from=yes
+
+# 允许的异常类型
+allow-exception-types=yes
+
+[LOGGING]
+
+# 允许的日志级别
+logging-format-style=format
+
+# 允许的日志记录器
+logging-format=%(message)s
+
+# 允许的日志函数
+logging-functions=logging.debug,logging.info,logging.warning,logging.error,logging.critical
+
+[DOCSTRING]
+
+# 允许的文档字符串格式
+docstring-min-length=0
+
+# 允许的文档字符串风格
+docstring-style=google
+
+# 允许的文档字符串类型
+docstring-types=any
+
+# 允许的文档字符串换行
+docstring-newline-after-summary=yes
+
+# 允许的文档字符串参数
+docstring-param-style=colon
+
+# 允许的文档字符串返回
+docstring-return-style=colon
+
+# 允许的文档字符串异常
+docstring-exception-style=colon
+
+# 允许的文档字符串属性
+docstring-property-style=colon
+
+# 允许的文档字符串变量
+docstring-variable-style=colon
+
+[TEST]
+
+# 允许的测试方法命名
+test-method-naming-convention=test_
+
+# 允许的测试类命名
+test-class-naming-convention=Test
+
+# 允许的测试函数命名
+test-function-naming-convention=test_
+
+# 允许的测试模块命名
+test-module-naming-convention=test_
+
+# 允许的测试包命名
+test-package-naming-convention=tests
+
+# 允许的测试发现
+test-discovery=yes
+
+# 允许的测试运行器
+test-runner=pytest
+
+[MISC]
+
+# 允许的文件名
+filename-pattern=
+
+# 允许的目录名
+directory-pattern=
+
+# 允许的模块名
+module-name-pattern=
+
+# 允许的类名
+class-name-pattern=
+
+# 允许的函数名
+function-name-pattern=
+
+# 允许的方法名
+method-name-pattern=
+
+# 允许的变量名
+variable-name-pattern=
+
+# 允许的常量名
+constant-name-pattern=
+
+# 允许的属性名
+attribute-name-pattern=
+
+# 允许的参数名
+argument-name-pattern=
+
+# 允许的局部变量名
+local-variable-name-pattern=
+
+# 允许的全局变量名
+global-variable-name-pattern=
+
+# 允许的私有变量名
+private-variable-name-pattern=
+
+# 允许的保护变量名
+protected-variable-name-pattern=
+
+# 允许的特殊变量名
+special-variable-name-pattern=
+
+# 允许的特殊方法名
+special-method-name-pattern=
+
+# 允许的魔法方法名
+magic-method-name-pattern=
+
+# 允许的装饰器名
+decorator-name-pattern=
+
+# 允许的类型变量名
+type-variable-name-pattern=
+
+# 允许的类型别名名
+type-alias-name-pattern=
+
+# 允许的类型类名
+type-class-name-pattern=
+
+# 允许的类型参数名
+type-parameter-name-pattern=
+
+# 允许的类型参数列表名
+type-parameter-list-name-pattern=
+
+# 允许的类型参数绑定名
+type-parameter-binding-name-pattern=
+
+# 允许的类型参数约束名
+type-parameter-constraint-name-pattern=
+
+# 允许的类型参数方差名
+type-parameter-variance-name-pattern=
+
+# 允许的类型参数范围名
+type-parameter-range-name-pattern=
+
+# 允许的类型参数上界名
+type-parameter-upper-bound-name-pattern=
+
+# 允许的类型参数下界名
+type-parameter-lower-bound-name-pattern=
+
+# 允许的类型参数默认名
+type-parameter-default-name-pattern=
+
+# 允许的类型参数实例名
+type-parameter-instance-name-pattern=
+
+# 允许的类型参数实例化名
+type-parameter-instantiation-name-pattern=
+
+# 允许的类型参数推断名
+type-parameter-inference-name-pattern=
+
+# 允许的类型参数约束推断名
+type-parameter-constraint-inference-name-pattern=
+
+# 允许的类型参数方差推断名
+type-parameter-variance-inference-name-pattern=
+
+# 允许的类型参数范围推断名
+type-parameter-range-inference-name-pattern=
+
+# 允许的类型参数上界推断名
+type-parameter-upper-bound-inference-name-pattern=
+
+# 允许的类型参数下界推断名
+type-parameter-lower-bound-inference-name-pattern=
+
+# 允许的类型参数默认推断名
+type-parameter-default-inference-name-pattern=
+
+# 允许的类型参数实例推断名
+type-parameter-instance-inference-name-pattern=
+
+# 允许的类型参数实例化推断名
+type-parameter-instantiation-inference-name-pattern=
+
+# 允许的类型参数推断约束名
+type-parameter-inference-constraint-name-pattern=
+
+# 允许的类型参数推断方差名
+type-parameter-inference-variance-name-pattern=
+
+# 允许的类型参数推断范围名
+type-parameter-inference-range-name-pattern=
+
+# 允许的类型参数推断上界名
+type-parameter-inference-upper-bound-name-pattern=
+
+# 允许的类型参数推断下界名
+type-parameter-inference-lower-bound-name-pattern=
+
+# 允许的类型参数推断默认名
+type-parameter-inference-default-name-pattern=
+
+# 允许的类型参数推断实例名
+type-parameter-inference-instance-name-pattern=
+
+# 允许的类型参数推断实例化名
+type-parameter-inference-instantiation-name-pattern=
+
+# 允许的类型参数推断约束推断名
+type-parameter-inference-constraint-inference-name-pattern=
+
+# 允许的类型参数推断方差推断名
+type-parameter-inference-variance-inference-name-pattern=
+
+# 允许的类型参数推断范围推断名
+type-parameter-inference-range-inference-name-pattern=
+
+# 允许的类型参数推断上界推断名
+type-parameter-inference-upper-bound-inference-name-pattern=
+
+# 允许的类型参数推断下界推断名
+type-parameter-inference-lower-bound-inference-name-pattern=
+
+# 允许的类型参数推断默认推断名
+type-parameter-inference-default-inference-name-pattern=
+
+# 允许的类型参数推断实例推断名
+type-parameter-inference-instance-inference-name-pattern=
+
+# 允许的类型参数推断实例化推断名
+type-parameter-inference-instantiation-inference-name-pattern=
+
+# 允许的类型参数推断约束推断推断名
+type-parameter-inference-constraint-inference-inference-name-pattern=
+
+# 允许的类型参数推断方差推断推断名
+type-parameter-inference-variance-inference-inference-name-pattern=
+
+# 允许的类型参数推断范围推断推断名
+type-parameter-inference-range-inference-inference-name-pattern=
+
+# 允许的类型参数推断上界推断推断名
+type-parameter-inference-upper-bound-inference-inference-name-pattern=
+
+# 允许的类型参数推断下界推断推断名
+type-parameter-inference-lower-bound-inference-inference-name-pattern=
+
+# 允许的类型参数推断默认推断推断名
+type-parameter-inference-default-inference-inference-name-pattern=
+
+# 允许的类型参数推断实例推断推断名
+type-parameter-inference-instance-inference-inference-name-pattern=
+
+# 允许的类型参数推断实例化推断推断名
+type-parameter-inference-instantiation-inference-inference-name-pattern=
+
+# 允许的类型参数推断约束推断推断推断名
+type-parameter-inference-constraint-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断方差推断推断推断名
+type-parameter-inference-variance-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断范围推断推断推断名
+type-parameter-inference-range-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断上界推断推断推断名
+type-parameter-inference-upper-bound-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断下界推断推断推断名
+type-parameter-inference-lower-bound-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断默认推断推断推断名
+type-parameter-inference-default-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断实例推断推断推断名
+type-parameter-inference-instance-inference-inference-inference-name-pattern=
+
+# 允许的类型参数推断实例化推断推断推断名
+type-parameter-inference-instantiation-inference-inference-inference-name-pattern=

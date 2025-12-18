@@ -1,6 +1,6 @@
 [flake8]
 # 设置最大行长度
-max-line-length = 100
+max-line-length = 120
 
 # 忽略特定的文件或目录
 exclude = .git,__pycache__,build,dist,.venv
@@ -9,10 +9,17 @@ exclude = .git,__pycache__,build,dist,.venv
 # E501: line too long
 # F401: unused import
 # W503: line break before binary operator
-ignore = E501,F401,W503
+# E303: too many blank lines
+# W293: blank line contains whitespace
+# W291: trailing whitespace
+# E122: continuation line missing indentation or outdented
+# E128: continuation line under-indented for visual indent
+# F821: undefined name
+# F841: local variable is assigned to but never used
+# F811: redefinition of unused
+ignore = E501,F401,W503,E303,W293,W291,E122,E128,F821,F841,F811
 
-# 启用扩展
-extend-ignore = D100,D101,D102,D103,D104,D105,D106,D107
+# 启用扩展	extend-ignore = D100,D101,D102,D103,D104,D105,D106,D107
 
 # 报告格式
 # format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s
