@@ -9,7 +9,6 @@
 import tkinter as tk
 import math
 import re
-import ipaddress
 from tkinter import ttk, filedialog, messagebox
 
 # 导入自定义模块
@@ -105,10 +104,10 @@ class ColoredNotebook(ttk.Frame):
         return self.light_purple_style
 
     def get_light_pink_style(self):
-        """获取淡粉色样式名称"""
+        """获取浅粉色样式名称"""
         return self.light_pink_style
 
-    def on_configure(self, event):
+    def on_configure(self, _):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         # 确保content_area能完全填充笔记本控件的空间
         if hasattr(self, 'content_area'):
@@ -398,8 +397,6 @@ class ColoredNotebook(ttk.Frame):
             elif selected_tab["color"] == "#fce4ec":  # 粉色标签
                 self.style.configure(self.light_pink_style, background=selected_color)
 
-        self.active_tab = tab_index
-
         # 更新背景色以匹配result_frame
         self._update_background_to_result_frame_color()
 
@@ -407,7 +404,7 @@ class ColoredNotebook(ttk.Frame):
         if self.tab_change_callback:
             self.tab_change_callback(tab_index)
 
-    def add(self, frame, text=""):
+    def add(self, _, __=""):
         """模拟ttk.Notebook的add方法"""
         # 这里我们不使用这个方法，而是使用add_tab方法
         pass
@@ -450,7 +447,9 @@ class IPSubnetSplitterApp:
         self.app_version = get_version()
 
         # CIDR格式验证正则表达式
-        self.cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/([0-9]|[1-2][0-9]|3[0-2])$'
+        self.cidr_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}' + \
+            r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/' + \
+            r'([0-9]|[1-2][0-9]|3[0-2])$'
 
         self.root = root
         self.root.title(f"IP子网切分工具 v{self.app_version}")
@@ -714,9 +713,6 @@ class IPSubnetSplitterApp:
         # 减小左侧边距，从0改为0px，右侧边距6px
         self.info_close_btn.grid(row=0, column=1, sticky="ns", padx=(0, 6), pady=5)  # 左侧边距0px，右侧边距6px
 
-        # 确保信息标签显示在关闭按钮上层
-        self.info_label.lift(self.info_close_btn)
-
         # 初始化信息栏状态
         self.info_bar_type = None  # 保存当前信息类型
         self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
@@ -786,14 +782,6 @@ class IPSubnetSplitterApp:
         # 导出按钮 - 统一pady设置
         self.export_btn = ttk.Button(input_frame, text="导出结果", command=self.export_result, width=8)
         self.export_btn.grid(row=0, column=4, rowspan=2, padx=(3, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)
-
-        # 信息栏测试按钮
-        # self.test_info_btn = ttk.Button(
-        #     input_frame, text="信息栏测试", command=self.test_info_bar, width=14
-        # )
-        # self.test_info_btn.grid(
-        #     row=0, column=4, rowspan=2, padx=(0, 0), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W
-        # )
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段列表表格的宽度，使其自适应窗口大小"""
@@ -993,12 +981,6 @@ class IPSubnetSplitterApp:
         )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
-
-        # 信息栏测试按钮
-        # self.planning_test_info_btn = ttk.Button(
-        #     parent_frame, text="信息栏测试", command=self.test_info_bar, width=14
-        # )
-        # self.planning_test_info_btn.pack(side=tk.RIGHT, padx=(10, 0))
 
         # 子网需求区域
         requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding="10")
@@ -1247,7 +1229,7 @@ class IPSubnetSplitterApp:
 
         return tree
 
-    def configure_treeview_scrollbar(self, parent, tree, side=tk.RIGHT):
+    def configure_treeview_scrollbar(self, parent, tree, _=tk.RIGHT):
         """为Treeview添加垂直滚动条
 
         Args:
@@ -1564,15 +1546,15 @@ class IPSubnetSplitterApp:
         self.edit_entry.bind("<Return>", self.on_edit_enter)
         self.edit_entry.bind("<Escape>", self.on_edit_escape)
 
-    def on_edit_focus_out(self, event):
+    def on_edit_focus_out(self, _):
         """编辑框失去焦点时保存数据"""
         self.save_edit()
 
-    def on_edit_enter(self, event):
+    def on_edit_enter(self, _):
         """按下Enter键时保存数据"""
         self.save_edit()
 
-    def on_edit_escape(self, event):
+    def on_edit_escape(self, _):
         """按下Escape键时取消编辑"""
         self.edit_entry.destroy()
         del self.current_edit_item
@@ -1845,7 +1827,7 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.place_forget()
         self.info_bar_type = None
 
-    def show_result(self, text, error=False, keep_data=False, info_type="info"):
+    def show_result(self, text, error=False, keep_data=False, _="info"):
         """显示结果"""
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
@@ -2081,7 +2063,7 @@ class IPSubnetSplitterApp:
             # 如果出现任何错误，就不绘制图表
             self.chart_data = None
 
-    def on_chart_resize(self, event):
+    def on_chart_resize(self, _):
         """Canvas尺寸变化时重新绘制图表"""
         # 当Canvas尺寸变化时重新绘制图表
         self.draw_distribution_chart()
@@ -2098,9 +2080,9 @@ class IPSubnetSplitterApp:
         font,
         anchor=tk.W,
         fill="#ffffff",
-        stroke="#000000",
-        stroke_width=1.5,
-        letter_spacing=1.5,
+        _="#000000",
+        __=1.5,
+        ___=1.5,
     ):
         """绘制带描边的文字（使用4方向基础描边，平衡性能和可读性）
 
@@ -2414,7 +2396,7 @@ class IPSubnetSplitterApp:
                 width / 2, height / 2, text=f"图表绘制失败: {str(e)}", font=title_font, fill="red"
             )
 
-    def on_window_resize(self, event):
+    def on_window_resize(self, _):
         """窗口大小变化时的处理函数，实现表格和图表自适应"""
         # 确保表格能够自适应窗口宽度
         self.remaining_tree.update_idletasks()
@@ -2565,14 +2547,12 @@ class IPSubnetSplitterApp:
                     TableStyle,
                     Paragraph,
                     Spacer,
-                    PageBreak,
                 )
                 from reportlab.lib import colors
                 from reportlab.pdfbase import pdfmetrics
                 from reportlab.pdfbase.ttfonts import TTFont
                 from reportlab.lib.units import cm
-                from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-                import sys
+                from reportlab.lib.enums import TA_LEFT, TA_CENTER
                 import time
 
                 # 注册中文字体
@@ -2743,7 +2723,7 @@ class IPSubnetSplitterApp:
                         # 使用自适应列宽替换现有列宽
                         print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
-                            main_table_data, font_name, font_size, table_width
+                            main_table_data, table_width
                         )
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
@@ -2928,14 +2908,13 @@ class IPSubnetSplitterApp:
                         # 使用自适应列宽替换现有列宽
                         print("  调用_calculate_auto_col_widths方法")
                         auto_col_widths = self._calculate_auto_col_widths(
-                            remaining_table_data, font_name, font_size, table_width
+                            remaining_table_data, table_width
                         )
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
                         col_widths = auto_col_widths
                     except Exception as e:
                         print(f"  计算剩余表格自适应列宽错误: {type(e).__name__}: {e}")
-                        import traceback
 
                         traceback.print_exc()
                         # 如果自适应列宽计算失败，使用默认列宽
@@ -3020,7 +2999,6 @@ class IPSubnetSplitterApp:
                     print("PDF文档生成成功")
                 except Exception as e:
                     print(f"PDF文档生成失败: {type(e).__name__}: {e}")
-                    import traceback
 
                     traceback.print_exc()
                 print("=== PDF导出调试信息结束 ===")
@@ -3103,7 +3081,6 @@ class IPSubnetSplitterApp:
             return file_path  # 返回导出的文件路径
 
         except Exception as e:
-            import traceback
 
             # 显示导出错误信息和堆栈跟踪
             error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
@@ -3142,7 +3119,7 @@ class IPSubnetSplitterApp:
 
         self._export_data(data_source, "保存子网规划结果", "规划结果已成功导出到: {file_path}", "导出失败: {error}")
 
-    def _calculate_auto_col_widths(self, table_data, font_name, font_size, table_width):
+    def _calculate_auto_col_widths(self, table_data, table_width):
         """根据内容计算自适应列宽
 
         Args:
@@ -3284,7 +3261,7 @@ class IPSubnetSplitterApp:
             print("未找到可用的中文字体")
             return False
 
-    def add_footer(self, canvas, doc):
+    def add_pdf_footer(self, canvas, doc):
         """在PDF文档中添加页脚"""
         import time
         from reportlab.lib.units import cm
@@ -3509,6 +3486,8 @@ class IPSubnetSplitterApp:
 
 
 if __name__ == "__main__":
+    import sys
+    import os
     # 创建主窗口
     root = tk.Tk()
 
@@ -3538,9 +3517,6 @@ if __name__ == "__main__":
         # 尝试加载图标文件
         # 在开发环境中，图标文件位于当前目录
         # 在打包后的程序中，使用PyInstaller的资源路径
-        import os
-        import sys
-        import tkinter as tk
 
         # 获取图标文件路径
         icon_path = None
@@ -3568,8 +3544,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"设置窗口图标失败: {e}")
 
-    # 创建应用实例
-    app = IPSubnetSplitterApp(root)
-
-    # 运行应用
+    # 创建应用实例并运行
+    IPSubnetSplitterApp(root)
     root.mainloop()
