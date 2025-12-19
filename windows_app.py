@@ -370,6 +370,9 @@ class IPSubnetSplitterApp:
             r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/' + \
             r'([0-9]|[1-2][0-9]|3[0-2])$'
 
+        # 存储删除记录历史，支持多次撤销
+        self.deleted_history = []
+
         self.root = root
         self.root.title(f"IP子网切分工具 v{self.app_version}")
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
@@ -670,7 +673,7 @@ class IPSubnetSplitterApp:
         # 获取选中的历史记录
         selected_items = self.history_tree.selection()
         if not selected_items:
-            messagebox.showinfo("提示", "请选择一条历史记录")
+            self.show_info("提示", "请选择一条历史记录")
             return
         
         # 获取选中项的值
@@ -852,7 +855,7 @@ class IPSubnetSplitterApp:
         # 获取选中的子网需求记录
         selected_items = self.requirements_tree.selection()
         if not selected_items:
-            messagebox.showinfo("提示", "请先选择要移动的子网需求记录")
+            self.show_info("提示", "请先选择要移动的子网需求记录")
             return
         
         selected_item = selected_items[0]
@@ -864,7 +867,7 @@ class IPSubnetSplitterApp:
         for item in self.pool_tree.get_children():
             pool_values = self.pool_tree.item(item, "values")
             if pool_values[1] == name:
-                messagebox.showerror("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
                 return
         
         # 从子网需求表删除记录
@@ -882,7 +885,7 @@ class IPSubnetSplitterApp:
         # 获取选中的需求池记录
         selected_items = self.pool_tree.selection()
         if not selected_items:
-            messagebox.showinfo("提示", "请先选择要移动的需求池记录")
+            self.show_info("提示", "请先选择要移动的需求池记录")
             return
         
         selected_item = selected_items[0]
@@ -894,7 +897,7 @@ class IPSubnetSplitterApp:
         for item in self.requirements_tree.get_children():
             req_values = self.requirements_tree.item(item, "values")
             if req_values[1] == name:
-                messagebox.showerror("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
                 return
         
         # 从需求池删除记录
@@ -906,18 +909,63 @@ class IPSubnetSplitterApp:
         # 更新序号和斑马条纹
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
-
-    def on_tree_select(self, event):
-        """处理Treeview组件的选择事件，确保两个表格不同时选中行"""
-        # 获取触发事件的组件
-        widget = event.widget
+    
+    def swap_records(self):
+        """交换两个表格中选中的记录"""
+        # 获取两个表格中的选中记录
+        selected_requirements = self.requirements_tree.selection()
+        selected_pool_items = self.pool_tree.selection()
         
-        # 如果选中的是需求池表格，清除子网需求表的选中状态
-        if widget == self.pool_tree:
-            self.requirements_tree.selection_remove(self.requirements_tree.selection())
-        # 如果选中的是子网需求表格，清除需求池表的选中状态
-        elif widget == self.requirements_tree:
-            self.pool_tree.selection_remove(self.pool_tree.selection())
+        # 检查是否同时选中了两个表格中的记录
+        if not selected_requirements or not selected_pool_items:
+            self.show_info("提示", "请同时选择两个表格中的记录进行交换")
+            return
+        
+        # 只处理单选情况
+        if len(selected_requirements) > 1 or len(selected_pool_items) > 1:
+            self.show_info("提示", "交换功能只支持单条记录交换")
+            return
+        
+        # 获取选中记录的值
+        req_item = selected_requirements[0]
+        pool_item = selected_pool_items[0]
+        
+        req_values = self.requirements_tree.item(req_item, "values")
+        pool_values = self.pool_tree.item(pool_item, "values")
+        
+        # 获取记录的名称和主机数量
+        req_name, req_hosts = req_values[1], req_values[2]
+        pool_name, pool_hosts = pool_values[1], pool_values[2]
+        
+        # 检查交换后是否会导致重复名称
+        # 检查需求池表中是否已存在req_name（排除当前选中的pool_item）
+        for item in self.pool_tree.get_children():
+            if item != pool_item:
+                values = self.pool_tree.item(item, "values")
+                if values[1] == req_name:
+                    self.show_error("错误", f"需求池中已存在名称为 '{req_name}' 的记录")
+                    return
+        
+        # 检查子网需求表中是否已存在pool_name（排除当前选中的req_item）
+        for item in self.requirements_tree.get_children():
+            if item != req_item:
+                values = self.requirements_tree.item(item, "values")
+                if values[1] == pool_name:
+                    self.show_error("错误", f"子网需求表中已存在名称为 '{pool_name}' 的记录")
+                    return
+        
+        # 交换记录值
+        self.requirements_tree.item(req_item, values=("", pool_name, pool_hosts))
+        self.pool_tree.item(pool_item, values=("", req_name, req_hosts))
+        
+        # 更新两个表格的序号和斑马条纹
+        self.update_requirements_tree_zebra_stripes()
+        self.update_pool_tree_zebra_stripes()
+        
+        # 保存交换操作到历史记录
+        self.save_current_state(f"交换记录: {req_name} ↔ {pool_name}")
+
+
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
@@ -1312,17 +1360,16 @@ class IPSubnetSplitterApp:
         # 放置滚动条在表格右侧
         requirements_scrollbar.grid(row=0, column=2, sticky="ns", padx=(0, 0))
         
-        # 绑定选择事件，确保两个表格不同时选中行
-        self.pool_tree.bind("<<TreeviewSelect>>", self.on_tree_select)
-        self.requirements_tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+        # 允许同时选择两张表中的记录，移除选择事件绑定
 
-        # 按钮框架内部布局 - 使用空白区域将底部三个按钮推到底部
-        button_frame.grid_rowconfigure(0, weight=0)
-        button_frame.grid_rowconfigure(1, weight=0)
-        button_frame.grid_rowconfigure(2, weight=1)  # 空白区域，将底部三个按钮推到底部
-        button_frame.grid_rowconfigure(3, weight=0)
-        button_frame.grid_rowconfigure(4, weight=0)
-        button_frame.grid_rowconfigure(5, weight=0)
+        # 按钮框架内部布局 - 按照用户要求设置行权重
+        button_frame.grid_rowconfigure(0, weight=0)  # 添加按钮
+        button_frame.grid_rowconfigure(1, weight=0)  # 删除按钮
+        button_frame.grid_rowconfigure(2, weight=0)  # 撤销按钮
+        button_frame.grid_rowconfigure(3, weight=1)  # 空白区域，将底部三个按钮推到底部
+        button_frame.grid_rowconfigure(4, weight=0)  # 向左移按钮
+        button_frame.grid_rowconfigure(5, weight=0)  # 交换记录按钮
+        button_frame.grid_rowconfigure(6, weight=0)  # 向右移按钮
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
@@ -1333,17 +1380,23 @@ class IPSubnetSplitterApp:
         delete_btn = ttk.Button(button_frame, text="删除", command=self.delete_subnet_requirement, width=7)
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
+        # 撤销按钮
+        self.undo_delete_btn = ttk.Button(button_frame, text="撤销", command=self.undo_delete, width=7)
+        self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
+
         # 向左移按钮 - 使用向左箭头，位于底部三个按钮的最上方
         self.undo_btn = ttk.Button(button_frame, text="←", command=self.move_left, width=7)
-        self.undo_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+        self.undo_btn.grid(row=4, column=0, sticky="ew", pady=(0, 5))
 
-        # 向右移按钮 - 使用向右箭头，位于向左移按钮下方
+        # 交换记录按钮 - 使用交换图标，位于向左移和向右移按钮中间
+        self.swap_btn = ttk.Button(button_frame, text="↔", command=self.swap_records, width=7)
+        self.swap_btn.grid(row=5, column=0, sticky="ew", pady=(0, 5))
+
+        # 向右移按钮 - 使用向右箭头，位于交换按钮下方
         self.redo_btn = ttk.Button(button_frame, text="→", command=self.move_right, width=7)
-        self.redo_btn.grid(row=4, column=0, sticky="ew", pady=(0, 5))
+        self.redo_btn.grid(row=6, column=0, sticky="ew", pady=(0, 5))
 
-        # 执行子网规划按钮，位于底部，右移按钮下方，跟着下边框走
-        self.execute_planning_btn = ttk.Button(button_frame, text="规划子网", command=self.execute_subnet_planning, width=7)
-        self.execute_planning_btn.grid(row=5, column=0, sticky="ew", pady=(0, 0))
+        # 规划子网按钮已移动到规划结果区域，此处不再显示
 
         # 添加示例数据 - 带斑马条纹标签
         # 先插入不带序号的数据
@@ -1357,7 +1410,7 @@ class IPSubnetSplitterApp:
         self.configure_treeview_styles(self.requirements_tree)
         self.configure_treeview_styles(self.pool_tree)  # 配置需求池表格样式
         
-        # 设置表格选择模式为单选
+        # 设置表格选择模式为单选，但允许跨表格选择
         self.requirements_tree.configure(selectmode=tk.BROWSE)
         self.pool_tree.configure(selectmode=tk.BROWSE)
 
@@ -1372,10 +1425,56 @@ class IPSubnetSplitterApp:
         self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
 
+        # 设置统一的按钮宽度
+        button_width = 8
+        
         # 导出规划按钮 - 使用 place 布局手动控制位置
-        export_planning_btn = ttk.Button(result_frame, text="导出规划", command=self.export_planning_result)
+        export_planning_btn = ttk.Button(result_frame, text="导出规划", 
+                                        command=self.export_planning_result, 
+                                        width=button_width,
+                                        style="Accent.TButton")
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
+        
+        # 创建醒目的按钮样式，使用较浅的红灰色系，用于导出规划
+        self.style.configure("Accent.TButton", 
+                           background="#c77c7c",  # 较浅的红灰色，带灰色调
+                           foreground="white",  # 白色文字
+                           font=("微软雅黑", 10, "bold"),
+                           padding=6)
+        
+        # 配置浅红灰色按钮的鼠标悬停效果
+        self.style.map("Accent.TButton", 
+                      background=[("active", "#b86d6d"),  # 鼠标悬停时使用略深的浅红灰色
+                                 ("!active", "#c77c7c"),  # 正常状态
+                                 ("pressed", "#a95d5d")],  # 按下状态
+                      foreground=[("active", "white"),
+                                 ("!active", "white"),
+                                 ("pressed", "white")])
+        
+        # 创建醒目的按钮样式，使用较深的红灰色系，用于规划子网
+        self.style.configure("RedAccent.TButton", 
+                           background="#9a5252",  # 较深的红灰色，带灰色调
+                           foreground="white",  # 白色文字
+                           font=("微软雅黑", 10, "bold"),
+                           padding=6)
+        
+        # 配置深红灰色按钮的鼠标悬停效果
+        self.style.map("RedAccent.TButton", 
+                      background=[("active", "#8b4646"),  # 鼠标悬停时使用略深的深红灰色
+                                 ("!active", "#9a5252"),  # 正常状态
+                                 ("pressed", "#7c3a3a")],  # 按下状态
+                      foreground=[("active", "white"),
+                                 ("!active", "white"),
+                                 ("pressed", "white")])
+        
+        # 规划子网按钮 - 使用 place 布局，位于导出规划按钮左方，大小相同
+        self.execute_planning_btn = ttk.Button(result_frame, text="规划子网", 
+                                             command=self.execute_subnet_planning, 
+                                             width=button_width,
+                                             style="RedAccent.TButton")
+        # 使用place布局，位于导出规划按钮左方，间距为10像素
+        self.execute_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-export_planning_btn.winfo_reqwidth()-10, y=-3)
 
         # 已分配子网页面
         self.allocated_frame = ttk.Frame(
@@ -1696,17 +1795,21 @@ class IPSubnetSplitterApp:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=4, pady=20)
 
-        def save_requirement():
-            """保存子网需求"""
+        def save_requirement(target_table="requirements"):
+            """保存子网需求
+            
+            Args:
+                target_table: 目标表，"requirements"表示子网需求表，"pool"表示需求池表
+            """
             name = name_var.get().strip()
             hosts = hosts_var.get().strip()
 
             if not name:
-                messagebox.showerror("错误", "请输入子网名称")
+                self.show_error("错误", "请输入子网名称")
                 return
 
             if not hosts.isdigit() or int(hosts) <= 0:
-                messagebox.showerror("错误", "请输入有效的主机数量")
+                self.show_error("错误", "请输入有效的主机数量")
                 return
 
             # 检查是否存在相同名称的子网，同时检查子网需求表和需求池表
@@ -1715,7 +1818,7 @@ class IPSubnetSplitterApp:
                 values = self.requirements_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
-                    messagebox.showerror("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
                     return
             
             # 检查需求池表
@@ -1723,18 +1826,29 @@ class IPSubnetSplitterApp:
                 values = self.pool_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
-                    messagebox.showerror("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
                     return
 
-            # 添加到表格 - 带斑马条纹标签
-            # 获取当前表格中的行数，计算新行的索引（从1开始）
-            current_rows = len(self.requirements_tree.get_children())
-            new_index = current_rows + 1
-            tag = "even" if new_index % 2 == 0 else "odd"
-            self.requirements_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
-
-            # 重新应用所有行的斑马条纹，确保一致性
-            self.update_requirements_tree_zebra_stripes()
+            if target_table == "requirements":
+                # 添加到子网需求表 - 带斑马条纹标签
+                # 获取当前表格中的行数，计算新行的索引（从1开始）
+                current_rows = len(self.requirements_tree.get_children())
+                new_index = current_rows + 1
+                tag = "even" if new_index % 2 == 0 else "odd"
+                self.requirements_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
+                
+                # 重新应用所有行的斑马条纹，确保一致性
+                self.update_requirements_tree_zebra_stripes()
+            else:
+                # 添加到需求池表 - 带斑马条纹标签
+                # 获取当前表格中的行数，计算新行的索引（从1开始）
+                current_rows = len(self.pool_tree.get_children())
+                new_index = current_rows + 1
+                tag = "even" if new_index % 2 == 0 else "odd"
+                self.pool_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
+                
+                # 重新应用所有行的斑马条纹，确保一致性
+                self.update_pool_tree_zebra_stripes()
 
             # 保存当前状态到操作记录，包含添加的子网信息
             self.save_current_state(f"添加子网: {name}({hosts})")
@@ -1742,12 +1856,15 @@ class IPSubnetSplitterApp:
             temp_window.destroy()
 
         # 创建按钮并在按钮框架中居中
-        save_button = ttk.Button(button_frame, text="保存", command=save_requirement, width=10)
-        cancel_button = ttk.Button(button_frame, text="取消", command=temp_window.destroy, width=10)
+        save_requirement_btn = ttk.Button(button_frame, text="保存需求", command=lambda: save_requirement("requirements"), width=10)
+        save_to_pool_btn = ttk.Button(button_frame, text="暂存到池", command=lambda: save_requirement("pool"), width=10)
 
         # 使用pack布局让按钮在按钮框架中居中显示
-        save_button.pack(side=tk.LEFT, padx=(0, 15))
-        cancel_button.pack(side=tk.LEFT)
+        save_requirement_btn.pack(side=tk.LEFT, padx=(0, 10))
+        save_to_pool_btn.pack(side=tk.LEFT)
+        
+        # 绑定Esc键关闭对话框
+        temp_window.bind("<Escape>", lambda event: temp_window.destroy())
 
     def center_window(self, window, width, height):
         """将窗口居中显示在主窗口中
@@ -1772,21 +1889,55 @@ class IPSubnetSplitterApp:
         window.geometry(f"{width}x{height}+{x}+{y}")
 
     def delete_subnet_requirement(self):
-        """删除选中的子网需求，并重新应用斑马条纹"""
-        selected_items = self.requirements_tree.selection()
-        if not selected_items:
-            messagebox.showwarning("提示", "请先选择要删除的子网需求")
+        """删除选中的子网需求或需求池记录，并重新应用斑马条纹"""
+        # 检查两个表格中是否有选中的记录
+        selected_requirements = self.requirements_tree.selection()
+        selected_pool_items = self.pool_tree.selection()
+        
+        if not selected_requirements and not selected_pool_items:
+            self.show_warning("提示", "请先选择要删除的记录")
+            return
+        
+        # 显示自定义的居中确认对话框
+        confirm = self.show_custom_confirm("确认删除", "确定要删除选中的记录吗？此操作可以通过撤销按钮恢复。")
+        if not confirm:
             return
 
-        # 收集要删除的子网信息
+        # 收集要删除的子网信息和详细记录
         deleted_subnets = []
-        for item in selected_items:
+        deleted_records = []
+        
+        # 删除子网需求表中的选中记录
+        for item in selected_requirements:
             values = self.requirements_tree.item(item, "values")
             deleted_subnets.append(f"{values[1]}({values[2]})")
+            # 保存详细记录，包括表格类型和记录数据
+            deleted_records.append({
+                "tree": "requirements",
+                "values": tuple(values),
+                "item": item
+            })
             self.requirements_tree.delete(item)
+        
+        # 删除需求池表中的选中记录
+        for item in selected_pool_items:
+            values = self.pool_tree.item(item, "values")
+            deleted_subnets.append(f"{values[1]}({values[2]})")
+            # 保存详细记录，包括表格类型和记录数据
+            deleted_records.append({
+                "tree": "pool",
+                "values": tuple(values),
+                "item": item
+            })
+            self.pool_tree.delete(item)
+
+        # 保存删除记录到历史列表，支持多次撤销
+        if deleted_records:
+            self.deleted_history.append(deleted_records)
 
         # 删除后重新应用斑马条纹
         self.update_requirements_tree_zebra_stripes()
+        self.update_pool_tree_zebra_stripes()
         
         # 保存当前状态到操作记录，包含删除的子网信息
         if deleted_subnets:
@@ -1802,6 +1953,187 @@ class IPSubnetSplitterApp:
     def update_pool_tree_zebra_stripes(self):
         """更新需求池表的斑马条纹和序号"""
         self.update_table_zebra_stripes(self.pool_tree, update_index=True)
+        
+    def show_custom_dialog(self, title, message, dialog_type="info"):
+        """显示自定义的居中对话框，支持info、error、warning类型"""
+        result = None
+        
+        # 创建Toplevel窗口
+        dialog = tk.Toplevel(self.root)
+        dialog.title(title)
+        dialog.resizable(False, False)
+        dialog.transient(self.root)  # 设置为父窗口的子窗口
+        dialog.grab_set()  # 模态对话框
+        
+        # 设置对话框内容
+        frame = ttk.Frame(dialog, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加消息文本
+        msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
+        msg_label.pack(pady=(0, 20))
+        
+        # 创建按钮框架
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill=tk.X)
+        
+        # 确定按钮（用于info、error、warning类型）
+        def on_ok():
+            nonlocal result
+            result = True
+            dialog.destroy()
+        
+        # 根据对话框类型设置按钮
+        if dialog_type in ["info", "error", "warning"]:
+            # 只有确定按钮，使用默认样式
+            ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
+            ok_btn.pack(side=tk.RIGHT)
+            
+            # 绑定回车键和Esc键
+            dialog.bind('<Return>', lambda e: on_ok())
+            dialog.bind('<Escape>', lambda e: on_ok())
+        
+        # 计算并设置对话框居中位置
+        dialog.update_idletasks()
+        dialog_width = dialog.winfo_width()
+        dialog_height = dialog.winfo_height()
+        
+        # 获取主窗口在屏幕上的绝对位置和尺寸
+        root_x = self.root.winfo_rootx()
+        root_y = self.root.winfo_rooty()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        
+        # 计算对话框在主窗口中心的坐标
+        x = root_x + (root_width - dialog_width) // 2
+        y = root_y + (root_height - dialog_height) // 2
+        
+        # 设置对话框位置
+        dialog.geometry(f"+{x}+{y}")
+        
+        # 等待对话框关闭
+        self.root.wait_window(dialog)
+        
+        return result
+    
+    def show_info(self, title, message):
+        """显示信息对话框"""
+        return self.show_custom_dialog(title, message, "info")
+    
+    def show_error(self, title, message):
+        """显示错误对话框"""
+        return self.show_custom_dialog(title, message, "error")
+    
+    def show_warning(self, title, message):
+        """显示警告对话框"""
+        return self.show_custom_dialog(title, message, "warning")
+    
+    def show_custom_confirm(self, title, message):
+        """显示自定义的居中确认对话框"""
+        result = None
+        
+        # 创建Toplevel窗口
+        dialog = tk.Toplevel(self.root)
+        dialog.title(title)
+        dialog.resizable(False, False)
+        dialog.transient(self.root)  # 设置为父窗口的子窗口
+        dialog.grab_set()  # 模态对话框
+        
+        # 设置对话框内容
+        frame = ttk.Frame(dialog, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加消息文本
+        msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
+        msg_label.pack(pady=(0, 20))
+        
+        # 创建按钮框架
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill=tk.X)
+        
+        # 确定按钮，使用默认样式
+        def on_ok():
+            nonlocal result
+            result = True
+            dialog.destroy()
+        
+        ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
+        ok_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        
+        # 取消按钮
+        def on_cancel():
+            nonlocal result
+            result = False
+            dialog.destroy()
+        
+        cancel_btn = ttk.Button(btn_frame, text="取消", command=on_cancel)
+        cancel_btn.pack(side=tk.RIGHT)
+        
+        # 绑定回车键和Esc键
+        dialog.bind('<Return>', lambda e: on_ok())
+        dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 计算并设置对话框居中位置
+        dialog.update_idletasks()
+        dialog_width = dialog.winfo_width()
+        dialog_height = dialog.winfo_height()
+        
+        # 获取主窗口在屏幕上的绝对位置和尺寸
+        root_x = self.root.winfo_rootx()
+        root_y = self.root.winfo_rooty()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        
+        # 计算对话框在主窗口中心的坐标
+        x = root_x + (root_width - dialog_width) // 2
+        y = root_y + (root_height - dialog_height) // 2
+        
+        # 设置对话框位置
+        dialog.geometry(f"+{x}+{y}")
+        
+        # 等待对话框关闭
+        self.root.wait_window(dialog)
+        
+        return result
+    
+    def undo_delete(self):
+        """撤销最近的删除操作，支持多次撤销"""
+        # 检查是否有删除记录历史
+        if not self.deleted_history:
+            self.show_info("提示", "没有可撤销的删除操作")
+            return
+        
+        # 从历史记录中取出最近一次删除的记录批次
+        deleted_records = self.deleted_history.pop()
+        
+        # 恢复被删除的记录
+        restored_subnets = []
+        
+        for record in deleted_records:
+            tree_type = record["tree"]
+            values = record["values"]
+            
+            # 根据记录类型选择对应的表格
+            if tree_type == "requirements":
+                # 恢复到子网需求表
+                self.requirements_tree.insert("", tk.END, values=values)
+            elif tree_type == "pool":
+                # 恢复到需求池表
+                self.pool_tree.insert("", tk.END, values=values)
+            
+            # 收集恢复的子网信息
+            restored_subnets.append(f"{values[1]}({values[2]})")
+        
+        # 恢复后重新应用斑马条纹
+        self.update_requirements_tree_zebra_stripes()
+        self.update_pool_tree_zebra_stripes()
+        
+        # 保存当前状态到操作记录，包含恢复的子网信息
+        if restored_subnets:
+            action_type = f"撤销删除: 恢复了 {', '.join(restored_subnets)}"
+        else:
+            action_type = "撤销删除"
+        self.save_current_state(action_type)
 
     def on_requirements_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能"""
@@ -1872,7 +2204,7 @@ class IPSubnetSplitterApp:
 
             # 验证数据
             if not new_value:
-                messagebox.showerror("错误", "输入不能为空")
+                self.show_error("错误", "输入不能为空")
                 return
 
             if self.current_edit_column == "name":
@@ -1883,24 +2215,24 @@ class IPSubnetSplitterApp:
                         values = self.requirements_tree.item(item, "values")
                         existing_name = values[1]  # 子网名称在第二列
                         if existing_name == new_value:
-                            messagebox.showerror("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                            self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
                             return
                 # 2. 检查需求池表
                 for item in self.pool_tree.get_children():
                     values = self.pool_tree.item(item, "values")
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
-                        messagebox.showerror("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                        self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
                         return
 
             if self.current_edit_column == "hosts":
                 try:
                     hosts = int(new_value)
                     if hosts <= 0:
-                        messagebox.showerror("错误", "主机数量必须大于0")
+                        self.show_error("错误", "主机数量必须大于0")
                         return
                 except ValueError:
-                    messagebox.showerror("错误", "主机数量必须是整数")
+                    self.show_error("错误", "主机数量必须是整数")
                     return
 
             # 更新Treeview数据
@@ -1925,11 +2257,11 @@ class IPSubnetSplitterApp:
         # 获取父网段
         parent = self.planning_parent_entry.get().strip()
         if not parent:
-            messagebox.showerror("错误", "请输入父网段")
+            self.show_error("错误", "请输入父网段")
             return
 
         if not re.match(self.cidr_pattern, parent):
-            messagebox.showerror("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
+            self.show_error("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
             return
 
         # 获取子网需求
@@ -1939,7 +2271,7 @@ class IPSubnetSplitterApp:
             subnet_requirements.append((values[1], int(values[2])))
 
         if not subnet_requirements:
-            messagebox.showerror("错误", "请添加至少一个子网需求")
+            self.show_error("错误", "请添加至少一个子网需求")
             return
 
         try:
@@ -1952,7 +2284,7 @@ class IPSubnetSplitterApp:
 
             # 检查是否有错误
             if 'error' in plan_result:
-                messagebox.showerror("错误", f"子网规划失败: {plan_result['error']}")
+                self.show_error("错误", f"子网规划失败: {plan_result['error']}")
                 return
 
             # 清空结果表格
@@ -2032,9 +2364,9 @@ class IPSubnetSplitterApp:
                     message = f"子网规划失败: {error_msg}"
             else:
                 message = f"子网规划失败: {error_msg}"
-            messagebox.showerror("错误", message)
+            self.show_error("错误", message)
         except Exception as e:
-            messagebox.showerror("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
+            self.show_error("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
     def execute_split(self, from_history=False):
         """执行切分操作
@@ -2060,7 +2392,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            messagebox.showerror("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
+            self.show_error("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
             return
         if not re.match(self.cidr_pattern, split):
             self.clear_result()
@@ -2068,7 +2400,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            messagebox.showerror("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
+            self.show_error("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
             return
 
         try:
