@@ -10,7 +10,7 @@ import tkinter as tk
 import math
 import re
 import datetime
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog
 
 # 导入自定义模块
 from ip_subnet_calculator import split_subnet, ip_to_int, get_subnet_info, suggest_subnet_planning
@@ -815,8 +815,8 @@ class IPSubnetSplitterApp:
         # 只有当连续两次都是"执行规划"操作且状态相同时才跳过
         if self.history_states and action_type == "执行规划" and self.history_states[-1]['action_type'] == "执行规划":
             last_state = self.history_states[-1]
-            if (last_state['requirements'] == subnet_requirements and 
-                last_state['parent'] == parent):
+            if (last_state['requirements'] == subnet_requirements 
+                    and last_state['parent'] == parent):
                 return
         
         # 如果当前不是最新状态，截断历史记录
@@ -847,8 +847,7 @@ class IPSubnetSplitterApp:
         # 重做按钮：如果当前索引小于历史记录长度-1，则可以重做
         self.redo_btn.config(state=tk.NORMAL if self.current_history_index < len(self.history_states) - 1 else tk.DISABLED)  
         
-        # 更新当前操作记录的指示
-        self.update_current_operation_indicator()
+        # 移除不存在的方法调用
         
     def move_left(self):
         """向左移：从子网需求表向需求池移动记录（支持多条记录，移动后保持选中）"""
@@ -1548,7 +1547,7 @@ class IPSubnetSplitterApp:
                                              width=button_width,
                                              style="RedAccent.TButton")
         # 使用place布局，位于导出规划按钮左方，间距为10像素
-        self.execute_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-export_planning_btn.winfo_reqwidth()-10, y=-3)
+        self.execute_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-export_planning_btn.winfo_reqwidth() - 10, y=-3)
 
         # 已分配子网页面
         self.allocated_frame = ttk.Frame(
@@ -3856,114 +3855,120 @@ class IPSubnetSplitterApp:
                 # 从导出数据中提取父网段和子网信息，生成chart_data
                 chart_data = None
                 
-                # 检查是否已有chart_data
-                if hasattr(self, 'chart_data') and self.chart_data is not None and isinstance(self.chart_data, dict):
-                    chart_data = self.chart_data
-                else:
-                    print("没有找到chart_data，尝试从导出数据中生成")
-                    
-                    # 尝试从main_data中提取父网段信息
-                    parent_cidr = None
-                    print(f"main_data内容: {main_data}")
-                    
-                    # 遍历main_data查找父网段信息
-                    for row in main_data:
-                        print(f"检查行: {row}")
-                        if len(row) >= 2:
-                            if row[0] == "父网段":
-                                parent_cidr = row[1]
-                                break
-                            # 检查其他可能的父网段字段名
-                            elif "父网段" in str(row[0]) or "父网络" in str(row[0]):
-                                parent_cidr = row[1]
-                                break
-                            # 检查第一行是否包含父网段信息
-                            elif row[0] and isinstance(row[0], str) and "/" in str(row[0]):
-                                parent_cidr = row[0]
-                                break
-                    
-                    if parent_cidr:
-                        print(f"从导出数据中提取到父网段: {parent_cidr}")
+                # 只有在子网切分功能中导出时才生成网段分布图
+                # 检查当前导出的主数据名称，如果是"切分网段信息"，则生成网段分布图
+                if data_source["main_name"] == "切分网段信息":
+                    # 检查是否已有chart_data
+                    if hasattr(self, 'chart_data') and self.chart_data is not None and isinstance(self.chart_data, dict):
+                        chart_data = self.chart_data
                     else:
-                        # 如果直接找不到父网段，尝试从main_tree中获取
-                        print("直接从main_data中找不到父网段，尝试从main_tree中获取")
-                        for item in main_tree.get_children():
-                            values = main_tree.item(item, "values")
-                            print(f"检查树节点: {values}")
-                            if values and len(values) >= 2:
-                                if values[0] == "父网段":
-                                    parent_cidr = values[1]
-                                    break
-                        if parent_cidr:
-                            print(f"从main_tree中提取到父网段: {parent_cidr}")
+                        print("没有找到chart_data，尝试从导出数据中生成")
                         
-                        # 从remaining_tree中提取剩余网段信息
-                        remaining_networks = []
-                        for item in remaining_tree.get_children():
-                            values = remaining_tree.item(item, "values")
-                            if values and len(values) >= 1:
-                                remaining_networks.append(values[0])
+                        # 尝试从main_data中提取父网段信息
+                        parent_cidr = None
+                        print(f"main_data内容: {main_data}")
                         
-                        # 从main_data中提取切分网段信息
-                        split_networks = []
+                        # 遍历main_data查找父网段信息
                         for row in main_data:
-                            if len(row) >= 2 and row[0] == "切分网段":
-                                split_networks.append(row[1])
+                            print(f"检查行: {row}")
+                            if len(row) >= 2:
+                                if row[0] == "父网段":
+                                    parent_cidr = row[1]
+                                    break
+                                # 检查其他可能的父网段字段名
+                                elif "父网段" in str(row[0]) or "父网络" in str(row[0]):
+                                    parent_cidr = row[1]
+                                    break
+                                # 检查第一行是否包含父网段信息
+                                elif row[0] and isinstance(row[0], str) and "/" in str(row[0]):
+                                    parent_cidr = row[0]
+                                    break
                         
-                        print(f"提取到切分网段: {split_networks}")
-                        print(f"提取到剩余网段: {remaining_networks}")
-                        
-                        # 生成chart_data
-                        parent_info = get_subnet_info(parent_cidr)
-                        if "error" not in parent_info:
-                            parent_start = ip_to_int(parent_info.get("network", "0.0.0.0"))
-                            parent_end = ip_to_int(parent_info.get("broadcast", "0.0.0.0"))
-                            parent_range = parent_end - parent_start + 1
+                        if parent_cidr:
+                            print(f"从导出数据中提取到父网段: {parent_cidr}")
+                        else:
+                            # 如果直接找不到父网段，尝试从main_tree中获取
+                            print("直接从main_data中找不到父网段，尝试从main_tree中获取")
+                            for item in main_tree.get_children():
+                                values = main_tree.item(item, "values")
+                                print(f"检查树节点: {values}")
+                                if values and len(values) >= 2:
+                                    if values[0] == "父网段":
+                                        parent_cidr = values[1]
+                                        break
+                            if parent_cidr:
+                                print(f"从main_tree中提取到父网段: {parent_cidr}")
                             
-                            chart_data = {
-                                "parent": {
-                                    "start": parent_start,
-                                    "end": parent_end,
-                                    "range": parent_range,
-                                    "name": parent_info.get("cidr", parent_cidr),
-                                    "color": "#f3e5f5",
-                                },
-                                "networks": [],
-                            }
+                            # 从remaining_tree中提取剩余网段信息
+                            remaining_networks = []
+                            for item in remaining_tree.get_children():
+                                values = remaining_tree.item(item, "values")
+                                if values and len(values) >= 1:
+                                    remaining_networks.append(values[0])
                             
-                            # 添加切分网段
-                            for split_cidr in split_networks:
-                                split_info = get_subnet_info(split_cidr)
-                                if "error" not in split_info:
-                                    split_start = ip_to_int(split_info.get("network", "0.0.0.0"))
-                                    split_end = ip_to_int(split_info.get("broadcast", "0.0.0.0"))
-                                    split_range = split_end - split_start + 1
-                                    chart_data["networks"].append({
-                                        "start": split_start,
-                                        "end": split_end,
-                                        "range": split_range,
-                                        "name": split_info.get("cidr", split_cidr),
-                                        "color": "#2196f3",
-                                        "type": "split",
-                                    })
+                            # 从main_data中提取切分网段信息
+                            split_networks = []
+                            for row in main_data:
+                                if len(row) >= 2 and row[0] == "切分网段":
+                                    split_networks.append(row[1])
                             
-                            # 添加剩余网段
-                            for remaining_cidr in remaining_networks:
-                                remaining_info = get_subnet_info(remaining_cidr)
-                                if "error" not in remaining_info:
-                                    remaining_start = ip_to_int(remaining_info.get("network", "0.0.0.0"))
-                                    remaining_end = ip_to_int(remaining_info.get("broadcast", "0.0.0.0"))
-                                    remaining_range = remaining_end - remaining_start + 1
-                                    chart_data["networks"].append({
-                                        "start": remaining_start,
-                                        "end": remaining_end,
-                                        "range": remaining_range,
-                                        "name": remaining_info.get("cidr", remaining_cidr),
-                                        "color": "#5e9c6a",
-                                        "type": "remaining",
-                                    })
+                            print(f"提取到切分网段: {split_networks}")
+                            print(f"提取到剩余网段: {remaining_networks}")
                             
-                            print(f"成功生成chart_data，包含 {len(chart_data['networks'])} 个网段")
+                            # 生成chart_data
+                            parent_info = get_subnet_info(parent_cidr)
+                            if "error" not in parent_info:
+                                parent_start = ip_to_int(parent_info.get("network", "0.0.0.0"))
+                                parent_end = ip_to_int(parent_info.get("broadcast", "0.0.0.0"))
+                                parent_range = parent_end - parent_start + 1
+                                
+                                chart_data = {
+                                    "parent": {
+                                        "start": parent_start,
+                                        "end": parent_end,
+                                        "range": parent_range,
+                                        "name": parent_info.get("cidr", parent_cidr),
+                                        "color": "#f3e5f5",
+                                    },
+                                    "networks": [],
+                                }
+                                
+                                # 添加切分网段
+                                for split_cidr in split_networks:
+                                    split_info = get_subnet_info(split_cidr)
+                                    if "error" not in split_info:
+                                        split_start = ip_to_int(split_info.get("network", "0.0.0.0"))
+                                        split_end = ip_to_int(split_info.get("broadcast", "0.0.0.0"))
+                                        split_range = split_end - split_start + 1
+                                        chart_data["networks"].append({
+                                            "start": split_start,
+                                            "end": split_end,
+                                            "range": split_range,
+                                            "name": split_info.get("cidr", split_cidr),
+                                            "color": "#2196f3",
+                                            "type": "split",
+                                        })
+                                
+                                # 添加剩余网段
+                                for remaining_cidr in remaining_networks:
+                                    remaining_info = get_subnet_info(remaining_cidr)
+                                    if "error" not in remaining_info:
+                                        remaining_start = ip_to_int(remaining_info.get("network", "0.0.0.0"))
+                                        remaining_end = ip_to_int(remaining_info.get("broadcast", "0.0.0.0"))
+                                        remaining_range = remaining_end - remaining_start + 1
+                                        chart_data["networks"].append({
+                                            "start": remaining_start,
+                                            "end": remaining_end,
+                                            "range": remaining_range,
+                                            "name": remaining_info.get("cidr", remaining_cidr),
+                                            "color": "#5e9c6a",
+                                            "type": "remaining",
+                                        })
+                                
+                                print(f"成功生成chart_data，包含 {len(chart_data['networks'])} 个网段")
+                else:
+                    print("当前不是子网切分功能导出，跳过网段分布图生成")
+                    chart_data = None
                 
                 # 简化检测条件，确保能正确检测到图表数据
                 has_chart_data = chart_data is not None and isinstance(chart_data, dict)
@@ -4431,7 +4436,6 @@ class IPSubnetSplitterApp:
                         print("网段分布图成功添加到PDF")
                     except Exception as e:
                         print(f"添加网段分布图到PDF失败: {type(e).__name__}: {e}")
-                        import traceback
                         traceback.print_exc()
                     finally:
                         # 延迟清理临时文件，避免权限问题
