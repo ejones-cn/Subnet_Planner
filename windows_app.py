@@ -9,6 +9,7 @@
 import tkinter as tk
 import math
 import re
+import datetime
 from tkinter import ttk, filedialog, messagebox
 
 # 导入自定义模块
@@ -702,6 +703,230 @@ class IPSubnetSplitterApp:
         # 执行切分，设置from_history=True，不记入历史
         self.execute_split(from_history=True)
 
+    def update_planning_history_tree(self):
+        """更新子网规划历史记录列表"""
+        # 清空现有历史记录
+        for item in self.planning_history_tree.get_children():
+            self.planning_history_tree.delete(item)
+        
+        # 重新插入所有历史记录
+        for index, history_record in enumerate(self.planning_history_records, 1):
+            # 设置斑马条纹标签
+            tags = ("even",) if index % 2 == 0 else ("odd",)
+            # 格式化需求信息
+            req_str = ", ".join([f"{name}({hosts})" for name, hosts in history_record['requirements']])
+            # 格式化为: 1. 10.21.48.0/20 | 办公区(200), 服务器区(50), 研发部(100)
+            formatted_record = f"{index}. {history_record['parent']} | {req_str}"
+            self.planning_history_tree.insert(
+                "", 
+                tk.END, 
+                values=(formatted_record,),
+                tags=tags
+            )
+
+    def reexecute_planning_from_history(self, event):
+        """从历史记录重新执行子网规划"""
+        # 获取选中的历史记录（双击事件会自动选择）
+        selected_items = self.planning_history_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中项的索引
+        selected_item = selected_items[0]
+        # 获取选中项在树中的索引
+        item_index = self.planning_history_tree.index(selected_item)
+        
+        # 获取对应的历史记录
+        if 0 <= item_index < len(self.planning_history_records):
+            history_record = self.planning_history_records[item_index]
+            
+            # 更新父网段输入框
+            self.planning_parent_entry.delete(0, tk.END)
+            self.planning_parent_entry.insert(0, history_record['parent'])
+            
+            # 清空现有子网需求
+            for item in self.requirements_tree.get_children():
+                self.requirements_tree.delete(item)
+            
+            # 添加历史记录中的子网需求
+            for i, (name, hosts) in enumerate(history_record['requirements']):
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=tags)
+            
+            # 更新序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            
+            # 执行子网规划，设置from_history=True，不记入历史
+            self.execute_subnet_planning(from_history=True)
+            
+    def update_undo_redo_buttons_state(self):
+        """更新撤销/重做按钮的状态"""
+        # 撤销按钮：如果当前索引大于0，则可以撤销
+        self.undo_btn.config(state=tk.NORMAL if self.current_history_index > 0 else tk.DISABLED)
+        
+        # 重做按钮：如果当前索引小于历史记录长度-1，则可以重做
+        self.redo_btn.config(state=tk.NORMAL if self.current_history_index < len(self.history_states) - 1 else tk.DISABLED)
+        
+    def undo_planning(self):
+        """撤销子网规划操作"""
+        if self.current_history_index > 0:
+            # 回退到上一个状态
+            self.current_history_index -= 1
+            
+            # 获取上一个状态
+            prev_state = self.history_states[self.current_history_index]
+            
+            # 恢复父网段
+            self.planning_parent_entry.delete(0, tk.END)
+            self.planning_parent_entry.insert(0, prev_state['parent'])
+            
+            # 清空现有子网需求
+            for item in self.requirements_tree.get_children():
+                self.requirements_tree.delete(item)
+            
+            # 恢复子网需求
+            for i, (name, hosts) in enumerate(prev_state['requirements']):
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=tags)
+            
+            # 更新序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            
+            # 恢复规划结果
+            # 清空结果表格
+            for item in self.allocated_tree.get_children():
+                self.allocated_tree.delete(item)
+            
+            for item in self.planning_remaining_tree.get_children():
+                self.planning_remaining_tree.delete(item)
+            
+            # 显示已分配子网
+            for i, subnet in enumerate(prev_state['plan_result']['allocated_subnets'], 1):
+                # 设置斑马条纹标签
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.allocated_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        i,
+                        subnet["name"],
+                        subnet["cidr"],
+                        subnet["required_hosts"],
+                        subnet["available_hosts"],
+                        subnet["info"]["network"],
+                        subnet["info"]["netmask"],
+                        subnet["info"]["broadcast"],
+                    ),
+                    tags=tags,
+                )
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.allocated_tree)
+            
+            # 显示剩余网段
+            for i, subnet in enumerate(prev_state['plan_result']['remaining_subnets_info'], 1):
+                # 设置斑马条纹标签
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.planning_remaining_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        i,
+                        prev_state['plan_result']['remaining_subnets'][i - 1],
+                        subnet["network"],
+                        subnet["netmask"],
+                        subnet["broadcast"],
+                        subnet["usable_addresses"],
+                    ),
+                    tags=tags,
+                )
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.planning_remaining_tree)
+            
+            # 更新撤销/重做按钮状态
+            self.update_undo_redo_buttons_state()
+            
+    def redo_planning(self):
+        """重做子网规划操作"""
+        if self.current_history_index < len(self.history_states) - 1:
+            # 前进到下一个状态
+            self.current_history_index += 1
+            
+            # 获取下一个状态
+            next_state = self.history_states[self.current_history_index]
+            
+            # 恢复父网段
+            self.planning_parent_entry.delete(0, tk.END)
+            self.planning_parent_entry.insert(0, next_state['parent'])
+            
+            # 清空现有子网需求
+            for item in self.requirements_tree.get_children():
+                self.requirements_tree.delete(item)
+            
+            # 恢复子网需求
+            for i, (name, hosts) in enumerate(next_state['requirements']):
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=tags)
+            
+            # 更新序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            
+            # 恢复规划结果
+            # 清空结果表格
+            for item in self.allocated_tree.get_children():
+                self.allocated_tree.delete(item)
+            
+            for item in self.planning_remaining_tree.get_children():
+                self.planning_remaining_tree.delete(item)
+            
+            # 显示已分配子网
+            for i, subnet in enumerate(next_state['plan_result']['allocated_subnets'], 1):
+                # 设置斑马条纹标签
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.allocated_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        i,
+                        subnet["name"],
+                        subnet["cidr"],
+                        subnet["required_hosts"],
+                        subnet["available_hosts"],
+                        subnet["info"]["network"],
+                        subnet["info"]["netmask"],
+                        subnet["info"]["broadcast"],
+                    ),
+                    tags=tags,
+                )
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.allocated_tree)
+            
+            # 显示剩余网段
+            for i, subnet in enumerate(next_state['plan_result']['remaining_subnets_info'], 1):
+                # 设置斑马条纹标签
+                tags = ("even",) if i % 2 == 0 else ("odd",)
+                self.planning_remaining_tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        i,
+                        next_state['plan_result']['remaining_subnets'][i - 1],
+                        subnet["network"],
+                        subnet["netmask"],
+                        subnet["broadcast"],
+                        subnet["usable_addresses"],
+                    ),
+                    tags=tags,
+                )
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.planning_remaining_tree)
+            
+            # 更新撤销/重做按钮状态
+            self.update_undo_redo_buttons_state()
+
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
         # 创建一个主框架，用于放置输入参数面板和历史记录面板
@@ -990,29 +1215,76 @@ class IPSubnetSplitterApp:
         """设置子网规划功能的界面"""
         # 直接使用self.planning_frame，移除中间层main_planning_frame
 
-        # 父网段输入区域
-        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
-        parent_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
+        # 设置grid布局
+        self.planning_frame.grid_columnconfigure(0, weight=0)
+        self.planning_frame.grid_columnconfigure(1, weight=1)
+        self.planning_frame.grid_rowconfigure(0, weight=0)
+        self.planning_frame.grid_rowconfigure(1, weight=0)
+        self.planning_frame.grid_rowconfigure(2, weight=1)
 
+        # 父网段设置区域
+        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
+        parent_frame.grid(row=0, column=0, sticky="nwse", pady=(0, 0))
+        
+        # 父网段输入框
         ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Entry(
             parent_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
-        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
-
+        
         # 子网需求区域
         requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding="10")
-        requirements_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))  # 改为垂直和水平填充，允许扩展
+        requirements_frame.grid(row=1, column=0, sticky="nwse", pady=(0, 10))
 
         # 内部容器框架，用于组织表格和按钮
         inner_frame = ttk.Frame(requirements_frame)
         inner_frame.pack(fill=tk.BOTH, expand=True)
 
+        # 操作记录区域 - 跨两行显示，增加内边距
+        history_frame = ttk.LabelFrame(self.planning_frame, text="操作记录", padding=(10, 10, 10, 10))
+        history_frame.grid(row=0, column=1, rowspan=2, sticky="nwse", padx=(10, 0), pady=(0, 10))  # 跨两行，靠右放置
+        
+        # 创建历史记录列表，去掉表头，显示多行
+        self.planning_history_tree = ttk.Treeview(history_frame, columns=('record'), show='', height=8)
+        
+        # 设置列宽
+        self.planning_history_tree.column('record', width=200, stretch=True)
+        
+        # 配置斑马条纹样式
+        self.configure_treeview_styles(self.planning_history_tree)
+        
+        # 放置历史记录树
+        self.planning_history_tree.pack(fill=tk.BOTH, expand=True)
+        
+        # 绑定双击事件，从历史记录重新执行
+        self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
+        
+        # 撤销和重做按钮框架
+        history_buttons_frame = ttk.Frame(history_frame)
+        history_buttons_frame.pack(fill=tk.X, expand=False, pady=(5, 0))
+        
+        # 撤销按钮
+        self.undo_btn = ttk.Button(history_buttons_frame, text="撤销", command=self.undo_planning, width=7)
+        self.undo_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        # 重做按钮
+        self.redo_btn = ttk.Button(history_buttons_frame, text="重做", command=self.redo_planning, width=7)
+        self.redo_btn.pack(side=tk.LEFT, padx=(5, 0))
+        
+        # 初始化撤销/重做相关变量
+        self.current_history_index = -1  # 当前操作索引
+        self.history_states = []  # 保存每个操作的完整状态
+
+        # 初始化规划历史记录列表
+        if not hasattr(self, 'planning_history_records'):
+            self.planning_history_records = []
+
         # 设置grid布局
         inner_frame.grid_rowconfigure(0, weight=1)
-        inner_frame.grid_columnconfigure(0, weight=1)
+        inner_frame.grid_columnconfigure(0, weight=0)
         inner_frame.grid_columnconfigure(1, weight=0)
         inner_frame.grid_columnconfigure(2, weight=0)
 
@@ -1024,9 +1296,9 @@ class IPSubnetSplitterApp:
         self.requirements_tree.heading("name", text="子网名称")
         self.requirements_tree.heading("hosts", text="主机数量")
         # 字段宽度设置
-        self.requirements_tree.column("index", width=50, minwidth=50, stretch=False)
-        self.requirements_tree.column("name", width=125, minwidth=100, stretch=True)
-        self.requirements_tree.column("hosts", width=125, minwidth=100, stretch=True)
+        self.requirements_tree.column("index", width=40, minwidth=40, stretch=False)
+        self.requirements_tree.column("name", width=146, minwidth=146, stretch=True)
+        self.requirements_tree.column("hosts", width=60, minwidth=60, stretch=True)
 
         # 绑定双击事件以实现编辑功能
         self.requirements_tree.bind("<Double-1>", self.on_requirements_tree_double_click)
@@ -1055,18 +1327,18 @@ class IPSubnetSplitterApp:
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
-        add_btn = ttk.Button(button_frame, text="添加", command=self.add_subnet_requirement)
+        add_btn = ttk.Button(button_frame, text="添加", command=self.add_subnet_requirement, width=7)
         add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
         # 删除按钮
-        delete_btn = ttk.Button(button_frame, text="删除", command=self.delete_subnet_requirement)
+        delete_btn = ttk.Button(button_frame, text="删除", command=self.delete_subnet_requirement, width=7)
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
         # 空白填充
         ttk.Frame(button_frame).grid(row=2, column=0, sticky="nsew")
 
         # 执行子网规划按钮，位于底部
-        self.execute_planning_btn = ttk.Button(button_frame, text="规划子网", command=self.execute_subnet_planning)
+        self.execute_planning_btn = ttk.Button(button_frame, text="规划子网", command=self.execute_subnet_planning, width=7)
         self.execute_planning_btn.grid(row=3, column=0, sticky="ew", pady=(0, 0))
 
         # 添加示例数据 - 带斑马条纹标签
@@ -1083,9 +1355,9 @@ class IPSubnetSplitterApp:
         # 删除原来的执行规划按钮容器
         # 按钮已移动到删除按钮下方
 
-        # 规划结果区域
+        # 规划结果区域 - 使用grid布局，跨两列显示
         result_frame = ttk.LabelFrame(self.planning_frame, text="规划结果", padding="10")
-        result_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 5))
 
         # 创建笔记本控件显示规划结果
         self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
@@ -1579,8 +1851,12 @@ class IPSubnetSplitterApp:
             del self.current_edit_column
             del self.current_edit_column_index
 
-    def execute_subnet_planning(self):
-        """执行子网规划"""
+    def execute_subnet_planning(self, from_history=False):
+        """执行子网规划
+        
+        Args:
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+        """
         # 获取父网段
         parent = self.planning_parent_entry.get().strip()
         if not parent:
@@ -1668,6 +1944,45 @@ class IPSubnetSplitterApp:
             self.auto_resize_columns(self.planning_remaining_tree)
 
             # 子网规划完成，不显示对话框提示
+
+            # 如果不是从历史记录执行，将操作记录保存到历史
+            if not from_history:
+                # 保存当前状态到撤销/重做历史
+                current_state = {
+                    'parent': parent,
+                    'requirements': subnet_requirements,
+                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'plan_result': plan_result
+                }
+                
+                # 如果当前不是最新状态，截断历史记录
+                if self.current_history_index < len(self.history_states) - 1:
+                    self.history_states = self.history_states[:self.current_history_index + 1]
+                
+                # 添加新状态
+                self.history_states.append(current_state)
+                self.current_history_index += 1
+                
+                # 只保留最近20条状态记录
+                if len(self.history_states) > 20:
+                    self.history_states.pop(0)
+                    self.current_history_index -= 1
+                
+                # 保存到历史记录
+                history_record = {
+                    'parent': parent,
+                    'requirements': subnet_requirements,
+                    'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                self.planning_history_records.append(history_record)
+                # 只保留最近20条记录
+                if len(self.planning_history_records) > 20:
+                    self.planning_history_records.pop(0)
+                # 更新历史记录列表
+                self.update_planning_history_tree()
+                
+                # 更新撤销/重做按钮状态
+                self.update_undo_redo_buttons_state()
 
         except ValueError as e:
             error_msg = str(e)
