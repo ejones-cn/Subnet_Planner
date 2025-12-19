@@ -2053,17 +2053,26 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
         
+        # 设置对话框最小高度
+        dialog.minsize(width=300, height=150)
+        
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
         
-        # 添加消息文本
+        # 设置frame的grid布局，让按钮垂直居中
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=0)
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(2, weight=1)
+        
+        # 添加消息文本，居中显示
         msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
-        msg_label.pack(pady=(0, 20))
+        msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         # 创建按钮框架
         btn_frame = ttk.Frame(frame)
-        btn_frame.pack(fill=tk.X)
+        btn_frame.grid(row=1, column=0, sticky="e")
         
         # 确定按钮（用于info、error、warning类型）
         def on_ok():
@@ -2127,26 +2136,26 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框
         
+        # 设置对话框最小高度
+        dialog.minsize(width=300, height=150)
+        
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
         
-        # 添加消息文本
+        # 设置frame的grid布局，让按钮垂直居中
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=0)
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(2, weight=1)
+        
+        # 添加消息文本，居中显示
         msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
-        msg_label.pack(pady=(0, 20))
+        msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         # 创建按钮框架
         btn_frame = ttk.Frame(frame)
-        btn_frame.pack(fill=tk.X)
-        
-        # 确定按钮，使用默认样式
-        def on_ok():
-            nonlocal result
-            result = True
-            dialog.destroy()
-        
-        ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
-        ok_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        btn_frame.grid(row=1, column=0, sticky="e")
         
         # 取消按钮
         def on_cancel():
@@ -2155,7 +2164,16 @@ class IPSubnetSplitterApp:
             dialog.destroy()
         
         cancel_btn = ttk.Button(btn_frame, text="取消", command=on_cancel)
-        cancel_btn.pack(side=tk.RIGHT)
+        cancel_btn.pack(side=tk.RIGHT, padx=(5, 0))
+        
+        # 确定按钮，使用默认样式
+        def on_ok():
+            nonlocal result
+            result = True
+            dialog.destroy()
+        
+        ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
+        ok_btn.pack(side=tk.RIGHT)
         
         # 绑定回车键和Esc键
         dialog.bind('<Return>', lambda e: on_ok())
