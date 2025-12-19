@@ -1079,7 +1079,7 @@ class IPSubnetSplitterApp:
         vcmd = (self.root.register(self.validate_split_cidr_local), '%P')
         self.split_entry = ttk.Entry(
             input_frame, width=16, font=(
-            "微软雅黑", 10), validate='focusout', validatecommand=vcmd
+                "微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
         self.split_entry.grid(row=1, column=1, padx=0, pady=(5, 3), sticky=tk.W + tk.N + tk.S)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
@@ -3373,10 +3373,9 @@ class IPSubnetSplitterApp:
                 print(f"文件路径: {file_path}")
                 print(f"文件扩展名: {file_ext}")
                 print("进入PDF导出分支")
-                from reportlab.lib.pagesizes import A4
+                from reportlab.lib.pagesizes import A4, landscape
                 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
                 from reportlab.platypus import (
-                    SimpleDocTemplate,
                     Table,
                     TableStyle,
                     Paragraph,
@@ -3384,7 +3383,6 @@ class IPSubnetSplitterApp:
                 )
                 from reportlab.lib import colors
                 from reportlab.pdfbase import pdfmetrics
-                from reportlab.pdfbase.ttfonts import TTFont
                 from reportlab.lib.units import cm
                 from reportlab.lib.enums import TA_LEFT, TA_CENTER
                 import time
@@ -3397,7 +3395,6 @@ class IPSubnetSplitterApp:
                 # 创建PDF文档，使用BaseDocTemplate以支持多页面模板
                 print("创建PDF文档对象")
                 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
-                from reportlab.lib.pagesizes import A4, landscape
                 
                 # 设置页面边距
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
@@ -3980,7 +3977,7 @@ class IPSubnetSplitterApp:
                 if has_chart_data and has_networks:
                     print("检测到有效网段分布图数据，准备添加到PDF")
                     from reportlab.platypus import Image
-                    import io
+
                     import os
                     from PIL import Image as PILImage
                     
@@ -3992,7 +3989,7 @@ class IPSubnetSplitterApp:
                         self.draw_distribution_chart()
                         
                         # 处理图表页面，确保竖排A4
-                        from reportlab.platypus import PageBreak, KeepTogether
+                        from reportlab.platypus import PageBreak
                         from io import BytesIO
                         
                         # 1. 切换到纵向页面模板，准备添加图表
@@ -4086,10 +4083,10 @@ class IPSubnetSplitterApp:
                             margin_left = 180  # 增加左边距，为文字留出更多空间
                             margin_right = 100
                             margin_top = 280  # 增加上边距，使标题与图表之间有一行字的距离
-                            margin_bottom = 150
+
                             chart_width = high_res_width - margin_left - margin_right
                             chart_x = margin_left
-                            chart_y = margin_top
+
                             
                             # 使用对数比例尺
                             log_max = math.log10(parent_range)
@@ -4155,7 +4152,7 @@ class IPSubnetSplitterApp:
                                 bold_text_font = bold_font
                             
                             # 简单可靠的文字垂直居中算法，确保中文文字在视觉上居中
-                            def get_centered_y(box_y, box_height, text_bbox, font):
+                            def get_centered_y(box_y, box_height, _, __):
                                 """计算文字垂直居中的y坐标，确保中文文字在视觉上居中"""
                                 # 用户反馈文字仍然偏低，调整为容器中心位置减去20像素，让文字继续往上移动
                                 # 由于PIL的y轴向下递增，降低y值可以让文字上移
@@ -4288,8 +4285,8 @@ class IPSubnetSplitterApp:
                             legend_y = y
                             # 调整图例大小，适应文字大小变化
                             legend_item_height = 60  # 图例项高度
-                            legend_block_size = 40  # 颜色块大小
-                            item_spacing = 20  # 项目间距
+
+
                             
                             # 彻底解决图例垂直对齐问题，考虑文字基线特性
                             legend_container_y = legend_y
@@ -4453,9 +4450,6 @@ class IPSubnetSplitterApp:
                 print("开始生成PDF文档...")
                 try:
                     # 确保中文支持
-                    from reportlab.pdfbase import pdfmetrics
-                    from reportlab.pdfbase.ttfonts import TTFont
-                    
                     # 注册中文字体，确保与register_chinese_fonts方法一致
                     try:
                         # 使用已注册的ChineseFont，确保字体名称一致
