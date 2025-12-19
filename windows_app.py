@@ -1213,7 +1213,7 @@ class IPSubnetSplitterApp:
         """创建子网切分功能的结果显示区域"""
         result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
         # 调整底部外边距，将结果区域与窗体下边距缩小
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 5))
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 0))
 
         # 创建一个自定义的笔记本控件来显示不同的结果页面
         self.notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_tab_change)
@@ -1231,7 +1231,7 @@ class IPSubnetSplitterApp:
         # 设置合适的列宽
         self.split_tree.column("item", width=100, minwidth=100, stretch=False)
         self.split_tree.column("value", width=250)
-        self.split_tree.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.split_tree.pack(fill=tk.BOTH, expand=True, pady=0)
 
         # 配置斑马条纹样式和信息标签样式
         self.configure_treeview_styles(self.split_tree, include_special_tags=True)
@@ -1308,8 +1308,8 @@ class IPSubnetSplitterApp:
         self.remaining_tree.configure(yscrollcommand=self.remaining_scroll_v.set)
 
         # 设置布局：Treeview在左，垂直滚动条在右，都填满整个可用空间
-        self.remaining_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=5)
-        self.remaining_scroll_v.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+        self.remaining_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=0)
+        self.remaining_scroll_v.pack(side=tk.RIGHT, fill=tk.Y, pady=0)
 
         # 绑定窗口大小变化事件，实现表格自适应
         self.root.bind("<Configure>", self.on_window_resize)
