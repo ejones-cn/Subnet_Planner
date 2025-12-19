@@ -851,67 +851,93 @@ class IPSubnetSplitterApp:
         self.update_current_operation_indicator()
         
     def move_left(self):
-        """向左移：从子网需求表向需求池移动记录"""
+        """向左移：从子网需求表向需求池移动记录（支持多条记录，移动后保持选中）"""
         # 获取选中的子网需求记录
         selected_items = self.requirements_tree.selection()
         if not selected_items:
             self.show_info("提示", "请先选择要移动的子网需求记录")
             return
         
-        selected_item = selected_items[0]
-        values = self.requirements_tree.item(selected_item, "values")
-        name = values[1]
-        hosts = values[2]
+        # 先检查所有选中记录是否都可以移动
+        # 同时收集要移动的记录数据
+        items_to_move = []
+        for selected_item in selected_items:
+            values = self.requirements_tree.item(selected_item, "values")
+            name = values[1]
+            hosts = values[2]
+            items_to_move.append({"name": name, "hosts": hosts})
+            
+            # 检查需求池中是否已存在相同名称的记录
+            for item in self.pool_tree.get_children():
+                pool_values = self.pool_tree.item(item, "values")
+                if pool_values[1] == name:
+                    self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                    return
         
-        # 检查需求池中是否已存在相同名称的记录
-        for item in self.pool_tree.get_children():
-            pool_values = self.pool_tree.item(item, "values")
-            if pool_values[1] == name:
-                self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
-                return
+        # 执行移动操作，并保存新插入记录的ID
+        new_pool_items = []
+        for selected_item in selected_items:
+            # 从子网需求表删除记录
+            self.requirements_tree.delete(selected_item)
         
-        # 从子网需求表删除记录
-        self.requirements_tree.delete(selected_item)
-        
-        # 添加到需求池
-        self.pool_tree.insert("", tk.END, values=("", name, hosts), tags=( ("even",) if len(self.pool_tree.get_children()) % 2 == 0 else ("odd",) ))
+        # 插入记录到需求池，并保存新记录的ID
+        for data in items_to_move:
+            new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+            new_pool_items.append(new_item_id)
         
         # 更新序号和斑马条纹
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
         
+        # 移动完成后，在需求池中选中刚刚移动的记录
+        if new_pool_items:
+            self.pool_tree.selection_set(*new_pool_items)
+        
     def move_right(self):
-        """向右移：从需求池向子网需求表移动记录"""
+        """向右移：从需求池向子网需求表移动记录（支持多条记录，移动后保持选中）"""
         # 获取选中的需求池记录
         selected_items = self.pool_tree.selection()
         if not selected_items:
             self.show_info("提示", "请先选择要移动的需求池记录")
             return
         
-        selected_item = selected_items[0]
-        values = self.pool_tree.item(selected_item, "values")
-        name = values[1]
-        hosts = values[2]
+        # 先检查所有选中记录是否都可以移动
+        # 同时收集要移动的记录数据
+        items_to_move = []
+        for selected_item in selected_items:
+            values = self.pool_tree.item(selected_item, "values")
+            name = values[1]
+            hosts = values[2]
+            items_to_move.append({"name": name, "hosts": hosts})
+            
+            # 检查子网需求表中是否已存在相同名称的记录
+            for item in self.requirements_tree.get_children():
+                req_values = self.requirements_tree.item(item, "values")
+                if req_values[1] == name:
+                    self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                    return
         
-        # 检查子网需求表中是否已存在相同名称的记录
-        for item in self.requirements_tree.get_children():
-            req_values = self.requirements_tree.item(item, "values")
-            if req_values[1] == name:
-                self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
-                return
+        # 执行移动操作，并保存新插入记录的ID
+        new_req_items = []
+        for selected_item in selected_items:
+            # 从需求池删除记录
+            self.pool_tree.delete(selected_item)
         
-        # 从需求池删除记录
-        self.pool_tree.delete(selected_item)
-        
-        # 添加到子网需求表
-        self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=( ("even",) if len(self.requirements_tree.get_children()) % 2 == 0 else ("odd",) ))
+        # 插入记录到子网需求表，并保存新记录的ID
+        for data in items_to_move:
+            new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+            new_req_items.append(new_item_id)
         
         # 更新序号和斑马条纹
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
+        
+        # 移动完成后，在子网需求表中选中刚刚移动的记录
+        if new_req_items:
+            self.requirements_tree.selection_set(*new_req_items)
     
     def swap_records(self):
-        """交换两个表格中选中的记录"""
+        """交换两个表格中选中的记录（支持多条记录，完全交换所有选中记录）"""
         # 获取两个表格中的选中记录
         selected_requirements = self.requirements_tree.selection()
         selected_pool_items = self.pool_tree.selection()
@@ -921,49 +947,94 @@ class IPSubnetSplitterApp:
             self.show_info("提示", "请同时选择两个表格中的记录进行交换")
             return
         
-        # 只处理单选情况
-        if len(selected_requirements) > 1 or len(selected_pool_items) > 1:
-            self.show_info("提示", "交换功能只支持单条记录交换")
-            return
+        # 准备交换的记录数据
+        # 1. 从子网需求表收集所有选中记录的数据
+        req_items_to_move = []
+        for item in selected_requirements:
+            values = self.requirements_tree.item(item, "values")
+            req_items_to_move.append({"name": values[1], "hosts": values[2]})
         
-        # 获取选中记录的值
-        req_item = selected_requirements[0]
-        pool_item = selected_pool_items[0]
+        # 2. 从需求池表收集所有选中记录的数据
+        pool_items_to_move = []
+        for item in selected_pool_items:
+            values = self.pool_tree.item(item, "values")
+            pool_items_to_move.append({"name": values[1], "hosts": values[2]})
         
-        req_values = self.requirements_tree.item(req_item, "values")
-        pool_values = self.pool_tree.item(pool_item, "values")
+        # 第一阶段：检查所有交换后是否会导致重复名称
+        # 收集所有要交换的名称
+        req_names_to_swap = [data["name"] for data in req_items_to_move]
+        pool_names_to_swap = [data["name"] for data in pool_items_to_move]
         
-        # 获取记录的名称和主机数量
-        req_name, req_hosts = req_values[1], req_values[2]
-        pool_name, pool_hosts = pool_values[1], pool_values[2]
-        
-        # 检查交换后是否会导致重复名称
-        # 检查需求池表中是否已存在req_name（排除当前选中的pool_item）
+        # 检查需求池表：要交换到需求池的req_names是否与需求池中已有的名称冲突（排除当前选中的pool_items）
+        all_pool_names = []
         for item in self.pool_tree.get_children():
-            if item != pool_item:
+            if item not in selected_pool_items:
                 values = self.pool_tree.item(item, "values")
-                if values[1] == req_name:
-                    self.show_error("错误", f"需求池中已存在名称为 '{req_name}' 的记录")
-                    return
+                all_pool_names.append(values[1])
         
-        # 检查子网需求表中是否已存在pool_name（排除当前选中的req_item）
+        for name in req_names_to_swap:
+            if name in all_pool_names:
+                self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                return
+        
+        # 检查子网需求表：要交换到子网需求表的pool_names是否与子网需求表中已有的名称冲突（排除当前选中的req_items）
+        all_req_names = []
         for item in self.requirements_tree.get_children():
-            if item != req_item:
+            if item not in selected_requirements:
                 values = self.requirements_tree.item(item, "values")
-                if values[1] == pool_name:
-                    self.show_error("错误", f"子网需求表中已存在名称为 '{pool_name}' 的记录")
-                    return
+                all_req_names.append(values[1])
         
-        # 交换记录值
-        self.requirements_tree.item(req_item, values=("", pool_name, pool_hosts))
-        self.pool_tree.item(pool_item, values=("", req_name, req_hosts))
+        for name in pool_names_to_swap:
+            if name in all_req_names:
+                self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                return
+        
+        # 第二阶段：执行完全交换操作
+        swapped_records = []
+        
+        # 保存新插入记录的ID，用于交换后重新选中
+        new_req_items = []
+        new_pool_items = []
+        
+        # 1. 先删除所有选中的记录
+        # 从子网需求表删除选中记录
+        for item in selected_requirements:
+            self.requirements_tree.delete(item)
+        
+        # 从需求池表删除选中记录
+        for item in selected_pool_items:
+            self.pool_tree.delete(item)
+        
+        # 2. 然后将对方的记录添加到自己的表格中
+        # 将需求池的记录添加到子网需求表，并保存新插入记录的ID
+        for data in pool_items_to_move:
+            new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+            new_req_items.append(new_item_id)
+            swapped_records.append(f"{data['name']} ↔ ...")
+        
+        # 将子网需求表的记录添加到需求池，并保存新插入记录的ID
+        for data in req_items_to_move:
+            new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+            new_pool_items.append(new_item_id)
         
         # 更新两个表格的序号和斑马条纹
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
         
+        # 3. 交换完成后，重新选中刚刚交换的记录
+        # 选中子网需求表中刚刚交换的记录
+        if new_req_items:
+            # selection_set不能直接接受列表，需要将列表转换为单独的参数
+            self.requirements_tree.selection_set(*new_req_items)
+        
+        # 选中需求池表中刚刚交换的记录
+        if new_pool_items:
+            # selection_set不能直接接受列表，需要将列表转换为单独的参数
+            self.pool_tree.selection_set(*new_pool_items)
+        
         # 保存交换操作到历史记录
-        self.save_current_state(f"交换记录: {req_name} ↔ {pool_name}")
+        action_type = f"交换记录: 子网需求表 {len(selected_requirements)} 条记录 ↔ 需求池 {len(selected_pool_items)} 条记录"
+        self.save_current_state(action_type)
 
 
 
@@ -1410,9 +1481,9 @@ class IPSubnetSplitterApp:
         self.configure_treeview_styles(self.requirements_tree)
         self.configure_treeview_styles(self.pool_tree)  # 配置需求池表格样式
         
-        # 设置表格选择模式为单选，但允许跨表格选择
-        self.requirements_tree.configure(selectmode=tk.BROWSE)
-        self.pool_tree.configure(selectmode=tk.BROWSE)
+        # 设置表格选择模式为多选，允许一次选择多条记录
+        self.requirements_tree.configure(selectmode=tk.EXTENDED)
+        self.pool_tree.configure(selectmode=tk.EXTENDED)
 
         # 删除原来的执行规划按钮容器
         # 按钮已移动到删除按钮下方
