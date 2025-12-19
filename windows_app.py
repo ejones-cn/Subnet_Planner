@@ -1257,7 +1257,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.heading("usable", text="可用地址数")
 
         # 设置列宽，使用minwidth替代width，让列可以自适应
-        self.remaining_tree.column("index", minwidth=35, width=35, stretch=False)
+        self.remaining_tree.column("index", minwidth=40, width=40, stretch=False, anchor="e")
         self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
@@ -1327,8 +1327,8 @@ class IPSubnetSplitterApp:
         # 直接使用self.planning_frame，移除中间层main_planning_frame
 
         # 设置grid布局
-        self.planning_frame.grid_columnconfigure(0, weight=0)
-        self.planning_frame.grid_columnconfigure(1, weight=0)  # 增加权重，让子网需求面板占据更多宽度
+        self.planning_frame.grid_columnconfigure(0, weight=1)  # 增加权重，让需求池面板和子网需求面板平均分配宽度
+        self.planning_frame.grid_columnconfigure(1, weight=1)  # 增加权重，让子网需求面板和规划结果面板占据更多宽度
         self.planning_frame.grid_rowconfigure(0, weight=0)
         self.planning_frame.grid_rowconfigure(1, weight=0)
         self.planning_frame.grid_rowconfigure(2, weight=1)
@@ -1350,7 +1350,7 @@ class IPSubnetSplitterApp:
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
         
-        # 需求池区域 - 跨两行显示，增加内边距
+        # 需求池区域
         history_frame = ttk.LabelFrame(self.planning_frame, text="需求池", padding=(10, 10, 10, 10))
         history_frame.grid(row=1, column=0, sticky="nwse", pady=(0, 10))  # 靠左放置
 
@@ -1374,7 +1374,7 @@ class IPSubnetSplitterApp:
         self.pool_tree.heading("hosts", text="主机数量")
         
         # 设置列宽，与子网需求表保持一致
-        self.pool_tree.column("index", width=40, minwidth=40, stretch=False)
+        self.pool_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
         self.pool_tree.column("name", width=140, minwidth=140, stretch=True)
         self.pool_tree.column("hosts", width=30, minwidth=30, stretch=True)
         
@@ -1417,7 +1417,7 @@ class IPSubnetSplitterApp:
         self.requirements_tree.heading("name", text="子网名称")
         self.requirements_tree.heading("hosts", text="主机数量")
         # 字段宽度设置
-        self.requirements_tree.column("index", width=40, minwidth=40, stretch=False)
+        self.requirements_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
         self.requirements_tree.column("name", width=140, minwidth=140, stretch=True)
         self.requirements_tree.column("hosts", width=30, minwidth=30, stretch=True)
 
@@ -1572,7 +1572,7 @@ class IPSubnetSplitterApp:
         self.allocated_tree.heading("broadcast", text="广播地址")
 
         # 设置列宽为自动，根据内容自动调整宽度
-        self.allocated_tree.column("index", width=0, minwidth=10, stretch=True)  # 序号列自动宽度
+        self.allocated_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")  # 序号列固定宽度40
         self.allocated_tree.column("name", width=0, minwidth=100, stretch=True)  # 子网名称列自动宽度
         self.allocated_tree.column("cidr", width=0, minwidth=90, stretch=True)  # CIDR列自动宽度
         self.allocated_tree.column("required", width=0, minwidth=30, stretch=True)  # 需求数列自动宽度
@@ -1619,7 +1619,7 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.heading("usable", text="可用地址数")
 
         # 设置列宽，所有列都启用拉伸以实现自适应
-        self.planning_remaining_tree.column("index", width=40, minwidth=30, stretch=True)
+        self.planning_remaining_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
         self.planning_remaining_tree.column("cidr", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column(
             "network", width=80, minwidth=70, stretch=True
@@ -1763,6 +1763,10 @@ class IPSubnetSplitterApp:
         for col in tree['columns']:
             # 获取表头文本
             header = tree.heading(col, 'text') or ''  # 确保header不是None
+            
+            # 跳过序号列，保持固定宽度6
+            if header == '序号' or col == 'index':
+                continue
 
             # 设置临时标签文本并测量宽度
             temp_label.config(text=header)
