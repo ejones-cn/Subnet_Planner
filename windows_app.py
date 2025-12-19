@@ -713,18 +713,20 @@ class IPSubnetSplitterApp:
         for index, history_record in enumerate(self.planning_history_records, 1):
             # 格式化记录内容
             if history_record['action_type'] == "初始状态":
-                formatted_record = f"{index}. 初始状态"
+                base_record = f"{index}. 初始状态"
             elif history_record['action_type'].startswith("删除子网") or history_record['action_type'].startswith("添加子网"):
                 # 对于删除和添加操作，只显示操作本身的信息，不显示所有子网
-                formatted_record = f"{index}. {history_record['action_type']}"
+                base_record = f"{index}. {history_record['action_type']}"
             else:
-                formatted_record = f"{index}. {history_record['action_type']}: {history_record['req_str']}"
+                base_record = f"{index}. {history_record['action_type']}: {history_record['req_str']}"
             
-            # 设置标签：当前操作添加current标签，其他添加斑马条纹标签
+            # 为当前步骤添加明显标记
             if index - 1 == self.current_history_index:
-                tags = ("current",)
+                formatted_record = f"→ {base_record}"
+                tags = ("even" if index % 2 == 0 else "odd", "current")
             else:
-                tags = ("even",) if index % 2 == 0 else ("odd",)
+                formatted_record = f"  {base_record}"
+                tags = ("even" if index % 2 == 0 else "odd",)
             
             # 插入历史记录
             self.planning_history_tree.insert(
@@ -801,6 +803,14 @@ class IPSubnetSplitterApp:
             'req_str': req_str
         }
         
+        # 检查当前状态是否与上一个状态相同，如果相同则不保存
+        # 只有当连续两次都是"执行规划"操作且状态相同时才跳过
+        if self.history_states and action_type == "执行规划" and self.history_states[-1]['action_type'] == "执行规划":
+            last_state = self.history_states[-1]
+            if (last_state['requirements'] == subnet_requirements and 
+                last_state['parent'] == parent):
+                return
+        
         # 如果当前不是最新状态，截断历史记录
         if self.current_history_index < len(self.history_states) - 1:
             self.history_states = self.history_states[:self.current_history_index + 1]
@@ -819,6 +829,9 @@ class IPSubnetSplitterApp:
         
         # 更新历史记录列表
         self.update_planning_history_tree()
+        
+        # 更新撤销/重做按钮状态
+        self.update_undo_redo_buttons_state()
         
     def update_undo_redo_buttons_state(self):
         """更新撤销/重做按钮的状态"""
@@ -862,6 +875,10 @@ class IPSubnetSplitterApp:
             
             for item in self.planning_remaining_tree.get_children():
                 self.planning_remaining_tree.delete(item)
+            
+            # 如果不是初始状态，执行子网规划
+            if prev_state['action_type'] != "初始状态" and prev_state['requirements']:
+                self.execute_subnet_planning(from_history=True)
             
             # 更新撤销/重做按钮状态
             self.update_undo_redo_buttons_state()
@@ -1204,14 +1221,18 @@ class IPSubnetSplitterApp:
         parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
         parent_frame.grid(row=0, column=0, sticky="nwse", pady=(0, 0))
         
-        # 父网段输入框
+        # 初始化父网段列表
+        self.parent_networks = ["10.21.48.0/20"]  # 默认父网段
+        
+        # 父网段下拉文本框
         ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
-        self.planning_parent_entry = ttk.Entry(
-            parent_frame, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
+        self.planning_parent_entry = ttk.Combobox(
+            parent_frame, values=self.parent_networks, width=16, font=("微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
+        self.planning_parent_entry.config(state="normal")  # 允许手动输入
         
         # 子网需求区域
         requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding="10")
@@ -1502,6 +1523,9 @@ class IPSubnetSplitterApp:
             tree.tag_configure("even", background="#d8d8d8")
             tree.tag_configure("odd", background="#ffffff")
 
+            # 配置当前操作标签样式：使用加粗字体和颜色变化，避免与斑马条纹冲突
+            tree.tag_configure("current", font=tree.cget("font") + ("bold",), foreground="#0066cc")
+
             # 如果需要，配置错误和信息标签
             if include_special_tags:
                 tree.tag_configure("error", foreground="red")
@@ -1685,6 +1709,14 @@ class IPSubnetSplitterApp:
                 messagebox.showerror("错误", "请输入有效的主机数量")
                 return
 
+            # 检查是否存在相同名称的子网
+            for item in self.requirements_tree.get_children():
+                values = self.requirements_tree.item(item, "values")
+                existing_name = values[1]  # 子网名称在第二列
+                if existing_name == name:
+                    messagebox.showerror("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    return
+
             # 添加到表格 - 带斑马条纹标签
             # 获取当前表格中的行数，计算新行的索引（从1开始）
             current_rows = len(self.requirements_tree.get_children())
@@ -1830,6 +1862,16 @@ class IPSubnetSplitterApp:
                 messagebox.showerror("错误", "输入不能为空")
                 return
 
+            if self.current_edit_column == "name":
+                # 检查是否存在相同名称的子网（排除当前正在编辑的行）
+                for item in self.requirements_tree.get_children():
+                    if item != self.current_edit_item:
+                        values = self.requirements_tree.item(item, "values")
+                        existing_name = values[1]  # 子网名称在第二列
+                        if existing_name == new_value:
+                            messagebox.showerror("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                            return
+
             if self.current_edit_column == "hosts":
                 try:
                     hosts = int(new_value)
@@ -1949,6 +1991,12 @@ class IPSubnetSplitterApp:
 
             # 如果不是从历史记录执行，将操作记录保存到历史
             if not from_history:
+                # 检查当前父网段是否在列表中，如果不在则添加
+                current_parent = self.planning_parent_entry.get().strip()
+                if current_parent and current_parent not in self.parent_networks:
+                    self.parent_networks.append(current_parent)
+                    self.planning_parent_entry.config(values=self.parent_networks)
+                
                 # 保存当前状态到操作记录
                 self.save_current_state("执行规划")
 
