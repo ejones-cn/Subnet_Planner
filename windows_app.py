@@ -1381,6 +1381,9 @@ class IPSubnetSplitterApp:
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.pool_tree)
         
+        # 绑定双击事件以实现编辑功能
+        self.pool_tree.bind("<Double-1>", self.on_pool_tree_double_click)
+        
         # 添加滚动条，确保只作用于表格，位于表格右侧
         history_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.pool_tree.yview)
         self.pool_tree.configure(yscroll=history_scrollbar.set)
@@ -1849,8 +1852,6 @@ class IPSubnetSplitterApp:
         name_var = tk.StringVar()
         name_entry = ttk.Entry(main_frame, textvariable=name_var, width=20)
         name_entry.grid(row=0, column=2, sticky=tk.W, pady=15, padx=(0, 10))
-        # 添加回车绑定
-        name_entry.bind("<Return>", lambda event: save_requirement())
         # 自动获得焦点，方便直接输入
         name_entry.focus_set()
 
@@ -1859,8 +1860,9 @@ class IPSubnetSplitterApp:
         hosts_var = tk.StringVar()
         hosts_entry = ttk.Entry(main_frame, textvariable=hosts_var, width=20)
         hosts_entry.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
-        # 添加回车绑定
-        hosts_entry.bind("<Return>", lambda event: save_requirement())
+        
+        # 只在窗口级别绑定一次回车键，避免重复触发
+        temp_window.bind("<Return>", lambda event: save_requirement())
 
         # 按钮框架 - 横跨所有列，确保按钮组居中
         button_frame = ttk.Frame(main_frame)
@@ -1872,15 +1874,22 @@ class IPSubnetSplitterApp:
             Args:
                 target_table: 目标表，"requirements"表示子网需求表，"pool"表示需求池表
             """
+            # 解绑回车键事件，防止错误对话框显示时重复触发
+            temp_window.unbind("<Return>")
+            
             name = name_var.get().strip()
             hosts = hosts_var.get().strip()
 
             if not name:
                 self.show_error("错误", "请输入子网名称")
+                # 重新绑定回车键事件
+                temp_window.bind("<Return>", lambda event: save_requirement())
                 return
 
             if not hosts.isdigit() or int(hosts) <= 0:
                 self.show_error("错误", "请输入有效的主机数量")
+                # 重新绑定回车键事件
+                temp_window.bind("<Return>", lambda event: save_requirement())
                 return
 
             # 检查是否存在相同名称的子网，同时检查子网需求表和需求池表
@@ -1890,6 +1899,8 @@ class IPSubnetSplitterApp:
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
                     self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    # 重新绑定回车键事件
+                    temp_window.bind("<Return>", lambda event: save_requirement())
                     return
             
             # 检查需求池表
@@ -1898,6 +1909,8 @@ class IPSubnetSplitterApp:
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
                     self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    # 重新绑定回车键事件
+                    temp_window.bind("<Return>", lambda event: save_requirement())
                     return
 
             if target_table == "requirements":
@@ -2034,7 +2047,7 @@ class IPSubnetSplitterApp:
         dialog.title(title)
         dialog.resizable(False, False)
         dialog.transient(self.root)  # 设置为父窗口的子窗口
-        dialog.grab_set()  # 模态对话框
+        dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
         
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
@@ -2207,7 +2220,7 @@ class IPSubnetSplitterApp:
         self.save_current_state(action_type)
 
     def on_requirements_tree_double_click(self, event):
-        """双击Treeview单元格时触发编辑功能"""
+        """双击Treeview单元格时触发编辑功能（子网需求表）"""
         # 获取双击位置的信息
         region = self.requirements_tree.identify_region(event.x, event.y)
         if region != "cell":
@@ -2246,6 +2259,54 @@ class IPSubnetSplitterApp:
         self.current_edit_item = item
         self.current_edit_column = column_name
         self.current_edit_column_index = column_index
+        self.current_edit_tree = "requirements"  # 保存当前编辑的表格
+
+        # 绑定事件
+        self.edit_entry.bind("<FocusOut>", self.on_edit_focus_out)
+        self.edit_entry.bind("<Return>", self.on_edit_enter)
+        self.edit_entry.bind("<Escape>", self.on_edit_escape)
+    
+    def on_pool_tree_double_click(self, event):
+        """双击Treeview单元格时触发编辑功能（需求池表）"""
+        # 获取双击位置的信息
+        region = self.pool_tree.identify_region(event.x, event.y)
+        if region != "cell":
+            return
+
+        # 获取双击的行和列
+        item = self.pool_tree.identify_row(event.y)
+        column = self.pool_tree.identify_column(event.x)
+
+        if not item or not column:
+            return
+
+        # 将列标识转换为列索引（例如 #1 -> 0, #2 -> 1）
+        column_index = int(column[1:]) - 1
+        # 不允许编辑序号列
+        if column_index == 0:
+            return
+        column_name = self.pool_tree["columns"][column_index]
+
+        # 获取当前值
+        current_value = self.pool_tree.item(item, "values")[column_index]
+
+        # 获取单元格的坐标和大小
+        x, y, width, height = self.pool_tree.bbox(item, column)
+
+        # 创建编辑框
+        self.edit_entry = ttk.Entry(self.pool_tree, width=width // 10)  # 估算字符宽度
+        self.edit_entry.insert(0, current_value)
+        self.edit_entry.select_range(0, tk.END)
+        self.edit_entry.focus()
+
+        # 放置编辑框在单元格上
+        self.edit_entry.place(x=x, y=y, width=width, height=height)
+
+        # 保存当前编辑的信息
+        self.current_edit_item = item
+        self.current_edit_column = column_name
+        self.current_edit_column_index = column_index
+        self.current_edit_tree = "pool"  # 保存当前编辑的表格
 
         # 绑定事件
         self.edit_entry.bind("<FocusOut>", self.on_edit_focus_out)
@@ -2266,6 +2327,8 @@ class IPSubnetSplitterApp:
         del self.current_edit_item
         del self.current_edit_column
         del self.current_edit_column_index
+        if hasattr(self, 'current_edit_tree'):
+            del self.current_edit_tree
 
     def save_edit(self):
         """保存编辑的数据"""
@@ -2278,18 +2341,56 @@ class IPSubnetSplitterApp:
                 self.show_error("错误", "输入不能为空")
                 return
 
+            # 获取原始值
+            if self.current_edit_tree == "requirements":
+                original_value = self.requirements_tree.item(self.current_edit_item, "values")[self.current_edit_column_index]
+            else:
+                original_value = self.pool_tree.item(self.current_edit_item, "values")[self.current_edit_column_index]
+
+            # 如果值没有变化，直接保存，不进行重复检查
+            if new_value == original_value:
+                # 根据当前编辑的表格，更新相应的Treeview数据
+                if self.current_edit_tree == "requirements":
+                    # 更新子网需求表
+                    values = list(self.requirements_tree.item(self.current_edit_item, "values"))
+                    values[self.current_edit_column_index] = new_value
+                    self.requirements_tree.item(self.current_edit_item, values=values)
+                    # 更新斑马条纹
+                    self.update_table_zebra_stripes(self.requirements_tree)
+                else:
+                    # 更新需求池表
+                    values = list(self.pool_tree.item(self.current_edit_item, "values"))
+                    values[self.current_edit_column_index] = new_value
+                    self.pool_tree.item(self.current_edit_item, values=values)
+                    # 更新斑马条纹
+                    self.update_table_zebra_stripes(self.pool_tree)
+                
+                # 清理编辑状态
+                self.edit_entry.destroy()
+                del self.current_edit_item
+                del self.current_edit_column
+                del self.current_edit_column_index
+                if hasattr(self, 'current_edit_tree'):
+                    del self.current_edit_tree
+                return
+
             if self.current_edit_column == "name":
                 # 检查是否存在相同名称的子网（排除当前正在编辑的行）
                 # 1. 检查子网需求表
                 for item in self.requirements_tree.get_children():
-                    if item != self.current_edit_item:
-                        values = self.requirements_tree.item(item, "values")
-                        existing_name = values[1]  # 子网名称在第二列
-                        if existing_name == new_value:
-                            self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
-                            return
+                    # 只有当当前编辑的是子网需求表时，才需要排除当前记录
+                    if self.current_edit_tree == "requirements" and item == self.current_edit_item:
+                        continue
+                    values = self.requirements_tree.item(item, "values")
+                    existing_name = values[1]  # 子网名称在第二列
+                    if existing_name == new_value:
+                        self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                        return
                 # 2. 检查需求池表
                 for item in self.pool_tree.get_children():
+                    # 只有当当前编辑的是需求池表时，才需要排除当前记录
+                    if self.current_edit_tree == "pool" and item == self.current_edit_item:
+                        continue
                     values = self.pool_tree.item(item, "values")
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
@@ -2306,10 +2407,21 @@ class IPSubnetSplitterApp:
                     self.show_error("错误", "主机数量必须是整数")
                     return
 
-            # 更新Treeview数据
-            values = list(self.requirements_tree.item(self.current_edit_item, "values"))
-            values[self.current_edit_column_index] = new_value
-            self.requirements_tree.item(self.current_edit_item, values=values)
+            # 根据当前编辑的表格，更新相应的Treeview数据
+            if hasattr(self, 'current_edit_tree') and self.current_edit_tree == "requirements":
+                # 更新子网需求表
+                values = list(self.requirements_tree.item(self.current_edit_item, "values"))
+                values[self.current_edit_column_index] = new_value
+                self.requirements_tree.item(self.current_edit_item, values=values)
+                # 更新斑马条纹
+                self.update_requirements_tree_zebra_stripes()
+            elif hasattr(self, 'current_edit_tree') and self.current_edit_tree == "pool":
+                # 更新需求池表
+                values = list(self.pool_tree.item(self.current_edit_item, "values"))
+                values[self.current_edit_column_index] = new_value
+                self.pool_tree.item(self.current_edit_item, values=values)
+                # 更新斑马条纹
+                self.update_pool_tree_zebra_stripes()
 
             # 销毁编辑框
             self.edit_entry.destroy()
@@ -2318,6 +2430,8 @@ class IPSubnetSplitterApp:
             del self.current_edit_item
             del self.current_edit_column
             del self.current_edit_column_index
+            if hasattr(self, 'current_edit_tree'):
+                del self.current_edit_tree
 
     def execute_subnet_planning(self, from_history=False):
         """执行子网规划
