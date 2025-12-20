@@ -403,11 +403,11 @@ class IPSubnetSplitterApp:
 
         # 优化的标签样式设置
         try:
-            # 设置Notebook的基本样式，使用更细的边框
-            self.style.configure("TNotebook", background="#ffffff", borderwidth=1, relief="groove")
+            # 设置Notebook的基本样式，使用默认边框样式
+            self.style.configure("TNotebook", background="#ffffff")
 
-            # 使用更细的边框，确保区域分割清晰但不突兀
-            self.style.configure("TLabelframe", borderwidth=1, relief="groove")
+            # 使用默认边框样式，移除深灰色边框
+            self.style.configure("TLabelframe")
             # 增大LabelFrame标题的字体大小
             self.style.configure("TLabelframe.Label", borderwidth=0, relief="flat", font=("微软雅黑", 12))
 
@@ -497,23 +497,45 @@ class IPSubnetSplitterApp:
         # 使用最基本、最兼容的样式设置
         # 在Windows系统上，简单的样式设置反而更可靠
 
-        # 1. 基础Treeview样式设置 - 修复表格线显示问题
-        # 将background设置为与偶数行相同的颜色，这样当没有足够的行时，
-        # 背景色看起来就像是斑马条纹的延续，解决斑马条纹不能充满空白区域的问题
+        # 1. 基础Treeview样式设置 - 修复Windows表格线显示问题
+        # 在Windows上，Treeview的表格线需要通过特定的样式配置来实现
         self.style.configure(
             "TTreeview",
-            background="#e0e0e0",  # 设置与偶数行相同的背景色
+            background="#e0e0e0",  # 设置背景色为浅灰色，与单元格背景色形成对比
             fieldbackground="#ffffff",  # 单元格背景设为白色
             foreground="black",  # 文本颜色
-            rowheight=28,  # 行高
-            padding=(1, 1),  # 1px内边距，让边框显示
-            bordercolor="#c0c0c0",
-            borderwidth=1,
+            rowheight=25,  # 调整行高，让表格线更明显
+            padding=(5, 2),  # 调整内边距，让表格线更明显
+            borderwidth=1,  # 确保表格有外框
+            relief="solid",  # 设置边框样式为实线
         )
-
-        # 2. 表头样式设置
+        
+        # 2. 表头样式设置 - 确保表头与表格线协调
         self.style.configure(
-            "TTreeview.Heading", background="#1976d2", foreground="white", font=("微软雅黑", 10, "bold"), padding=(5, 3)
+            "TTreeview.Heading", 
+            background="#1976d2", 
+            foreground="white", 
+            font=("微软雅黑", 10, "bold"), 
+            padding=(10, 5),  # 增大表头内边距
+            relief="ridge",  # 表头使用凸起样式，与表格线形成对比
+        )
+        
+        # 3. 为Treeview添加边框，让整个表格有一个外框，使用默认颜色
+        self.style.configure("TTreeview", borderwidth=1, relief="solid")
+        
+        # 4. 启用斑马条纹，通过背景色对比来增强表格线效果
+        # 斑马条纹样式已经在configure_treeview_styles方法中配置
+        print("Treeview表格线样式设置完成")
+
+        # 2. 表头样式设置，移除深灰色边框，使用默认颜色
+        self.style.configure(
+            "TTreeview.Heading", 
+            background="#1976d2", 
+            foreground="white", 
+            font=("微软雅黑", 10, "bold"), 
+            padding=(5, 3),
+            relief="solid",  # 确保表头显示边框
+            borderwidth=1,  # 表头边框宽度
         )
 
         # 3. 选中状态设置
@@ -545,19 +567,18 @@ class IPSubnetSplitterApp:
             "Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
         )
 
-        # 信息栏框架样式 - 使用更明显的边框，确保左侧边框可见，添加明确背景色
-        # 修改边框样式：1px宽，#808080
+        # 信息栏框架样式 - 使用默认边框颜色
         self.style.configure(
-            "InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+            "InfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
         )
         self.style.configure(
-            "SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+            "SuccessInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
         )
         self.style.configure(
-            "ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+            "ErrorInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
         )
         self.style.configure(
-            "InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#808080", background="#DCDAD5"
+            "InfoInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
         )
 
         # 8. 斑马条纹样式配置
@@ -1116,10 +1137,6 @@ class IPSubnetSplitterApp:
         self.clear_btn = ttk.Button(input_frame, text="清空结果", command=self.clear_result, width=7)
         self.clear_btn.grid(row=1, column=3, padx=(2, 3), pady=(5, 3), sticky=tk.N + tk.S + tk.E + tk.W)
 
-        # 导出按钮 - 统一pady设置，往右移一点
-        self.export_btn = ttk.Button(input_frame, text="导出结果", command=self.export_result, width=8)
-        self.export_btn.grid(row=0, column=4, rowspan=2, padx=(8, 3), pady=3, sticky=tk.N + tk.S + tk.E + tk.W)  # 增加左侧内边距，向右移动
-        
         # 创建历史记录面板，与输入参数面板同级
         history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 10, 3))
         history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
@@ -1143,11 +1160,26 @@ class IPSubnetSplitterApp:
         
         # 添加垂直滚动条
         history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
-        self.history_tree.configure(yscrollcommand=history_scroll.set)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def scrollbar_callback(*args):
+            # 更新滚动条位置
+            history_scroll.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                history_scroll.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                history_scroll.grid()
+        
+        self.history_tree.configure(yscrollcommand=scrollbar_callback)
         
         # 使用grid布局精确控制位置
         self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=5, padx=(0, 2))  # 表格在第0行第0列，占据主要空间
-        history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)  # 滚动条在第0行第1列，仅垂直填充
+        # 初始隐藏滚动条，只有当内容超过可视区域时才显示
+        history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)
+        scrollbar_callback(0.0, 1.0)
         
         # 配置更紧凑的按钮样式，减小内部文字间距
         self.style.configure("CompactText.TButton", 
@@ -1237,9 +1269,19 @@ class IPSubnetSplitterApp:
         # 调整底部外边距，将结果区域与窗体下边距缩小
         result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 0))
 
+        # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
+        self.export_btn = ttk.Button(result_frame, text="导出结果", 
+                                    command=self.export_result, 
+                                    width=10)
+        # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
+        self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
+
         # 创建一个自定义的笔记本控件来显示不同的结果页面
         self.notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_tab_change)
         self.notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # 将导出结果按钮提升到最上层，避免被遮挡
+        self.export_btn.lift()
 
         # 切分网段信息页面
         self.split_info_frame = ttk.Frame(
@@ -1298,40 +1340,86 @@ class IPSubnetSplitterApp:
         self.notebook.add_tab("剩余网段列表", self.remaining_frame, "#e8f5e9")  # 浅绿色
         self.notebook.add_tab("网段分布图表", self.chart_frame, "#f3e5f5")  # 浅紫色
 
-        # 创建滚动容器
+        # 配置chart_frame的grid布局
+        self.chart_frame.grid_rowconfigure(0, weight=1)
+        self.chart_frame.grid_columnconfigure(0, weight=1)
+        self.chart_frame.grid_columnconfigure(1, weight=0)
+        
+        # 创建滚动容器，使用grid布局
         scroll_frame = ttk.Frame(self.chart_frame)
-        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        scroll_frame.grid(row=0, column=0, sticky=tk.NSEW)
+        scroll_frame.grid_rowconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(1, weight=0)
 
         # 添加滚动条
         self.chart_scrollbar = ttk.Scrollbar(scroll_frame, orient=tk.VERTICAL)
-        self.chart_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # 创建Canvas用于绘制柱状图，移除pady边距以避免显示灰色背景
-        self.chart_canvas = tk.Canvas(scroll_frame, bg="white", yscrollcommand=self.chart_scrollbar.set)
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True, pady=0)
-
+        
+        # 创建Canvas用于绘制柱状图，设置背景色为深灰色以匹配图表背景
+        # 禁止水平滚动，只允许垂直滚动
+        self.chart_canvas = tk.Canvas(scroll_frame, bg="#333333")
+        self.chart_canvas.grid(row=0, column=0, sticky=tk.NSEW, pady=0)
+        
         # 配置滚动条
         self.chart_scrollbar.config(command=self.chart_canvas.yview)
+        self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def chart_scrollbar_callback(*args):
+            # 更新滚动条位置
+            self.chart_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                self.chart_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置Canvas的滚动条命令
+        self.chart_canvas.config(yscrollcommand=chart_scrollbar_callback, xscrollcommand=None)
+        
+        # 初始检查是否需要显示滚动条
+        chart_scrollbar_callback(0.0, 1.0)
 
         # 绑定窗口大小变化事件，实现图表自适应
         self.chart_canvas.bind("<Configure>", self.on_chart_resize)
         # 绑定鼠标滚轮事件
         self.chart_canvas.bind("<MouseWheel>", self.on_chart_mousewheel)
-        self.chart_frame.bind("<Enter>", lambda e: self.chart_canvas.focus_set())
 
         # 调整列宽，确保所有列都能完整显示并自适应窗口宽度
         self.remaining_tree.column("broadcast", minwidth=100, width=130, stretch=True)
         self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
 
+        # 配置remaining_frame的grid布局
+        self.remaining_frame.grid_rowconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(1, weight=0)
+        
         # 添加垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
             self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
         )
-        self.remaining_tree.configure(yscrollcommand=self.remaining_scroll_v.set)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def remaining_scrollbar_callback(*args):
+            # 更新滚动条位置
+            self.remaining_scroll_v.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                self.remaining_scroll_v.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        
+        self.remaining_tree.configure(yscrollcommand=remaining_scrollbar_callback)
 
         # 设置布局：Treeview在左，垂直滚动条在右，都填满整个可用空间
-        self.remaining_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=0)
-        self.remaining_scroll_v.pack(side=tk.RIGHT, fill=tk.Y, pady=0)
+        self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        # 初始隐藏滚动条
+        self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        remaining_scrollbar_callback(0.0, 1.0)
 
         # 绑定窗口大小变化事件，实现表格自适应
         self.root.bind("<Configure>", self.on_window_resize)
@@ -1408,11 +1496,25 @@ class IPSubnetSplitterApp:
         
         # 添加滚动条，确保只作用于表格，位于表格右侧
         history_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.pool_tree.yview)
-        self.pool_tree.configure(yscroll=history_scrollbar.set)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def pool_scrollbar_callback(*args):
+            # 更新滚动条位置
+            history_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                history_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                history_scrollbar.grid()
+        
+        self.pool_tree.configure(yscroll=pool_scrollbar_callback)
         
         # 放置需求池表格和滚动条
         self.pool_tree.grid(row=0, column=0, sticky="nsew")
         history_scrollbar.grid(row=0, column=1, sticky="ns")
+        pool_scrollbar_callback(0.0, 1.0)
         
         # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做按钮操作
         # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
@@ -1451,10 +1553,24 @@ class IPSubnetSplitterApp:
 
         # 添加滚动条，确保只作用于表格，位于表格右侧
         requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL, command=self.requirements_tree.yview)
-        self.requirements_tree.configure(yscroll=requirements_scrollbar.set)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def requirements_scrollbar_callback(*args):
+            # 更新滚动条位置
+            requirements_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                requirements_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                requirements_scrollbar.grid()
+        
+        self.requirements_tree.configure(yscroll=requirements_scrollbar_callback)
 
         # 放置滚动条在表格右侧
         requirements_scrollbar.grid(row=0, column=2, sticky="ns", padx=(0, 0))
+        requirements_scrollbar_callback(0.0, 1.0)
         
         # 允许同时选择两张表中的记录，移除选择事件绑定
 
@@ -1612,9 +1728,21 @@ class IPSubnetSplitterApp:
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL, command=self.allocated_tree.yview
         )
-
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def allocated_scrollbar_callback(*args):
+            # 更新滚动条位置
+            allocated_v_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                allocated_v_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                allocated_v_scrollbar.grid()
+        
         # 配置表格使用滚动条（仅垂直）
-        self.allocated_tree.configure(yscrollcommand=allocated_v_scrollbar.set)
+        self.allocated_tree.configure(yscrollcommand=allocated_scrollbar_callback)
 
         # 重新布局表格和滚动条，使用grid布局实现自适应
         self.allocated_frame.grid_rowconfigure(0, weight=1)
@@ -1622,6 +1750,7 @@ class IPSubnetSplitterApp:
 
         self.allocated_tree.grid(row=0, column=0, sticky="nsew")
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        allocated_scrollbar_callback(0.0, 1.0)
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.allocated_tree)
@@ -1661,9 +1790,21 @@ class IPSubnetSplitterApp:
             orient=tk.VERTICAL,
             command=self.planning_remaining_tree.yview,
         )
-
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def planning_remaining_scrollbar_callback(*args):
+            # 更新滚动条位置
+            remaining_v_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                remaining_v_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                remaining_v_scrollbar.grid()
+        
         # 配置表格使用滚动条（仅垂直）
-        self.planning_remaining_tree.configure(yscrollcommand=remaining_v_scrollbar.set)
+        self.planning_remaining_tree.configure(yscrollcommand=planning_remaining_scrollbar_callback)
 
         # 重新布局表格和滚动条，使用grid布局实现自适应
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
@@ -1671,6 +1812,7 @@ class IPSubnetSplitterApp:
 
         self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        planning_remaining_scrollbar_callback(0.0, 1.0)
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.planning_remaining_tree)
@@ -2699,6 +2841,31 @@ class IPSubnetSplitterApp:
 
             # 让表格自适应窗口宽度
             self.adjust_remaining_tree_width()
+            
+            # 不自动跳转到剩余网段页面，直接更新滚动条状态
+            # 强制更新所有组件的尺寸信息
+            self.root.update_idletasks()
+            self.remaining_frame.update_idletasks()
+            self.remaining_tree.update_idletasks()
+            
+            # 触发滚动条回调函数，更新滚动条状态
+            self.remaining_tree.yview_moveto(0.0)
+            self.remaining_tree.update_idletasks()
+            
+            # 获取当前滚动位置，确保滚动条状态正确
+            yview = self.remaining_tree.yview()
+            
+            # 直接更新滚动条状态，不依赖局部回调函数
+            if hasattr(self, 'remaining_scroll_v'):
+                # 更新滚动条位置
+                self.remaining_scroll_v.set(yview[0], yview[1])
+                # 检查是否需要显示滚动条
+                if float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0:
+                    # 内容不可滚动，隐藏滚动条
+                    self.remaining_scroll_v.grid_remove()
+                else:
+                    # 内容可滚动，显示滚动条
+                    self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
 
             # 准备图表数据
             self.prepare_chart_data(result, split_info, result["remaining_subnets_info"])
@@ -3118,13 +3285,17 @@ class IPSubnetSplitterApp:
             # 清空Canvas
             self.chart_canvas.delete("all")
 
+            # 获取父框架尺寸，确保Canvas宽度不会超过父框架
+            parent_width = self.chart_frame.winfo_width()
+            parent_height = self.chart_frame.winfo_height()
+            
             # 获取Canvas尺寸
             width = self.chart_canvas.winfo_width()
             canvas_height = self.chart_canvas.winfo_height()
 
             # 如果Canvas还没有渲染完成，使用默认尺寸
-            if width < 10:
-                width = self.chart_frame.winfo_width() - 30  # 使用父框架宽度减去边距
+            if width < 10 or width > parent_width:
+                width = parent_width - 30  # 使用父框架宽度减去边距
             if canvas_height < 10:
                 canvas_height = 400
 
@@ -3174,13 +3345,24 @@ class IPSubnetSplitterApp:
             background_height = max(required_height, canvas_height)
             self.chart_canvas.create_rectangle(0, 0, width, background_height, fill="#333333", outline="", width=0)
 
-            # 设置Canvas滚动区域
-            self.chart_canvas.config(scrollregion=(0, 0, width, background_height))
+            # 获取Canvas的实际宽度，确保scrollregion宽度不超过Canvas宽度
+            actual_width = self.chart_canvas.winfo_width()
+            if actual_width < 10:
+                actual_width = width
+            
+            # 设置Canvas滚动区域，确保宽度不超过Canvas实际宽度，只允许垂直滚动
+            self.chart_canvas.config(scrollregion=(0, 0, actual_width, background_height))
+            
+            # 确保Canvas只允许垂直滚动，不允许水平滚动
+            self.chart_canvas.config(xscrollcommand=None)
 
             # 绘制父网段
             parent_range = parent_info.get("range", 1)
             log_value = max(log_min, math.log10(parent_range))
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+            
+            # 确保柱状图宽度不会超过可用绘图区域
+            bar_width = min(bar_width, chart_width)
 
             # 绘制父网段条（使用明显的深灰色）
             color = "#636e72"  # 明显的深灰色
@@ -3213,6 +3395,9 @@ class IPSubnetSplitterApp:
                 network_range = network.get("range", 1)
                 log_value = max(log_min, math.log10(network_range))
                 bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                
+                # 确保柱状图宽度不会超过可用绘图区域
+                bar_width = min(bar_width, chart_width)
 
                 # 绘制切分网段条（明显的蓝色）
                 color = "#4a7eb4"  # 明显的蓝色
@@ -3286,6 +3471,9 @@ class IPSubnetSplitterApp:
                 network_range = network.get("range", 1)
                 log_value = max(log_min, math.log10(network_range))
                 bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+                
+                # 确保柱状图宽度不会超过可用绘图区域
+                bar_width = min(bar_width, chart_width)
 
                 # 为每个剩余网段选择不同颜色（参考Web版）
                 color_index = i % len(subnet_colors)
@@ -4835,10 +5023,27 @@ class IPSubnetSplitterApp:
             self.remaining_tree.delete(item)
         # 更新剩余网段列表的斑马条纹标签
         self.update_table_zebra_stripes(self.remaining_tree)
+        
+        # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
+        if hasattr(self, 'remaining_scroll_v'):
+            # 重置滚动条位置
+            self.remaining_scroll_v.set(0.0, 1.0)
+            # 隐藏滚动条
+            self.remaining_scroll_v.grid_remove()
 
         # 清空图表
         self.chart_canvas.delete("all")
         self.chart_data = None
+        
+        # 更新Canvas滚动区域，设置为不可滚动状态
+        self.chart_canvas.config(scrollregion=(0, 0, self.chart_canvas.winfo_width(), 100))
+        
+        # 调用滚动条回调函数，确保滚动条隐藏
+        # 模拟内容不可滚动的情况，让滚动条隐藏
+        if hasattr(self, 'chart_scrollbar'):
+            self.chart_scrollbar.set(0.0, 1.0)
+            # 使用grid_remove()直接隐藏滚动条
+            self.chart_scrollbar.grid_remove()
 
     def register_chinese_fonts(self):
         """注册中文字体供PDF导出使用"""
