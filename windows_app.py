@@ -380,9 +380,22 @@ class IPSubnetSplitterApp:
 
         # 设置样式
         self.style = ttk.Style()
-
-        # 保持使用vista主题，符合Windows系统风格
-        self.style.theme_use("vista")
+        
+        # 尝试集成Azure主题 - 先检查是否有azure.tcl文件
+        azure_theme_path = "azure.tcl"
+        if os.path.exists(azure_theme_path):
+            try:
+                self.root.tk.call("source", azure_theme_path)
+                print("Azure主题加载成功")
+                # 如果Azure主题加载成功，可以设置为默认主题
+                self.style.theme_use("azure")
+            except Exception as e:
+                print(f"Azure主题加载失败: {e}")
+                # 加载失败时使用默认的vista主题
+                self.style.theme_use("vista")
+        else:
+            # 如果没有azure.tcl文件，使用默认的vista主题
+            self.style.theme_use("vista")
 
         self.style.configure("TLabel", font=("微软雅黑", 10))
         self.style.configure("TButton", font=("微软雅黑", 10), focuscolor="#888888", focuswidth=1)
@@ -2956,7 +2969,7 @@ class IPSubnetSplitterApp:
         
         # 计算对话框居中显示的位置（相对于主窗口）
         dialog_width = 400
-        dialog_height = 350
+        dialog_height = 450  # 增加对话框高度，确保主题切换控件能显示完整
         
         # 获取主窗口的位置和大小
         root_x = self.root.winfo_x()
@@ -2979,7 +2992,8 @@ class IPSubnetSplitterApp:
         content_frame.grid_rowconfigure(0, weight=0)  # 标题行不扩展
         content_frame.grid_rowconfigure(1, weight=0)  # 说明行不扩展
         content_frame.grid_rowconfigure(2, weight=1)  # 按钮矩阵行扩展，用于垂直居中
-        content_frame.grid_rowconfigure(3, weight=0)  # 关闭按钮行不扩展
+        content_frame.grid_rowconfigure(3, weight=0)  # 主题切换行不扩展
+        content_frame.grid_rowconfigure(4, weight=0)  # 关闭按钮行不扩展
         content_frame.grid_columnconfigure(0, weight=1)  # 唯一列扩展
         
         # 添加标题标签
@@ -3028,9 +3042,57 @@ class IPSubnetSplitterApp:
                                     style=button_style, command=self.clear_result)
         clear_result_btn.grid(row=2, column=1, padx=5, pady=5)
         
+        # 主题切换部分
+        theme_frame = ttk.LabelFrame(content_frame, text="主题切换", padding="10")
+        theme_frame.grid(row=3, column=0, sticky=tk.EW, pady=(15, 10))
+        
+        # 配置主题切换框架的列
+        theme_frame.grid_columnconfigure(0, weight=0)  # 标签列
+        theme_frame.grid_columnconfigure(1, weight=1)  # 下拉列表列
+        theme_frame.grid_columnconfigure(2, weight=0)  # 按钮列
+        
+        # 主题选择标签
+        theme_label = ttk.Label(theme_frame, text="选择主题：")
+        theme_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        
+        # 获取系统可用的内置主题列表
+        theme_list = self.style.theme_names()
+        
+        # 创建主题选择下拉列表
+        self.theme_var = tk.StringVar(value=self.style.theme_use())  # 设置默认主题为当前使用的主题
+        
+        # 创建下拉列表控件
+        theme_combobox = ttk.Combobox(theme_frame, textvariable=self.theme_var, 
+                                     values=theme_list, state="readonly")
+        theme_combobox.grid(row=0, column=1, sticky=tk.EW, pady=5)
+        
+        # 主题切换函数
+        def switch_theme():
+            new_theme = self.theme_var.get()
+            try:
+                # 使用系统内置主题切换，彻底移除sv-ttk，解决黑色底色问题
+                self.style.theme_use(new_theme)
+                # 重新配置Treeview样式，确保在新主题下表格线仍然可见
+                self.configure_treeview_styles(self.split_tree) if hasattr(self, 'split_tree') else None
+                self.configure_treeview_styles(self.remaining_tree) if hasattr(self, 'remaining_tree') else None
+                self.configure_treeview_styles(self.allocated_tree) if hasattr(self, 'allocated_tree') else None
+                self.configure_treeview_styles(self.planning_remaining_tree) if hasattr(self, 'planning_remaining_tree') else None
+                self.configure_treeview_styles(self.pool_tree) if hasattr(self, 'pool_tree') else None
+                self.configure_treeview_styles(self.requirements_tree) if hasattr(self, 'requirements_tree') else None
+                self.configure_treeview_styles(self.history_tree) if hasattr(self, 'history_tree') else None
+            except Exception as e:
+                print(f"主题切换出错: {e}")
+                # 出错时恢复到默认主题
+                self.style.theme_use("vista")
+        
+        # 创建应用主题按钮
+        theme_switch_btn = ttk.Button(theme_frame, text="应用主题", width=button_width, 
+                                     style=button_style, command=switch_theme)
+        theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
+        
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=3, column=0, sticky=tk.EW, pady=(15, 0))
+        close_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 0))
         close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
         
         # 添加关闭按钮到右下角
