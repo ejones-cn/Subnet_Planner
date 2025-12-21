@@ -526,8 +526,8 @@ class IPSubnetSplitterApp:
             foreground="black",  # 文本颜色
             rowheight=25,  # 调整行高，让表格线更明显
             padding=(5, 2),  # 调整内边距，让表格线更明显
-            borderwidth=1,  # 确保表格有外框
-            relief="solid",  # 设置边框样式为实线
+            borderwidth=0,  # 去掉表格外框
+            relief="flat",  # 去掉边框样式
         )
         
         # 2. 表头样式设置 - 确保表头与表格线协调
@@ -540,8 +540,8 @@ class IPSubnetSplitterApp:
             relief="ridge",  # 表头使用凸起样式，与表格线形成对比
         )
         
-        # 3. 为Treeview添加边框，让整个表格有一个外框，使用默认颜色
-        self.style.configure("TTreeview", borderwidth=1, relief="solid")
+        # 3. 去掉Treeview外框
+        self.style.configure("TTreeview", borderwidth=0, relief="flat")
         
         # 4. 启用斑马条纹，通过背景色对比来增强表格线效果
         # 斑马条纹样式已经在configure_treeview_styles方法中配置
@@ -554,8 +554,8 @@ class IPSubnetSplitterApp:
             foreground="white", 
             font=("微软雅黑", 10, "bold"), 
             padding=(5, 3),
-            relief="solid",  # 确保表头显示边框
-            borderwidth=1,  # 表头边框宽度
+            relief="flat",  # 去掉表头边框样式
+            borderwidth=0,  # 去掉表头边框宽度
         )
 
         # 3. 选中状态设置
@@ -578,27 +578,27 @@ class IPSubnetSplitterApp:
         # 7. 信息栏样式配置 - 紧凑设计，调大字体
         # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
         self.style.configure(
-            "Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+            "Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat"
         )
         self.style.configure(
-            "Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+            "Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat"
         )
         self.style.configure(
-            "Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat", background="#DCDAD5"
+            "Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat"
         )
 
-        # 信息栏框架样式 - 使用默认边框颜色
+        # 信息栏框架样式 - 使用极淡灰色边框
         self.style.configure(
-            "InfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
+            "InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5"
         )
         self.style.configure(
-            "SuccessInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
+            "SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5"
         )
         self.style.configure(
-            "ErrorInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
+            "ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5"
         )
         self.style.configure(
-            "InfoInfoBar.TFrame", borderwidth=1, relief="solid", background="#DCDAD5"
+            "InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5"
         )
 
         # 8. 斑马条纹样式配置
@@ -632,7 +632,7 @@ class IPSubnetSplitterApp:
         # 默认隐藏
         self.info_bar_frame.place_forget()
 
-        # 信息栏高度统一为37px，与place布局一致
+        # 信息栏高度统一为30px，与place布局一致
         self.info_bar_frame.configure(height=30)  # 调整高度与标签页按钮一致
 
         # 确保信息栏框架的grid布局配置正确
@@ -647,21 +647,21 @@ class IPSubnetSplitterApp:
         self.style.configure(
             "InfoBarCloseButton.TButton",
             font=(("微软雅黑", 9)),  # 减小字号到9
-            foreground="#666666",  # 中灰色文字
+            foreground="#9E9E9E",  # 中灰色文字
             focuscolor="none",
             focuswidth=0,
             padding=(0, 0, 0, 0),  # 无内边距，更紧凑
             width=2,  # 减小宽度到2
             borderwidth=0,
             relief="flat",
-            background="#DCDAD5",  # 与信息栏背景相同
+            background="#9E9E9E",  # 与信息栏背景相同
         )
         # 完全重置所有状态的背景色
         self.style.map(
             "InfoBarCloseButton.TButton",
             focuscolor=[("focus", "none")],
             focuswidth=[("focus", 0)],
-            background=[("active", "#DCDAD5"), ("!active", "#DCDAD5"), ("selected", "#DCDAD5")],
+            background=[("active", "#9E9E9E"), ("!active", "#9E9E9E"), ("selected", "#9E9E9E")],
         )
 
         # 改用grid布局，确保关闭按钮始终可见
@@ -674,7 +674,7 @@ class IPSubnetSplitterApp:
         # 调整padding，为边框留出空间
         # padding格式：(left, top, right, bottom)
         self.info_label = ttk.Label(
-            self.info_bar_frame, text="", padding=(3, 3, 0, 3), anchor="w"
+            self.info_bar_frame, text="", padding=(3, 3, 0, 0), anchor="w"
         )  # 减小内边距，为边框留出空间
         # 为边框留出空间，上下各2px，左右各3px
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)  # 为边框留出空间
@@ -687,8 +687,8 @@ class IPSubnetSplitterApp:
             command=self.hide_info_bar,
             font=(("微软雅黑", 9)),
             fg="#999999",  # 浅灰色文字，更融入背景
-            bg="#DCDAD5",
-            activebackground="#DCDAD5",
+            
+           
             activeforeground="#999999",  # 浅灰色文字，更融入背景
             bd=0,
             relief="flat",
@@ -5218,7 +5218,7 @@ class IPSubnetSplitterApp:
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
             padx=12,  # 水平内边距，与子网标签一致
-            pady=4.5,  # 调整垂直内边距，使其高度与信息框一致
+            pady=4.4,  # 调整垂直内边距，高度调小1px
             bd=0,  # 取消默认边框
             relief="flat",  # 平坦样式
             highlightthickness=1,  # 高亮边框宽度，模拟边框
@@ -5228,7 +5228,7 @@ class IPSubnetSplitterApp:
         )
 
         # 放置在窗口标题栏右侧位置，y坐标调整为与信息框垂直对齐，与标签页按钮底部对齐
-        self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-24, y=21)  # y=21，与信息栏顶部对齐
+        self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-24, y=22)  # y=22，向下移动1px，与信息栏顶部对齐
         self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
 
         # 绑定鼠标事件实现悬停效果
@@ -5242,8 +5242,8 @@ class IPSubnetSplitterApp:
             font=('微软雅黑', 10, 'bold'),  # 字体与子网标签激活状态一致，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
-            padx=8,  # 水平内边距，使其宽度与高度一致
-            pady=4.5,  # 调整垂直内边距，使其高度与信息框一致
+            padx=4.4,  # 水平内边距，调整为与pady一致，使其宽度与高度相同
+            pady=4.4,  # 调整垂直内边距，高度调小1px
             bd=0,  # 无边框，扁平化风格
             relief="flat",  # 平坦样式，扁平化风格
             highlightthickness=1,  # 高亮边框宽度，模拟边框
@@ -5253,7 +5253,7 @@ class IPSubnetSplitterApp:
         )
 
         # 放置钉住按钮在橙色标题栏右侧，关于按钮左侧且不重叠，y坐标与信息框对齐，与标签页按钮底部对齐
-        self.pin_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-89, y=21)  # x=-89，与信息栏顶部对齐
+        self.pin_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-94, y=22)  # x=-94，向左移动5个像素，y=22，向下移动1px，与信息栏顶部对齐
         self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
 
         # 绑定鼠标事件实现悬停效果
