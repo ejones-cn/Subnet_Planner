@@ -1138,7 +1138,7 @@ class IPSubnetSplitterApp:
         # 父网段 - 使用Combobox，支持下拉选择
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Combobox(
-            input_frame, values=self.split_parent_networks, width=16, font=(
+            input_frame, values=self.split_parent_networks, width=22, font=(
             "微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
         self.parent_entry.grid(row=1, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
@@ -1151,7 +1151,7 @@ class IPSubnetSplitterApp:
         )
         vcmd = (self.root.register(self.validate_split_cidr_local), '%P')
         self.split_entry = ttk.Combobox(
-            input_frame, values=self.split_networks, width=16, font=(
+            input_frame, values=self.split_networks, width=22, font=(
             "微软雅黑", 10), validate='focusout', validatecommand=vcmd
         )
         self.split_entry.grid(row=2, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
