@@ -59,11 +59,56 @@ def update_version_file(major, minor, patch):
             rf'"{new_version}":\s*"\d{{4}}-\d{{2}}-\d{{2}}"', f'"{new_version}": "{today}"', content
         )
     else:
-        # 如果版本号不存在，在RELEASE_DATES中添加
-        new_release_line = f'"{new_version}": "{today}"' + ",\n"
-        content = re.sub(
-            r"RELEASE_DATES\s*=\s*\{", f"RELEASE_DATES = {{{new_release_line}", content
-        )
+        # 如果版本号不存在，在RELEASE_DATES字典开头添加
+        # 查找RELEASE_DATES字典的开始位置
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if 'RELEASE_DATES = {' in line:
+                # 保留现有的缩进
+                indent = ' ' * (len(line) - len(line.lstrip()))
+                
+                # 检查当前行是否包含版本号（如：RELEASE_DATES = {"1.0.0": "2025-11-30",）
+                if '"' in line:
+                    # 如果当前行包含版本号，在等号和大括号后面插入新版本号
+                    # 例如：RELEASE_DATES = {"1.0.0": "2025-11-30",
+                    # 变为：RELEASE_DATES = {
+                    #           "1.4.8": "2025-12-22",
+                    #           "1.0.0": "2025-11-30",
+                    
+                    # 找到大括号的位置
+                    brace_pos = line.find('{')
+                    if brace_pos != -1:
+                        # 将当前行拆分为两部分：大括号前和大括号后
+                        before_brace = line[:brace_pos + 1]
+                        after_brace = line[brace_pos + 1:].strip()
+                        
+                        # 更新当前行为只有大括号前的部分
+                        lines[i] = before_brace
+                        
+                        # 在当前行后面添加新版本号
+                        lines.insert(i + 1, f'{indent}    "{new_version}": "{today}",')
+                        
+                        # 如果大括号后有内容，将其添加到新版本号的下一行
+                        if after_brace:
+                            lines.insert(i + 2, f'{indent}    {after_brace}')
+                else:
+                    # 查找第一个版本号的位置
+                    first_version_line = i + 1
+                    for j in range(i + 1, len(lines)):
+                        if '"' in lines[j]:
+                            first_version_line = j
+                            break
+                        elif lines[j].strip() == '':
+                            # 如果是空行，继续查找
+                            continue
+                        else:
+                            # 如果是其他内容，在它前面添加
+                            first_version_line = j
+                            break
+                    # 在第一个版本号前面添加新版本号
+                    lines.insert(first_version_line, f'{indent}    "{new_version}": "{today}",')
+                break
+        content = '\n'.join(lines)
 
     with open(VERSION_FILE, "w", encoding="utf-8") as f:
         f.write(content)
