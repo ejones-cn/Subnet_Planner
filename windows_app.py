@@ -554,7 +554,7 @@ class IPSubnetSplitterApp:
         
         # 4. 启用斑马条纹，通过背景色对比来增强表格线效果
         # 斑马条纹样式已经在configure_treeview_styles方法中配置
-        print("Treeview表格线样式设置完成")
+
 
         # 2. 表头样式设置，移除深灰色边框，使用默认颜色
         self.style.configure(
@@ -613,7 +613,7 @@ class IPSubnetSplitterApp:
         # 8. 斑马条纹样式配置
         # 在Treeview中通过标签(tags)实现斑马条纹效果
         # 注意：ttk.Style不直接支持斑马条纹，需要在插入行时使用tags
-        print("Treeview表格线样式设置完成")
+
         
         # 初始化历史记录相关属性
         self.history_states = []
@@ -718,6 +718,10 @@ class IPSubnetSplitterApp:
         
         # 初始化历史记录
         self.history_records = []
+        
+        # 创建临时标签用于测量文本宽度，避免重复创建和销毁
+        self._temp_label = tk.Label(self.root)
+        self._temp_label.pack_forget()
 
     def validate_split_cidr_local(self, text):
         return self.validate_cidr(text, self.split_entry)
@@ -1935,8 +1939,11 @@ class IPSubnetSplitterApp:
                     current_tags = tree.item(item, "tags")
                     if tag not in current_tags:
                         tree.item(item, tags=(tag,))
-        except Exception:
-            # 如果发生错误，不影响程序运行
+        except AttributeError:
+            # 忽略属性不存在的错误
+            pass
+        except Exception as e:
+            # 如果发生其他错误，不影响程序运行
             pass
 
     def auto_resize_columns(self, tree):
@@ -1945,8 +1952,6 @@ class IPSubnetSplitterApp:
         Args:
             tree: 要调整列宽的Treeview对象
         """
-        # 创建一个临时标签用于测量文本宽度（使用默认字体或从root获取字体）
-        temp_label = tk.Label(self.root)
 
         # 为每列设置一个合理的默认最小宽度（基于列类型）
         default_min_widths = {
@@ -1975,8 +1980,8 @@ class IPSubnetSplitterApp:
                 continue
 
             # 设置临时标签文本并测量宽度
-            temp_label.config(text=header)
-            header_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
+            self._temp_label.config(text=header)
+            header_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
 
             # 获取列中内容的最大宽度
             max_width = header_width
@@ -1985,10 +1990,10 @@ class IPSubnetSplitterApp:
                 if value and len(value) > list(tree['columns']).index(col):
                     cell_value = str(value[list(tree['columns']).index(col)])
                     # 设置临时标签文本并测量宽度
-                    temp_label.config(text=cell_value)
-                    cell_width = temp_label.winfo_reqwidth() + 20  # 增加一些边距
+                    self._temp_label.config(text=cell_value)
+                    cell_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
                     # 确保cell_width和max_width都是有效的数值
-                    if cell_width is not None and max_width is not None and cell_width > max_width:
+                    if cell_width > max_width:
                         max_width = cell_width
 
             # 应用默认最小宽度，如果计算出的宽度小于默认值
@@ -1998,21 +2003,14 @@ class IPSubnetSplitterApp:
             # 设置列宽
             tree.column(col, width=max_width, stretch=True)
 
-        # 销毁临时标签
-        temp_label.destroy()
-
     def resize_tables(self):
         """调整表格列宽以适应容器大小并更新空行数"""
         try:
             # 动态更新所有表格的空行数
-            if hasattr(self, 'split_tree'):
-                self.update_table_zebra_stripes(self.split_tree)
-            if hasattr(self, 'remaining_tree'):
-                self.update_table_zebra_stripes(self.remaining_tree)
-            if hasattr(self, 'allocated_tree'):
-                self.update_table_zebra_stripes(self.allocated_tree)
-            if hasattr(self, 'planning_remaining_tree'):
-                self.update_table_zebra_stripes(self.planning_remaining_tree)
+            tree_names = ['split_tree', 'remaining_tree', 'allocated_tree', 'planning_remaining_tree']
+            for tree_name in tree_names:
+                if hasattr(self, tree_name):
+                    self.update_table_zebra_stripes(getattr(self, tree_name))
 
             # 仅调整规划结果区域的表格列宽，不影响子网需求区域
             if hasattr(self, 'planning_notebook') and hasattr(self.planning_notebook, 'content_area'):
@@ -2023,8 +2021,14 @@ class IPSubnetSplitterApp:
                 # 调整剩余网段表格，根据内容自动调整列宽
                 if hasattr(self, 'planning_remaining_tree'):
                     self.auto_resize_columns(self.planning_remaining_tree)
-        except Exception:
-            # 忽略调整过程中的错误
+        except AttributeError as e:
+            # 忽略属性不存在的错误
+            pass
+        except ValueError as e:
+            # 忽略值错误
+            pass
+        except Exception as e:
+            # 忽略其他错误
             pass
 
     def add_subnet_requirement(self):
@@ -2071,8 +2075,12 @@ class IPSubnetSplitterApp:
         hosts_entry = ttk.Entry(main_frame, textvariable=hosts_var, width=20)
         hosts_entry.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
         
-        # 只在窗口级别绑定一次回车键，避免重复触发
-        temp_window.bind("<Return>", lambda event: save_requirement())
+        # 定义回车键事件处理函数
+        def on_return_key(event):
+            save_requirement()
+        
+        # 只在窗口创建时绑定一次回车键事件
+        temp_window.bind("<Return>", on_return_key)
 
         # 按钮框架 - 横跨所有列，确保按钮组居中
         button_frame = ttk.Frame(main_frame)
@@ -2085,21 +2093,17 @@ class IPSubnetSplitterApp:
                 target_table: 目标表，"requirements"表示子网需求表，"pool"表示需求池表
             """
             # 解绑回车键事件，防止错误对话框显示时重复触发
-            temp_window.unbind("<Return>")
+
             
             name = name_var.get().strip()
             hosts = hosts_var.get().strip()
 
             if not name:
                 self.show_error("错误", "请输入子网名称")
-                # 重新绑定回车键事件
-                temp_window.bind("<Return>", lambda event: save_requirement())
                 return
 
             if not hosts.isdigit() or int(hosts) <= 0:
                 self.show_error("错误", "请输入有效的主机数量")
-                # 重新绑定回车键事件
-                temp_window.bind("<Return>", lambda event: save_requirement())
                 return
 
             # 检查是否存在相同名称的子网，同时检查子网需求表和需求池表
@@ -2109,8 +2113,6 @@ class IPSubnetSplitterApp:
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
                     self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
-                    # 重新绑定回车键事件
-                    temp_window.bind("<Return>", lambda event: save_requirement())
                     return
             
             # 检查需求池表
@@ -2119,8 +2121,6 @@ class IPSubnetSplitterApp:
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
                     self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
-                    # 重新绑定回车键事件
-                    temp_window.bind("<Return>", lambda event: save_requirement())
                     return
 
             if target_table == "requirements":
@@ -3082,20 +3082,13 @@ class IPSubnetSplitterApp:
                 # 使用系统内置主题切换，彻底移除sv-ttk，解决黑色底色问题
                 self.style.theme_use(new_theme)
                 # 重新配置Treeview样式，确保在新主题下表格线仍然可见
-                if hasattr(self, 'split_tree'):
-                    self.configure_treeview_styles(self.split_tree)
-                if hasattr(self, 'remaining_tree'):
-                    self.configure_treeview_styles(self.remaining_tree)
-                if hasattr(self, 'allocated_tree'):
-                    self.configure_treeview_styles(self.allocated_tree)
-                if hasattr(self, 'planning_remaining_tree'):
-                    self.configure_treeview_styles(self.planning_remaining_tree)
-                if hasattr(self, 'pool_tree'):
-                    self.configure_treeview_styles(self.pool_tree)
-                if hasattr(self, 'requirements_tree'):
-                    self.configure_treeview_styles(self.requirements_tree)
-                if hasattr(self, 'history_tree'):
-                    self.configure_treeview_styles(self.history_tree)
+                tree_names = ['split_tree', 'remaining_tree', 'allocated_tree', 'planning_remaining_tree', 'pool_tree', 'requirements_tree', 'history_tree']
+                for tree_name in tree_names:
+                    if hasattr(self, tree_name):
+                        tree = getattr(self, tree_name)
+                        # 检查split_tree是否需要包含特殊标签
+                        include_special = tree_name == 'split_tree'
+                        self.configure_treeview_styles(tree, include_special)
             except Exception as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
