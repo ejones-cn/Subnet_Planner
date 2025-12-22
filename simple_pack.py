@@ -105,7 +105,7 @@ def test_pack_result(sign_info=None):
     if exe_files:
         exe_path = exe_files[0]
         print(f"EXE文件已生成: {exe_path}")
-        print(f"文件大小: {os.path.getsize(exe_path) / (1024*1024):.2f} MB")
+        print(f"文件大小: {os.path.getsize(exe_path) / (1024 * 1024):.2f} MB")
 
         # 手动复制图标文件到EXE所在目录
         icon_path = os.path.abspath("icon.ico")

@@ -11,67 +11,83 @@ IP子网切分计算器
 4. 执行子网切分
 """
 
-# 导入版本管理模块
-import sys
-import os
+# 导入标准库模块
 import re
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from version import get_version
-
-__version__ = get_version()
-
 import ipaddress
 
-def handle_ip_subnet_error(error, error_type="子网操作"):
+# 导入本地模块
+from version import get_version
+
+# 模块版本号
+__version__ = get_version()
+
+
+def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
     """
     通用IP子网错误处理函数
-    
+
     参数:
     error: 捕获的ValueError异常
     error_type: 错误类型前缀（如"子网计算"、"子网规划"）
-    
+    language: 错误信息语言，"zh"表示中文，"en"表示英文
+
     返回:
     包含错误信息的字典
     """
     error_msg = str(error)
-    if "not a valid netmask" in error_msg:
-        return {"error": f"'{error_msg.split()[0]}' 不是有效的子网掩码"}
-    elif re.search(r"octet.*?not permitted", error_msg, re.IGNORECASE):
-        match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
-        if match:
-            octet = match.group(1)
-            if int(octet) > 255:
-                return {"error": f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"}
-        return {"error": f"{error_type}错误: {error_msg}"}
-    elif "does not appear to be an IPv4 or IPv6 network" in error_msg:
-        return {"error": f"无效的网络地址格式: {error_msg.split()[-1]}"}
-    elif "has host bits set" in error_msg:
-        return {"error": f"CIDR地址包含主机位: {error_msg.split()[0]}"}
-    elif re.search(r"expected.*?4 octets", error_msg, re.IGNORECASE | re.DOTALL):
-        ip_match = re.search(r"'([^']+)'", error_msg)
-        if ip_match:
-            invalid_ip = ip_match.group(1)
-            return {"error": f"IP地址格式错误，需要4个八位组，实际为 '{invalid_ip}'"}
-        else:
-            return {"error": "IP地址格式错误，需要4个八位组"}
-    elif re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
+    error_info = None
+
+    # 定义错误模式匹配列表，包含错误类型、匹配模式和错误信息模板
+    error_patterns = [
+        # (匹配函数, 英文模板, 中文模板)
+        (lambda msg: "not a valid netmask" in msg,
+         lambda m: f"'{m.split()[0]}' is not a valid subnet mask",
+         lambda m: f"'{m.split()[0]}' 不是有效的子网掩码"),
+        
+        (lambda msg: "does not appear to be an IPv4 or IPv6 network" in msg,
+         lambda m: f"Invalid network address format: {m.split()[-1]}",
+         lambda m: f"无效的网络地址格式: {m.split()[-1]}"),
+        
+        (lambda msg: "has host bits set" in msg,
+         lambda m: f"CIDR address has host bits set: {m.split()[0]}",
+         lambda m: f"CIDR地址包含主机位: {m.split()[0]}"),
+        
+        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
+         lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
+         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效，必须≤255"),
+        
+        (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL),
+         lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
+         lambda m: "IP地址格式错误，需要4个八位组" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误，需要4个八位组，实际为 '{re.search(r"'([^']+)'", m).group(1)}'"),
+    ]
+
+    # 检查错误模式
+    for match_func, en_template, zh_template in error_patterns:
+        if match_func(error_msg):
+            if language == "en":
+                error_info = en_template(error_msg)
+            else:
+                error_info = zh_template(error_msg)
+            break
+
+    # 检查octet长度错误（特殊处理）
+    if not error_info and re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
             invalid_octet = octet_match.group(1)
-            return {"error": f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"}
-    elif re.search(r"octet.*?exceeds", error_msg, re.IGNORECASE):
-        match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
-        if match:
-            octet_value = match.group(1)
-            return {"error": f"IP地址中八位组 '{octet_value}' 无效，必须小于等于255"}
-    elif "Octet" in error_msg and "exceeds" in error_msg:
-        match = re.search(r"Octet (\d+) exceeds", error_msg)
-        if match:
-            octet_value = match.group(1)
-            return {"error": f"IP地址中八位组 '{octet_value}' 无效，必须小于等于255"}
-    else:
-        return {"error": f"{error_type}错误: {error_msg}"}
+            if language == "en":
+                error_info = f"Invalid octet '{invalid_octet}' in IP, max 3 chars (0-255) allowed"
+            else:
+                error_info = f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"
+
+    # 使用默认错误信息
+    if not error_info:
+        if language == "en":
+            error_info = f"{error_type} error: {error_msg}"
+        else:
+            error_info = f"{error_type}错误: {error_msg}"
+
+    return {"error": error_info}
 
 
 def ip_to_int(ip_str):
@@ -99,13 +115,13 @@ def get_subnet_info(network_str):
         # 计算通配符掩码：子网掩码的反码
         wildcard = ~int(network.netmask) & 0xFFFFFFFF
         wildcard_mask = int_to_ip(wildcard)
-        
+
         # 计算可用主机范围
         host_range_start = str(network.network_address + 1) if network.num_addresses > 2 else str(network.network_address)
         host_range_end = str(network.broadcast_address - 1) if network.num_addresses > 2 else str(network.broadcast_address)
-        
+
         # 获取可用主机数量
-        number_of_hosts = network.num_addresses - 2 if network.num_addresses > 2 else network.num_addresses
+        usable_addresses = network.num_addresses - 2 if network.num_addresses > 2 else network.num_addresses
 
         return {
             "network": str(network.network_address),
@@ -115,15 +131,9 @@ def get_subnet_info(network_str):
             "cidr": str(network.with_prefixlen),
             "prefixlen": network.prefixlen,
             "num_addresses": network.num_addresses,
-            "usable_addresses": number_of_hosts,
-            # 以下是为了兼容导出函数添加的键
-            "network_address": str(network.network_address),
-            "subnet_mask": str(network.netmask),
-            "prefix_length": network.prefixlen,
-            "broadcast_address": str(network.broadcast_address),
+            "usable_addresses": usable_addresses,
             "host_range_start": host_range_start,
-            "host_range_end": host_range_end,
-            "number_of_hosts": number_of_hosts
+            "host_range_end": host_range_end
         }
     except ValueError as e:
         return handle_ip_subnet_error(e, "子网计算")
@@ -144,13 +154,13 @@ def split_subnet(parent_cidr, split_cidr):
         # 如果父网段和切分网段相同，直接返回空列表
         if parent_net == split_net:
             return {
-            "parent": parent_cidr,
-            "split": split_cidr,
-            "remaining_subnets": [],
-            "parent_info": get_subnet_info(parent_cidr),
-            "split_info": get_subnet_info(split_cidr),
-            "remaining_subnets_info": [],
-        }
+                "parent": parent_cidr,
+                "split": split_cidr,
+                "remaining_subnets": [],
+                "parent_info": get_subnet_info(parent_cidr),
+                "split_info": get_subnet_info(split_cidr),
+                "remaining_subnets_info": [],
+            }
 
         # 使用Python ipaddress模块的address_exclude方法获取剩余网段
         # 这个方法会自动生成最简洁的剩余网段列表
@@ -172,6 +182,42 @@ def split_subnet(parent_cidr, split_cidr):
         return handle_ip_subnet_error(e, "子网规划")
 
 
+def _allocate_subnet(available_subnets, required):
+    """
+    辅助函数：从可用子网列表中为需求子网分配空间
+    
+    参数:
+    available_subnets: 可用子网列表
+    required: 需求子网信息
+    
+    返回:
+    分配结果元组 (success, allocated_subnet, remaining_subnets, error)
+    """
+    new_prefix = required["prefix_len"]
+
+    for i, available in enumerate(available_subnets):
+        if available.prefixlen <= new_prefix:
+            try:
+                # 只获取第一个子网，不需要生成所有子网
+                subnets_gen = available.subnets(new_prefix=new_prefix)
+                new_subnet = next(subnets_gen, None)
+                if not new_subnet:
+                    return False, None, None, f"无法为 {required['name']} 创建前缀长度为 {new_prefix} 的子网"
+                
+                # 计算剩余子网
+                remaining = list(available.address_exclude(new_subnet))
+                updated_available = available_subnets.copy()
+                updated_available.pop(i)
+                updated_available.extend(remaining)
+                updated_available.sort()
+                
+                return True, new_subnet, updated_available, None
+            except ValueError as e:
+                return False, None, None, f"创建子网失败: {str(e)}"
+    
+    return False, None, None, f"无法为 {required['name']} 分配足够大的子网空间"
+
+
 def suggest_subnet_planning(parent_cidr, required_subnets):
     """
     子网规划智能建议功能
@@ -186,87 +232,56 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
     try:
         parent_net = ipaddress.IPv4Network(parent_cidr, strict=False)
 
-        # 按所需主机数量从大到小排序，优先分配大的子网
-        sorted_subnets = sorted(required_subnets, key=lambda x: x["hosts"], reverse=True)
-
-        # 计算每个子网需要的CIDR前缀长度
-        for subnet in sorted_subnets:
-            # 计算需要的地址数量（包括网络地址和广播地址）
+        # 预处理子网需求：计算前缀长度并排序
+        sorted_subnets = []
+        for subnet in required_subnets:
+            # 计算需要的地址数量和前缀长度
             required_addresses = subnet["hosts"] + 2
-            # 计算合适的前缀长度
             prefix_len = 32 - (required_addresses - 1).bit_length()
-            # 确保前缀长度在有效范围内（0-32）且不小于父网段的前缀长度
             prefix_len = max(prefix_len, parent_net.prefixlen)
-            prefix_len = min(prefix_len, 32)  # 确保前缀长度不超过32
-            prefix_len = max(prefix_len, 0)   # 确保前缀长度不小于0
-            subnet["prefix_len"] = prefix_len
+            prefix_len = min(prefix_len, 32)
+            
+            sorted_subnets.append({
+                "name": subnet["name"],
+                "hosts": subnet["hosts"],
+                "prefix_len": prefix_len
+            })
+        
+        # 按所需主机数量从大到小排序，优先分配大的子网
+        sorted_subnets.sort(key=lambda x: x["hosts"], reverse=True)
 
         # 开始分配子网
         available_subnets = [parent_net]
         allocated_subnets = []
 
         for required in sorted_subnets:
-            allocated = False
+            # 调用辅助函数分配子网
+            success, new_subnet, updated_available, error = _allocate_subnet(available_subnets, required)
+            
+            if not success:
+                return {"error": error}
+            
+            # 分配成功，更新状态
+            available_subnets = updated_available
+            subnet_info = get_subnet_info(str(new_subnet))
+            allocated_subnets.append({
+                "name": required["name"],
+                "cidr": str(new_subnet),
+                "required_hosts": required["hosts"],
+                "available_hosts": subnet_info["usable_addresses"],
+                "info": subnet_info,
+            })
 
-            # 尝试在可用子网中找到合适的网段
-            for i, available in enumerate(available_subnets):
-                # 检查可用子网是否有足够的空间
-                if available.prefixlen <= required["prefix_len"]:
-                    # 创建所需的子网
-                    # 确保新前缀长度在有效范围内
-                    new_prefix = required["prefix_len"]
-                    new_prefix = max(new_prefix, 0)
-                    new_prefix = min(new_prefix, 32)
-                    
-                    # 验证是否可以使用该前缀长度创建子网
-                    try:
-                        # 只获取第一个子网，不需要生成所有子网，避免处理大网段时程序卡顿
-                        subnets_gen = available.subnets(new_prefix=new_prefix)
-                        new_subnet = next(subnets_gen, None)
-                        if not new_subnet:
-                            return {"error": f"无法为 {required['name']} 创建前缀长度为 {new_prefix} 的子网"}
-                        
-                        # 确保生成的子网有有效的前缀长度
-                        if not (0 <= new_subnet.prefixlen <= 32):
-                            return {"error": f"生成了无效的子网前缀长度: {new_subnet.prefixlen}"}
-                    except ValueError as e:
-                        return {"error": f"创建子网失败: {str(e)}"}
-
-                    # 分配该子网
-                    allocated_subnets.append(
-                        {
-                            "name": required["name"],
-                            "cidr": str(new_subnet),
-                            "required_hosts": required["hosts"],
-                            "available_hosts": (
-                                new_subnet.num_addresses - 2
-                                if new_subnet.num_addresses > 2
-                                else new_subnet.num_addresses
-                            ),
-                            "info": get_subnet_info(str(new_subnet)),
-                        }
-                    )
-
-                    # 更新可用子网列表
-                    remaining = list(available.address_exclude(new_subnet))
-                    available_subnets.pop(i)
-                    available_subnets.extend(remaining)
-                    available_subnets.sort()  # 保持排序
-
-                    allocated = True
-                    break
-
-            if not allocated:
-                return {"error": f"无法为 {required['name']} 分配足够大的子网空间"}
-
+        # 生成剩余子网信息
+        remaining_subnets = [str(subnet) for subnet in available_subnets]
+        remaining_subnets_info = [get_subnet_info(str(subnet)) for subnet in available_subnets]
+        
         return {
             "parent_cidr": parent_cidr,
             "required_subnets": required_subnets,
             "allocated_subnets": allocated_subnets,
-            "remaining_subnets": [str(subnet) for subnet in available_subnets],
-            "remaining_subnets_info": [
-                get_subnet_info(str(subnet)) for subnet in available_subnets
-            ],
+            "remaining_subnets": remaining_subnets,
+            "remaining_subnets_info": remaining_subnets_info,
         }
 
     except ValueError as e:
@@ -287,38 +302,35 @@ if __name__ == "__main__":
         for key, value in result["split_info"].items():
             print(f"  {key}: {value}")
         print(f"\n剩余网段 ({len(result['remaining_subnets'])} 个):")
-        for i, subnet in enumerate(result["remaining_subnets_info"], 1):
-            print(f"\n网段 {i}:")
-            for key, value in subnet.items():
+        for idx, sub in enumerate(result["remaining_subnets_info"], 1):
+            print(f"\n网段 {idx}:")
+            for key, value in sub.items():
                 print(f"  {key}: {value}")
 
     # 测试子网规划智能建议
     print("\n=== 测试子网规划智能建议功能 ===")
-    required_subnets = [
+    test_required_subnets = [
         {"name": "办公区", "hosts": 200},
         {"name": "服务器区", "hosts": 50},
         {"name": "研发部", "hosts": 100},
         {"name": "测试环境", "hosts": 30},
     ]
 
-    plan = suggest_subnet_planning("192.168.0.0/16", required_subnets)
+    plan = suggest_subnet_planning("192.168.0.0/16", test_required_subnets)
     if "error" in plan:
         print(f"错误: {plan['error']}")
     else:
         print(f"父网段: {plan['parent_cidr']}")
-        print(f"\n已分配子网:")
-        for subnet in plan["allocated_subnets"]:
-            print(f"\n{subnet['name']}:")
-            print(f"  CIDR: {subnet['cidr']}")
-            print(f"  需求主机数: {subnet['required_hosts']}")
-            print(f"  可用主机数: {subnet['available_hosts']}")
-            print(f"  网络地址: {subnet['info']['network']}")
-            print(f"  子网掩码: {subnet['info']['netmask']}")
-            print(f"  广播地址: {subnet['info']['broadcast']}")
+        print("\n已分配子网:")
+        for sub in plan["allocated_subnets"]:
+            print(f"\n{sub['name']}:")
+            print(f"  CIDR: {sub['cidr']}")
+            print(f"  需求主机数: {sub['required_hosts']}")
+            print(f"  可用主机数: {sub['available_hosts']}")
+            print(f"  网络地址: {sub['info']['network']}")
+            print(f"  子网掩码: {sub['info']['netmask']}")
+            print(f"  广播地址: {sub['info']['broadcast']}")
 
         print(f"\n剩余网段 ({len(plan['remaining_subnets'])} 个):")
-        for i, subnet in enumerate(plan["remaining_subnets_info"], 1):
-            print(f"\n网段 {i}: {subnet['cidr']}")
-
-
-
+        for idx, sub in enumerate(plan["remaining_subnets_info"], 1):
+            print(f"\n网段 {idx}: {sub['cidr']}")

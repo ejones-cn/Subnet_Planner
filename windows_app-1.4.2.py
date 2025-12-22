@@ -381,8 +381,21 @@ class IPSubnetSplitterApp:
         # 设置样式
         self.style = ttk.Style()
         
-        # 使用默认主题
-        self.style.theme_use("vista")
+        # 尝试集成Azure主题 - 先检查是否有azure.tcl文件
+        azure_theme_path = "azure.tcl"
+        if os.path.exists(azure_theme_path):
+            try:
+                self.root.tk.call("source", azure_theme_path)
+                print("Azure主题加载成功")
+                # 如果Azure主题加载成功，可以设置为默认主题
+                self.style.theme_use("azure")
+            except Exception as e:
+                print(f"Azure主题加载失败: {e}")
+                # 加载失败时使用默认的vista主题
+                self.style.theme_use("vista")
+        else:
+            # 如果没有azure.tcl文件，使用默认的vista主题
+            self.style.theme_use("vista")
 
         self.style.configure("TLabel", font=("微软雅黑", 10))
         self.style.configure("TButton", font=("微软雅黑", 10), focuscolor="#888888", focuswidth=1)
@@ -3005,7 +3018,7 @@ class IPSubnetSplitterApp:
         success_btn.grid(row=0, column=0, padx=5, pady=5)
         
         error_btn = ttk.Button(button_frame, text="测试错误信息", width=button_width, 
-                              style=button_style, command=lambda: self.show_result("测试错误信息：操作失败！", error=True, keep_data=True))
+                              style=button_style, command=lambda: self.show_result("测试错误信息：操作失败！", error=True))
         error_btn.grid(row=0, column=1, padx=5, pady=5)
         
         # 第二行按钮
@@ -3137,14 +3150,14 @@ class IPSubnetSplitterApp:
             full_text_with_icon = icon + text
             full_width = calculate_pixel_width(full_text_with_icon)
             
-            # 注释掉调试信息，避免在生产环境中显示
-            # print(f"\n--- 文本截断调试信息 ---")
-            # print(f"原始文本长度: {len(text)}")
-            # print(f"图标宽度: {icon_width}px")
-            # print(f"最大像素宽度: {max_pixel_width}px")
-            # print(f"可用宽度: {available_width}px")
-            # print(f"完整文本宽度: {full_width}px")
-            # print(f"是否需要截断: {full_width > max_pixel_width}")
+            # 添加调试信息
+            print(f"\n--- 文本截断调试信息 ---")
+            print(f"原始文本长度: {len(text)}")
+            print(f"图标宽度: {icon_width}px")
+            print(f"最大像素宽度: {max_pixel_width}px")
+            print(f"可用宽度: {available_width}px")
+            print(f"完整文本宽度: {full_width}px")
+            print(f"是否需要截断: {full_width > max_pixel_width}")
             
             if full_width <= max_pixel_width:
                 return text
@@ -3711,42 +3724,13 @@ class IPSubnetSplitterApp:
             if main_headers is None:
                 main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
 
-            # 用于去重的集合，存储已经添加过的项目
-            added_items = set()
             for item in main_tree.get_children():
                 values = main_tree.item(item, "values")
                 if main_filter:
                     if main_filter(values):
-                        # 去重：如果是键值对格式，确保每个项目只出现一次
-                        if len(values) >= 2 and values[0] != "":
-                            item_key = values[0]
-                            if item_key not in added_items:
-                                added_items.add(item_key)
-                                main_data.append(values)
-                        else:
-                            main_data.append(values)
-                elif values:
-                    # 去重：如果是键值对格式，确保每个项目只出现一次
-                    if len(values) >= 2 and values[0] != "":
-                        item_key = values[0]
-                        if item_key not in added_items:
-                            added_items.add(item_key)
-                            main_data.append(values)
-                    else:
                         main_data.append(values)
-            
-            # 二次去重：确保所有数据行都是唯一的，解决切分网段信息重复的问题
-            print(f"main_data原始长度: {len(main_data)}")
-            unique_main_data = []
-            seen_rows = set()
-            for row in main_data:
-                # 将行转换为可哈希的元组
-                row_tuple = tuple(row)
-                if row_tuple not in seen_rows:
-                    seen_rows.add(row_tuple)
-                    unique_main_data.append(row)
-            main_data = unique_main_data
-            print(f"main_data去重后长度: {len(main_data)}")
+                elif values:
+                    main_data.append(values)
 
             # 准备剩余数据
             remaining_tree = data_source["remaining_tree"]
@@ -3818,29 +3802,23 @@ class IPSubnetSplitterApp:
 
             elif file_ext == ".pdf":
                 # PDF格式导出
-                try:
-                    print("\n=== PDF导出调试信息 ===")
-                    print(f"文件路径: {file_path}")
-                    print(f"文件扩展名: {file_ext}")
-                    print("进入PDF导出分支")
-                    from reportlab.lib.pagesizes import A4, landscape
-                    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-                    from reportlab.platypus import (
-                        Table,
-                        TableStyle,
-                        Paragraph,
-                        Spacer,
-                    )
-                    from reportlab.lib import colors
-                    from reportlab.pdfbase import pdfmetrics
-                    from reportlab.lib.units import cm
-                    from reportlab.lib.enums import TA_LEFT, TA_CENTER
-                    import time
-                except ImportError as e:
-                    # 处理reportlab库缺失的情况
-                    error_msg = f"导出PDF失败: 缺少必要的库 '{e.name}'。请安装reportlab库后重试。\n\n安装命令: pip install reportlab --timeout 120"
-                    self.show_result(error_msg, error=True)
-                    return None
+                print("\n=== PDF导出调试信息 ===")
+                print(f"文件路径: {file_path}")
+                print(f"文件扩展名: {file_ext}")
+                print("进入PDF导出分支")
+                from reportlab.lib.pagesizes import A4, landscape
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.platypus import (
+                    Table,
+                    TableStyle,
+                    Paragraph,
+                    Spacer,
+                )
+                from reportlab.lib import colors
+                from reportlab.pdfbase import pdfmetrics
+                from reportlab.lib.units import cm
+                from reportlab.lib.enums import TA_LEFT, TA_CENTER
+                import time
 
                 # 注册中文字体
                 print("调用register_chinese_fonts()")
@@ -4555,7 +4533,7 @@ class IPSubnetSplitterApp:
                             # 3. 增加柱状图高度，为文字留出更多空间
                             bar_height = 100
                             
-                            # 恢复网段分布图文字标题
+                            # 绘制标题 - 调大300%后再调小30% (108 → 76)
                             title = "网段分布图"
                             # 创建合适大小的标题字体
                             title_font_size = 76  # 108 * 0.7 = 75.6，取整为76

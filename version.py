@@ -5,11 +5,11 @@
 用于集中管理IP子网切分工具的版本号
 """
 
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 4
-PATCH_VERSION = 1
+PATCH_VERSION = 2
 
 VERSION_TUPLE = (MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
 
@@ -22,6 +22,7 @@ RELEASE_DATES = {
     "1.3.0": "2025-12-11",
     "1.4.0": "2025-12-19",
     "1.4.1": "2025-12-20",
+    "1.4.2": "2025-12-21",
 }
 
 
