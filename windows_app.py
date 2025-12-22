@@ -11,6 +11,28 @@ import math
 import re
 import datetime
 from tkinter import ttk, filedialog
+import tkinter.font as tkfont
+import sys
+import os
+import traceback
+import json
+import time
+from io import BytesIO
+
+# 外部库导入
+from PIL import Image, ImageDraw, ImageFont
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+import reportlab.lib.colors as colors
+from reportlab.lib.colors import black, white, lightgrey, grey, darkgrey, blue, lightblue, red, green, yellow
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import Image as RLImage, PageBreak, BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
 
 # 导入自定义模块
 from ip_subnet_calculator import split_subnet, ip_to_int, get_subnet_info, suggest_subnet_planning
@@ -355,8 +377,8 @@ class IPSubnetSplitterApp:
 
     def __init__(self, root):
         # 导入版本管理模块
-        import sys
-        import os
+
+
 
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from version import get_version
@@ -3060,13 +3082,20 @@ class IPSubnetSplitterApp:
                 # 使用系统内置主题切换，彻底移除sv-ttk，解决黑色底色问题
                 self.style.theme_use(new_theme)
                 # 重新配置Treeview样式，确保在新主题下表格线仍然可见
-                self.configure_treeview_styles(self.split_tree) if hasattr(self, 'split_tree') else None
-                self.configure_treeview_styles(self.remaining_tree) if hasattr(self, 'remaining_tree') else None
-                self.configure_treeview_styles(self.allocated_tree) if hasattr(self, 'allocated_tree') else None
-                self.configure_treeview_styles(self.planning_remaining_tree) if hasattr(self, 'planning_remaining_tree') else None
-                self.configure_treeview_styles(self.pool_tree) if hasattr(self, 'pool_tree') else None
-                self.configure_treeview_styles(self.requirements_tree) if hasattr(self, 'requirements_tree') else None
-                self.configure_treeview_styles(self.history_tree) if hasattr(self, 'history_tree') else None
+                if hasattr(self, 'split_tree'):
+                    self.configure_treeview_styles(self.split_tree)
+                if hasattr(self, 'remaining_tree'):
+                    self.configure_treeview_styles(self.remaining_tree)
+                if hasattr(self, 'allocated_tree'):
+                    self.configure_treeview_styles(self.allocated_tree)
+                if hasattr(self, 'planning_remaining_tree'):
+                    self.configure_treeview_styles(self.planning_remaining_tree)
+                if hasattr(self, 'pool_tree'):
+                    self.configure_treeview_styles(self.pool_tree)
+                if hasattr(self, 'requirements_tree'):
+                    self.configure_treeview_styles(self.requirements_tree)
+                if hasattr(self, 'history_tree'):
+                    self.configure_treeview_styles(self.history_tree)
             except Exception as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
@@ -3114,11 +3143,10 @@ class IPSubnetSplitterApp:
         # 使用tkinter的Font.measure方法计算实际显示宽度
 
         # 创建字体对象，用于测量文本宽度
-        import tkinter.font as tkfont
         
         try:
             font = tkfont.Font(family="微软雅黑", size=9)
-        except:
+        except Exception:
             font = tkfont.Font(family="Arial", size=9)
 
         # 计算字符串的实际像素宽度
@@ -3677,7 +3705,7 @@ class IPSubnetSplitterApp:
             success_msg: 成功消息格式字符串
             failure_msg: 失败消息格式字符串
         """
-        import traceback
+
         try:
             # 使用文件对话框，支持多种格式
             file_path = filedialog.asksaveasfilename(
@@ -3698,7 +3726,7 @@ class IPSubnetSplitterApp:
                 return  # 用户取消了保存
 
             # 获取文件扩展名
-            import os
+
 
             file_ext = os.path.splitext(file_path)[1].lower()
 
@@ -3760,7 +3788,7 @@ class IPSubnetSplitterApp:
             # 根据文件扩展名选择导出格式
             if file_ext == ".json":
                 # JSON格式导出
-                import json
+    
 
                 if data_source["main_name"] == "切分网段信息":
                     # 子网切分结果特殊处理
@@ -3823,19 +3851,19 @@ class IPSubnetSplitterApp:
                     print(f"文件路径: {file_path}")
                     print(f"文件扩展名: {file_ext}")
                     print("进入PDF导出分支")
-                    from reportlab.lib.pagesizes import A4, landscape
-                    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    
                     from reportlab.platypus import (
                         Table,
                         TableStyle,
                         Paragraph,
                         Spacer,
                     )
-                    from reportlab.lib import colors
-                    from reportlab.pdfbase import pdfmetrics
-                    from reportlab.lib.units import cm
-                    from reportlab.lib.enums import TA_LEFT, TA_CENTER
-                    import time
+    
+    
+    
+    
+    
                 except ImportError as e:
                     # 处理reportlab库缺失的情况
                     error_msg = f"导出PDF失败: 缺少必要的库 '{e.name}'。请安装reportlab库后重试。\n\n安装命令: pip install reportlab --timeout 120"
@@ -3849,7 +3877,7 @@ class IPSubnetSplitterApp:
 
                 # 创建PDF文档，使用BaseDocTemplate以支持多页面模板
                 print("创建PDF文档对象")
-                from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
+
                 
                 # 设置页面边距
                 margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)  # 左、右、上、下
@@ -4431,10 +4459,10 @@ class IPSubnetSplitterApp:
                 
                 if has_chart_data and has_networks:
                     print("检测到有效网段分布图数据，准备添加到PDF")
-                    from reportlab.platypus import Image
+    
 
-                    import os
-                    from PIL import Image as PILImage
+    
+
                     
                     try:
                         # 直接使用应用中已经绘制好的图表，而不是重新生成
@@ -4444,8 +4472,8 @@ class IPSubnetSplitterApp:
                         self.draw_distribution_chart()
                         
                         # 处理图表页面，确保竖排A4
-                        from reportlab.platypus import PageBreak
-                        from io import BytesIO
+        
+        
                         
                         # 1. 切换到纵向页面模板，准备添加图表
                         elements.append(NextPageTemplate('portrait'))
@@ -4462,7 +4490,7 @@ class IPSubnetSplitterApp:
                         # 4. 直接使用PIL绘制图表，确保文字垂直居中对齐
                         if not canvas_capture_success:
                             print("使用PIL直接绘制图表作为备选方案")
-                            from PIL import ImageDraw, ImageFont
+            
                             
                             # 准备图表数据
                             parent_info = chart_data.get("parent", {})
@@ -4488,10 +4516,9 @@ class IPSubnetSplitterApp:
                             
                             # 确保高度至少为原始A4高度
                             dynamic_high_res_height = max(high_res_height, required_height)
-                            print(f"动态计算图表高度: 基础高度={base_height}, 网段数量={total_networks}, 总高度={required_height}, 最终高度={dynamic_high_res_height}")
                             
                             # 创建动态高度的高分辨率图像
-                            pil_image = PILImage.new('RGB', (high_res_width, dynamic_high_res_height), color='#333333')
+                            pil_image = Image.new('RGB', (high_res_width, dynamic_high_res_height), color='#333333')
                             draw = ImageDraw.Draw(pil_image)
                             
                             # 确保中文正常显示，使用更可靠的字体加载逻辑
@@ -4500,7 +4527,7 @@ class IPSubnetSplitterApp:
                             font_loaded = False
                             
                             try:
-                                import os
+                
                                 system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
                                 
                                 # 尝试多种中文字体，确保成功加载
@@ -4561,7 +4588,7 @@ class IPSubnetSplitterApp:
                             title_font_size = 76  # 108 * 0.7 = 75.6，取整为76
                             title_font = None
                             try:
-                                import os
+                
                                 system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
                                 title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
                                 if os.path.exists(title_font_path):
@@ -4593,7 +4620,6 @@ class IPSubnetSplitterApp:
                             text_font = None
                             bold_text_font = None
                             try:
-                                import os
                                 system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
                                 font_path = os.path.join(system_font_dir, 'msyh.ttc')
                                 if os.path.exists(font_path):
@@ -4837,7 +4863,7 @@ class IPSubnetSplitterApp:
                             print(f"成功保存高DPI PNG图像，尺寸: {pil_image.size}, DPI: 300")
                         
                         # 6. 计算图像在PDF中的合适尺寸
-                        from reportlab.lib.pagesizes import A4
+        
                         portrait_width, portrait_height = A4
                         
                         # 使用动态计算的图像高度
@@ -4868,7 +4894,6 @@ class IPSubnetSplitterApp:
                         
                         # 计算实际DPI：1点=1/72英寸
                         actual_dpi = high_res_width / (final_pdf_width / 72.0)
-                        print(f"图像在PDF中的尺寸: {final_pdf_width:.1f}x{final_pdf_height:.1f}点，实际DPI: {actual_dpi:.1f}")
                         
                         # 9. 只添加图像，不添加额外的标题文字
                         # 图表本身已经包含了"网段分布图"标题，所以不需要在PDF页面上重复显示
@@ -4876,7 +4901,7 @@ class IPSubnetSplitterApp:
                         
                         # 对于高图表，我们允许其跨页显示，确保完整性
                         # 如果图像高度超过页面高度，ReportLab会自动将其拆分到多页
-                        chart_elements.append(Image(img_byte_arr, width=final_pdf_width, height=final_pdf_height))
+                        chart_elements.append(RLImage(img_byte_arr, width=final_pdf_width, height=final_pdf_height))
                         
                         # 不使用KeepTogether，允许图表跨页显示，确保完整性
                         elements.extend(chart_elements)
@@ -4942,8 +4967,8 @@ class IPSubnetSplitterApp:
 
             elif file_ext == ".xlsx":
                 # Excel格式导出
-                from openpyxl import Workbook
-                from openpyxl.styles import Font, Alignment
+
+
 
                 # 创建Excel工作簿
                 workbook = Workbook()
@@ -5170,8 +5195,8 @@ class IPSubnetSplitterApp:
         # 导入所需模块
         import sys
         import os
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase.ttfonts import TTFont
+
+
 
         # 尝试查找系统中的中文字体
         font_path = None
