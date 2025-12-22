@@ -2701,11 +2701,8 @@ class IPSubnetSplitterApp:
                 return
 
             # 清空结果表格
-            for item in self.allocated_tree.get_children():
-                self.allocated_tree.delete(item)
-
-            for item in self.planning_remaining_tree.get_children():
-                self.planning_remaining_tree.delete(item)
+            self.clear_tree_items(self.allocated_tree)
+            self.clear_tree_items(self.planning_remaining_tree)
 
             # 显示已分配子网
             for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
@@ -2821,19 +2818,13 @@ class IPSubnetSplitterApp:
             result = split_subnet(parent, split)
 
             # 清空现有结果
-            for item in self.split_tree.get_children():
-                self.split_tree.delete(item)
-            for item in self.remaining_tree.get_children():
-                self.remaining_tree.delete(item)
+            self.clear_tree_items(self.split_tree)
+            self.clear_tree_items(self.remaining_tree)
 
             if "error" in result:
                 # 显示错误信息
-                self.split_tree.delete(*self.split_tree.get_children())
                 self.split_tree.insert("", tk.END, values=("错误", result["error"]), tags=("error",))
                 return
-
-            # 显示切分网段信息表格
-            self.split_tree.delete(*self.split_tree.get_children())
 
             # 添加切分网段信息，同时设置斑马条纹标签
             self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd",))
@@ -2882,12 +2873,9 @@ class IPSubnetSplitterApp:
             # 不自动跳转到剩余网段页面，直接更新滚动条状态
             # 强制更新所有组件的尺寸信息
             self.root.update_idletasks()
-            self.remaining_frame.update_idletasks()
-            self.remaining_tree.update_idletasks()
             
             # 触发滚动条回调函数，更新滚动条状态
             self.remaining_tree.yview_moveto(0.0)
-            self.remaining_tree.update_idletasks()
             
             # 获取当前滚动位置，确保滚动条状态正确
             yview = self.remaining_tree.yview()
@@ -2923,11 +2911,7 @@ class IPSubnetSplitterApp:
                     self.split_entry.config(values=self.split_networks)
                 
                 # 检查是否已存在相同的记录
-                duplicate_exists = False
-                for existing_record in self.history_records:
-                    if existing_record['parent'] == parent and existing_record['split'] == split:
-                        duplicate_exists = True
-                        break
+                duplicate_exists = any(record['parent'] == parent and record['split'] == split for record in self.history_records)
                 
                 # 如果不存在相同记录，则添加到历史记录
                 if not duplicate_exists:
@@ -2956,6 +2940,14 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
+
+    def clear_tree_items(self, tree):
+        """清空表格中的所有项
+        
+        Args:
+            tree: 要清空的Treeview对象
+        """
+        tree.delete(*tree.get_children())
 
     def hide_info_bar(self):
         """隐藏信息栏"""
