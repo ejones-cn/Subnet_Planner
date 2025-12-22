@@ -722,6 +722,19 @@ class IPSubnetSplitterApp:
         # 创建临时标签用于测量文本宽度，避免重复创建和销毁
         self._temp_label = tk.Label(self.root)
         self._temp_label.pack_forget()
+        
+        # 信息栏相关常量
+        self.INFO_BAR_LEFT_OFFSET = 235
+        self.INFO_BAR_RIGHT_OFFSET = 136
+        self.INFO_BAR_PADDING = 3
+        self.MIN_INFO_BAR_WIDTH = 300
+        self.CLOSE_BTN_WIDTH = 30
+        self.MIN_PIXEL_WIDTH = 50
+        self.INFO_BAR_PLACE_LEFT = 238
+        self.INFO_BAR_PLACE_RIGHT = 136
+        self.INFO_BAR_PLACE_Y = 21.5
+        self.INFO_BAR_PLACE_HEIGHT = 30
+        self.MIN_INFO_BAR_PLACE_WIDTH = 300
 
     def validate_split_cidr_local(self, text):
         return self.validate_cidr(text, self.split_entry)
@@ -3101,8 +3114,15 @@ class IPSubnetSplitterApp:
                               style=button_style, command=test_dialog.destroy)
         close_btn.grid(row=0, column=1, padx=5)
 
-    def show_result(self, text, error=False, keep_data=False, _="info"):
-        """显示结果"""
+    def show_result(self, text, error=False, keep_data=False, message_type="info"):
+        """显示结果
+        
+        Args:
+            text: 要显示的文本
+            error: 是否为错误信息
+            keep_data: 是否保留数据
+            message_type: 信息类型（info, success, error等）
+        """
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
             self.clear_result()
@@ -3195,21 +3215,19 @@ class IPSubnetSplitterApp:
 
         # 获取信息栏的实际宽度
         root_width = self.root.winfo_width()
-        info_bar_width = root_width - 235 - 136 - 3  # 与信息栏宽度计算保持一致
-        if info_bar_width < 300:
-            info_bar_width = 300
         
-        # 计算关闭按钮的宽度（约30px，包括按钮宽度和边距）
-        close_btn_width = 30
+        info_bar_width = root_width - self.INFO_BAR_LEFT_OFFSET - self.INFO_BAR_RIGHT_OFFSET - self.INFO_BAR_PADDING  # 与信息栏宽度计算保持一致
+        if info_bar_width < self.MIN_INFO_BAR_WIDTH:
+            info_bar_width = self.MIN_INFO_BAR_WIDTH
         
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
         # 减少内边距预留，增加两个中文字符宽度（约32px），让文本可以多显示一些字符
         # 增加可用宽度，让文本可以多显示两个中文字符
-        max_pixel_width = info_bar_width - 5 - close_btn_width  # 减去5px内边距和关闭按钮宽度
+        max_pixel_width = info_bar_width - 5 - self.CLOSE_BTN_WIDTH  # 减去5px内边距和关闭按钮宽度
         
         # 确保最大像素宽度为正数
-        if max_pixel_width < 50:
-            max_pixel_width = 50
+        if max_pixel_width < self.MIN_PIXEL_WIDTH:
+            max_pixel_width = self.MIN_PIXEL_WIDTH
             
         truncated_text = truncate_text_by_pixel(text, icon, max_pixel_width)
 
@@ -3218,27 +3236,19 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.configure(style=frame_style)
 
         # 显示信息栏 - 使用place布局，放置在顶部标签栏右侧红框位置，宽度适配子网规划到钉住按钮的距离
+        # 计算信息栏位置和宽度
+        info_bar_width = root_width - self.INFO_BAR_PLACE_LEFT - self.INFO_BAR_PLACE_RIGHT  # 右侧偏移量改为136px
+        # 增加最小宽度，确保信息栏不会过窄
+        if info_bar_width < self.MIN_INFO_BAR_PLACE_WIDTH:  # 增加最小宽度为300px
+            info_bar_width = self.MIN_INFO_BAR_PLACE_WIDTH
+        
         if self.info_bar_frame.winfo_manager() == "":
-            # 获取根窗口宽度
-            root_width = self.root.winfo_width()
-            # 计算信息栏宽度：窗口宽度 - 左侧235px - 右侧136px - 3px边距
-            # 调整宽度计算，确保信息栏有足够宽度
-            info_bar_width = root_width - 238 - 136  # 右侧偏移量改为136px
-            # 增加最小宽度，确保信息栏不会过窄
-            if info_bar_width < 300:  # 增加最小宽度为300px
-                info_bar_width = 300
-            # 恢复原始位置：顶部标签栏右侧，y=22，高度30px，与标签页按钮底部对齐
-            self.info_bar_frame.place(x=238, y=21.5, width=info_bar_width, height=30)
+            # 恢复原始位置：顶部标签栏右侧，y=21.5，高度30px，与标签页按钮底部对齐
+            self.info_bar_frame.place(x=self.INFO_BAR_PLACE_LEFT, y=self.INFO_BAR_PLACE_Y, width=info_bar_width, height=self.INFO_BAR_PLACE_HEIGHT)
         else:
             # 如果已经显示，确保位置和宽度正确
-            root_width = self.root.winfo_width()
-            # 同样的计算逻辑，使用新的右侧偏移量和边距
-            info_bar_width = root_width - 238 - 136  # 右侧偏移量改为136px
-            # 增加最小宽度，确保信息栏不会过窄
-            if info_bar_width < 300:  # 增加最小宽度为300px
-                info_bar_width = 300
             # 恢复原始高度和位置
-            self.info_bar_frame.place_configure(x=238, y=21.5, width=info_bar_width, height=30)
+            self.info_bar_frame.place_configure(x=self.INFO_BAR_PLACE_LEFT, y=self.INFO_BAR_PLACE_Y, width=info_bar_width, height=self.INFO_BAR_PLACE_HEIGHT)
 
         # 去掉自动隐藏功能，需要手动隐藏
 
@@ -3337,9 +3347,9 @@ class IPSubnetSplitterApp:
         font,
         anchor=tk.W,
         fill="#ffffff",
-        _="#000000",
-        __=1.5,
-        ___=1.5,
+        stroke_color="#000000",
+        stroke_width=1.5,
+        letter_spacing=1.5,
     ):
         """绘制带描边的文字（使用4方向基础描边，平衡性能和可读性）
 
@@ -3350,13 +3360,12 @@ class IPSubnetSplitterApp:
             font: 字体设置
             anchor: 文字锚点
             fill: 文字颜色
-            stroke: 描边颜色（为了兼容性保留此参数）
-            stroke_width: 描边宽度（为了兼容性保留此参数）
-            letter_spacing: 字间距（为了兼容性保留此参数）
+            stroke_color: 描边颜色
+            stroke_width: 描边宽度
+            letter_spacing: 字间距
         """
         try:
             # 使用4个方向的基础描边，平衡性能和可读性
-            stroke_color = "#000000"
             offset = 1  # 描边偏移量
 
             # 绘制4个方向的描边
@@ -3367,7 +3376,7 @@ class IPSubnetSplitterApp:
 
             # 绘制主文字
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
-        except Exception:
+        except (AttributeError, ValueError) as e:
             # 出错时直接绘制文字，不添加描边
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
 
