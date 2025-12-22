@@ -54,7 +54,7 @@ def update_version_file(major, minor, patch):
 
     # 更新或添加发布日期
     today = datetime.now().strftime("%Y-%m-%d")
-    if f'"{new_version}"':
+    if f'"{new_version}":' in content:
         content = re.sub(
             rf'"{new_version}":\s*"\d{{4}}-\d{{2}}-\d{{2}}"', f'"{new_version}": "{today}"', content
         )
