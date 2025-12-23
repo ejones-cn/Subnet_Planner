@@ -721,24 +721,38 @@ class IPSubnetSplitterApp:
     def validate_split_cidr_local(self, text):
         return self.validate_cidr(text, self.split_entry)
     
+    def is_valid_cidr(self, cidr):
+        """验证CIDR格式是否有效
+        
+        Args:
+            cidr: 要验证的CIDR字符串
+            
+        Returns:
+            bool: 如果CIDR格式有效则返回True，否则返回False
+        """
+        return bool(re.match(self.cidr_pattern, cidr.strip())) if cidr.strip() else False
+    
     def update_history_tree(self):
         """更新历史记录列表"""
-        # 清空现有历史记录
-        for item in self.history_tree.get_children():
-            self.history_tree.delete(item)
-        
-        # 重新插入所有历史记录
-        for index, history_record in enumerate(self.history_records, 1):
-            # 设置斑马条纹标签
-            tags = ("even",) if index % 2 == 0 else ("odd",)
-            # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
-            formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
-            self.history_tree.insert(
-                "", 
-                tk.END, 
-                values=(formatted_record,),
-                tags=tags
-            )
+        try:
+            # 清空现有历史记录
+            self.clear_tree_items(self.history_tree)
+            
+            # 重新插入所有历史记录
+            for index, history_record in enumerate(self.history_records, 1):
+                # 设置斑马条纹标签
+                tags = ("even",) if index % 2 == 0 else ("odd",)
+                # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
+                formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
+                self.history_tree.insert(
+                    "", 
+                    tk.END, 
+                    values=(formatted_record,),
+                    tags=tags
+                )
+        except Exception as e:
+            # 错误处理，确保GUI更新失败不会导致程序崩溃
+            print(f"更新历史记录列表失败: {str(e)}")
     
     def reexecute_split(self):
         """从历史记录重新执行切分操作"""
@@ -1468,6 +1482,192 @@ class IPSubnetSplitterApp:
         # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
         self.root.after(100, self.initial_table_setup)
 
+    def _create_result_main_frame(self):
+        """创建结果显示区域的主框架"""
+        result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
+        # 调整底部外边距，将结果区域与窗体下边距缩小
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 0))
+        return result_frame
+    
+    def _create_export_button(self, parent_frame):
+        """添加导出结果按钮"""
+        # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
+        self.export_btn = ttk.Button(parent_frame, text="导出结果", 
+                                    command=self.export_result, 
+                                    width=10)
+        # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
+        self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
+        
+        # 将导出结果按钮提升到最上层，避免被遮挡
+        self.export_btn.lift()
+    
+    def _create_result_notebook(self, parent_frame):
+        """创建笔记本控件来显示不同的结果页面"""
+        # 创建一个自定义的笔记本控件来显示不同的结果页面
+        self.notebook = ColoredNotebook(parent_frame, style=self.style, tab_change_callback=self.on_tab_change)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+    
+    def _create_split_info_page(self):
+        """创建切分网段信息页面"""
+        # 切分网段信息页面
+        self.split_info_frame = ttk.Frame(
+            self.notebook.content_area, padding="5", style=self.notebook.get_light_blue_style()
+        )
+
+        # 创建切分网段信息表格
+        self.split_tree = ttk.Treeview(self.split_info_frame, columns=("item", "value"), show="headings", height=5)
+        self.split_tree.heading("item", text="项目")
+        self.split_tree.heading("value", text="值")
+        # 设置合适的列宽
+        self.split_tree.column("item", width=100, minwidth=100, stretch=False)
+        self.split_tree.column("value", width=250)
+        self.split_tree.pack(fill=tk.BOTH, expand=True, pady=0)
+
+        # 配置斑马条纹样式和信息标签样式
+        self.configure_treeview_styles(self.split_tree, include_special_tags=True)
+    
+    def _create_remaining_subnets_page(self):
+        """创建剩余网段表页面"""
+        # 剩余网段表页面
+        self.remaining_frame = ttk.Frame(
+            self.notebook.content_area, padding="5", style=self.notebook.get_light_green_style()
+        )
+
+        # 创建剩余网段信息表格
+        self.remaining_tree = ttk.Treeview(
+            self.remaining_frame,
+            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            show="headings",
+            height=5,
+        )
+        self.remaining_tree.heading("index", text="序号")
+        self.remaining_tree.heading("cidr", text="CIDR")
+        self.remaining_tree.heading("network", text="网络地址")
+        self.remaining_tree.heading("netmask", text="子网掩码")
+        self.remaining_tree.heading("wildcard", text="通配符掩码")
+        self.remaining_tree.heading("broadcast", text="广播地址")
+        self.remaining_tree.heading("usable", text="可用地址数")
+
+        # 设置列宽，使用minwidth替代width，让列可以自适应
+        self.remaining_tree.column("index", minwidth=40, width=40, stretch=False, anchor="e")
+        self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
+        self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
+        self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
+        self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
+        
+        # 调整列宽，确保所有列都能完整显示并自适应窗口宽度
+        self.remaining_tree.column("broadcast", minwidth=100, width=130, stretch=True)
+        self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
+
+        # 配置斑马条纹样式
+        self.configure_treeview_styles(self.remaining_tree)
+    
+    def _create_network_chart_page(self):
+        """创建网段分布图页面"""
+        # 网段分布图页面
+        self.chart_frame = ttk.Frame(
+            self.notebook.content_area, padding="5", style=self.notebook.get_light_purple_style()
+        )
+        
+        # 配置chart_frame的grid布局
+        self.chart_frame.grid_rowconfigure(0, weight=1)
+        self.chart_frame.grid_columnconfigure(0, weight=1)
+        self.chart_frame.grid_columnconfigure(1, weight=0)
+        
+        # 创建滚动容器，使用grid布局
+        scroll_frame = ttk.Frame(self.chart_frame)
+        scroll_frame.grid(row=0, column=0, sticky=tk.NSEW)
+        scroll_frame.grid_rowconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(1, weight=0)
+
+        # 添加滚动条
+        self.chart_scrollbar = ttk.Scrollbar(scroll_frame, orient=tk.VERTICAL)
+        
+        # 创建Canvas用于绘制柱状图，设置背景色为深灰色以匹配图表背景
+        # 禁止水平滚动，只允许垂直滚动
+        self.chart_canvas = tk.Canvas(scroll_frame, bg="#333333")
+        self.chart_canvas.grid(row=0, column=0, sticky=tk.NSEW, pady=0)
+        
+        # 配置滚动条
+        self.chart_scrollbar.config(command=self.chart_canvas.yview)
+        self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def chart_scrollbar_callback(*args):
+            # 更新滚动条位置
+            self.chart_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                self.chart_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置Canvas的滚动条命令
+        self.chart_canvas.config(yscrollcommand=chart_scrollbar_callback, xscrollcommand=None)
+        
+        # 初始检查是否需要显示滚动条
+        chart_scrollbar_callback(0.0, 1.0)
+
+        # 绑定窗口大小变化事件，实现图表自适应
+        self.chart_canvas.bind("<Configure>", self.on_chart_resize)
+        # 绑定鼠标滚轮事件
+        self.chart_canvas.bind("<MouseWheel>", self.on_chart_mousewheel)
+    
+    def _add_result_tabs(self):
+        """添加标签页到笔记本"""
+        # 添加标签页，每个标签页设置不同的颜色
+        self.notebook.add_tab("切分网段信息", self.split_info_frame, "#e3f2fd")  # 浅蓝色
+        self.notebook.add_tab("剩余网段表", self.remaining_frame, "#e8f5e9")  # 浅绿色
+        self.notebook.add_tab("网段分布图", self.chart_frame, "#f3e5f5")  # 浅紫色
+    
+    def _setup_scrollbars(self):
+        """配置滚动条"""
+        # 配置remaining_frame的grid布局
+        self.remaining_frame.grid_rowconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(1, weight=0)
+        
+        # 添加垂直滚动条
+        self.remaining_scroll_v = ttk.Scrollbar(
+            self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
+        )
+        
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def remaining_scrollbar_callback(*args):
+            # 更新滚动条位置
+            self.remaining_scroll_v.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                self.remaining_scroll_v.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        
+        self.remaining_tree.configure(yscrollcommand=remaining_scrollbar_callback)
+
+        # 设置布局：Treeview在左，垂直滚动条在右，都填满整个可用空间
+        self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        # 初始隐藏滚动条
+        self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        remaining_scrollbar_callback(0.0, 1.0)
+    
+    def _setup_initial_state(self):
+        """设置初始状态"""
+        # 绑定窗口大小变化事件，实现表格自适应
+        self.root.bind("<Configure>", self.on_window_resize)
+
+        # 初始提示
+        self.clear_result()
+
+        # Treeview表格线样式已在初始化时设置
+
+        # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
+        self.root.after(100, self.initial_table_setup)
+    
     def setup_planning_page(self):
         """设置子网规划功能的界面"""
         # 直接使用self.planning_frame，移除中间层main_planning_frame
@@ -1921,18 +2121,25 @@ class IPSubnetSplitterApp:
         """
         try:
             # 只更新行标签，样式已在初始化时配置
-            for index, item in enumerate(tree.get_children(), start=1):
+            children = tree.get_children()
+            for index, item in enumerate(children, start=1):
                 tag = "even" if index % 2 == 0 else "odd"
 
                 if update_index:
                     # 更新序号列
                     values = list(tree.item(item, "values"))
-                    values[0] = index
-                    tree.item(item, values=values, tags=(tag,))
+                    if values and values[0] != index:  # 只有当序号不一致时才更新
+                        values[0] = index
+                        tree.item(item, values=values, tags=(tag,))
+                    else:
+                        # 只更新斑马条纹标签，减少不必要的UI更新
+                        current_tags = tree.item(item, "tags")
+                        if tag not in current_tags:
+                            tree.item(item, tags=(tag,))
                 else:
                     # 只更新斑马条纹标签
                     current_tags = tree.item(item, "tags")
-                    if tag not in current_tags:
+                    if tag not in current_tags:  # 只有当标签不一致时才更新
                         tree.item(item, tags=(tag,))
         except AttributeError:
             # 忽略属性不存在的错误
@@ -2668,7 +2875,7 @@ class IPSubnetSplitterApp:
             self.show_error("错误", "请输入父网段")
             return
 
-        if not re.match(self.cidr_pattern, parent):
+        if not self.is_valid_cidr(parent):
             self.show_error("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
             return
 
@@ -2791,7 +2998,7 @@ class IPSubnetSplitterApp:
             return
 
         # 验证CIDR格式
-        if not re.match(self.cidr_pattern, parent):
+        if not self.is_valid_cidr(parent):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
@@ -2799,7 +3006,7 @@ class IPSubnetSplitterApp:
             )
             self.show_error("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
             return
-        if not re.match(self.cidr_pattern, split):
+        if not self.is_valid_cidr(split):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
@@ -2865,27 +3072,23 @@ class IPSubnetSplitterApp:
             # 让表格自适应窗口宽度
             self.adjust_remaining_tree_width()
             
-            # 不自动跳转到剩余网段页面，直接更新滚动条状态
-            # 强制更新所有组件的尺寸信息
-            self.root.update_idletasks()
-            
-            # 触发滚动条回调函数，更新滚动条状态
-            self.remaining_tree.yview_moveto(0.0)
-            
-            # 获取当前滚动位置，确保滚动条状态正确
-            yview = self.remaining_tree.yview()
-            
-            # 直接更新滚动条状态，不依赖局部回调函数
+            # 优化滚动条状态更新，减少不必要的计算
             if hasattr(self, 'remaining_scroll_v'):
-                # 更新滚动条位置
-                self.remaining_scroll_v.set(yview[0], yview[1])
+                # 获取当前滚动位置
+                yview = self.remaining_tree.yview()
                 # 检查是否需要显示滚动条
-                if float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0:
-                    # 内容不可滚动，隐藏滚动条
-                    self.remaining_scroll_v.grid_remove()
-                else:
-                    # 内容可滚动，显示滚动条
-                    self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+                need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+                
+                # 只在状态变化时才更新UI，减少不必要的刷新
+                current_state = self.remaining_scroll_v.winfo_ismapped()
+                if need_scrollbar != current_state:
+                    if need_scrollbar:
+                        # 内容可滚动，显示滚动条
+                        self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+                        self.remaining_scroll_v.set(yview[0], yview[1])
+                    else:
+                        # 内容不可滚动，隐藏滚动条
+                        self.remaining_scroll_v.grid_remove()
 
             # 准备图表数据
             self.prepare_chart_data(result, split_info, result["remaining_subnets_info"])
@@ -2898,14 +3101,20 @@ class IPSubnetSplitterApp:
                 # 检查当前父网段是否在列表中，如果不在则添加（使用子网切分专用的父网段历史记录）
                 if parent and parent not in self.split_parent_networks:
                     self.split_parent_networks.append(parent)
+                    # 限制历史记录大小，最多保留100条
+                    if len(self.split_parent_networks) > 100:
+                        self.split_parent_networks.pop(0)
                     self.parent_entry.config(values=self.split_parent_networks)
-                
-                # 检查当前切分段是否在列表中，如果不在则添加
+            
+            # 检查当前切分段是否在列表中，如果不在则添加
                 if split and split not in self.split_networks:
                     self.split_networks.append(split)
+                    # 限制历史记录大小，最多保留100条
+                    if len(self.split_networks) > 100:
+                        self.split_networks.pop(0)
                     self.split_entry.config(values=self.split_networks)
-                
-                # 检查是否已存在相同的记录
+            
+            # 检查是否已存在相同的记录
                 duplicate_exists = any(record['parent'] == parent and record['split'] == split for record in self.history_records)
                 
                 # 如果不存在相同记录，则添加到历史记录
@@ -2915,6 +3124,9 @@ class IPSubnetSplitterApp:
                         'split': split
                     }
                     self.history_records.append(split_record)
+                    # 限制历史记录大小，最多保留50条
+                    if len(self.history_records) > 50:
+                        self.history_records.pop(0)
                     
                     # 更新历史记录列表
                     self.update_history_tree()
@@ -2942,7 +3154,10 @@ class IPSubnetSplitterApp:
         Args:
             tree: 要清空的Treeview对象
         """
-        tree.delete(*tree.get_children())
+        # 批量删除所有子项，减少UI更新次数
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
 
     def hide_info_bar(self):
         """隐藏信息栏"""
@@ -5142,16 +5357,14 @@ class IPSubnetSplitterApp:
     def clear_result(self):
         """清空结果表格和图表"""
         # 清空切分网段信息表格
-        for item in self.split_tree.get_children():
-            self.split_tree.delete(item)
+        self.clear_tree_items(self.split_tree)
         # 添加提示行
         self.split_tree.insert("", tk.END, values=("提示", "点击'执行切分'按钮开始操作..."), tags=('odd',))
         # 更新切分网段表格的斑马条纹标签
         self.update_table_zebra_stripes(self.split_tree)
 
         # 清空剩余网段表表格
-        for item in self.remaining_tree.get_children():
-            self.remaining_tree.delete(item)
+        self.clear_tree_items(self.remaining_tree)
         # 更新剩余网段表的斑马条纹标签
         self.update_table_zebra_stripes(self.remaining_tree)
         
