@@ -642,7 +642,7 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.place_forget()
 
         # 信息栏高度统一为30px，与place布局一致
-        self.info_bar_frame.configure(height=30)  # 调整高度与标签页按钮一致
+        self.info_bar_frame.configure(height=10)  # 调整高度与标签页按钮一致
 
         # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)  # 行填充整个高度
@@ -651,27 +651,15 @@ class IPSubnetSplitterApp:
         # 关闭按钮列固定宽度，不占据剩余空间
         self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 权重0，固定宽度
 
-        # 优化关闭按钮样式，减小宽度，确保文字能显示满信息框
-        # 重置按钮样式，确保没有平台默认样式干扰
+        # 设置关闭按钮样式，使其宽度与高度一致（30px）
         self.style.configure(
             "InfoBarCloseButton.TButton",
-            font=(("微软雅黑", 9)),  # 减小字号到9
-            foreground="#9E9E9E",  # 中灰色文字
-            focuscolor="none",
-            focuswidth=0,
-            padding=(0, 0, 0, 0),  # 无内边距，更紧凑
-            width=2,  # 减小宽度到2
-            borderwidth=0,
-            relief="flat",
-            background="#9E9E9E",  # 与信息栏背景相同
+            padding=(2, 0),  # 按用户要求设置padding为(2, 0)
+            foreground="#9E9E9E",
+            font=("微软雅黑", 8),
+            width=2,  # 字符宽度，配合padding使用
         )
-        # 完全重置所有状态的背景色
-        self.style.map(
-            "InfoBarCloseButton.TButton",
-            focuscolor=[("focus", "none")],
-            focuswidth=[("focus", 0)],
-            background=[("active", "#9E9E9E"), ("!active", "#9E9E9E"), ("selected", "#9E9E9E")],
-        )
+        # 使用默认的颜色和其他样式
 
         # 改用grid布局，确保关闭按钮始终可见
         # 重置grid配置
@@ -690,22 +678,16 @@ class IPSubnetSplitterApp:
 
         # 关闭按钮使用grid布局，减小左侧边距，让文字能更接近关闭按钮
         # 使用tk.Button而非ttk.Button，避免Windows平台样式限制
-        self.info_close_btn = tk.Button(
+        self.info_close_btn = ttk.Button(
             self.info_bar_frame,
             text="✕",
             command=self.hide_info_bar,
-            font=(("微软雅黑", 9)),
-            fg="#999999",  # 浅灰色文字，更融入背景
-            
-           
-            activeforeground="#999999",  # 浅灰色文字，更融入背景
-            bd=0,
-            relief="flat",
+            style="InfoBarCloseButton.TButton",  # 使用自定义样式，确保宽度与高度一致
             cursor="hand2",
         )
         # 调整sticky参数为"ns"，确保垂直居中
         # 减小左侧边距，从0改为0px，右侧边距6px，调整pady为1，与信息栏高度一致
-        self.info_close_btn.grid(row=0, column=1, sticky="ns", padx=(0, 6), pady=1)  # 左侧边距0px，右侧边距6px，与信息栏高度一致
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=2)  # 左侧边距0px，右侧边距6px，与信息栏高度一致
 
         # 初始化信息栏状态
         self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
@@ -3094,6 +3076,16 @@ class IPSubnetSplitterApp:
                         # 检查split_tree是否需要包含特殊标签
                         include_special = tree_name == 'split_tree'
                         self.configure_treeview_styles(tree, include_special)
+                
+                # 重新配置信息栏关闭按钮样式，确保在新主题下大小设定仍然生效
+                if hasattr(self, 'style'):
+                    self.style.configure(
+                        "InfoBarCloseButton.TButton",
+                        padding=(2, 0),  # 按用户要求统一设置padding为(2, 0)
+                        font=("微软雅黑", 8),  # 字体设置为微软雅黑，大小为8
+                        foreground="#9E9E9E",
+                        width=2,  # 字符宽度，配合padding使用
+                    )
             except Exception as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
