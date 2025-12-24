@@ -3714,17 +3714,46 @@ class IPSubnetSplitterApp:
                     prefix_analysis += " (站点本地多播)"
                 elif ip_address.startswith("ff0e:"):
                     prefix_analysis += " (全球多播)"
+                else:
+                    prefix_analysis += " (其他多播类型)"
             elif ip_address.startswith("fe80:"):
                 prefix_analysis = "链路本地前缀 (fe80::/10)"
             elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
                 prefix_analysis = "唯一本地地址前缀 (fc00::/7)"
-            elif ip_address.startswith("2000:"):
+            elif ip_address.startswith("2000:") or ip_address.startswith("2001:") or ip_address.startswith("2002:"):
                 prefix_analysis = "全球单播地址前缀 (2000::/3)"
+            elif ip_address.startswith("::ffff:"):
+                prefix_analysis = "IPv4映射地址前缀 (::ffff:0:0/96)"
+            elif ip_address.startswith("64:ff9b::"):
+                prefix_analysis = "IPv4/IPv6转换地址前缀 (64:ff9b::/96)"
+            elif ip_address.startswith("2001:db8::"):
+                prefix_analysis = "文档地址前缀 (2001:db8::/32)"
             elif ip_address == "::1":
                 prefix_analysis = "回环地址 (::1/128)"
             elif ip_address == "::":
                 prefix_analysis = "未指定地址 (::/128)"
-            self.ipv6_info_tree.insert("", tk.END, values=("前缀分析", prefix_analysis))
+            elif ip_address.startswith("100::"):
+                prefix_analysis = "黑洞地址前缀 (100::/64)"
+            elif ip_address.startswith("2001:10::"):
+                prefix_analysis = "ORCHID地址前缀 (2001:10::/28)"
+            elif ip_address.startswith("fec0:"):
+                prefix_analysis = "站点本地地址前缀 (已弃用)"
+            else:
+                # 对于未匹配到的地址，提供通用的前缀分析
+                if ipv6_info.get("is_global"):
+                    prefix_analysis = "全球单播地址前缀"
+                elif ipv6_info.get("is_private"):
+                    prefix_analysis = "私有地址前缀"
+                elif ipv6_info.get("is_link_local"):
+                    prefix_analysis = "链路本地地址前缀"
+                else:
+                    prefix_analysis = "未知地址前缀"
+            # 获取用户指定的CIDR前缀长度
+            user_cidr = ipv6_info.get("prefix_length", ipv6_info.get("cidr", 128))
+            
+            # 生成完整的前缀分析，包括基础前缀和用户指定的CIDR
+            full_prefix_analysis = f"{prefix_analysis}，网络前缀：/{user_cidr}"
+            self.ipv6_info_tree.insert("", tk.END, values=("前缀分析", full_prefix_analysis))
             
             # 分析地址结构
             segments = ip_address.split(":")
@@ -3815,16 +3844,23 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=("网络规模与用途", ""))
             
             # 子网规模描述
-            total_hosts = ipv6_info.get("total_hosts", 0)
+            prefix_length = ipv6_info.get("prefix_length", ipv6_info.get("cidr", 128))
             size_desc = ""
-            if total_hosts <= 1:
+            if prefix_length == 128:
                 size_desc = "单主机地址（/128前缀）"
-            elif total_hosts <= 65536:
+            elif prefix_length == 64:
                 size_desc = "小型网络（/64前缀）"
-            elif total_hosts <= 4294967296:
+            elif prefix_length == 48:
                 size_desc = "中型网络（/48前缀）"
+            elif 40 <= prefix_length <= 47:
+                size_desc = f"区域级网络（/{prefix_length}前缀）"
+            elif 32 < prefix_length <= 39:
+                size_desc = f"大型网络（/{prefix_length}前缀）"
+            elif prefix_length <= 32:
+                size_desc = "超大型网络（/32或更短前缀）"
             else:
-                size_desc = "大型网络（/32或更短前缀）"
+                # 其他特殊前缀长度
+                size_desc = f"特殊网络（/{prefix_length}前缀）"
             self.ipv6_info_tree.insert("", tk.END, values=("子网规模", size_desc))
             
             # IP地址用途描述
@@ -3833,14 +3869,32 @@ class IPSubnetSplitterApp:
                 usage_desc = "用于本地主机测试和诊断"
             elif ipv6_info.get("is_link_local"):
                 usage_desc = "用于同一链路内的设备通信，无需路由器"
-            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
-                usage_desc = "用于内部网络通信，不可路由到公网"
-            elif ip_address.startswith("2000:"):
-                usage_desc = "可在全球范围内路由，用于公网通信"
             elif ipv6_info.get("is_multicast"):
                 usage_desc = "用于一对多通信，支持组播应用"
             elif "::ffff:" in ip_address:
                 usage_desc = "用于在IPv6网络中表示IPv4地址"
+            elif ip_address.startswith("64:ff9b::"):
+                usage_desc = "用于IPv4/IPv6网络之间的地址转换"
+            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
+                usage_desc = "用于内部网络通信，不可路由到公网"
+            elif ip_address.startswith("2000:") or ip_address.startswith("2001:") or ip_address.startswith("2002:"):
+                usage_desc = "可在全球范围内路由，用于公网通信"
+            elif ip_address.startswith("2001:db8::"):
+                usage_desc = "用于文档示例和教学，不用于实际网络部署"
+            elif ip_address.startswith("100::"):
+                usage_desc = "用于黑洞路由，丢弃不需要的流量"
+            elif ip_address.startswith("2001:10::"):
+                usage_desc = "用于ORCHID（Overlay Routable Cryptographic Hash Identifiers）系统"
+            elif ip_address == "::":
+                usage_desc = "表示未指定地址，通常用于初始启动阶段"
+            elif ip_address.startswith("fec0:"):
+                usage_desc = "已弃用的站点本地地址，不建议在新网络中使用"
+            elif ipv6_info.get("is_global"):
+                usage_desc = "可在全球范围内路由，用于公网通信"
+            elif ipv6_info.get("is_private"):
+                usage_desc = "用于内部网络通信，不可路由到公网"
+            else:
+                usage_desc = "根据地址类型和前缀规划的特定用途"
             self.ipv6_info_tree.insert("", tk.END, values=("主要用途", usage_desc))
             
             # 7. 配置建议
