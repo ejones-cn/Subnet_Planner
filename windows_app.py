@@ -35,7 +35,11 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image as RLImage, PageBreak, BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
 
 # 导入自定义模块
-from ip_subnet_calculator import split_subnet, ip_to_int, get_subnet_info, suggest_subnet_planning
+from ip_subnet_calculator import (
+    split_subnet, ip_to_int, get_subnet_info, suggest_subnet_planning,
+    merge_subnets, ipv4_to_ipv6, ipv6_to_ipv4, get_ip_info,
+    range_to_cidr, check_subnet_overlap
+)
 
 
 # 自定义的ColoredNotebook类，支持每个标签不同颜色
@@ -143,6 +147,14 @@ class ColoredNotebook(ttk.Frame):
     def get_light_purple_style(self):
         """获取浅紫色样式名称"""
         return self.light_purple_style
+        
+    def get_light_orange_style(self):
+        """获取浅橙色样式名称"""
+        return self.light_orange_style
+        
+    def get_light_pink_style(self):
+        """获取淡粉色样式名称"""
+        return self.light_pink_style
 
     def on_configure(self, _):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
@@ -1309,9 +1321,16 @@ class IPSubnetSplitterApp:
         # 设置子网规划功能的界面
         self.setup_planning_page()
 
+        # 高级工具模块 - 使用默认样式以继承主窗体底色
+        self.advanced_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
+        
+        # 设置高级工具功能的界面
+        self.setup_advanced_tools_page()
+        
         # 添加顶级标签页 - 使用不同颜色
         self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
+        self.top_level_notebook.add_tab("高级工具", self.advanced_frame, "#e8f5e9")  # 浅绿色
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
@@ -3167,6 +3186,697 @@ class IPSubnetSplitterApp:
             self.info_auto_hide_id = None
         # 隐藏信息栏 - 使用place_forget()
         self.info_bar_frame.place_forget()
+        
+    def setup_advanced_tools_page(self):
+        """设置高级工具功能的界面"""
+        # 创建一个笔记本控件来显示不同的高级工具功能
+        self.advanced_notebook = ColoredNotebook(self.advanced_frame, style=self.style)
+        self.advanced_notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # 1. IPv4地址信息查询功能 - 浅蓝色
+        self.ipv4_info_frame = ttk.Frame(
+            self.advanced_notebook.content_area, 
+            padding="10", 
+            style=self.advanced_notebook.get_light_blue_style()
+        )
+        self.create_ipv4_info_section()
+        
+        # 2. IPv6地址信息查询功能 - 浅绿色
+        self.ipv6_info_frame = ttk.Frame(
+            self.advanced_notebook.content_area, 
+            padding="10", 
+            style=self.advanced_notebook.get_light_green_style()
+        )
+        self.create_ipv6_info_section()
+        
+        # 3. 子网合并与范围转CIDR功能 - 浅紫色
+        self.merge_frame = ttk.Frame(
+            self.advanced_notebook.content_area, 
+            padding="10", 
+            style=self.advanced_notebook.get_light_purple_style()
+        )
+        self.create_merged_subnets_and_cidr_section()
+        
+        # 5. 子网重叠检测功能 - 淡粉色
+        self.overlap_frame = ttk.Frame(
+            self.advanced_notebook.content_area, 
+            padding="10", 
+            style=self.advanced_notebook.get_light_pink_style()
+        )
+        self.create_subnet_overlap_section()
+        
+        # 添加高级工具标签页
+        self.advanced_notebook.add_tab("IPv4查询", self.ipv4_info_frame, "#e3f2fd")  # 浅蓝色
+        self.advanced_notebook.add_tab("IPv6查询", self.ipv6_info_frame, "#e8f5e9")  # 浅绿色
+        self.advanced_notebook.add_tab("子网合并", self.merge_frame, "#f3e5f5")  # 浅紫色
+        self.advanced_notebook.add_tab("重叠检测", self.overlap_frame, "#fce4ec")  # 淡粉色
+        
+    def create_merge_subnets_section(self):
+        """创建子网合并功能界面"""
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(self.merge_frame, text="子网列表", padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 子网输入文本框
+        self.merge_text = tk.Text(input_frame, height=8, width=60, font=("微软雅黑", 10))
+        self.merge_text.pack(fill=tk.BOTH, expand=True)
+        self.merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
+        
+        # 创建按钮区域
+        button_frame = ttk.Frame(input_frame)
+        button_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.merge_btn = ttk.Button(button_frame, text="合并子网", command=self.execute_merge_subnets)
+        self.merge_btn.pack(side=tk.LEFT)
+        
+        # 创建结果区域
+        result_frame = ttk.LabelFrame(self.merge_frame, text="合并结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.merge_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
+        self.merge_result_tree.heading("cidr", text="CIDR")
+        self.merge_result_tree.heading("network", text="网络地址")
+        self.merge_result_tree.heading("netmask", text="子网掩码")
+        self.merge_result_tree.heading("broadcast", text="广播地址")
+        self.merge_result_tree.heading("hosts", text="可用主机数")
+        
+        self.merge_result_tree.column("cidr", width=120)
+        self.merge_result_tree.column("network", width=120)
+        self.merge_result_tree.column("netmask", width=120)
+        self.merge_result_tree.column("broadcast", width=120)
+        self.merge_result_tree.column("hosts", width=100, anchor="e")
+        
+        self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.merge_result_tree)
+        
+    def create_ipv6_info_section(self):
+        """创建IPv6地址信息查询功能界面"""
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(self.ipv6_info_frame, text="IPv6地址信息查询", padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(input_frame, text="IPv6地址:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ipv6_info_entry = ttk.Entry(input_frame, width=40)
+        self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        
+        # CIDR下拉列表（IPv6支持1-128）
+        ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ipv6_cidr_var = tk.StringVar()
+        self.ipv6_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly")
+        self.ipv6_cidr_combobox['values'] = list(range(1, 129))
+        self.ipv6_cidr_combobox.current(63)  # 默认选择64
+        self.ipv6_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.ipv6_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv6_info)
+        self.ipv6_info_btn.pack(side=tk.LEFT)
+        
+        # 创建结果区域
+        result_frame = ttk.LabelFrame(self.ipv6_info_frame, text="查询结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.ipv6_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
+        self.ipv6_info_tree.heading("item", text="项目")
+        self.ipv6_info_tree.heading("value", text="值")
+        
+        self.ipv6_info_tree.column("item", width=200)
+        self.ipv6_info_tree.column("value", width=350)
+        
+        self.ipv6_info_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.ipv6_info_tree, include_special_tags=True)
+        
+    def create_merged_subnets_and_cidr_section(self):
+        """创建子网合并和范围转CIDR功能界面"""
+        # 创建输入部分的容器，包含所有组件
+        input_container = ttk.Frame(self.merge_frame)
+        input_container.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # 创建两列框架，放置在输入容器中
+        left_frame = ttk.Frame(input_container)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 5))
+        
+        right_frame = ttk.Frame(input_container)
+        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 10))
+        
+        # 左侧：子网列表
+        subnet_frame = ttk.LabelFrame(left_frame, text="子网列表", padding="10")
+        subnet_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 子网输入文本框
+        self.merge_text = tk.Text(subnet_frame, height=8, width=30, font=("微软雅黑", 10))
+        self.merge_text.pack(fill=tk.BOTH, expand=True)
+        self.merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
+        
+        # 子网合并按钮
+        self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
+        self.merge_btn.pack(side=tk.LEFT, pady=(5, 0))
+        
+        # 右侧：IP地址范围
+        range_frame = ttk.LabelFrame(right_frame, text="IP地址范围", padding="10")
+        range_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 起始IP
+        start_frame = ttk.Frame(range_frame)
+        start_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(start_frame, text="起始IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_start_entry = ttk.Entry(start_frame, width=20)
+        self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_start_entry.insert(0, "192.168.0.1")
+        
+        # 结束IP
+        end_frame = ttk.Frame(range_frame)
+        end_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        ttk.Label(end_frame, text="结束IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_end_entry = ttk.Entry(end_frame, width=20)
+        self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_end_entry.insert(0, "192.168.0.254")
+        
+        # 范围转CIDR按钮
+        self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
+        self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
+        
+        # 创建结果区域，移到input_container中，位于两列下方
+        result_frame = ttk.LabelFrame(input_container, text="CIDR结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 0))
+        
+        # 创建共用的结果树
+        self.merge_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
+        self.merge_result_tree.heading("cidr", text="CIDR")
+        self.merge_result_tree.heading("network", text="网络地址")
+        self.merge_result_tree.heading("netmask", text="子网掩码")
+        self.merge_result_tree.heading("broadcast", text="广播地址")
+        self.merge_result_tree.heading("hosts", text="可用主机数")
+        
+        self.merge_result_tree.column("cidr", width=120)
+        self.merge_result_tree.column("network", width=120)
+        self.merge_result_tree.column("netmask", width=120)
+        self.merge_result_tree.column("broadcast", width=120)
+        self.merge_result_tree.column("hosts", width=100, anchor="e")
+        
+        self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.merge_result_tree)
+    
+    def create_ipv4_info_section(self):
+        """创建IPv4地址信息查询功能界面"""
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(self.ipv4_info_frame, text="IPv4地址信息查询", padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # IP地址输入
+        ttk.Label(input_frame, text="IP地址:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ip_info_entry = ttk.Entry(input_frame, width=30)
+        self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
+        self.ip_info_entry.insert(0, "192.168.1.1")
+        
+        # 常用子网掩码与CIDR的映射关系，包含所有CIDR 1~32
+        self.subnet_mask_cidr_map = {
+            "128.0.0.0": "1",
+            "192.0.0.0": "2",
+            "224.0.0.0": "3",
+            "240.0.0.0": "4",
+            "248.0.0.0": "5",
+            "252.0.0.0": "6",
+            "254.0.0.0": "7",
+            "255.0.0.0": "8",
+            "255.128.0.0": "9",
+            "255.192.0.0": "10",
+            "255.224.0.0": "11",
+            "255.240.0.0": "12",
+            "255.248.0.0": "13",
+            "255.252.0.0": "14",
+            "255.254.0.0": "15",
+            "255.255.0.0": "16",
+            "255.255.128.0": "17",
+            "255.255.192.0": "18",
+            "255.255.224.0": "19",
+            "255.255.240.0": "20",
+            "255.255.248.0": "21",
+            "255.255.252.0": "22",
+            "255.255.254.0": "23",
+            "255.255.255.0": "24",
+            "255.255.255.128": "25",
+            "255.255.255.192": "26",
+            "255.255.255.224": "27",
+            "255.255.255.240": "28",
+            "255.255.255.248": "29",
+            "255.255.255.252": "30",
+            "255.255.255.254": "31",
+            "255.255.255.255": "32"
+        }
+        
+        # 创建反向映射，用于从CIDR获取子网掩码
+        self.cidr_subnet_mask_map = {v: k for k, v in self.subnet_mask_cidr_map.items()}
+        
+        # 子网掩码下拉列表
+        ttk.Label(input_frame, text="子网掩码:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ip_mask_var = tk.StringVar()
+        self.ip_mask_combobox = ttk.Combobox(input_frame, textvariable=self.ip_mask_var, width=18, state="readonly")
+        self.ip_mask_combobox['values'] = list(self.subnet_mask_cidr_map.keys())
+        self.ip_mask_combobox.current(list(self.subnet_mask_cidr_map.keys()).index("255.255.255.0"))
+        self.ip_mask_combobox.pack(side=tk.LEFT, padx=(0, 10))
+        # 绑定子网掩码选择事件
+        self.ip_mask_combobox.bind("<<ComboboxSelected>>", self.on_subnet_mask_change)
+        
+        # CIDR下拉列表
+        ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ip_cidr_var = tk.StringVar()
+        self.ip_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly")
+        self.ip_cidr_combobox['values'] = list(range(1, 33))
+        self.ip_cidr_combobox.current(23)  # 默认选择24
+        self.ip_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
+        # 绑定CIDR选择事件
+        self.ip_cidr_combobox.bind("<<ComboboxSelected>>", self.on_cidr_change)
+        
+        self.ip_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv4_info)
+        self.ip_info_btn.pack(side=tk.LEFT)
+        
+        # 创建结果区域
+        result_frame = ttk.LabelFrame(self.ipv4_info_frame, text="查询结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.ip_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
+        self.ip_info_tree.heading("item", text="项目")
+        self.ip_info_tree.heading("value", text="值")
+        
+        self.ip_info_tree.column("item", width=150)
+        self.ip_info_tree.column("value", width=250)
+        
+        self.ip_info_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
+        
+    def create_range_to_cidr_section(self):
+        """创建IP地址范围转CIDR功能界面"""
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(self.range_to_cidr_frame, text="IP地址范围", padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 开始IP
+        start_frame = ttk.Frame(input_frame)
+        start_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(start_frame, text="起始IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_start_entry = ttk.Entry(start_frame, width=30)
+        self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_start_entry.insert(0, "192.168.0.1")
+        
+        # 结束IP
+        end_frame = ttk.Frame(input_frame)
+        end_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        ttk.Label(end_frame, text="结束IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_end_entry = ttk.Entry(end_frame, width=30)
+        self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_end_entry.insert(0, "192.168.0.254")
+        
+        # 转换按钮
+        button_frame = ttk.Frame(input_frame)
+        button_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.range_to_cidr_btn = ttk.Button(button_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
+        self.range_to_cidr_btn.pack(side=tk.LEFT)
+        
+        # 创建结果区域
+        result_frame = ttk.LabelFrame(self.range_to_cidr_frame, text="CIDR结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.range_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
+        self.range_result_tree.heading("cidr", text="CIDR")
+        self.range_result_tree.heading("network", text="网络地址")
+        self.range_result_tree.heading("netmask", text="子网掩码")
+        self.range_result_tree.heading("broadcast", text="广播地址")
+        self.range_result_tree.heading("hosts", text="可用主机数")
+        
+        self.range_result_tree.column("cidr", width=120)
+        self.range_result_tree.column("network", width=120)
+        self.range_result_tree.column("netmask", width=120)
+        self.range_result_tree.column("broadcast", width=120)
+        self.range_result_tree.column("hosts", width=100, anchor="e")
+        
+        self.range_result_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.range_result_tree)
+        
+    def create_subnet_overlap_section(self):
+        """创建子网重叠检测功能界面"""
+        # 创建输入区域
+        input_frame = ttk.LabelFrame(self.overlap_frame, text="子网列表", padding="10")
+        input_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 子网输入文本框
+        self.overlap_text = tk.Text(input_frame, height=8, width=60, font=("微软雅黑", 10))
+        self.overlap_text.pack(fill=tk.BOTH, expand=True)
+        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
+        
+        # 创建按钮区域
+        button_frame = ttk.Frame(input_frame)
+        button_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.overlap_btn = ttk.Button(button_frame, text="检测重叠", command=self.execute_check_overlap)
+        self.overlap_btn.pack(side=tk.LEFT)
+        
+        # 创建结果区域
+        result_frame = ttk.LabelFrame(self.overlap_frame, text="检测结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings")
+        self.overlap_result_tree.heading("status", text="状态")
+        self.overlap_result_tree.heading("message", text="描述")
+        
+        self.overlap_result_tree.column("status", width=100)
+        self.overlap_result_tree.column("message", width=400)
+        
+        self.overlap_result_tree.pack(fill=tk.BOTH, expand=True)
+        self.configure_treeview_styles(self.overlap_result_tree)
+        
+    def execute_merge_subnets(self):
+        """执行子网合并操作"""
+        try:
+            # 清空结果树
+            for item in self.merge_result_tree.get_children():
+                self.merge_result_tree.delete(item)
+            
+            # 获取输入的子网列表
+            subnets_text = self.merge_text.get(1.0, tk.END).strip()
+            if not subnets_text:
+                self.show_info("提示", "请输入子网列表")
+                return
+            
+            # 解析子网列表
+            subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
+            
+            # 执行合并
+            result = merge_subnets(subnets)
+            
+            # 检查是否有错误
+            if isinstance(result, dict) and "error" in result:
+                self.show_info("错误", result["error"])
+                return
+            
+            # 显示结果
+            merged_subnets = result.get("merged_subnets", [])
+            for subnet in merged_subnets:
+                # 获取子网信息
+                info = get_subnet_info(subnet)
+                self.merge_result_tree.insert("", tk.END, values=(
+                    subnet,
+                    info["network"],
+                    info["netmask"],
+                    info["broadcast"],
+                    info["usable_addresses"]
+                ))
+                
+
+            
+        except ValueError as e:
+            self.show_info("错误", f"合并失败: {str(e)}")
+        except Exception as e:
+            self.show_info("错误", f"操作失败: {str(e)}")
+        
+    def execute_ipv6_info(self):
+        """执行IPv6地址信息查询"""
+        try:
+            # 清空结果树
+            for item in self.ipv6_info_tree.get_children():
+                self.ipv6_info_tree.delete(item)
+            
+            ipv6 = self.ipv6_info_entry.get().strip()
+            if not ipv6:
+                self.show_info("提示", "请输入IPv6地址")
+                return
+            
+            # 获取CIDR
+            cidr = self.ipv6_cidr_var.get()
+            
+            # 构造网络地址
+            network_str = f"{ipv6}/{cidr}"
+            
+            # 获取IPv6信息
+            ipv6_info = get_ip_info(network_str)
+            
+            # 显示结果
+            for key, value in ipv6_info.items():
+                # 将英文键转换为中文
+                key_map = {
+                    "ip_address": "IP地址",
+                    "version": "IP版本",
+                    "is_global": "是否全局可路由",
+                    "is_private": "是否私有地址",
+                    "is_link_local": "是否链路本地",
+                    "is_loopback": "是否回环地址",
+                    "is_multicast": "是否组播地址",
+                    "is_unspecified": "是否未指定地址",
+                    "is_reserved": "是否保留地址",
+                    "network_address": "网络地址",
+                    "broadcast_address": "广播地址",
+                    "subnet_mask": "子网掩码",
+                    "cidr": "CIDR前缀",
+                    "prefix_length": "前缀长度",
+                    "total_hosts": "总主机数",
+                    "usable_hosts": "可用主机数",
+                    "first_host": "第一个可用主机",
+                    "last_host": "最后一个可用主机",
+                    "binary": "二进制表示",
+                    "hexadecimal": "十六进制表示",
+                    "compressed": "压缩格式",
+                    "exploded": "展开格式",
+                    "reverse_dns": "反向DNS格式",
+                    "integer": "整数值",
+                    "ip_int": "整数值",
+                    "class": "地址类别"
+                }
+                
+                display_key = key_map.get(key, key)
+                self.ipv6_info_tree.insert("", tk.END, values=(display_key, value))
+            
+        except ValueError as e:
+            self.show_info("错误", f"查询失败: {str(e)}")
+        except Exception as e:
+            self.show_info("错误", f"操作失败: {str(e)}")
+        
+    def execute_ipv4_info(self):
+        """执行IPv4地址信息查询"""
+        try:
+            # 清空结果树
+            for item in self.ip_info_tree.get_children():
+                self.ip_info_tree.delete(item)
+            
+            ip = self.ip_info_entry.get().strip()
+            if not ip:
+                self.show_info("提示", "请输入IP地址")
+                return
+            
+            # 获取子网掩码和CIDR
+            subnet_mask = self.ip_mask_var.get()
+            cidr = self.ip_cidr_var.get()
+            
+            # 优先使用CIDR，如果没有则使用子网掩码
+            network_str = None
+            if cidr:
+                try:
+                    network_str = f"{ip}/{cidr}"
+                except:
+                    pass
+            
+            if not network_str and subnet_mask:
+                try:
+                    # 转换子网掩码为CIDR
+                    mask_int = ip_to_int(subnet_mask)
+                    prefix_len = bin(mask_int).count('1')
+                    network_str = f"{ip}/{prefix_len}"
+                except:
+                    pass
+            
+            # 如果无法构造网络地址，只显示基本IP信息
+            basic_info = True
+            subnet_info = None
+            
+            if network_str:
+                try:
+                    # 获取子网信息
+                    subnet_info = get_subnet_info(network_str)
+                    basic_info = False
+                except:
+                    pass
+            
+            # 获取基本IP信息
+            info = get_ip_info(ip)
+            
+            # 显示结果
+            if not basic_info and subnet_info:
+                # 显示子网相关信息
+                self.ip_info_tree.insert("", tk.END, values=("IP地址", ip))
+                self.ip_info_tree.insert("", tk.END, values=("子网掩码", subnet_info["netmask"]))
+                self.ip_info_tree.insert("", tk.END, values=("CIDR", subnet_info["cidr"]))
+                self.ip_info_tree.insert("", tk.END, values=("网络地址", subnet_info["network"]))
+                self.ip_info_tree.insert("", tk.END, values=("广播地址", subnet_info["broadcast"]))
+                self.ip_info_tree.insert("", tk.END, values=("第一个可用地址", subnet_info["host_range_start"]))
+                self.ip_info_tree.insert("", tk.END, values=("最后一个可用地址", subnet_info["host_range_end"]))
+                self.ip_info_tree.insert("", tk.END, values=("可用主机数", subnet_info["usable_addresses"]))
+                
+                # 二进制表示
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("二进制值", ""))
+                self.ip_info_tree.insert("", tk.END, values=("IP地址", info["binary"]))
+                self.ip_info_tree.insert("", tk.END, values=("子网掩码", '.'.join(f'{int(octet):08b}' for octet in subnet_info["netmask"].split('.'))))
+                self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):08b}' for octet in subnet_info["network"].split('.'))))
+                self.ip_info_tree.insert("", tk.END, values=("广播地址", '.'.join(f'{int(octet):08b}' for octet in subnet_info["broadcast"].split('.'))))
+                
+                # 十六进制表示
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("十六进制值", ""))
+                self.ip_info_tree.insert("", tk.END, values=("IP地址", info["hexadecimal"]))
+                self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):02x}' for octet in subnet_info["network"].split('.'))))
+                
+                # IP属性
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("IP属性", ""))
+                self.ip_info_tree.insert("", tk.END, values=("网络类别", info["class"]))
+                self.ip_info_tree.insert("", tk.END, values=("是否私有IP", "是" if info["is_private"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否回环地址", "是" if info["is_loopback"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否组播地址", "是" if info["is_multicast"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if info["is_global"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否链路本地地址", "是" if info["is_link_local"] else "否"))
+            else:
+                # 只显示基本IP信息
+                for key, value in info.items():
+                    # 跳过字节相关的字段，不显示
+                    if key.startswith("octet_"):
+                        continue
+                    
+                    # 转换键为中文
+                    key_map = {
+                        "ip_address": "IP地址",
+                        "version": "IP版本",
+                        "class": "网络类别",
+                        "binary": "二进制表示",
+                        "hexadecimal": "十六进制表示",
+                        "integer": "整数表示",
+                        "is_private": "是否私有IP",
+                        "is_reserved": "是否保留IP",
+                        "is_loopback": "是否回环地址",
+                        "is_multicast": "是否组播地址",
+                        "is_global": "是否全局可路由",
+                        "is_link_local": "是否链路本地地址",
+                        "is_unspecified": "是否未指定地址",
+                        "default_netmask": "默认子网掩码"
+                    }
+                    
+                    display_key = key_map.get(key, key)
+                    display_value = "是" if value is True else "否" if value is False else value
+                    
+                    self.ip_info_tree.insert("", tk.END, values=(display_key, display_value))
+                
+        except ValueError as e:
+            self.show_info("错误", f"查询失败: {str(e)}")
+        except Exception as e:
+            self.show_info("错误", f"操作失败: {str(e)}")
+        
+    def execute_range_to_cidr(self):
+        """执行IP地址范围转CIDR操作"""
+        try:
+            # 清空结果树
+            for item in self.merge_result_tree.get_children():
+                self.merge_result_tree.delete(item)
+            
+            # 获取输入的IP范围
+            start_ip = self.range_start_entry.get().strip()
+            end_ip = self.range_end_entry.get().strip()
+            
+            if not start_ip or not end_ip:
+                self.show_info("提示", "请输入完整的IP范围")
+                return
+            
+            # 执行转换
+            result = range_to_cidr(start_ip, end_ip)
+            
+            # 检查是否有错误
+            if isinstance(result, dict) and "error" in result:
+                self.show_info("错误", result["error"])
+                return
+            
+            # 显示结果
+            cidr_list = result.get("cidr_list", [])
+            for cidr in cidr_list:
+                # 获取子网信息
+                info = get_subnet_info(cidr)
+                self.merge_result_tree.insert("", tk.END, values=(
+                    cidr,
+                    info["network"],
+                    info["netmask"],
+                    info["broadcast"],
+                    info["usable_addresses"]
+                ))
+                
+
+            
+        except ValueError as e:
+            self.show_info("错误", f"转换失败: {str(e)}")
+        except Exception as e:
+            self.show_info("错误", f"操作失败: {str(e)}")
+    
+    def on_subnet_mask_change(self, event):
+        """当子网掩码改变时，更新CIDR值"""
+        selected_mask = self.ip_mask_var.get()
+        if selected_mask in self.subnet_mask_cidr_map:
+            cidr = self.subnet_mask_cidr_map[selected_mask]
+            self.ip_cidr_var.set(cidr)
+    
+    def on_cidr_change(self, event):
+        """当CIDR改变时，更新子网掩码值"""
+        selected_cidr = self.ip_cidr_var.get()
+        if selected_cidr in self.cidr_subnet_mask_map:
+            subnet_mask = self.cidr_subnet_mask_map[selected_cidr]
+            self.ip_mask_var.set(subnet_mask)
+            
+    def execute_check_overlap(self):
+        """执行子网重叠检测"""
+        try:
+            # 清空结果树
+            for item in self.overlap_result_tree.get_children():
+                self.overlap_result_tree.delete(item)
+            
+            # 获取输入的子网列表
+            subnets_text = self.overlap_text.get(1.0, tk.END).strip()
+            if not subnets_text:
+                self.show_info("提示", "请输入子网列表")
+                return
+            
+            # 解析子网列表
+            subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
+            
+            # 执行重叠检测
+            result = check_subnet_overlap(subnets)
+            
+            # 检查是否有错误
+            if isinstance(result, dict) and "error" in result:
+                self.show_info("错误", result["error"])
+                return
+            
+            # 显示结果
+            overlaps = result.get("overlaps", [])
+            if overlaps:
+                for overlap in overlaps:
+                    subnet1 = overlap.get("subnet1", "")
+                    subnet2 = overlap.get("subnet2", "")
+                    overlap_type = overlap.get("type", "重叠")
+                    
+                    self.overlap_result_tree.insert("", tk.END, values=(
+                        "重叠",
+                        f"{subnet1} 与 {subnet2} 发生 {overlap_type}"
+                    ))
+
+            else:
+                self.overlap_result_tree.insert("", tk.END, values=(
+                    "正常",
+                    "所有子网之间没有重叠"
+                ))
+
+                
+        except ValueError as e:
+            self.show_info("错误", f"检测失败: {str(e)}")
+        except Exception as e:
+            self.show_info("错误", f"操作失败: {str(e)}")
         
     def toggle_test_info_bar(self, event=None):
         """打开功能调试对话框（彩蛋功能）

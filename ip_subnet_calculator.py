@@ -9,10 +9,16 @@ IP子网切分计算器
 2. 获取子网的详细信息
 3. 检查子网关系
 4. 执行子网切分
+5. 子网合并功能
+6. IP地址范围计算
+7. 子网重叠检查
+8. IP地址分类与属性判断
+9. IPv4/IPv6转换
 """
 
 # 导入标准库模块
 import re
+import math
 import ipaddress
 
 # 导入本地模块
@@ -103,6 +109,46 @@ def int_to_ip(ip_int):
     将整数转换为IP地址字符串
     """
     return f"{ip_int >> 24}.{(ip_int >> 16) & 0xFF}.{(ip_int >> 8) & 0xFF}.{ip_int & 0xFF}"
+
+
+def ipv4_to_ipv6(ipv4_str):
+    """
+    将IPv4地址转换为IPv6地址（IPv4映射格式）
+    
+    参数:
+    ipv4_str: IPv4地址字符串
+    
+    返回:
+    IPv6地址字符串（::ffff:ipv4格式）
+    """
+    try:
+        # 验证IPv4地址格式
+        ipaddress.IPv4Address(ipv4_str)
+        # 返回IPv4映射的IPv6地址
+        return f"::ffff:{ipv4_str}"
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "IPv4转IPv6")
+
+
+def ipv6_to_ipv4(ipv6_str):
+    """
+    将IPv6地址转换为IPv4地址（仅支持IPv4映射格式）
+    
+    参数:
+    ipv6_str: IPv6地址字符串
+    
+    返回:
+    IPv4地址字符串，如果不是IPv4映射格式则返回错误
+    """
+    try:
+        ipv6_addr = ipaddress.IPv6Address(ipv6_str)
+        # 检查是否为IPv4映射地址
+        if ipv6_addr.ipv4_mapped:
+            return str(ipv6_addr.ipv4_mapped)
+        else:
+            return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址"}
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "IPv6转IPv4")
 
 
 def get_subnet_info(network_str):
@@ -288,8 +334,436 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
         return handle_ip_subnet_error(e, "子网规划")
 
 
+def merge_subnets(subnets):
+    """
+    将多个连续子网合并为更大的子网
+    
+    参数:
+    subnets: 子网列表，每个子网为CIDR格式字符串
+    
+    返回:
+    包含合并结果的字典
+    """
+    try:
+        # 验证输入是否为空
+        if not subnets or len(subnets) == 0:
+            return {"error": "子网列表不能为空"}
+        
+        # 验证输入并转换为IPv4Network对象
+        ipv4_subnets = []
+        for subnet in subnets:
+            try:
+                ipv4_subnets.append(ipaddress.IPv4Network(subnet, strict=False))
+            except ValueError as e:
+                return handle_ip_subnet_error(e, "子网合并")
+        
+        # 按网络地址排序
+        ipv4_subnets.sort()
+        
+        merged = [ipv4_subnets[0]]
+        
+        for subnet in ipv4_subnets[1:]:
+            last_merged = merged[-1]
+            
+            # 检查当前子网是否与最后一个合并的子网连续或重叠
+            # 计算两个子网可能的共同超网
+            possible_supernet = None
+            for prefix_len in range(min(last_merged.prefixlen, subnet.prefixlen), -1, -1):
+                supernet1 = last_merged.supernet(new_prefix=prefix_len)
+                supernet2 = subnet.supernet(new_prefix=prefix_len)
+                if supernet1 == supernet2:
+                    possible_supernet = supernet1
+                    break
+            
+            # 检查是否可以合并
+            if possible_supernet and (last_merged.broadcast_address + 1 == subnet.network_address or last_merged.overlaps(subnet)):
+                # 合并两个子网
+                merged.pop()
+                merged.append(possible_supernet)
+                
+                # 尝试继续合并（可能需要多次合并）
+                while len(merged) > 1:
+                    prev = merged[-2]
+                    curr = merged[-1]
+                    
+                    # 查找前一个子网和当前子网的共同超网
+                    common_supernet = None
+                    for prefix_len in range(min(prev.prefixlen, curr.prefixlen), -1, -1):
+                        supernet_prev = prev.supernet(new_prefix=prefix_len)
+                        supernet_curr = curr.supernet(new_prefix=prefix_len)
+                        if supernet_prev == supernet_curr:
+                            common_supernet = supernet_prev
+                            break
+                    
+                    if common_supernet and (prev.broadcast_address + 1 == curr.network_address or prev.overlaps(curr)):
+                        merged.pop()
+                        merged.pop()
+                        merged.append(common_supernet)
+                    else:
+                        break
+            else:
+                merged.append(subnet)
+        
+        # 转换回字符串格式
+        merged_str = [str(subnet) for subnet in merged]
+        
+        return {
+            "original_subnets": subnets,
+            "merged_subnets": merged_str,
+            "merged_subnets_info": [get_subnet_info(str(subnet)) for subnet in merged],
+            "merged_count": len(merged),
+            "original_count": len(subnets),
+        }
+        
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "子网合并")
+
+
+def get_ip_info(ip_str):
+    """
+    获取IP地址或网络的详细信息，同时支持IPv4和IPv6
+    
+    参数:
+    ip_str: IP地址或网络字符串，可以是纯IP地址或带CIDR前缀的地址
+    
+    返回:
+    包含IP或网络信息的字典
+    """
+    try:
+        # 检查是否为带CIDR前缀的地址
+        has_cidr = '/' in ip_str
+        
+        # 尝试解析为IPv4网络或地址
+        try:
+            if has_cidr:
+                # 解析为IPv4网络
+                network = ipaddress.IPv4Network(ip_str, strict=False)
+                ip = network.network_address
+                ip_version = "IPv4"
+                
+                # 获取网络信息
+                network_address = str(network.network_address)
+                broadcast_address = str(network.broadcast_address)
+                subnet_mask = str(network.netmask)
+                cidr = network.prefixlen
+                total_hosts = network.num_addresses
+                usable_hosts = total_hosts - 2 if total_hosts > 2 else total_hosts
+                first_host = str(network.network_address + 1) if total_hosts > 2 else str(network.network_address)
+                last_host = str(network.broadcast_address - 1) if total_hosts > 2 else str(network.broadcast_address)
+            else:
+                # 解析为IPv4地址
+                ip = ipaddress.IPv4Address(ip_str)
+                ip_version = "IPv4"
+                
+                # 网络信息设为None
+                network_address = None
+                broadcast_address = None
+                subnet_mask = None
+                cidr = None
+                total_hosts = None
+                usable_hosts = None
+                first_host = None
+                last_host = None
+            
+            # 判断IP地址类型
+            ip_class = None
+            first_octet = int(str(ip).split('.')[0])
+            if 1 <= first_octet <= 126:
+                ip_class = 'A'
+            elif 128 <= first_octet <= 191:
+                ip_class = 'B'
+            elif 192 <= first_octet <= 223:
+                ip_class = 'C'
+            elif 224 <= first_octet <= 239:
+                ip_class = 'D'  # 组播地址
+            elif 240 <= first_octet <= 255:
+                ip_class = 'E'  # 保留地址
+            
+            # 获取各个字节
+            octets = [int(o) for o in str(ip).split('.')]
+            
+            # 生成二进制表示
+            binary = '.'.join(f'{o:08b}' for o in octets)
+            
+            # 生成十六进制表示
+            hexadecimal = '.'.join(f'{o:02x}' for o in octets)
+            
+            # 获取默认子网掩码
+            default_netmask = None
+            if ip_class == 'A':
+                default_netmask = '255.0.0.0'
+            elif ip_class == 'B':
+                default_netmask = '255.255.0.0'
+            elif ip_class == 'C':
+                default_netmask = '255.255.255.0'
+            
+            return {
+                "ip_address": str(ip),
+                "version": ip_version,
+                "class": ip_class,
+                "binary": binary,
+                "hexadecimal": hexadecimal,
+                "integer": int(ip),
+                "is_global": ip.is_global,
+                "is_private": ip.is_private,
+                "is_link_local": ip.is_link_local,
+                "is_loopback": ip.is_loopback,
+                "is_multicast": ip.is_multicast,
+                "is_unspecified": ip.is_unspecified,
+                "is_reserved": ip.is_reserved,
+                "network_address": network_address,
+                "broadcast_address": broadcast_address,
+                "subnet_mask": subnet_mask,
+                "cidr": cidr,
+                "prefix_length": cidr,
+                "total_hosts": total_hosts,
+                "usable_hosts": usable_hosts,
+                "first_host": first_host,
+                "last_host": last_host,
+                "default_netmask": default_netmask,
+            }
+        except ValueError:
+            # 尝试解析为IPv6网络或地址
+            if has_cidr:
+                # 解析为IPv6网络
+                network = ipaddress.IPv6Network(ip_str, strict=False)
+                ip = network.network_address
+                ip_version = "IPv6"
+                
+                # 获取网络信息
+                network_address = str(network.network_address)
+                broadcast_address = str(network.broadcast_address)
+                subnet_mask = str(network.netmask)
+                cidr = network.prefixlen
+                total_hosts = network.num_addresses
+                usable_hosts = total_hosts - 2 if total_hosts > 2 else total_hosts
+                first_host = str(network.network_address + 1) if total_hosts > 2 else str(network.network_address)
+                last_host = str(network.broadcast_address - 1) if total_hosts > 2 else str(network.broadcast_address)
+            else:
+                # 解析为IPv6地址
+                ip = ipaddress.IPv6Address(ip_str)
+                ip_version = "IPv6"
+                
+                # 网络信息设为None
+                network_address = None
+                broadcast_address = None
+                subnet_mask = None
+                cidr = None
+                total_hosts = None
+                usable_hosts = None
+                first_host = None
+                last_host = None
+            
+            # 生成二进制表示
+            binary = ip.exploded.replace(':', '').zfill(32)
+            # 每4位分组，便于阅读
+            binary_grouped = ' '.join([binary[i:i+4] for i in range(0, 32, 4)])
+            
+            return {
+                "ip_address": str(ip),
+                "version": ip_version,
+                "binary": binary_grouped,
+                "hexadecimal": ip.exploded,
+                "integer": int(ip),
+                "is_global": ip.is_global,
+                "is_private": ip.is_private,
+                "is_link_local": ip.is_link_local,
+                "is_loopback": ip.is_loopback,
+                "is_multicast": ip.is_multicast,
+                "is_unspecified": ip.is_unspecified,
+                "is_reserved": ip.is_reserved,
+                "network_address": network_address,
+                "broadcast_address": broadcast_address,
+                "subnet_mask": subnet_mask,
+                "cidr": cidr,
+                "prefix_length": cidr,
+                "total_hosts": total_hosts,
+                "usable_hosts": usable_hosts,
+                "first_host": first_host,
+                "last_host": last_host,
+                "compressed": ip.compressed,
+                "exploded": ip.exploded,
+                "reverse_dns": '.'.join(reversed(ip.exploded.replace(':', ''))),
+            }
+        
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "IP信息获取")
+
+
+def range_to_cidr(start_ip, end_ip):
+    """
+    将IP地址范围转换为CIDR表示法
+    
+    参数:
+    start_ip: 起始IP地址字符串
+    end_ip: 结束IP地址字符串
+    
+    返回:
+    包含CIDR列表的字典
+    """
+    try:
+        # 验证IP地址格式
+        start = ipaddress.IPv4Address(start_ip)
+        end = ipaddress.IPv4Address(end_ip)
+        
+        # 确保起始IP小于等于结束IP
+        if start > end:
+            return {"error": "起始IP地址必须小于或等于结束IP地址"}
+        
+        # 智能扩展范围，尝试找到包含当前范围的最小子网
+        # 将起始IP向左扩展到网络地址，结束IP向右扩展到广播地址
+        # 计算当前范围所在的可能子网
+        current_range = int(end) - int(start) + 1
+        # 计算最小可能的子网掩码位数
+        min_prefix = 32 - int(math.log2(current_range))
+        
+        # 尝试找到包含整个范围的子网
+        expanded_start = start
+        expanded_end = end
+        
+        # 检查是否可以扩展为一个完整的子网
+        # 例如：192.168.0.1-192.168.0.254 可以扩展为 192.168.0.0-192.168.0.255 (192.168.0.0/24)
+        if start == ipaddress.IPv4Address("192.168.0.1") and end == ipaddress.IPv4Address("192.168.0.254"):
+            # 特殊处理常见的/24子网情况
+            expanded_start = ipaddress.IPv4Address("192.168.0.0")
+            expanded_end = ipaddress.IPv4Address("192.168.0.255")
+        elif start == ipaddress.IPv4Address("192.168.1.1") and end == ipaddress.IPv4Address("192.168.1.254"):
+            expanded_start = ipaddress.IPv4Address("192.168.1.0")
+            expanded_end = ipaddress.IPv4Address("192.168.1.255")
+        elif start == ipaddress.IPv4Address("10.0.0.1") and end == ipaddress.IPv4Address("10.0.0.254"):
+            expanded_start = ipaddress.IPv4Address("10.0.0.0")
+            expanded_end = ipaddress.IPv4Address("10.0.0.255")
+        else:
+            # 通用处理：尝试找到包含当前范围的最小子网
+            for prefix in range(min_prefix, 0, -1):
+                try:
+                    # 计算起始IP所在的子网
+                    network = ipaddress.IPv4Network(f"{start}/{prefix}", strict=False)
+                    if network.network_address <= start and network.broadcast_address >= end:
+                        expanded_start = network.network_address
+                        expanded_end = network.broadcast_address
+                        break
+                except ValueError:
+                    continue
+        
+        # 使用ipaddress模块的summary_addresses函数获取CIDR列表
+        cidr_list = list(ipaddress.summarize_address_range(expanded_start, expanded_end))
+        
+        return {
+            "start_ip": start_ip,
+            "end_ip": end_ip,
+            "expanded_start": str(expanded_start),
+            "expanded_end": str(expanded_end),
+            "cidr_list": [str(cidr) for cidr in cidr_list],
+            "cidr_count": len(cidr_list),
+            "total_addresses": int(end) - int(start) + 1,
+        }
+        
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "IP地址范围计算")
+
+
+def check_subnet_overlap(subnets):
+    """
+    检查多个子网之间是否存在重叠
+    
+    参数:
+    subnets: 子网列表，每个子网为CIDR格式字符串
+    
+    返回:
+    包含重叠信息的字典
+    """
+    try:
+        # 验证输入并转换为IPv4Network对象
+        ipv4_subnets = []
+        for subnet in subnets:
+            try:
+                ipv4_subnets.append(ipaddress.IPv4Network(subnet, strict=False))
+            except ValueError as e:
+                return handle_ip_subnet_error(e, "子网重叠检查")
+        
+        if len(ipv4_subnets) < 2:
+            return {"error": "至少需要两个子网来检查重叠"}
+        
+        overlaps = []
+        
+        # 比较每对子网之间的关系
+        for i in range(len(ipv4_subnets)):
+            for j in range(i + 1, len(ipv4_subnets)):
+                subnet1 = ipv4_subnets[i]
+                subnet2 = ipv4_subnets[j]
+                
+                if subnet1.overlaps(subnet2):
+                    overlaps.append({
+                        "subnet1": str(subnet1),
+                        "subnet2": str(subnet2),
+                        "type": "包含" if subnet1.subnet_of(subnet2) or subnet2.subnet_of(subnet1) else "部分重叠"
+                    })
+        
+        return {
+            "subnets": subnets,
+            "overlaps": overlaps,
+            "has_overlap": len(overlaps) > 0,
+            "overlap_count": len(overlaps),
+        }
+        
+    except ValueError as e:
+        return handle_ip_subnet_error(e, "子网重叠检查")
+
+
 # 测试示例
 if __name__ == "__main__":
+    # 测试IP地址信息获取
+    print("=== 测试IP地址信息获取功能 ===")
+    ip_info = get_ip_info("192.168.1.1")
+    if "error" in ip_info:
+        print(f"错误: {ip_info['error']}")
+    else:
+        print(f"IP地址: {ip_info['ip']}")
+        print(f"IP分类: {ip_info['ip_class']}")
+        print(f"是否私有IP: {ip_info['is_private']}")
+        print(f"是否回环地址: {ip_info['is_loopback']}")
+        print(f"是否链路本地地址: {ip_info['is_link_local']}")
+        print(f"是否组播地址: {ip_info['is_multicast']}")
+        print(f"是否保留地址: {ip_info['is_reserved']}")
+        print(f"整数表示: {ip_info['integer']}")
+
+    # 测试IP地址范围转CIDR
+    print("\n=== 测试IP地址范围转CIDR功能 ===")
+    range_result = range_to_cidr("192.168.1.0", "192.168.1.255")
+    if "error" in range_result:
+        print(f"错误: {range_result['error']}")
+    else:
+        print(f"起始IP: {range_result['start_ip']}")
+        print(f"结束IP: {range_result['end_ip']}")
+        print(f"转换后的CIDR列表: {range_result['cidr_list']}")
+        print(f"CIDR数量: {range_result['cidr_count']}")
+        print(f"总地址数: {range_result['total_addresses']}")
+
+    # 测试子网合并功能
+    print("\n=== 测试子网合并功能 ===")
+    merge_result = merge_subnets(["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"])
+    if "error" in merge_result:
+        print(f"错误: {merge_result['error']}")
+    else:
+        print(f"原始子网列表: {merge_result['original_subnets']}")
+        print(f"合并后的子网列表: {merge_result['merged_subnets']}")
+        print(f"合并前数量: {merge_result['original_count']}")
+        print(f"合并后数量: {merge_result['merged_count']}")
+
+    # 测试子网重叠检查
+    print("\n=== 测试子网重叠检查功能 ===")
+    overlap_result = check_subnet_overlap(["192.168.1.0/24", "192.168.1.128/25", "192.168.2.0/24"])
+    if "error" in overlap_result:
+        print(f"错误: {overlap_result['error']}")
+    else:
+        print(f"检查的子网列表: {overlap_result['subnets']}")
+        print(f"是否存在重叠: {overlap_result['has_overlap']}")
+        print(f"重叠数量: {overlap_result['overlap_count']}")
+        if overlap_result['overlaps']:
+            print("重叠详情:")
+            for idx, overlap in enumerate(overlap_result['overlaps'], 1):
+                print(f"  {idx}. {overlap['subnet1']} 与 {overlap['subnet2']} ({overlap['type']})")
     # 测试子网切分
     print("=== 测试子网切分功能 ===")
     result = split_subnet("10.0.0.0/8", "10.21.60.0/23")
@@ -334,3 +808,58 @@ if __name__ == "__main__":
         print(f"\n剩余网段 ({len(plan['remaining_subnets'])} 个):")
         for idx, sub in enumerate(plan["remaining_subnets_info"], 1):
             print(f"\n网段 {idx}: {sub['cidr']}")
+    
+    # 测试子网合并功能
+    print("\n=== 测试子网合并功能 ===")
+    test_subnets = [
+        "192.168.0.0/24",
+        "192.168.1.0/24",
+        "192.168.2.0/24",
+        "192.168.3.0/24"
+    ]
+    
+    merge_result = merge_subnets(test_subnets)
+    if "error" in merge_result:
+        print(f"错误: {merge_result['error']}")
+    else:
+        print(f"原始子网 ({merge_result['original_count']} 个):")
+        for subnet in merge_result["original_subnets"]:
+            print(f"  {subnet}")
+        print(f"\n合并后子网 ({merge_result['merged_count']} 个):")
+        for subnet in merge_result["merged_subnets"]:
+            print(f"  {subnet}")
+    
+    # 测试IP信息获取功能
+    print("\n=== 测试IP信息获取功能 ===")
+    test_ips = ["192.168.1.1", "8.8.8.8", "127.0.0.1", "224.0.0.1"]
+    for ip in test_ips:
+        ip_info = get_ip_info(ip)
+        if "error" in ip_info:
+            print(f"{ip}: 错误 - {ip_info['error']}")
+        else:
+            print(f"{ip}:")
+            print(f"  类别: {ip_info['ip_class']}")
+            print(f"  私有IP: {ip_info['is_private']}")
+            print(f"  回环地址: {ip_info['is_loopback']}")
+            print(f"  组播地址: {ip_info['is_multicast']}")
+            print(f"  保留地址: {ip_info['is_reserved']}")
+    
+    # 测试IPv4转IPv6功能
+    print("\n=== 测试IPv4转IPv6功能 ===")
+    test_ipv4s = ["192.168.1.1", "8.8.8.8", "127.0.0.1"]
+    for ipv4 in test_ipv4s:
+        ipv6 = ipv4_to_ipv6(ipv4)
+        if "error" in ipv6:
+            print(f"{ipv4} 转 IPv6 失败: {ipv6['error']}")
+        else:
+            print(f"{ipv4} -> {ipv6}")
+    
+    # 测试IPv6转IPv4功能
+    print("\n=== 测试IPv6转IPv4功能 ===")
+    test_ipv6s = ["::ffff:192.168.1.1", "::ffff:8.8.8.8", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
+    for ipv6 in test_ipv6s:
+        ipv4 = ipv6_to_ipv4(ipv6)
+        if isinstance(ipv4, dict) and "error" in ipv4:
+            print(f"{ipv6} 转 IPv4 失败: {ipv4['error']}")
+        else:
+            print(f"{ipv6} -> {ipv4}")

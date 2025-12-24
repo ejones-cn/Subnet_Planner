@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template_string
 import ipaddress
 import json
-from ip_subnet_calculator import split_subnet, suggest_subnet_planning
+from ip_subnet_calculator import split_subnet, suggest_subnet_planning, ipv4_to_ipv6, ipv6_to_ipv4, merge_subnets, get_ip_info, range_to_cidr, check_subnet_overlap
 from web_version import __version__
 
 app = Flask(__name__)
@@ -278,6 +278,12 @@ HTML_TEMPLATE = '''
         <div class="tabs">
             <button class="tab {{ 'active' if active_tab == 'subnet-split' else '' }}" data-target="subnet-split">子网切分</button>
             <button class="tab {{ 'active' if active_tab == 'subnet-plan' else '' }}" data-target="subnet-plan">子网规划</button>
+            <button class="tab {{ 'active' if active_tab == 'ipv4-to-ipv6' else '' }}" data-target="ipv4-to-ipv6">IPv4转IPv6</button>
+            <button class="tab {{ 'active' if active_tab == 'ipv6-to-ipv4' else '' }}" data-target="ipv6-to-ipv4">IPv6转IPv4</button>
+            <button class="tab {{ 'active' if active_tab == 'ip-info' else '' }}" data-target="ip-info">IP地址信息</button>
+            <button class="tab {{ 'active' if active_tab == 'subnet-merge' else '' }}" data-target="subnet-merge">子网合并</button>
+            <button class="tab {{ 'active' if active_tab == 'range-to-cidr' else '' }}" data-target="range-to-cidr">IP范围转CIDR</button>
+            <button class="tab {{ 'active' if active_tab == 'subnet-overlap' else '' }}" data-target="subnet-overlap">子网重叠检查</button>
         </div>
         
         <!-- 子网切分功能 -->
@@ -708,6 +714,572 @@ HTML_TEMPLATE = '''
             {% endif %}
         </div>
         
+        <!-- IPv4转IPv6功能 -->
+        <div id="ipv4-to-ipv6" class="tool-content {{ 'active' if active_tab == 'ipv4-to-ipv6' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ipv4-to-ipv6">
+                <div class="form-group">
+                    <label for="ipv4">IPv4地址</label>
+                    <input type="text" id="ipv4" name="ipv4" placeholder="例如：192.168.1.1">
+                </div>
+                <button type="submit" name="action" value="ipv4-to-ipv6">转换为IPv6</button>
+            </form>
+            
+            {% if ipv6_result %}
+                <div class="result">
+                    {% if ipv6_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ipv6_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>转换结果</h3>
+                        <div class="info-row">
+                            <div class="info-label">IPv4地址:</div>
+                            <div class="info-value">{{ ipv4 }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IPv6地址:</div>
+                            <div class="info-value">{{ ipv6_result }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IPv6转IPv4功能 -->
+        <div id="ipv6-to-ipv4" class="tool-content {{ 'active' if active_tab == 'ipv6-to-ipv4' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ipv6-to-ipv4">
+                <div class="form-group">
+                    <label for="ipv6">IPv6地址</label>
+                    <input type="text" id="ipv6" name="ipv6" placeholder="例如：::ffff:192.168.1.1">
+                </div>
+                <button type="submit" name="action" value="ipv6-to-ipv4">转换为IPv4</button>
+            </form>
+            
+            {% if ipv4_result %}
+                <div class="result">
+                    {% if ipv4_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ipv4_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>转换结果</h3>
+                        <div class="info-row">
+                            <div class="info-label">IPv6地址:</div>
+                            <div class="info-value">{{ ipv6 }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IPv4地址:</div>
+                            <div class="info-value">{{ ipv4_result }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IP地址信息查询功能 -->
+        <div id="ip-info" class="tool-content {{ 'active' if active_tab == 'ip-info' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ip-info">
+                <div class="form-group">
+                    <label for="ip_query">IP地址</label>
+                    <input type="text" id="ip_query" name="ip_query" placeholder="例如：192.168.1.1">
+                </div>
+                <button type="submit" name="action" value="ip-info">查询IP信息</button>
+            </form>
+            
+            {% if ip_info_result %}
+                <div class="result">
+                    {% if ip_info_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ip_info_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>IP信息</h3>
+                        <div class="info-row">
+                            <div class="info-label">IP地址:</div>
+                            <div class="info-value">{{ ip_info_result.ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IP分类:</div>
+                            <div class="info-value">{{ ip_info_result.ip_class }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否私有IP:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_private else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否回环地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_loopback else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否链路本地地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_link_local else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否组播地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_multicast else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否保留地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_reserved else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">整数表示:</div>
+                            <div class="info-value">{{ ip_info_result.integer }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IP范围转CIDR功能 -->
+        <div id="range-to-cidr" class="tool-content {{ 'active' if active_tab == 'range-to-cidr' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="range-to-cidr">
+                <div class="form-group">
+                    <label for="start_ip">起始IP地址</label>
+                    <input type="text" id="start_ip" name="start_ip" placeholder="例如：192.168.0.0">
+                </div>
+                <div class="form-group">
+                    <label for="end_ip">结束IP地址</label>
+                    <input type="text" id="end_ip" name="end_ip" placeholder="例如：192.168.0.255">
+                </div>
+                <button type="submit" name="action" value="range-to-cidr">转换为CIDR</button>
+            </form>
+            
+            {% if range_result %}
+                <div class="result">
+                    {% if range_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ range_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>转换结果</h3>
+                        <div class="info-row">
+                            <div class="info-label">起始IP地址:</div>
+                            <div class="info-value">{{ range_result.start_ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">结束IP地址:</div>
+                            <div class="info-value">{{ range_result.end_ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">总地址数:</div>
+                            <div class="info-value">{{ range_result.total_addresses }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">转换后的CIDR数量:</div>
+                            <div class="info-value">{{ range_result.cidr_count }}</div>
+                        </div>
+                        
+                        <h4>CIDR列表</h4>
+                        <div class="table-container">
+                            <table class="subnet-table">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>CIDR</th>
+                                </tr>
+                                {% for cidr in range_result.cidr_list %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ cidr }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 子网重叠检查功能 -->
+        <div id="subnet-overlap" class="tool-content {{ 'active' if active_tab == 'subnet-overlap' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="subnet-overlap">
+                <div class="form-group">
+                    <label for="overlap_subnets">子网列表（支持换行、逗号或空格分隔）</label>
+                    <textarea id="overlap_subnets" name="overlap_subnets" rows="5" cols="50" placeholder="例如：
+192.168.0.0/24
+192.168.1.0/24
+192.168.0.128/25"></textarea>
+                </div>
+                <button type="submit" name="action" value="check-overlap">检查重叠</button>
+            </form>
+            
+            {% if overlap_result %}
+                <div class="result">
+                    {% if overlap_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ overlap_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>检查结果</h3>
+                        <div class="info-row">
+                            <div class="info-label">检查的子网数量:</div>
+                            <div class="info-value">{{ overlap_result.subnets | length }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否存在重叠:</div>
+                            <div class="info-value">{{ '是' if overlap_result.has_overlap else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">重叠数量:</div>
+                            <div class="info-value">{{ overlap_result.overlap_count }}</div>
+                        </div>
+                        
+                        {% if overlap_result.has_overlap %}
+                            <h4>重叠详情</h4>
+                            <div class="table-container">
+                                <table class="subnet-table">
+                                    <tr>
+                                        <th>序号</th>
+                                        <th>子网1</th>
+                                        <th>子网2</th>
+                                        <th>重叠类型</th>
+                                    </tr>
+                                    {% for overlap in overlap_result.overlaps %}
+                                        <tr>
+                                            <td>{{ loop.index }}</td>
+                                            <td>{{ overlap.subnet1 }}</td>
+                                            <td>{{ overlap.subnet2 }}</td>
+                                            <td>{{ overlap.type }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 子网合并功能 -->
+        <div id="subnet-merge" class="tool-content {{ 'active' if active_tab == 'subnet-merge' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="subnet-merge">
+                <div class="form-group">
+                    <label for="merge_subnets">子网列表（支持换行、逗号或空格分隔）</label>
+                    <textarea id="merge_subnets" name="merge_subnets" rows="5" cols="50" placeholder="例如：
+192.168.0.0/24
+192.168.1.0/24
+192.168.2.0/24
+192.168.3.0/24"></textarea>
+                </div>
+                <button type="submit" name="action" value="merge">合并子网</button>
+            </form>
+            
+            {% if merge_result %}
+                <div class="result">
+                    {% if merge_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ merge_result.error }}
+                        </div>
+                    {% else %}
+                        <h3>合并结果</h3>
+                        <div class="info-row">
+                            <div class="info-label">原始子网数量:</div>
+                            <div class="info-value">{{ merge_result.original_count }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">合并后子网数量:</div>
+                            <div class="info-value">{{ merge_result.merged_count }}</div>
+                        </div>
+                        
+                        <h4>合并后子网列表</h4>
+                        <div class="table-container">
+                            <table class="subnet-table">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>CIDR</th>
+                                    <th>网络地址</th>
+                                    <th>子网掩码</th>
+                                    <th>可用地址</th>
+                                </tr>
+                                {% for subnet in merge_result.merged_subnets_info %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ subnet.cidr }}</td>
+                                        <td>{{ subnet.network }}</td>
+                                        <td>{{ subnet.netmask }}</td>
+                                        <td>{{ subnet.usable_addresses }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IPv4转IPv6功能 -->
+        <div id="ipv4-to-ipv6" class="tool-content {{ 'active' if active_tab == 'ipv4-to-ipv6' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ipv4-to-ipv6">
+                <div class="form-group">
+                    <label for="ipv4">IPv4地址 (如：192.168.1.1)</label>
+                    <input type="text" id="ipv4" name="ipv4" value="{{ ipv4 if ipv4 else '192.168.1.1' }}" required>
+                </div>
+                <button type="submit" name="action" value="ipv4-to-ipv6">转换为IPv6</button>
+            </form>
+            
+            {% if ipv4_to_ipv6_result %}
+                <div class="result">
+                    {% if ipv4_to_ipv6_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ipv4_to_ipv6_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">IPv4地址:</div>
+                            <div class="info-value">{{ ipv4_to_ipv6_result.ipv4 }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IPv6地址:</div>
+                            <div class="info-value">{{ ipv4_to_ipv6_result.ipv6 }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IPv6转IPv4功能 -->
+        <div id="ipv6-to-ipv4" class="tool-content {{ 'active' if active_tab == 'ipv6-to-ipv4' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ipv6-to-ipv4">
+                <div class="form-group">
+                    <label for="ipv6">IPv6地址 (如：::ffff:192.168.1.1)</label>
+                    <input type="text" id="ipv6" name="ipv6" value="{{ ipv6 if ipv6 else '::ffff:192.168.1.1' }}" required>
+                </div>
+                <button type="submit" name="action" value="ipv6-to-ipv4">转换为IPv4</button>
+            </form>
+            
+            {% if ipv6_to_ipv4_result %}
+                <div class="result">
+                    {% if ipv6_to_ipv4_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ipv6_to_ipv4_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">IPv6地址:</div>
+                            <div class="info-value">{{ ipv6_to_ipv4_result.ipv6 }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IPv4地址:</div>
+                            <div class="info-value">{{ ipv6_to_ipv4_result.ipv4 }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IP地址信息功能 -->
+        <div id="ip-info" class="tool-content {{ 'active' if active_tab == 'ip-info' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="ip-info">
+                <div class="form-group">
+                    <label for="ip">IP地址 (如：192.168.1.1)</label>
+                    <input type="text" id="ip" name="ip" value="{{ ip if ip else '192.168.1.1' }}" required>
+                </div>
+                <button type="submit" name="action" value="ip-info">获取IP信息</button>
+            </form>
+            
+            {% if ip_info_result %}
+                <div class="result">
+                    {% if ip_info_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ ip_info_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">IP地址:</div>
+                            <div class="info-value">{{ ip_info_result.ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">IP分类:</div>
+                            <div class="info-value">{{ ip_info_result.ip_class }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否私有IP:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_private else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否回环地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_loopback else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否链路本地地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_link_local else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否组播地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_multicast else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否保留地址:</div>
+                            <div class="info-value">{{ '是' if ip_info_result.is_reserved else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">整数表示:</div>
+                            <div class="info-value">{{ ip_info_result.integer }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 子网合并功能 -->
+        <div id="subnet-merge" class="tool-content {{ 'active' if active_tab == 'subnet-merge' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="subnet-merge">
+                <div class="form-group">
+                    <label for="merge-subnets">子网列表 (每行一个，如：192.168.1.0/24)</label>
+                    <textarea id="merge-subnets" name="merge-subnets" rows="5" cols="50" required>{{ merge_subnets_input if merge_subnets_input else '192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n192.168.3.0/24' }}</textarea>
+                </div>
+                <button type="submit" name="action" value="merge-subnets">合并子网</button>
+            </form>
+            
+            {% if merge_subnets_result %}
+                <div class="result">
+                    {% if merge_subnets_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ merge_subnets_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">原始子网数量:</div>
+                            <div class="info-value">{{ merge_subnets_result.original_count }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">合并后子网数量:</div>
+                            <div class="info-value">{{ merge_subnets_result.merged_count }}</div>
+                        </div>
+                        
+                        <h3>原始子网列表</h3>
+                        <ul>
+                            {% for subnet in merge_subnets_result.original_subnets %}
+                                <li>{{ subnet }}</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <h3>合并后子网列表</h3>
+                        <ul>
+                            {% for subnet in merge_subnets_result.merged_subnets %}
+                                <li>{{ subnet }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- IP范围转CIDR功能 -->
+        <div id="range-to-cidr" class="tool-content {{ 'active' if active_tab == 'range-to-cidr' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="range-to-cidr">
+                <div class="form-group">
+                    <label for="start-ip">起始IP地址 (如：192.168.1.0)</label>
+                    <input type="text" id="start-ip" name="start-ip" value="{{ start_ip if start_ip else '192.168.1.0' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="end-ip">结束IP地址 (如：192.168.1.255)</label>
+                    <input type="text" id="end-ip" name="end-ip" value="{{ end_ip if end_ip else '192.168.1.255' }}" required>
+                </div>
+                <button type="submit" name="action" value="range-to-cidr">转换为CIDR</button>
+            </form>
+            
+            {% if range_to_cidr_result %}
+                <div class="result">
+                    {% if range_to_cidr_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ range_to_cidr_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">起始IP:</div>
+                            <div class="info-value">{{ range_to_cidr_result.start_ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">结束IP:</div>
+                            <div class="info-value">{{ range_to_cidr_result.end_ip }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">CIDR数量:</div>
+                            <div class="info-value">{{ range_to_cidr_result.cidr_count }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">总地址数:</div>
+                            <div class="info-value">{{ range_to_cidr_result.total_addresses }}</div>
+                        </div>
+                        
+                        <h3>转换后的CIDR列表</h3>
+                        <ul>
+                            {% for cidr in range_to_cidr_result.cidr_list %}
+                                <li>{{ cidr }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 子网重叠检查功能 -->
+        <div id="subnet-overlap" class="tool-content {{ 'active' if active_tab == 'subnet-overlap' else '' }}">
+            <form method="POST">
+                <input type="hidden" name="active_tab" value="subnet-overlap">
+                <div class="form-group">
+                    <label for="overlap-subnets">子网列表 (每行一个，如：192.168.1.0/24)</label>
+                    <textarea id="overlap-subnets" name="overlap-subnets" rows="5" cols="50" required>{{ overlap_subnets_input if overlap_subnets_input else '192.168.1.0/24\n192.168.1.128/25\n192.168.2.0/24' }}</textarea>
+                </div>
+                <button type="submit" name="action" value="check-overlap">检查重叠</button>
+            </form>
+            
+            {% if overlap_subnets_result %}
+                <div class="result">
+                    {% if overlap_subnets_result.error %}
+                        <div class="error">
+                            <strong>错误：</strong>{{ overlap_subnets_result.error }}
+                        </div>
+                    {% else %}
+                        <div class="info-row">
+                            <div class="info-label">检查的子网数量:</div>
+                            <div class="info-value">{{ overlap_subnets_result.subnets|length }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">是否存在重叠:</div>
+                            <div class="info-value">{{ '是' if overlap_subnets_result.has_overlap else '否' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">重叠数量:</div>
+                            <div class="info-value">{{ overlap_subnets_result.overlap_count }}</div>
+                        </div>
+                        
+                        {% if overlap_subnets_result.overlaps %}
+                            <h3>重叠详情</h3>
+                            <table class="subnet-table">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>子网1</th>
+                                    <th>子网2</th>
+                                    <th>重叠类型</th>
+                                </tr>
+                                {% for idx, overlap in enumerate(overlap_subnets_result.overlaps, 1) %}
+                                    <tr>
+                                        <td>{{ idx }}</td>
+                                        <td>{{ overlap.subnet1 }}</td>
+                                        <td>{{ overlap.subnet2 }}</td>
+                                        <td>{{ overlap.type }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
         <!-- 子网规划建议功能 -->
         <div id="subnet-plan" class="tool-content {{ 'active' if active_tab == 'subnet-plan' else '' }}">
             <form method="POST">
@@ -1114,6 +1686,29 @@ def index():
     subnet_names = []
     host_counts = []
     active_tab = request.form.get('currentActiveTab', request.args.get('active_tab', 'subnet-split'))  # 默认显示子网切分标签页
+    
+    # IPv4转IPv6相关变量
+    ipv4 = None
+    ipv6_result = None
+    ipv6 = None
+    ipv4_result = None
+    
+    # IP信息查询相关变量
+    ip_query = None
+    ip_info_result = None
+    
+    # 子网合并相关变量
+    merge_subnets_list = None
+    merge_result = None
+    
+    # IP范围转CIDR相关变量
+    start_ip = None
+    end_ip = None
+    range_result = None
+    
+    # 子网重叠检查相关变量
+    overlap_subnets_list = None
+    overlap_result = None
 
     # 辅助函数：过滤和转换子网需求数据
     def process_subnet_requirements(names, hosts):
@@ -1206,6 +1801,72 @@ def index():
                 else:
                     # 如果有无效输入，返回错误信息
                     plan_result = {"error": "请确保所有子网的主机数字段都填写了有效的整数"}
+        elif action == 'ipv4-to-ipv6':
+            # IPv4转IPv6功能
+            ipv4 = request.form.get('ipv4', '')
+            if ipv4:
+                ipv6_result = ipv4_to_ipv6(ipv4)
+        elif action == 'ipv6-to-ipv4':
+            # IPv6转IPv4功能
+            ipv6 = request.form.get('ipv6', '')
+            if ipv6:
+                ipv4_result = ipv6_to_ipv4(ipv6)
+        elif action == 'ip-info':
+            # IP信息查询功能
+            ip_query = request.form.get('ip_query', '')
+            if ip_query:
+                ip_info_result = get_ip_info(ip_query)
+        elif action == 'merge':
+            # 子网合并功能
+            merge_subnets_text = request.form.get('merge_subnets', '')
+            if merge_subnets_text:
+                # 处理输入的子网列表，支持换行、逗号、空格分隔
+                subnets_list = []
+                lines = merge_subnets_text.strip().split('\n')
+                for line in lines:
+                    parts = re.split('[ ,]+', line.strip())
+                    subnets_list.extend([part for part in parts if part])
+                if subnets_list:
+                    merge_result = merge_subnets(subnets_list)
+        elif action == 'ipv6-to-ipv4':
+            ipv6 = request.form.get('ipv6', '')
+            if ipv6:
+                ipv4_result = ipv6_to_ipv4(ipv6)
+        elif action == 'ip-info':
+            ip_query = request.form.get('ip_query', '')
+            if ip_query:
+                ip_info_result = get_ip_info(ip_query)
+        elif action == 'merge':
+            subnets_text = request.form.get('merge_subnets', '')
+            if subnets_text:
+                # 处理输入的子网列表，支持换行、逗号、空格分隔
+                subnets_list = []
+                # 先按换行分割
+                lines = subnets_text.strip().split('\n')
+                for line in lines:
+                    # 再按逗号和空格分割
+                    parts = re.split('[ ,]+', line.strip())
+                    subnets_list.extend([part for part in parts if part])
+                if subnets_list:
+                    merge_result = merge_subnets(subnets_list)
+        elif action == 'range-to-cidr':
+            start_ip = request.form.get('start_ip', '')
+            end_ip = request.form.get('end_ip', '')
+            if start_ip and end_ip:
+                range_result = range_to_cidr(start_ip, end_ip)
+        elif action == 'check-overlap':
+            overlap_subnets_text = request.form.get('overlap_subnets', '')
+            if overlap_subnets_text:
+                # 处理输入的子网列表，支持换行、逗号、空格分隔
+                subnets_list = []
+                # 先按换行分割
+                lines = overlap_subnets_text.strip().split('\n')
+                for line in lines:
+                    # 再按逗号和空格分割
+                    parts = re.split('[ ,]+', line.strip())
+                    subnets_list.extend([part for part in parts if part])
+                if subnets_list:
+                    overlap_result = check_subnet_overlap(subnets_list)
 
     # 在渲染模板前，确保所有必要的变量都有合理的默认值
     # 这些默认值只在首次加载或未提交对应表单时使用
@@ -1218,7 +1879,7 @@ def index():
     
     # 将 subnet_names 和 host_counts 组合成列表传递给模板
     subnet_requirements = list(zip(subnet_names, host_counts)) if subnet_names and host_counts else []
-    return render_template_string(HTML_TEMPLATE, parent=parent, split=split, result=result, plan_result=plan_result, plan_parent=plan_parent, subnet_requirements=subnet_requirements, version=__version__, active_tab=active_tab)
+    return render_template_string(HTML_TEMPLATE, parent=parent, split=split, result=result, plan_result=plan_result, plan_parent=plan_parent, subnet_requirements=subnet_requirements, version=__version__, active_tab=active_tab, ipv4=ipv4, ipv6_result=ipv6_result, ipv6=ipv6, ipv4_result=ipv4_result, ip_query=ip_query, ip_info_result=ip_info_result, merge_result=merge_result)
 
 
 if __name__ == "__main__":
