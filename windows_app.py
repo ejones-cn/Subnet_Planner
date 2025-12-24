@@ -3283,7 +3283,7 @@ class IPSubnetSplitterApp:
         
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
         ttk.Label(input_frame, text="IPv6地址:").pack(side=tk.LEFT, padx=(0, 5))
-        self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=40, font=("微软雅黑", 10))
+        self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=51, font=("微软雅黑", 10))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
         self.ipv6_info_entry.config(state="normal")  # 允许手动输入
@@ -3294,7 +3294,7 @@ class IPSubnetSplitterApp:
         # CIDR下拉列表（IPv6支持1-128）
         ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_cidr_var = tk.StringVar()
-        self.ipv6_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly")
+        self.ipv6_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly", font=("微软雅黑", 10))
         self.ipv6_cidr_combobox['values'] = list(range(1, 129))
         self.ipv6_cidr_combobox.current(63)  # 默认选择64
         self.ipv6_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
@@ -3404,8 +3404,8 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text="IP地址:").pack(side=tk.LEFT, padx=(0, 5))
-        self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=30, font=("微软雅黑", 10))
+        ttk.Label(input_frame, text="IPv4地址:").pack(side=tk.LEFT, padx=(0, 5))
+        self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=("微软雅黑", 10))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
         self.ip_info_entry.config(state="normal")  # 允许手动输入
@@ -3455,7 +3455,7 @@ class IPSubnetSplitterApp:
         # 子网掩码下拉列表
         ttk.Label(input_frame, text="子网掩码:").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_mask_var = tk.StringVar()
-        self.ip_mask_combobox = ttk.Combobox(input_frame, textvariable=self.ip_mask_var, width=18, state="readonly")
+        self.ip_mask_combobox = ttk.Combobox(input_frame, textvariable=self.ip_mask_var, width=18, state="readonly", font=("微软雅黑", 10))
         self.ip_mask_combobox['values'] = list(self.subnet_mask_cidr_map.keys())
         self.ip_mask_combobox.current(list(self.subnet_mask_cidr_map.keys()).index("255.255.255.0"))
         self.ip_mask_combobox.pack(side=tk.LEFT, padx=(0, 10))
@@ -3465,7 +3465,7 @@ class IPSubnetSplitterApp:
         # CIDR下拉列表
         ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_cidr_var = tk.StringVar()
-        self.ip_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly")
+        self.ip_cidr_combobox = ttk.Combobox(input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly", font=("微软雅黑", 10))
         self.ip_cidr_combobox['values'] = list(range(1, 33))
         self.ip_cidr_combobox.current(23)  # 默认选择24
         self.ip_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
