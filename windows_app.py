@@ -3330,9 +3330,9 @@ class IPSubnetSplitterApp:
         right_frame = ttk.Frame(input_container)
         right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 10))
         
-        # 左侧：子网列表
+        # 左侧上方：子网列表
         subnet_frame = ttk.LabelFrame(left_frame, text="子网列表", padding="10")
-        subnet_frame.pack(fill=tk.BOTH, expand=True)
+        subnet_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
         
         # 子网输入文本框
         self.merge_text = tk.Text(subnet_frame, height=8, width=30, font=("微软雅黑", 10))
@@ -3343,9 +3343,9 @@ class IPSubnetSplitterApp:
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
         self.merge_btn.pack(side=tk.LEFT, pady=(5, 0))
         
-        # 右侧：IP地址范围
-        range_frame = ttk.LabelFrame(right_frame, text="IP地址范围", padding="10")
-        range_frame.pack(fill=tk.BOTH, expand=True)
+        # 左侧下方：IP地址范围
+        range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
+        range_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
         
         # 起始IP - 使用Combobox，支持下拉选择和记忆功能
         start_frame = ttk.Frame(range_frame)
@@ -3377,9 +3377,9 @@ class IPSubnetSplitterApp:
         self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
         self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
         
-        # 创建结果区域，移到input_container中，位于两列下方
-        result_frame = ttk.LabelFrame(input_container, text="CIDR结果", padding="10")
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 0))
+        # 右侧：CIDR结果
+        result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding="10")
+        result_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建共用的结果树
         self.merge_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
