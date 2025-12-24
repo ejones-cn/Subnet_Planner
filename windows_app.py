@@ -655,10 +655,10 @@ class IPSubnetSplitterApp:
         # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
 
-        # 创建信息栏框架 - 直接放置在root窗口，位于顶部标签栏右侧红框位置
-        self.info_bar_frame = ttk.Frame(root, style="InfoBar.TFrame")
-        # 默认隐藏
-        self.info_bar_frame.place_forget()
+        # 创建信息栏框架 - 放置在main_frame中，位于底部
+        self.info_bar_frame = ttk.Frame(self.main_frame, style="InfoBar.TFrame")
+        # 默认隐藏，使用pack_forget()
+        self.info_bar_frame.pack_forget()
 
         # 信息栏高度统一为30px，与place布局一致
         self.info_bar_frame.configure(height=10)  # 调整高度与标签页按钮一致
@@ -1741,7 +1741,7 @@ class IPSubnetSplitterApp:
         history_frame.grid_columnconfigure(1, weight=0)
         
         # 创建需求池表格，结构与子网需求表相同
-        self.pool_tree = ttk.Treeview(history_frame, columns=("index", "name", "hosts"), show="headings", height=8)
+        self.pool_tree = ttk.Treeview(history_frame, columns=("index", "name", "hosts"), show="headings", height=6)
         self.pool_tree.heading("index", text="序号")
         self.pool_tree.heading("name", text="子网名称")
         self.pool_tree.heading("hosts", text="主机数量")
@@ -1893,7 +1893,7 @@ class IPSubnetSplitterApp:
 
         # 规划结果区域 - 使用grid布局，跨两列显示
         result_frame = ttk.LabelFrame(self.planning_frame, text="规划结果", padding="10")
-        result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 5))
+        result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 0))
 
         # 创建笔记本控件显示规划结果
         self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
@@ -3192,7 +3192,7 @@ class IPSubnetSplitterApp:
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
         # 隐藏信息栏 - 使用place_forget()
-        self.info_bar_frame.place_forget()
+        self.info_bar_frame.pack_forget()
         
     def setup_advanced_tools_page(self):
         """设置高级工具功能的界面"""
@@ -4691,20 +4691,14 @@ class IPSubnetSplitterApp:
         self.info_label.config(text=icon + truncated_text, style=label_style)
         self.info_bar_frame.configure(style=frame_style)
 
-        # 显示信息栏 - 使用place布局，放置在顶部标签栏右侧红框位置，宽度适配子网规划到钉住按钮的距离
-        # 计算信息栏位置和宽度
-        info_bar_width = root_width - self.INFO_BAR_PLACE_LEFT - self.INFO_BAR_PLACE_RIGHT  # 右侧偏移量改为136px
-        # 增加最小宽度，确保信息栏不会过窄
-        if info_bar_width < self.MIN_INFO_BAR_PLACE_WIDTH:  # 增加最小宽度为300px
-            info_bar_width = self.MIN_INFO_BAR_PLACE_WIDTH
+        # 显示信息栏 - 使用pack布局，放置在main_frame底部
         
         if self.info_bar_frame.winfo_manager() == "":
-            # 恢复原始位置：顶部标签栏右侧，y=21.5，高度30px，与标签页按钮底部对齐
-            self.info_bar_frame.place(x=self.INFO_BAR_PLACE_LEFT, y=self.INFO_BAR_PLACE_Y, width=info_bar_width, height=self.INFO_BAR_PLACE_HEIGHT)
+            # 放置在main_frame底部
+            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 10), padx=10)
         else:
-            # 如果已经显示，确保位置和宽度正确
-            # 恢复原始高度和位置
-            self.info_bar_frame.place_configure(x=self.INFO_BAR_PLACE_LEFT, y=self.INFO_BAR_PLACE_Y, width=info_bar_width, height=self.INFO_BAR_PLACE_HEIGHT)
+            # 如果已经显示，确保布局正确
+            self.info_bar_frame.pack_configure(side="bottom", fill="x", pady=(0, 10), padx=10)
 
         # 去掉自动隐藏功能，需要手动隐藏
 
