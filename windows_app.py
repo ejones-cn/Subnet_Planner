@@ -3572,7 +3572,7 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 子网输入文本框
-        self.overlap_text = tk.Text(input_frame, height=8, width=60, font=("微软雅黑", 10))
+        self.overlap_text = tk.Text(input_frame, height=12, width=60, font=("微软雅黑", 10))
         self.overlap_text.pack(fill=tk.BOTH, expand=False)
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
         
