@@ -3800,10 +3800,20 @@ class IPSubnetSplitterApp:
             
             # 显示结果
             if not basic_info and subnet_info:
-                # 显示子网相关信息
+                # 显示子网相关信息 - 采用分组显示
+                # 1. 基本网络信息
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", ip))
                 self.ip_info_tree.insert("", tk.END, values=("子网掩码", subnet_info["netmask"]))
+                # 添加通配符掩码
+                wildcard_mask = '.'.join(str(255 - int(octet)) for octet in subnet_info["netmask"].split('.'))
+                self.ip_info_tree.insert("", tk.END, values=("通配符掩码", wildcard_mask))
                 self.ip_info_tree.insert("", tk.END, values=("CIDR", subnet_info["cidr"]))
+                self.ip_info_tree.insert("", tk.END, values=("网络类别", info.get("class", "") + "类"))
+                self.ip_info_tree.insert("", tk.END, values=("默认子网掩码", info.get("default_netmask", "")))
+                
+                # 2. 地址范围信息
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("地址范围", ""))
                 self.ip_info_tree.insert("", tk.END, values=("网络地址", subnet_info["network"]))
                 self.ip_info_tree.insert("", tk.END, values=("广播地址", subnet_info["broadcast"]))
                 self.ip_info_tree.insert("", tk.END, values=("第一个可用地址", subnet_info["host_range_start"]))
@@ -3816,6 +3826,7 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=("二进制表示", ""))
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", info["binary"]))
                 self.ip_info_tree.insert("", tk.END, values=("子网掩码", '.'.join(f'{int(octet):08b}' for octet in subnet_info["netmask"].split('.'))))
+                self.ip_info_tree.insert("", tk.END, values=("通配符掩码", '.'.join(f'{255 - int(octet):08b}' for octet in subnet_info["netmask"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):08b}' for octet in subnet_info["network"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("广播地址", '.'.join(f'{int(octet):08b}' for octet in subnet_info["broadcast"].split('.'))))
                 
@@ -3824,15 +3835,24 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=("十六进制表示", ""))
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", info["hexadecimal"]))
                 self.ip_info_tree.insert("", tk.END, values=("子网掩码", '.'.join(f'{int(octet):02x}' for octet in subnet_info["netmask"].split('.'))))
+                self.ip_info_tree.insert("", tk.END, values=("通配符掩码", '.'.join(f'{255 - int(octet):02x}' for octet in subnet_info["netmask"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):02x}' for octet in subnet_info["network"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("广播地址", '.'.join(f'{int(octet):02x}' for octet in subnet_info["broadcast"].split('.'))))
                 
-                # IP属性
+                # 6. 十进制数值表示
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("十进制数值表示", ""))
+                self.ip_info_tree.insert("", tk.END, values=("IP地址", info["integer"]))
+                self.ip_info_tree.insert("", tk.END, values=("子网掩码", str(ip_to_int(subnet_info["netmask"]))))
+                wildcard_int = ip_to_int('.'.join(str(255 - int(octet)) for octet in subnet_info["netmask"].split('.')))
+                self.ip_info_tree.insert("", tk.END, values=("通配符掩码", str(wildcard_int)))
+                self.ip_info_tree.insert("", tk.END, values=("网络地址", str(ip_to_int(subnet_info["network"]))))
+                self.ip_info_tree.insert("", tk.END, values=("广播地址", str(ip_to_int(subnet_info["broadcast"]))))
+                
+                # 7. IP属性
                 self.ip_info_tree.insert("", tk.END, values=())
                 self.ip_info_tree.insert("", tk.END, values=("IP属性", ""))
                 self.ip_info_tree.insert("", tk.END, values=("IP版本", info["version"]))
-                self.ip_info_tree.insert("", tk.END, values=("网络类别", info["class"]))
-                self.ip_info_tree.insert("", tk.END, values=("默认子网掩码", info["default_netmask"]))
                 self.ip_info_tree.insert("", tk.END, values=("是否私有IP", "是" if info["is_private"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否保留IP", "是" if info["is_reserved"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否回环地址", "是" if info["is_loopback"] else "否"))
@@ -3840,12 +3860,53 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if info["is_global"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否链路本地地址", "是" if info["is_link_local"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if info["is_unspecified"] else "否"))
+                
+                # 8. 扩展信息
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("扩展信息", ""))
+                
+                # IP地址用途描述
+                ip_purpose = ""
+                if info["is_loopback"]:
+                    ip_purpose = "本地回环地址，用于测试本地网络"
+                elif info["is_private"]:
+                    ip_purpose = "私有地址，用于内部网络"
+                elif info["is_multicast"]:
+                    ip_purpose = "组播地址，用于一对多通信"
+                elif info["is_reserved"]:
+                    ip_purpose = "保留地址，用于特殊用途"
+                elif info["is_global"]:
+                    ip_purpose = "全球可路由地址，用于公网通信"
+                else:
+                    ip_purpose = "未知用途"
+                self.ip_info_tree.insert("", tk.END, values=("IP地址用途", ip_purpose))
+                
+                # 子网大小描述
+                subnet_size = subnet_info["usable_addresses"]
+                size_desc = ""
+                if subnet_size <= 254:
+                    size_desc = "小型网络，适合家庭或小型办公室"
+                elif subnet_size <= 65534:
+                    size_desc = "中型网络，适合企业或校园网络"
+                else:
+                    size_desc = "大型网络，适合大型机构或运营商"
+                self.ip_info_tree.insert("", tk.END, values=("子网规模", size_desc))
+                
+                # 网络配置建议
+                config_advice = ""
+                if subnet_size > 65534:
+                    config_advice = "建议划分为多个子网，便于管理和减少广播域"
+                elif info["is_private"]:
+                    config_advice = "建议使用DHCP服务器自动分配IP地址"
+                else:
+                    config_advice = "建议配置静态路由和防火墙规则"
+                self.ip_info_tree.insert("", tk.END, values=("配置建议", config_advice))
             else:
                 # 只显示基本IP信息，采用分组显示
                 # 1. 基本信息
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", info.get("ip_address", ip)))
                 self.ip_info_tree.insert("", tk.END, values=("IP版本", info.get("version", "")))
-                self.ip_info_tree.insert("", tk.END, values=("网络类别", info.get("class", "")))
+                self.ip_info_tree.insert("", tk.END, values=("网络类别", info.get("class", "") + "类"))
                 self.ip_info_tree.insert("", tk.END, values=("默认子网掩码", info.get("default_netmask", "")))
                 
                 # 2. 数值表示
@@ -3865,6 +3926,34 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if info.get("is_global", False) else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否链路本地地址", "是" if info.get("is_link_local", False) else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if info.get("is_unspecified", False) else "否"))
+                
+                # 4. 扩展信息
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("扩展信息", ""))
+                
+                # IP地址用途描述
+                ip_purpose = ""
+                if info.get("is_loopback", False):
+                    ip_purpose = "本地回环地址，用于测试本地网络"
+                elif info.get("is_private", False):
+                    ip_purpose = "私有地址，用于内部网络"
+                elif info.get("is_multicast", False):
+                    ip_purpose = "组播地址，用于一对多通信"
+                elif info.get("is_reserved", False):
+                    ip_purpose = "保留地址，用于特殊用途"
+                elif info.get("is_global", False):
+                    ip_purpose = "全球可路由地址，用于公网通信"
+                else:
+                    ip_purpose = "未知用途"
+                self.ip_info_tree.insert("", tk.END, values=("IP地址用途", ip_purpose))
+                
+                # 网络配置建议
+                config_advice = ""
+                if info.get("is_private", False):
+                    config_advice = "建议使用DHCP服务器自动分配IP地址"
+                else:
+                    config_advice = "建议配置静态路由和防火墙规则"
+                self.ip_info_tree.insert("", tk.END, values=("配置建议", config_advice))
                 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
