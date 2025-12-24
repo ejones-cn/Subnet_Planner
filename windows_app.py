@@ -3242,53 +3242,6 @@ class IPSubnetSplitterApp:
         self.advanced_notebook.add_tab("子网合并", self.merge_frame, "#f3e5f5")  # 浅紫色
         self.advanced_notebook.add_tab("重叠检测", self.overlap_frame, "#fce4ec")  # 淡粉色
         
-    def create_merge_subnets_section(self):
-        """创建子网合并功能界面"""
-        # 创建输入区域
-        input_frame = ttk.LabelFrame(self.merge_frame, text="子网列表", padding="10")
-        input_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # 子网输入文本框
-        self.merge_text = tk.Text(input_frame, height=8, width=30, font=("微软雅黑", 10))
-        self.merge_text.pack(fill=tk.BOTH, expand=True)
-        self.merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
-        
-        # 创建按钮区域
-        button_frame = ttk.Frame(input_frame)
-        button_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        self.merge_btn = ttk.Button(button_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.pack(side=tk.RIGHT)
-        
-        # 创建结果区域
-        result_frame = ttk.LabelFrame(self.merge_frame, text="合并结果", padding="10")
-        result_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.merge_result_tree = ttk.Treeview(result_frame, columns=("属性"), show="headings")
-        self.merge_result_tree.heading("属性", text="属性")
-        
-        # 初始显示属性行，无数据
-        properties = ["CIDR", "网络地址", "子网掩码", "广播地址", "可用主机数"]
-        for prop in properties:
-            self.merge_result_tree.insert("", tk.END, values=(prop,))
-        
-        self.merge_result_tree.column("属性", width=90, minwidth=90, stretch=False)
-        
-        # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
-        self.merge_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
-        self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
-        
-        # 使用grid布局，确保Treeview和滚动条正确对齐
-        self.merge_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        self.merge_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重，使Treeview可以扩展
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
-        
-        self.configure_treeview_styles(self.merge_result_tree)
-        
     def create_ipv6_info_section(self):
         """创建IPv6地址信息查询功能界面"""
         # 在ipv6_info_frame中增加中间容器，内边距10
@@ -3409,7 +3362,7 @@ class IPSubnetSplitterApp:
         
         # 子网合并按钮 - 固定在右下角
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.grid(row=1, column=0, columnspan=2, sticky="e", pady=(5, 0))
+        self.merge_btn.grid(row=1, column=0, columnspan=2, sticky="e", pady=(5, 0), padx=(0, 10))
         
         # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
@@ -3685,7 +3638,7 @@ class IPSubnetSplitterApp:
         
         # 直接创建检测重叠按钮 - 靠右放置
         self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
-        self.overlap_btn.pack(side=tk.RIGHT, pady=(5, 0))
+        self.overlap_btn.pack(side=tk.RIGHT, pady=(5, 0), padx=(0, 10))
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text="检测结果", padding=(10, 10, 0, 10))
