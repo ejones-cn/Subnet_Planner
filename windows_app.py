@@ -3275,8 +3275,12 @@ class IPSubnetSplitterApp:
         
     def create_ipv6_info_section(self):
         """创建IPv6地址信息查询功能界面"""
+        # 在ipv6_info_frame中增加中间容器，内边距10
+        content_container = ttk.Frame(self.ipv6_info_frame, padding="10")
+        content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        
         # 创建输入区域
-        input_frame = ttk.LabelFrame(self.ipv6_info_frame, text="IPv6地址信息查询", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text="IPv6地址信息查询", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
@@ -3301,7 +3305,7 @@ class IPSubnetSplitterApp:
         self.ipv6_info_btn.pack(side=tk.LEFT)
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(self.ipv6_info_frame, text="查询结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         self.ipv6_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
@@ -3317,7 +3321,7 @@ class IPSubnetSplitterApp:
     def create_merged_subnets_and_cidr_section(self):
         """创建子网合并和范围转CIDR功能界面"""
         # 创建输入部分的容器，包含所有组件
-        input_container = ttk.Frame(self.merge_frame)
+        input_container = ttk.Frame(self.merge_frame, padding="10")
         input_container.pack(fill=tk.BOTH, expand=True)
         
         # 创建两列框架，放置在输入容器中
@@ -3329,8 +3333,8 @@ class IPSubnetSplitterApp:
         input_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         input_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
         
-        left_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 5))
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10))
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         
         # 确保左侧面板内部的行能撑满高度
         left_frame.grid_rowconfigure(0, weight=1)  # 子网列表面板行
@@ -3408,8 +3412,12 @@ class IPSubnetSplitterApp:
     
     def create_ipv4_info_section(self):
         """创建IPv4地址信息查询功能界面"""
+        # 在ipv4_info_frame中增加中间容器
+        content_container = ttk.Frame(self.ipv4_info_frame, padding="10")
+        content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        
         # 创建输入区域
-        input_frame = ttk.LabelFrame(self.ipv4_info_frame, text="IPv4地址信息查询", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text="IPv4地址信息查询", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
@@ -3485,7 +3493,7 @@ class IPSubnetSplitterApp:
         self.ip_info_btn.pack(side=tk.LEFT)
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(self.ipv4_info_frame, text="查询结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         self.ip_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
@@ -3551,8 +3559,12 @@ class IPSubnetSplitterApp:
         
     def create_subnet_overlap_section(self):
         """创建子网重叠检测功能界面"""
+        # 在overlap_frame中增加中间容器，内边距10
+        content_container = ttk.Frame(self.overlap_frame, padding="10")
+        content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        
         # 创建输入区域
-        input_frame = ttk.LabelFrame(self.overlap_frame, text="子网列表", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text="子网列表", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 子网输入文本框
@@ -3568,7 +3580,7 @@ class IPSubnetSplitterApp:
         self.overlap_btn.pack(side=tk.LEFT)
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(self.overlap_frame, text="检测结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="检测结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings")
