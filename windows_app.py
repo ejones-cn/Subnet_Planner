@@ -3274,7 +3274,19 @@ class IPSubnetSplitterApp:
         
         self.merge_result_tree.column("属性", width=90, minwidth=90, stretch=False)
         
-        self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
+        self.merge_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
+        self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        self.merge_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        self.merge_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.merge_result_tree)
         
     def create_ipv6_info_section(self):
@@ -3312,6 +3324,7 @@ class IPSubnetSplitterApp:
         result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
+        # 创建Treeview和垂直滚动条
         self.ipv6_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
         self.ipv6_info_tree.heading("item", text="项目")
         self.ipv6_info_tree.heading("value", text="值")
@@ -3319,7 +3332,19 @@ class IPSubnetSplitterApp:
         self.ipv6_info_tree.column("item", width=100)
         self.ipv6_info_tree.column("value", width=350)
         
-        self.ipv6_info_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条
+        ipv6_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        ipv6_info_scrollbar.config(command=self.ipv6_info_tree.yview)
+        self.ipv6_info_tree.config(yscrollcommand=ipv6_info_scrollbar.set)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        self.ipv6_info_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        ipv6_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.ipv6_info_tree, include_special_tags=True)
         
     def create_merged_subnets_and_cidr_section(self):
@@ -3442,7 +3467,19 @@ class IPSubnetSplitterApp:
             elif i == 4:  # 主机数列
                 self.merge_result_tree.column(col, width=40, minwidth=40)
         
-        self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
+        self.merge_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
+        self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        self.merge_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        self.merge_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.merge_result_tree)
     
     def create_ipv4_info_section(self):
@@ -3531,6 +3568,7 @@ class IPSubnetSplitterApp:
         result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
+        # 创建Treeview和垂直滚动条
         self.ip_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
         self.ip_info_tree.heading("item", text="项目")
         self.ip_info_tree.heading("value", text="值")
@@ -3538,7 +3576,19 @@ class IPSubnetSplitterApp:
         self.ip_info_tree.column("item", width=100)
         self.ip_info_tree.column("value", width=350)
         
-        self.ip_info_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条
+        ip_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        ip_info_scrollbar.config(command=self.ip_info_tree.yview)
+        self.ip_info_tree.config(yscrollcommand=ip_info_scrollbar.set)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        self.ip_info_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        ip_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
         
     def create_range_to_cidr_section(self):
@@ -3589,7 +3639,19 @@ class IPSubnetSplitterApp:
         self.range_result_tree.column("broadcast", width=90)
         self.range_result_tree.column("hosts", width=50, anchor="e")
         
-        self.range_result_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条
+        range_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        range_result_scrollbar.config(command=self.range_result_tree.yview)
+        self.range_result_tree.config(yscrollcommand=range_result_scrollbar.set)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        self.range_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        range_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.range_result_tree)
         
     def create_subnet_overlap_section(self):
@@ -3602,10 +3664,24 @@ class IPSubnetSplitterApp:
         input_frame = ttk.LabelFrame(content_container, text="子网列表", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # 子网输入文本框
-        self.overlap_text = tk.Text(input_frame, height=12, width=60, font=("微软雅黑", 10))
-        self.overlap_text.pack(fill=tk.BOTH, expand=False)
+        # 子网输入文本框和滚动条
+        text_frame = ttk.Frame(input_frame)
+        text_frame.pack(fill=tk.BOTH, expand=False)
+        
+        self.overlap_text = tk.Text(text_frame, height=12, width=60, font=("微软雅黑", 10))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
+        
+        # 添加垂直滚动条
+        overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.overlap_text.yview)
+        self.overlap_text.configure(yscrollcommand=overlap_text_scrollbar.set)
+        
+        # 使用grid布局放置文本框和滚动条
+        self.overlap_text.grid(row=0, column=0, sticky=tk.NSEW)
+        overlap_text_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
         
         # 直接创建检测重叠按钮 - 靠右放置
         self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
@@ -3622,7 +3698,19 @@ class IPSubnetSplitterApp:
         self.overlap_result_tree.column("status", width=50)
         self.overlap_result_tree.column("message", width=450)
         
-        self.overlap_result_tree.pack(fill=tk.BOTH, expand=True)
+        # 添加垂直滚动条
+        overlap_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
+        overlap_result_scrollbar.config(command=self.overlap_result_tree.yview)
+        self.overlap_result_tree.config(yscrollcommand=overlap_result_scrollbar.set)
+        
+        # 使用grid布局放置Treeview和滚动条
+        self.overlap_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        overlap_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        
         self.configure_treeview_styles(self.overlap_result_tree)
         
     def execute_merge_subnets(self):
@@ -3655,6 +3743,11 @@ class IPSubnetSplitterApp:
                     self.merge_result_tree.column(col, width=70, minwidth=70)
                 elif i == 4:  # 主机数列
                     self.merge_result_tree.column(col, width=40, minwidth=40)
+            
+            # 重新绑定滚动条
+            if hasattr(self, 'merge_result_scrollbar'):
+                self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
+                self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
             
             # 获取输入的子网合并列表
             subnets_text = self.subnet_merge_text.get(1.0, tk.END).strip()
@@ -4310,6 +4403,11 @@ class IPSubnetSplitterApp:
                     self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)  # 增大一半并固定
                 else:  # 其他列
                     self.merge_result_tree.column(col, width=120)
+            
+            # 重新绑定滚动条
+            if hasattr(self, 'merge_result_scrollbar'):
+                self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
+                self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
             
             # 定义要显示的属性列表
             properties = [
