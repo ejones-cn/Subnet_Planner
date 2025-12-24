@@ -3572,12 +3572,9 @@ class IPSubnetSplitterApp:
         self.overlap_text.pack(fill=tk.BOTH, expand=True)
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
         
-        # 创建按钮区域
-        button_frame = ttk.Frame(input_frame)
-        button_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        self.overlap_btn = ttk.Button(button_frame, text="检测重叠", command=self.execute_check_overlap)
-        self.overlap_btn.pack(side=tk.LEFT)
+        # 直接创建检测重叠按钮
+        self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
+        self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0))
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text="检测结果", padding="10")
