@@ -649,19 +649,23 @@ class IPSubnetSplitterApp:
         self.main_frame = ttk.Frame(root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
+        # 创建信息栏框架 - 放置在main_frame中，位于底部
+        self.info_bar_frame = ttk.Frame(self.main_frame, style="InfoBar.TFrame")
+        # 默认隐藏，使用pack_forget()
+        self.info_bar_frame.pack_forget()
+        # 先设置信息栏的布局，确保它在底部
+        self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 10), padx=10)
+        # 立即隐藏，等待需要时显示
+        self.info_bar_frame.pack_forget()
+
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
 
         # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
 
-        # 创建信息栏框架 - 放置在main_frame中，位于底部
-        self.info_bar_frame = ttk.Frame(self.main_frame, style="InfoBar.TFrame")
-        # 默认隐藏，使用pack_forget()
-        self.info_bar_frame.pack_forget()
-
         # 信息栏高度统一为30px，与place布局一致
-        self.info_bar_frame.configure(height=10)  # 调整高度与标签页按钮一致
+        self.info_bar_frame.configure(height=30)  # 使用正确的高度值30px
 
         # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)  # 行填充整个高度
@@ -3254,7 +3258,7 @@ class IPSubnetSplitterApp:
         button_frame.pack(fill=tk.X, pady=(5, 0))
         
         self.merge_btn = ttk.Button(button_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.pack(side=tk.LEFT)
+        self.merge_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(self.merge_frame, text="合并结果", padding="10")
@@ -3302,7 +3306,7 @@ class IPSubnetSplitterApp:
         self.ipv6_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
         
         self.ipv6_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv6_info)
-        self.ipv6_info_btn.pack(side=tk.LEFT)
+        self.ipv6_info_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
@@ -3354,9 +3358,9 @@ class IPSubnetSplitterApp:
         self.merge_text.pack(fill=tk.BOTH, expand=True)
         self.merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
         
-        # 子网合并按钮
+        # 子网合并按钮 - 靠右放置
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.pack(side=tk.LEFT, pady=(5, 0))
+        self.merge_btn.pack(side=tk.RIGHT, pady=(5, 0))
         
         # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
@@ -3388,9 +3392,9 @@ class IPSubnetSplitterApp:
         self.range_end_entry.bind("<FocusOut>", self.update_range_end_history)
         self.range_end_entry.bind("<Return>", self.update_range_end_history)
         
-        # 范围转CIDR按钮
+        # 范围转CIDR按钮 - 靠右放置
         self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
-        self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
+        self.range_to_cidr_btn.pack(side=tk.RIGHT, pady=(5, 0))
         
         # 右侧：CIDR结果
         result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding="10")
@@ -3490,7 +3494,7 @@ class IPSubnetSplitterApp:
         self.ip_cidr_combobox.bind("<<ComboboxSelected>>", self.on_cidr_change)
         
         self.ip_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv4_info)
-        self.ip_info_btn.pack(side=tk.LEFT)
+        self.ip_info_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
@@ -3535,7 +3539,7 @@ class IPSubnetSplitterApp:
         button_frame.pack(fill=tk.X, pady=(5, 0))
         
         self.range_to_cidr_btn = ttk.Button(button_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
-        self.range_to_cidr_btn.pack(side=tk.LEFT)
+        self.range_to_cidr_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(self.range_to_cidr_frame, text="CIDR结果", padding="10")
@@ -3569,18 +3573,18 @@ class IPSubnetSplitterApp:
         
         # 子网输入文本框
         self.overlap_text = tk.Text(input_frame, height=8, width=60, font=("微软雅黑", 10))
-        self.overlap_text.pack(fill=tk.BOTH, expand=True)
+        self.overlap_text.pack(fill=tk.BOTH, expand=False)
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
         
-        # 直接创建检测重叠按钮
+        # 直接创建检测重叠按钮 - 靠右放置
         self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
-        self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0))
+        self.overlap_btn.pack(side=tk.RIGHT, pady=(5, 0))
         
         # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text="检测结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings")
+        self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
         self.overlap_result_tree.heading("status", text="状态")
         self.overlap_result_tree.heading("message", text="描述")
         
@@ -4306,6 +4310,46 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.show_info("错误", f"操作失败: {str(e)}")
     
+    def execute_check_overlap(self):
+        """执行子网重叠检测操作"""
+        try:
+            # 清空结果树
+            for item in self.overlap_result_tree.get_children():
+                self.overlap_result_tree.delete(item)
+            
+            # 获取输入的子网列表
+            subnets_text = self.overlap_text.get(1.0, tk.END).strip()
+            if not subnets_text:
+                self.show_info("提示", "请输入子网列表")
+                return
+            
+            # 解析子网列表
+            subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
+            
+            # 执行重叠检测
+            result = check_subnet_overlap(subnets)
+            
+            # 检查是否有错误
+            if isinstance(result, dict) and "error" in result:
+                self.show_info("错误", result["error"])
+                return
+            
+            # 显示结果
+            overlaps = result.get("overlaps", [])
+            
+            # 如果没有重叠，显示无重叠信息
+            if not overlaps:
+                self.overlap_result_tree.insert("", tk.END, values=("无", "未检测到子网重叠"))
+            else:
+                # 显示所有重叠信息
+                for overlap in overlaps:
+                    status = "重叠"
+                    description = f"{overlap['subnet1']} 与 {overlap['subnet2']} ({overlap['type']})"
+                    self.overlap_result_tree.insert("", tk.END, values=(status, description))
+                    
+        except Exception as e:
+            self.show_info("错误", f"执行子网重叠检测失败: {str(e)}")
+    
     def update_ipv4_history(self, event=None):
         """更新IPv4地址查询历史记录"""
         ip_value = self.ip_info_entry.get().strip()
@@ -4368,55 +4412,7 @@ class IPSubnetSplitterApp:
             subnet_mask = self.cidr_subnet_mask_map[selected_cidr]
             self.ip_mask_var.set(subnet_mask)
             
-    def execute_check_overlap(self):
-        """执行子网重叠检测"""
-        try:
-            # 清空结果树
-            for item in self.overlap_result_tree.get_children():
-                self.overlap_result_tree.delete(item)
-            
-            # 获取输入的子网列表
-            subnets_text = self.overlap_text.get(1.0, tk.END).strip()
-            if not subnets_text:
-                self.show_info("提示", "请输入子网列表")
-                return
-            
-            # 解析子网列表
-            subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
-            
-            # 执行重叠检测
-            result = check_subnet_overlap(subnets)
-            
-            # 检查是否有错误
-            if isinstance(result, dict) and "error" in result:
-                self.show_info("错误", result["error"])
-                return
-            
-            # 显示结果
-            overlaps = result.get("overlaps", [])
-            if overlaps:
-                for overlap in overlaps:
-                    subnet1 = overlap.get("subnet1", "")
-                    subnet2 = overlap.get("subnet2", "")
-                    overlap_type = overlap.get("type", "重叠")
-                    
-                    self.overlap_result_tree.insert("", tk.END, values=(
-                        "重叠",
-                        f"{subnet1} 与 {subnet2} 发生 {overlap_type}"
-                    ))
-
-            else:
-                self.overlap_result_tree.insert("", tk.END, values=(
-                    "正常",
-                    "所有子网之间没有重叠"
-                ))
-
-                
-        except ValueError as e:
-            self.show_info("错误", f"检测失败: {str(e)}")
-        except Exception as e:
-            self.show_info("错误", f"操作失败: {str(e)}")
-        
+    
     def toggle_test_info_bar(self, event=None):
         """打开功能调试对话框（彩蛋功能）
         快捷键：Ctrl+Shift+I
@@ -4695,10 +4691,10 @@ class IPSubnetSplitterApp:
         
         if self.info_bar_frame.winfo_manager() == "":
             # 放置在main_frame底部
-            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 10), padx=10)
+            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 0), padx=10)
         else:
             # 如果已经显示，确保布局正确
-            self.info_bar_frame.pack_configure(side="bottom", fill="x", pady=(0, 10), padx=10)
+            self.info_bar_frame.pack_configure(side="bottom", fill="x", pady=(0, 0), padx=10)
 
         # 去掉自动隐藏功能，需要手动隐藏
 
