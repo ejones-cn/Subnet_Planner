@@ -3927,7 +3927,7 @@ class IPSubnetSplitterApp:
                 rfc_ref = "RFC 4291"
             self.ipv6_info_tree.insert("", tk.END, values=("相关RFC", rfc_ref))
             
-            # 6. 扩展信息
+            # 9. 扩展信息
             has_extended_info = False
             
             # 检查是否为IPv4映射地址
