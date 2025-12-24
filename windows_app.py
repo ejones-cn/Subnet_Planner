@@ -3249,7 +3249,7 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 子网输入文本框
-        self.merge_text = tk.Text(input_frame, height=8, width=60, font=("微软雅黑", 10))
+        self.merge_text = tk.Text(input_frame, height=8, width=30, font=("微软雅黑", 10))
         self.merge_text.pack(fill=tk.BOTH, expand=True)
         self.merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
         
@@ -3354,13 +3354,37 @@ class IPSubnetSplitterApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
         
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=10, font=("微软雅黑", 10))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=("微软雅黑", 10))
+        
+        # 添加垂直滚动条
+        subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL, command=self.subnet_merge_text.yview)
+        subnet_merge_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 配置文本框使用滚动条
+        self.subnet_merge_text.configure(yscrollcommand=subnet_merge_scrollbar.set)
+        
         self.subnet_merge_text.pack(fill=tk.BOTH, expand=True)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
         
-        # 子网合并按钮 - 靠右放置
+        # 先删除滚动条和文本框的pack布局
+        subnet_merge_scrollbar.pack_forget()
+        self.subnet_merge_text.pack_forget()
+        
+        # 配置子网合并列表面板的grid布局
+        subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
+        subnet_frame.grid_columnconfigure(1, weight=0)  # 滚动条列
+        subnet_frame.grid_rowconfigure(0, weight=1)  # 文本框行
+        subnet_frame.grid_rowconfigure(1, weight=0)  # 按钮行
+        
+        # 重新使用grid布局放置文本框
+        self.subnet_merge_text.grid(row=0, column=0, sticky="nsew")
+        
+        # 重新使用grid布局放置滚动条
+        subnet_merge_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # 子网合并按钮 - 固定在右下角
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.pack(side=tk.RIGHT, pady=(5, 0))
+        self.merge_btn.grid(row=1, column=0, columnspan=2, sticky="e", pady=(5, 0))
         
         # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
