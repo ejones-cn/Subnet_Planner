@@ -3318,7 +3318,7 @@ class IPSubnetSplitterApp:
         """创建子网合并和范围转CIDR功能界面"""
         # 创建输入部分的容器，包含所有组件
         input_container = ttk.Frame(self.merge_frame)
-        input_container.pack(fill=tk.BOTH, expand=True, pady=10)
+        input_container.pack(fill=tk.BOTH, expand=True)
         
         # 创建两列框架，放置在输入容器中
         left_frame = ttk.Frame(input_container)
