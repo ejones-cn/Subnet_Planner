@@ -18,6 +18,7 @@ import traceback
 import json
 import time
 from io import BytesIO
+import ipaddress
 
 # 外部库导入
 from PIL import Image, ImageDraw, ImageFont
@@ -3730,29 +3731,84 @@ class IPSubnetSplitterApp:
             if len(segments) > 1:
                 self.ipv6_info_tree.insert("", tk.END, values=("地址段数量", f"{len(segments)}"))
             
-            # 5. 数值表示
+            # 5. 二进制表示
             self.ipv6_info_tree.insert("", tk.END, values=())
-            self.ipv6_info_tree.insert("", tk.END, values=("数值表示", ""))
-            self.ipv6_info_tree.insert("", tk.END, values=("二进制表示", ipv6_info.get("binary", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=("十六进制表示", ipv6_info.get("hexadecimal", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("二进制表示", ""))
+            self.ipv6_info_tree.insert("", tk.END, values=("IP地址", ipv6_info.get("binary", "")))
             
-            # 显示整数值（如果有）
+            # 计算并显示子网掩码的二进制表示
+            if ipv6_info.get("subnet_mask"):
+                subnet_mask = ipv6_info["subnet_mask"]
+                subnet_bin = subnet_mask.replace(':', '').zfill(32)
+                subnet_bin_grouped = ' '.join([subnet_bin[i:i+4] for i in range(0, 32, 4)])
+                self.ipv6_info_tree.insert("", tk.END, values=("子网掩码", subnet_bin_grouped))
+            
+            # 计算并显示网络地址的二进制表示
+            if ipv6_info.get("network_address"):
+                network_addr = ipv6_info["network_address"]
+                network_bin = network_addr.replace(':', '').zfill(32)
+                network_bin_grouped = ' '.join([network_bin[i:i+4] for i in range(0, 32, 4)])
+                self.ipv6_info_tree.insert("", tk.END, values=("网络地址", network_bin_grouped))
+            
+            # 计算并显示广播地址的二进制表示
+            if ipv6_info.get("broadcast_address"):
+                broadcast_addr = ipv6_info["broadcast_address"]
+                broadcast_bin = broadcast_addr.replace(':', '').zfill(32)
+                broadcast_bin_grouped = ' '.join([broadcast_bin[i:i+4] for i in range(0, 32, 4)])
+                self.ipv6_info_tree.insert("", tk.END, values=("广播地址", broadcast_bin_grouped))
+            
+            # 6. 十六进制表示
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("十六进制表示", ""))
+            self.ipv6_info_tree.insert("", tk.END, values=("IP地址", ipv6_info.get("hexadecimal", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("子网掩码", ipv6_info.get("subnet_mask", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("网络地址", ipv6_info.get("network_address", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("广播地址", ipv6_info.get("broadcast_address", "")))
+            
+            # 7. 十进制数值表示
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("十进制数值表示", ""))
             if "integer" in ipv6_info:
-                self.ipv6_info_tree.insert("", tk.END, values=("整数值", ipv6_info["integer"]))
+                self.ipv6_info_tree.insert("", tk.END, values=("IP地址", ipv6_info["integer"]))
             
-            # 添加各地址段的详细表示
+            # 计算并显示子网掩码的十进制数值
+            if ipv6_info.get("subnet_mask"):
+                subnet_mask = ipv6_info["subnet_mask"]
+                subnet_int = int(ipaddress.IPv6Address(subnet_mask))
+                self.ipv6_info_tree.insert("", tk.END, values=("子网掩码", subnet_int))
+            
+            # 计算并显示网络地址的十进制数值
+            if ipv6_info.get("network_address"):
+                network_addr = ipv6_info["network_address"]
+                network_int = int(ipaddress.IPv6Address(network_addr))
+                self.ipv6_info_tree.insert("", tk.END, values=("网络地址", network_int))
+            
+            # 计算并显示广播地址的十进制数值
+            if ipv6_info.get("broadcast_address"):
+                broadcast_addr = ipv6_info["broadcast_address"]
+                broadcast_int = int(ipaddress.IPv6Address(broadcast_addr))
+                self.ipv6_info_tree.insert("", tk.END, values=("广播地址", broadcast_int))
+            
+            # 8. 地址段详情
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("地址段详情", ""))
             exploded = ipv6_info.get("exploded", "")
             if exploded:
                 segments = exploded.split(":")
-                self.ipv6_info_tree.insert("", tk.END, values=())
-                self.ipv6_info_tree.insert("", tk.END, values=("地址段详情", ""))
-                for i, segment in enumerate(segments):
-                    if segment:  # 跳过空段（压缩的0）
-                        # 十六进制到十进制转换
-                        dec_value = int(segment, 16)
-                        # 十六进制到二进制转换，补全16位
-                        bin_value = f"{dec_value:016b}"
-                        self.ipv6_info_tree.insert("", tk.END, values=(f"第{i+1}段", f"{segment} (十六进制) = {dec_value} (十进制) = {bin_value} (二进制)"))
+            else:
+                # 处理全0压缩的情况
+                segments = ["0000"] * 8
+            
+            for i, segment in enumerate(segments):
+                if segment:  # 跳过空段（压缩的0）
+                    # 十六进制到十进制转换
+                    dec_value = int(segment, 16)
+                    # 十六进制到二进制转换，补全16位
+                    bin_value = f"{dec_value:016b}"
+                    self.ipv6_info_tree.insert("", tk.END, values=(f"第{i+1}段", f"{segment} (十六进制) = {dec_value} (十进制) = {bin_value} (二进制)"))
+                else:
+                    # 处理空段（压缩的0）
+                    self.ipv6_info_tree.insert("", tk.END, values=(f"第{i+1}段", f"0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)"))
             
             # 6. 网络规模与用途
             self.ipv6_info_tree.insert("", tk.END, values=())
