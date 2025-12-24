@@ -3321,7 +3321,7 @@ class IPSubnetSplitterApp:
         self.ipv6_info_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview和垂直滚动条
@@ -3370,7 +3370,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板行（固定高度）
         
         # 左侧上方：子网合并列表 - 使用grid布局
-        subnet_frame = ttk.LabelFrame(left_frame, text="子网合并列表", padding="10")
+        subnet_frame = ttk.LabelFrame(left_frame, text="子网合并列表", padding=(10, 10, 0, 10))
         subnet_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
         
         # 配置左侧面板的grid布局
@@ -3446,7 +3446,7 @@ class IPSubnetSplitterApp:
         self.range_to_cidr_btn.pack(side=tk.RIGHT, pady=(5, 0))
         
         # 右侧：CIDR结果
-        result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding="10")
+        result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建正常的结果树（非转置）
@@ -3565,7 +3565,7 @@ class IPSubnetSplitterApp:
         self.ip_info_btn.pack(side=tk.RIGHT)
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建Treeview和垂直滚动条
@@ -3661,7 +3661,7 @@ class IPSubnetSplitterApp:
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
         # 创建输入区域
-        input_frame = ttk.LabelFrame(content_container, text="子网列表", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text="子网列表", padding=(10, 10, 0, 10))
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 子网输入文本框和滚动条
@@ -3688,7 +3688,7 @@ class IPSubnetSplitterApp:
         self.overlap_btn.pack(side=tk.RIGHT, pady=(5, 0))
         
         # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text="检测结果", padding="10")
+        result_frame = ttk.LabelFrame(content_container, text="检测结果", padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
