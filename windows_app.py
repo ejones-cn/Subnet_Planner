@@ -3268,7 +3268,7 @@ class IPSubnetSplitterApp:
         for prop in properties:
             self.merge_result_tree.insert("", tk.END, values=(prop,))
         
-        self.merge_result_tree.column("属性", width=120)
+        self.merge_result_tree.column("属性", width=90, minwidth=90, stretch=False)
         
         self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.merge_result_tree)
@@ -3312,7 +3312,7 @@ class IPSubnetSplitterApp:
         self.ipv6_info_tree.heading("item", text="项目")
         self.ipv6_info_tree.heading("value", text="值")
         
-        self.ipv6_info_tree.column("item", width=200)
+        self.ipv6_info_tree.column("item", width=100)
         self.ipv6_info_tree.column("value", width=350)
         
         self.ipv6_info_tree.pack(fill=tk.BOTH, expand=True)
@@ -3405,7 +3405,7 @@ class IPSubnetSplitterApp:
         for prop in properties:
             self.merge_result_tree.insert("", tk.END, values=(prop,))
         
-        self.merge_result_tree.column("属性", width=120)
+        self.merge_result_tree.column("属性", width=90, minwidth=90, stretch=False)
         
         self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.merge_result_tree)
@@ -3500,8 +3500,8 @@ class IPSubnetSplitterApp:
         self.ip_info_tree.heading("item", text="项目")
         self.ip_info_tree.heading("value", text="值")
         
-        self.ip_info_tree.column("item", width=150)
-        self.ip_info_tree.column("value", width=250)
+        self.ip_info_tree.column("item", width=100)
+        self.ip_info_tree.column("value", width=350)
         
         self.ip_info_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
@@ -3584,8 +3584,8 @@ class IPSubnetSplitterApp:
         self.overlap_result_tree.heading("status", text="状态")
         self.overlap_result_tree.heading("message", text="描述")
         
-        self.overlap_result_tree.column("status", width=100)
-        self.overlap_result_tree.column("message", width=400)
+        self.overlap_result_tree.column("status", width=50)
+        self.overlap_result_tree.column("message", width=450)
         
         self.overlap_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.overlap_result_tree)
