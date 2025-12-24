@@ -146,7 +146,7 @@ def ipv6_to_ipv4(ipv6_str):
         if ipv6_addr.ipv4_mapped:
             return str(ipv6_addr.ipv4_mapped)
         else:
-            return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址"}
+            return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式（如::ffff:192.168.1.1）"}
     except ValueError as e:
         return handle_ip_subnet_error(e, "IPv6转IPv4")
 
@@ -719,8 +719,8 @@ if __name__ == "__main__":
     if "error" in ip_info:
         print(f"错误: {ip_info['error']}")
     else:
-        print(f"IP地址: {ip_info['ip']}")
-        print(f"IP分类: {ip_info['ip_class']}")
+        print(f"IP地址: {ip_info['ip_address']}")
+        print(f"IP分类: {ip_info['class']}")
         print(f"是否私有IP: {ip_info['is_private']}")
         print(f"是否回环地址: {ip_info['is_loopback']}")
         print(f"是否链路本地地址: {ip_info['is_link_local']}")
@@ -838,7 +838,7 @@ if __name__ == "__main__":
             print(f"{ip}: 错误 - {ip_info['error']}")
         else:
             print(f"{ip}:")
-            print(f"  类别: {ip_info['ip_class']}")
+            print(f"  类别: {ip_info['class']}")
             print(f"  私有IP: {ip_info['is_private']}")
             print(f"  回环地址: {ip_info['is_loopback']}")
             print(f"  组播地址: {ip_info['is_multicast']}")
