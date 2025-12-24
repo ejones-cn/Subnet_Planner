@@ -3333,7 +3333,7 @@ class IPSubnetSplitterApp:
         right_frame = ttk.Frame(input_container)
         
         # 使用grid布局，固定左侧宽度，右侧自适应
-        input_container.grid_columnconfigure(0, minsize=250, weight=0)  # 固定左侧宽度
+        input_container.grid_columnconfigure(0, minsize=140, weight=0)  # 固定左侧宽度
         input_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         input_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
         
@@ -3354,7 +3354,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
         
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=30, font=("微软雅黑", 10))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=10, font=("微软雅黑", 10))
         self.subnet_merge_text.pack(fill=tk.BOTH, expand=True)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
         
@@ -3370,8 +3370,8 @@ class IPSubnetSplitterApp:
         start_frame = ttk.Frame(range_frame)
         start_frame.pack(fill=tk.X, pady=(0, 5))
         
-        ttk.Label(start_frame, text="起始IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_start_entry = ttk.Combobox(start_frame, values=self.range_start_history, width=20, font=("微软雅黑", 10))
+        ttk.Label(start_frame, text="起始:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_start_entry = ttk.Combobox(start_frame, values=self.range_start_history, width=13, font=("微软雅黑", 10))
         self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_start_entry.insert(0, "192.168.0.1")
         self.range_start_entry.config(state="normal")  # 允许手动输入
@@ -3383,8 +3383,8 @@ class IPSubnetSplitterApp:
         end_frame = ttk.Frame(range_frame)
         end_frame.pack(fill=tk.X, pady=(5, 0))
         
-        ttk.Label(end_frame, text="结束IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=20, font=("微软雅黑", 10))
+        ttk.Label(end_frame, text="结束:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=("微软雅黑", 10))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.0.254")
         self.range_end_entry.config(state="normal")  # 允许手动输入
@@ -3401,22 +3401,22 @@ class IPSubnetSplitterApp:
         result_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建正常的结果树（非转置）
-        columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "可用主机数"]
+        columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "主机数"]
         self.merge_result_tree = ttk.Treeview(result_frame, columns=columns, show="headings")
         
         # 设置列标题和初始宽度
         for i, col in enumerate(columns):
             self.merge_result_tree.heading(col, text=col)
             if i == 0:  # CIDR列
-                self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)
+                self.merge_result_tree.column(col, width=110, minwidth=110, stretch=False)
             elif i == 1:  # 网络地址列
-                self.merge_result_tree.column(col, width=100, minwidth=100)
+                self.merge_result_tree.column(col, width=70, minwidth=70)
             elif i == 2:  # 子网掩码列
-                self.merge_result_tree.column(col, width=120, minwidth=120)
+                self.merge_result_tree.column(col, width=70, minwidth=70)
             elif i == 3:  # 广播地址列
-                self.merge_result_tree.column(col, width=100, minwidth=100)
-            elif i == 4:  # 可用主机数列
-                self.merge_result_tree.column(col, width=80, minwidth=80)
+                self.merge_result_tree.column(col, width=70, minwidth=70)
+            elif i == 4:  # 主机数列
+                self.merge_result_tree.column(col, width=40, minwidth=40)
         
         self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.merge_result_tree)
@@ -3557,13 +3557,13 @@ class IPSubnetSplitterApp:
         self.range_result_tree.heading("network", text="网络地址")
         self.range_result_tree.heading("netmask", text="子网掩码")
         self.range_result_tree.heading("broadcast", text="广播地址")
-        self.range_result_tree.heading("hosts", text="可用主机数")
+        self.range_result_tree.heading("hosts", text="主机数")
         
-        self.range_result_tree.column("cidr", width=120)
-        self.range_result_tree.column("network", width=120)
-        self.range_result_tree.column("netmask", width=120)
-        self.range_result_tree.column("broadcast", width=120)
-        self.range_result_tree.column("hosts", width=100, anchor="e")
+        self.range_result_tree.column("cidr", width=90)
+        self.range_result_tree.column("network", width=90)
+        self.range_result_tree.column("netmask", width=90)
+        self.range_result_tree.column("broadcast", width=90)
+        self.range_result_tree.column("hosts", width=50, anchor="e")
         
         self.range_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.range_result_tree)
@@ -3615,22 +3615,22 @@ class IPSubnetSplitterApp:
             self.merge_result_tree.config(columns=())
             
             # 创建正常的列结构：每列代表一个属性
-            columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "可用主机数"]
+            columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "主机数"]
             self.merge_result_tree.config(columns=columns)
             
             # 设置列标题和宽度
             for i, col in enumerate(columns):
                 self.merge_result_tree.heading(col, text=col)
                 if i == 0:  # CIDR列
-                    self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)
+                    self.merge_result_tree.column(col, width=110, minwidth=110, stretch=False)
                 elif i == 1:  # 网络地址列
-                    self.merge_result_tree.column(col, width=100, minwidth=100)
+                    self.merge_result_tree.column(col, width=70, minwidth=70)
                 elif i == 2:  # 子网掩码列
-                    self.merge_result_tree.column(col, width=120, minwidth=120)
+                    self.merge_result_tree.column(col, width=70, minwidth=70)
                 elif i == 3:  # 广播地址列
-                    self.merge_result_tree.column(col, width=100, minwidth=100)
-                elif i == 4:  # 可用主机数列
-                    self.merge_result_tree.column(col, width=80, minwidth=80)
+                    self.merge_result_tree.column(col, width=70, minwidth=70)
+                elif i == 4:  # 主机数列
+                    self.merge_result_tree.column(col, width=40, minwidth=40)
             
             # 获取输入的子网合并列表
             subnets_text = self.subnet_merge_text.get(1.0, tk.END).strip()
