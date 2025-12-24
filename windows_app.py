@@ -3260,18 +3260,15 @@ class IPSubnetSplitterApp:
         result_frame = ttk.LabelFrame(self.merge_frame, text="合并结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.merge_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
-        self.merge_result_tree.heading("cidr", text="CIDR")
-        self.merge_result_tree.heading("network", text="网络地址")
-        self.merge_result_tree.heading("netmask", text="子网掩码")
-        self.merge_result_tree.heading("broadcast", text="广播地址")
-        self.merge_result_tree.heading("hosts", text="可用主机数")
+        self.merge_result_tree = ttk.Treeview(result_frame, columns=("属性"), show="headings")
+        self.merge_result_tree.heading("属性", text="属性")
         
-        self.merge_result_tree.column("cidr", width=120)
-        self.merge_result_tree.column("network", width=120)
-        self.merge_result_tree.column("netmask", width=120)
-        self.merge_result_tree.column("broadcast", width=120)
-        self.merge_result_tree.column("hosts", width=100, anchor="e")
+        # 初始显示属性行，无数据
+        properties = ["CIDR", "网络地址", "子网掩码", "广播地址", "可用主机数"]
+        for prop in properties:
+            self.merge_result_tree.insert("", tk.END, values=(prop,))
+        
+        self.merge_result_tree.column("属性", width=120)
         
         self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.merge_result_tree)
@@ -3325,14 +3322,28 @@ class IPSubnetSplitterApp:
         
         # 创建两列框架，放置在输入容器中
         left_frame = ttk.Frame(input_container)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 5))
-        
         right_frame = ttk.Frame(input_container)
-        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 10))
         
-        # 左侧上方：子网列表
+        # 使用grid布局，固定左侧宽度，右侧自适应
+        input_container.grid_columnconfigure(0, minsize=250, weight=0)  # 固定左侧宽度
+        input_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
+        input_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
+        
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 5))
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10))
+        
+        # 确保左侧面板内部的行能撑满高度
+        left_frame.grid_rowconfigure(0, weight=1)  # 子网列表面板行
+        left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板行（固定高度）
+        
+        # 左侧上方：子网列表 - 使用grid布局
         subnet_frame = ttk.LabelFrame(left_frame, text="子网列表", padding="10")
-        subnet_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        subnet_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
+        
+        # 配置左侧面板的grid布局
+        left_frame.grid_rowconfigure(0, weight=1)  # 子网列表面板随窗体变化
+        left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板固定高度
+        left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
         
         # 子网输入文本框
         self.merge_text = tk.Text(subnet_frame, height=8, width=30, font=("微软雅黑", 10))
@@ -3343,9 +3354,9 @@ class IPSubnetSplitterApp:
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
         self.merge_btn.pack(side=tk.LEFT, pady=(5, 0))
         
-        # 左侧下方：IP地址范围
+        # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
-        range_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+        range_frame.grid(row=1, column=0, sticky="ew", pady=(5, 0))  # 仅水平填充，固定高度
         
         # 起始IP - 使用Combobox，支持下拉选择和记忆功能
         start_frame = ttk.Frame(range_frame)
@@ -3381,19 +3392,16 @@ class IPSubnetSplitterApp:
         result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding="10")
         result_frame.pack(fill=tk.BOTH, expand=True)
         
-        # 创建共用的结果树
-        self.merge_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
-        self.merge_result_tree.heading("cidr", text="CIDR")
-        self.merge_result_tree.heading("network", text="网络地址")
-        self.merge_result_tree.heading("netmask", text="子网掩码")
-        self.merge_result_tree.heading("broadcast", text="广播地址")
-        self.merge_result_tree.heading("hosts", text="可用主机数")
+        # 创建转置后的结果树
+        self.merge_result_tree = ttk.Treeview(result_frame, columns=("属性"), show="headings")
+        self.merge_result_tree.heading("属性", text="属性")
         
-        self.merge_result_tree.column("cidr", width=120)
-        self.merge_result_tree.column("network", width=120)
-        self.merge_result_tree.column("netmask", width=120)
-        self.merge_result_tree.column("broadcast", width=120)
-        self.merge_result_tree.column("hosts", width=100, anchor="e")
+        # 初始显示属性行，无数据
+        properties = ["CIDR", "网络地址", "子网掩码", "广播地址", "可用主机数"]
+        for prop in properties:
+            self.merge_result_tree.insert("", tk.END, values=(prop,))
+        
+        self.merge_result_tree.column("属性", width=120)
         
         self.merge_result_tree.pack(fill=tk.BOTH, expand=True)
         self.configure_treeview_styles(self.merge_result_tree)
@@ -3599,16 +3607,49 @@ class IPSubnetSplitterApp:
             
             # 显示结果
             merged_subnets = result.get("merged_subnets", [])
-            for subnet in merged_subnets:
-                # 获取子网信息
-                info = get_subnet_info(subnet)
-                self.merge_result_tree.insert("", tk.END, values=(
-                    subnet,
-                    info["network"],
-                    info["netmask"],
-                    info["broadcast"],
-                    info["usable_addresses"]
-                ))
+            
+            # 转置表格：清空并重新创建列
+            for item in self.merge_result_tree.get_children():
+                self.merge_result_tree.delete(item)
+            
+            # 清除所有列
+            for col in self.merge_result_tree["columns"]:
+                self.merge_result_tree.heading(col, text="")
+            self.merge_result_tree.config(columns=())
+            
+            # 如果没有结果，直接返回
+            if not merged_subnets:
+                return
+            
+            # 创建转置后的列：第一列为属性名称，后续每列为一个子网
+            columns = ["属性"] + merged_subnets
+            self.merge_result_tree.config(columns=columns)
+            
+            # 设置列标题和宽度
+            for i, col in enumerate(columns):
+                self.merge_result_tree.heading(col, text=col)
+                if i == 0:  # 第一列（属性列）
+                    self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)  # 增大一半并固定
+                else:  # 其他列
+                    self.merge_result_tree.column(col, width=120)
+            
+            # 定义要显示的属性列表
+            properties = [
+                ("CIDR", lambda info, subnet: subnet),
+                ("网络地址", lambda info, subnet: info["network"]),
+                ("子网掩码", lambda info, subnet: info["netmask"]),
+                ("广播地址", lambda info, subnet: info["broadcast"]),
+                ("可用主机数", lambda info, subnet: info["usable_addresses"])
+            ]
+            
+            # 填充转置后的数据
+            for prop_name, prop_func in properties:
+                # 为每个属性创建一行
+                row_values = [prop_name]
+                for subnet in merged_subnets:
+                    info = get_subnet_info(subnet)
+                    row_values.append(prop_func(info, subnet))
+                self.merge_result_tree.insert("", tk.END, values=row_values)
                 
 
             
@@ -4205,16 +4246,49 @@ class IPSubnetSplitterApp:
             
             # 显示结果
             cidr_list = result.get("cidr_list", [])
-            for cidr in cidr_list:
-                # 获取子网信息
-                info = get_subnet_info(cidr)
-                self.merge_result_tree.insert("", tk.END, values=(
-                    cidr,
-                    info["network"],
-                    info["netmask"],
-                    info["broadcast"],
-                    info["usable_addresses"]
-                ))
+            
+            # 转置表格：清空并重新创建列
+            for item in self.merge_result_tree.get_children():
+                self.merge_result_tree.delete(item)
+            
+            # 清除所有列
+            for col in self.merge_result_tree["columns"]:
+                self.merge_result_tree.heading(col, text="")
+            self.merge_result_tree.config(columns=())
+            
+            # 如果没有结果，直接返回
+            if not cidr_list:
+                return
+            
+            # 创建转置后的列：第一列为属性名称，后续每列为一个CIDR
+            columns = ["属性"] + cidr_list
+            self.merge_result_tree.config(columns=columns)
+            
+            # 设置列标题和宽度
+            for i, col in enumerate(columns):
+                self.merge_result_tree.heading(col, text=col)
+                if i == 0:  # 第一列（属性列）
+                    self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)  # 增大一半并固定
+                else:  # 其他列
+                    self.merge_result_tree.column(col, width=120)
+            
+            # 定义要显示的属性列表
+            properties = [
+                ("CIDR", lambda info, cidr: cidr),
+                ("网络地址", lambda info, cidr: info["network"]),
+                ("子网掩码", lambda info, cidr: info["netmask"]),
+                ("广播地址", lambda info, cidr: info["broadcast"]),
+                ("可用主机数", lambda info, cidr: info["usable_addresses"])
+            ]
+            
+            # 填充转置后的数据
+            for prop_name, prop_func in properties:
+                # 为每个属性创建一行
+                row_values = [prop_name]
+                for cidr in cidr_list:
+                    info = get_subnet_info(cidr)
+                    row_values.append(prop_func(info, cidr))
+                self.merge_result_tree.insert("", tk.END, values=row_values)
                 
 
             
