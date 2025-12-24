@@ -3614,46 +3614,55 @@ class IPSubnetSplitterApp:
             # 获取IPv6信息
             ipv6_info = get_ip_info(network_str)
             
-            # 显示结果
-            for key, value in ipv6_info.items():
-                # 将英文键转换为中文
-                key_map = {
-                    "ip_address": "IP地址",
-                    "version": "IP版本",
-                    "is_global": "是否全局可路由",
-                    "is_private": "是否私有地址",
-                    "is_link_local": "是否链路本地",
-                    "is_loopback": "是否回环地址",
-                    "is_multicast": "是否组播地址",
-                    "is_unspecified": "是否未指定地址",
-                    "is_reserved": "是否保留地址",
-                    "network_address": "网络地址",
-                    "broadcast_address": "广播地址",
-                    "subnet_mask": "子网掩码",
-                    "cidr": "CIDR前缀",
-                    "prefix_length": "前缀长度",
-                    "total_hosts": "总主机数",
-                    "usable_hosts": "可用主机数",
-                    "first_host": "第一个可用主机",
-                    "last_host": "最后一个可用主机",
-                    "binary": "二进制表示",
-                    "hexadecimal": "十六进制表示",
-                    "compressed": "压缩格式",
-                    "exploded": "展开格式",
-                    "reverse_dns": "反向DNS格式",
-                    "integer": "整数值",
-                    "ip_int": "整数值",
-                    "class": "地址类别"
-                }
-                
-                display_key = key_map.get(key, key)
-                self.ipv6_info_tree.insert("", tk.END, values=(display_key, value))
+            # 分组显示结果
+            # 1. 基本信息
+            self.ipv6_info_tree.insert("", tk.END, values=("IP地址", ipv6_info.get("ip_address", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("IP版本", ipv6_info.get("version", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("CIDR前缀", ipv6_info.get("cidr", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("前缀长度", ipv6_info.get("prefix_length", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("网络地址", ipv6_info.get("network_address", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("广播地址", ipv6_info.get("broadcast_address", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("子网掩码", ipv6_info.get("subnet_mask", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("第一个可用主机", ipv6_info.get("first_host", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("最后一个可用主机", ipv6_info.get("last_host", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("总主机数", ipv6_info.get("total_hosts", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("可用主机数", ipv6_info.get("usable_hosts", "")))
+            
+            # 2. 地址格式
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("地址格式", ""))
+            self.ipv6_info_tree.insert("", tk.END, values=("压缩格式", ipv6_info.get("compressed", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("展开格式", ipv6_info.get("exploded", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("反向DNS格式", ipv6_info.get("reverse_dns", "")))
+            
+            # 3. 地址属性
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("地址属性", ""))
+            self.ipv6_info_tree.insert("", tk.END, values=("地址类别", ipv6_info.get("class", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if ipv6_info.get("is_global") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否私有地址", "是" if ipv6_info.get("is_private") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否链路本地", "是" if ipv6_info.get("is_link_local") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否回环地址", "是" if ipv6_info.get("is_loopback") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否组播地址", "是" if ipv6_info.get("is_multicast") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if ipv6_info.get("is_unspecified") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否保留地址", "是" if ipv6_info.get("is_reserved") else "否"))
+            
+            # 4. 数值表示
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("数值表示", ""))
+            self.ipv6_info_tree.insert("", tk.END, values=("二进制表示", ipv6_info.get("binary", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=("十六进制表示", ipv6_info.get("hexadecimal", "")))
+            
+            # 显示整数值（如果有）
+            if "integer" in ipv6_info:
+                self.ipv6_info_tree.insert("", tk.END, values=("整数值", ipv6_info["integer"]))
+            elif "ip_int" in ipv6_info:
+                self.ipv6_info_tree.insert("", tk.END, values=("整数值", ipv6_info["ip_int"]))
             
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
         except Exception as e:
             self.show_info("错误", f"操作失败: {str(e)}")
-        
     def execute_ipv4_info(self):
         """执行IPv4地址信息查询"""
         try:
@@ -3713,10 +3722,11 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=("第一个可用地址", subnet_info["host_range_start"]))
                 self.ip_info_tree.insert("", tk.END, values=("最后一个可用地址", subnet_info["host_range_end"]))
                 self.ip_info_tree.insert("", tk.END, values=("可用主机数", subnet_info["usable_addresses"]))
+                self.ip_info_tree.insert("", tk.END, values=("总主机数", subnet_info["num_addresses"]))
                 
                 # 二进制表示
                 self.ip_info_tree.insert("", tk.END, values=())
-                self.ip_info_tree.insert("", tk.END, values=("二进制值", ""))
+                self.ip_info_tree.insert("", tk.END, values=("二进制表示", ""))
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", info["binary"]))
                 self.ip_info_tree.insert("", tk.END, values=("子网掩码", '.'.join(f'{int(octet):08b}' for octet in subnet_info["netmask"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):08b}' for octet in subnet_info["network"].split('.'))))
@@ -3724,48 +3734,50 @@ class IPSubnetSplitterApp:
                 
                 # 十六进制表示
                 self.ip_info_tree.insert("", tk.END, values=())
-                self.ip_info_tree.insert("", tk.END, values=("十六进制值", ""))
+                self.ip_info_tree.insert("", tk.END, values=("十六进制表示", ""))
                 self.ip_info_tree.insert("", tk.END, values=("IP地址", info["hexadecimal"]))
+                self.ip_info_tree.insert("", tk.END, values=("子网掩码", '.'.join(f'{int(octet):02x}' for octet in subnet_info["netmask"].split('.'))))
                 self.ip_info_tree.insert("", tk.END, values=("网络地址", '.'.join(f'{int(octet):02x}' for octet in subnet_info["network"].split('.'))))
+                self.ip_info_tree.insert("", tk.END, values=("广播地址", '.'.join(f'{int(octet):02x}' for octet in subnet_info["broadcast"].split('.'))))
                 
                 # IP属性
                 self.ip_info_tree.insert("", tk.END, values=())
                 self.ip_info_tree.insert("", tk.END, values=("IP属性", ""))
+                self.ip_info_tree.insert("", tk.END, values=("IP版本", info["version"]))
                 self.ip_info_tree.insert("", tk.END, values=("网络类别", info["class"]))
+                self.ip_info_tree.insert("", tk.END, values=("默认子网掩码", info["default_netmask"]))
                 self.ip_info_tree.insert("", tk.END, values=("是否私有IP", "是" if info["is_private"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否保留IP", "是" if info["is_reserved"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否回环地址", "是" if info["is_loopback"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否组播地址", "是" if info["is_multicast"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if info["is_global"] else "否"))
                 self.ip_info_tree.insert("", tk.END, values=("是否链路本地地址", "是" if info["is_link_local"] else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if info["is_unspecified"] else "否"))
             else:
-                # 只显示基本IP信息
-                for key, value in info.items():
-                    # 跳过字节相关的字段，不显示
-                    if key.startswith("octet_"):
-                        continue
-                    
-                    # 转换键为中文
-                    key_map = {
-                        "ip_address": "IP地址",
-                        "version": "IP版本",
-                        "class": "网络类别",
-                        "binary": "二进制表示",
-                        "hexadecimal": "十六进制表示",
-                        "integer": "整数表示",
-                        "is_private": "是否私有IP",
-                        "is_reserved": "是否保留IP",
-                        "is_loopback": "是否回环地址",
-                        "is_multicast": "是否组播地址",
-                        "is_global": "是否全局可路由",
-                        "is_link_local": "是否链路本地地址",
-                        "is_unspecified": "是否未指定地址",
-                        "default_netmask": "默认子网掩码"
-                    }
-                    
-                    display_key = key_map.get(key, key)
-                    display_value = "是" if value is True else "否" if value is False else value
-                    
-                    self.ip_info_tree.insert("", tk.END, values=(display_key, display_value))
+                # 只显示基本IP信息，采用分组显示
+                # 1. 基本信息
+                self.ip_info_tree.insert("", tk.END, values=("IP地址", info.get("ip_address", ip)))
+                self.ip_info_tree.insert("", tk.END, values=("IP版本", info.get("version", "")))
+                self.ip_info_tree.insert("", tk.END, values=("网络类别", info.get("class", "")))
+                self.ip_info_tree.insert("", tk.END, values=("默认子网掩码", info.get("default_netmask", "")))
+                
+                # 2. 数值表示
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("数值表示", ""))
+                self.ip_info_tree.insert("", tk.END, values=("二进制表示", info.get("binary", "")))
+                self.ip_info_tree.insert("", tk.END, values=("十六进制表示", info.get("hexadecimal", "")))
+                self.ip_info_tree.insert("", tk.END, values=("整数表示", info.get("integer", "")))
+                
+                # 3. IP属性
+                self.ip_info_tree.insert("", tk.END, values=())
+                self.ip_info_tree.insert("", tk.END, values=("IP属性", ""))
+                self.ip_info_tree.insert("", tk.END, values=("是否私有IP", "是" if info.get("is_private", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否保留IP", "是" if info.get("is_reserved", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否回环地址", "是" if info.get("is_loopback", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否组播地址", "是" if info.get("is_multicast", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否全局可路由", "是" if info.get("is_global", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否链路本地地址", "是" if info.get("is_link_local", False) else "否"))
+                self.ip_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if info.get("is_unspecified", False) else "否"))
                 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
