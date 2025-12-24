@@ -4669,17 +4669,17 @@ class IPSubnetSplitterApp:
 
             return "..."
 
-        # 获取信息栏的实际宽度
-        root_width = self.root.winfo_width()
+        # 获取信息栏的实际宽度 - 现在info_bar_frame已经使用pack布局，直接获取其宽度
+        # 先更新窗口，确保能获取到准确的宽度
+        self.root.update_idletasks()
+        info_bar_width = self.info_bar_frame.winfo_width()
         
-        info_bar_width = root_width - self.INFO_BAR_LEFT_OFFSET - self.INFO_BAR_RIGHT_OFFSET - self.INFO_BAR_PADDING  # 与信息栏宽度计算保持一致
         if info_bar_width < self.MIN_INFO_BAR_WIDTH:
             info_bar_width = self.MIN_INFO_BAR_WIDTH
         
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
-        # 减少内边距预留，增加两个中文字符宽度（约32px），让文本可以多显示一些字符
-        # 增加可用宽度，让文本可以多显示两个中文字符
-        max_pixel_width = info_bar_width - 5 - self.CLOSE_BTN_WIDTH  # 减去5px内边距和关闭按钮宽度
+        # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
+        max_pixel_width = info_bar_width - 10 - self.CLOSE_BTN_WIDTH  # 减去内边距和关闭按钮宽度
         
         # 确保最大像素宽度为正数
         if max_pixel_width < self.MIN_PIXEL_WIDTH:
