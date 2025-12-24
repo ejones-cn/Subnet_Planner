@@ -3635,6 +3635,9 @@ class IPSubnetSplitterApp:
                 address_type = "文档/测试地址"
             elif ip_address.startswith("2000:"):
                 address_type = "全球单播地址"
+            # 添加IPv4映射地址检测
+            elif "::ffff:" in ip_address:
+                address_type = "IPv4映射的IPv6地址"
             self.ipv6_info_tree.insert("", tk.END, values=("地址类型", address_type))
             self.ipv6_info_tree.insert("", tk.END, values=("CIDR前缀", ipv6_info.get("cidr", "")))
             self.ipv6_info_tree.insert("", tk.END, values=("前缀长度", ipv6_info.get("prefix_length", "")))
@@ -3653,6 +3656,11 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=("展开格式", ipv6_info.get("exploded", "")))
             self.ipv6_info_tree.insert("", tk.END, values=("反向DNS格式", ipv6_info.get("reverse_dns", "")))
             
+            # 添加IPv4映射地址转换（如果适用）
+            if "::ffff:" in ip_address:
+                ipv4_part = ip_address.split("::ffff:")[-1]
+                self.ipv6_info_tree.insert("", tk.END, values=("映射的IPv4地址", ipv4_part))
+            
             # 3. 地址属性
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=("地址属性", ""))
@@ -3663,6 +3671,7 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=("是否组播地址", "是" if ipv6_info.get("is_multicast") else "否"))
             self.ipv6_info_tree.insert("", tk.END, values=("是否未指定地址", "是" if ipv6_info.get("is_unspecified") else "否"))
             self.ipv6_info_tree.insert("", tk.END, values=("是否保留地址", "是" if ipv6_info.get("is_reserved") else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=("是否IPv4映射", "是" if "::ffff:" in ip_address else "否"))
             
             # 4. 地址结构分析
             self.ipv6_info_tree.insert("", tk.END, values=())
@@ -3672,9 +3681,18 @@ class IPSubnetSplitterApp:
             prefix_analysis = ""
             if ipv6_info.get("is_multicast"):
                 prefix_analysis = "多播地址前缀"
+                # 进一步分析多播地址类型
+                if ip_address.startswith("ff01:"):
+                    prefix_analysis += " (接口本地多播)"
+                elif ip_address.startswith("ff02:"):
+                    prefix_analysis += " (链路本地多播)"
+                elif ip_address.startswith("ff05:"):
+                    prefix_analysis += " (站点本地多播)"
+                elif ip_address.startswith("ff0e:"):
+                    prefix_analysis += " (全球多播)"
             elif ip_address.startswith("fe80:"):
                 prefix_analysis = "链路本地前缀 (fe80::/10)"
-            elif ip_address.startswith("fc00:"):
+            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
                 prefix_analysis = "唯一本地地址前缀 (fc00::/7)"
             elif ip_address.startswith("2000:"):
                 prefix_analysis = "全球单播地址前缀 (2000::/3)"
@@ -3683,6 +3701,11 @@ class IPSubnetSplitterApp:
             elif ip_address == "::":
                 prefix_analysis = "未指定地址 (::/128)"
             self.ipv6_info_tree.insert("", tk.END, values=("前缀分析", prefix_analysis))
+            
+            # 分析地址结构
+            segments = ip_address.split(":")
+            if len(segments) > 1:
+                self.ipv6_info_tree.insert("", tk.END, values=("地址段数量", f"{len(segments)}"))
             
             # 5. 数值表示
             self.ipv6_info_tree.insert("", tk.END, values=())
@@ -3693,19 +3716,83 @@ class IPSubnetSplitterApp:
             # 显示整数值（如果有）
             if "integer" in ipv6_info:
                 self.ipv6_info_tree.insert("", tk.END, values=("整数值", ipv6_info["integer"]))
-                
-                # 添加十进制表示的分段显示
-                int_value = ipv6_info["integer"]
-                # 以16位为一组显示
-                hex_segments = []
-                temp = int_value
-                for _ in range(8):
-                    hex_segments.insert(0, f"{temp & 0xFFFF:04x}")
-                    temp >>= 16
-                formatted_hex = ":".join(hex_segments)
-                self.ipv6_info_tree.insert("", tk.END, values=("分段十六进制", formatted_hex))
-            elif "ip_int" in ipv6_info:
-                self.ipv6_info_tree.insert("", tk.END, values=("整数值", ipv6_info["ip_int"]))
+            
+            # 添加各地址段的详细表示
+            exploded = ipv6_info.get("exploded", "")
+            if exploded:
+                segments = exploded.split(":")
+                self.ipv6_info_tree.insert("", tk.END, values=())
+                self.ipv6_info_tree.insert("", tk.END, values=("地址段详情", ""))
+                for i, segment in enumerate(segments):
+                    if segment:  # 跳过空段（压缩的0）
+                        # 十六进制到十进制转换
+                        dec_value = int(segment, 16)
+                        # 十六进制到二进制转换，补全16位
+                        bin_value = f"{dec_value:016b}"
+                        self.ipv6_info_tree.insert("", tk.END, values=(f"第{i+1}段", f"{segment} (十六进制) = {dec_value} (十进制) = {bin_value} (二进制)"))
+            
+            # 6. 网络规模与用途
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("网络规模与用途", ""))
+            
+            # 子网规模描述
+            total_hosts = ipv6_info.get("total_hosts", 0)
+            size_desc = ""
+            if total_hosts <= 1:
+                size_desc = "单主机地址（/128前缀）"
+            elif total_hosts <= 65536:
+                size_desc = "小型网络（/64前缀）"
+            elif total_hosts <= 4294967296:
+                size_desc = "中型网络（/48前缀）"
+            else:
+                size_desc = "大型网络（/32或更短前缀）"
+            self.ipv6_info_tree.insert("", tk.END, values=("子网规模", size_desc))
+            
+            # IP地址用途描述
+            usage_desc = ""
+            if ipv6_info.get("is_loopback"):
+                usage_desc = "用于本地主机测试和诊断"
+            elif ipv6_info.get("is_link_local"):
+                usage_desc = "用于同一链路内的设备通信，无需路由器"
+            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
+                usage_desc = "用于内部网络通信，不可路由到公网"
+            elif ip_address.startswith("2000:"):
+                usage_desc = "可在全球范围内路由，用于公网通信"
+            elif ipv6_info.get("is_multicast"):
+                usage_desc = "用于一对多通信，支持组播应用"
+            elif "::ffff:" in ip_address:
+                usage_desc = "用于在IPv6网络中表示IPv4地址"
+            self.ipv6_info_tree.insert("", tk.END, values=("主要用途", usage_desc))
+            
+            # 7. 配置建议
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("配置建议", ""))
+            
+            advice = ""
+            if ipv6_info.get("is_global"):
+                advice = "建议配置防火墙规则，限制不必要的入站访问"
+            elif ipv6_info.get("is_private"):
+                advice = "建议使用SLAAC或DHCPv6自动分配地址"
+            if ipv6_info.get("prefix_length", 0) < 64:
+                advice += "\n建议为终端设备分配/64前缀，符合IPv6最佳实践"
+            self.ipv6_info_tree.insert("", tk.END, values=("网络配置", advice))
+            
+            # 8. RFC标准参考
+            self.ipv6_info_tree.insert("", tk.END, values=())
+            self.ipv6_info_tree.insert("", tk.END, values=("RFC标准参考", ""))
+            
+            rfc_ref = ""
+            if ipv6_info.get("is_multicast"):
+                rfc_ref = "RFC 4291, RFC 3306"
+            elif ip_address.startswith("fe80:"):
+                rfc_ref = "RFC 4291"
+            elif ip_address.startswith("fc00:"):
+                rfc_ref = "RFC 4193"
+            elif ip_address.startswith("2000:"):
+                rfc_ref = "RFC 4291, RFC 7454"
+            elif "::ffff:" in ip_address:
+                rfc_ref = "RFC 4291"
+            self.ipv6_info_tree.insert("", tk.END, values=("相关RFC", rfc_ref))
             
             # 6. 扩展信息
             has_extended_info = False
