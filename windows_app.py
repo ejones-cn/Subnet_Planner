@@ -406,6 +406,12 @@ class IPSubnetSplitterApp:
 
         # 存储删除记录历史，支持多次撤销
         self.deleted_history = []
+        
+        # 高级工具历史记录列表
+        self.ipv4_history = ["192.168.1.1"]  # IPv4地址查询历史
+        self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]  # IPv6地址查询历史
+        self.range_start_history = ["192.168.0.1"]  # IP范围起始地址历史
+        self.range_end_history = ["192.168.0.254"]  # IP范围结束地址历史
 
         self.root = root
         self.root.title(f"IP子网切分工具 v{self.app_version}")
@@ -3275,10 +3281,15 @@ class IPSubnetSplitterApp:
         input_frame = ttk.LabelFrame(self.ipv6_info_frame, text="IPv6地址信息查询", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
+        # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
         ttk.Label(input_frame, text="IPv6地址:").pack(side=tk.LEFT, padx=(0, 5))
-        self.ipv6_info_entry = ttk.Entry(input_frame, width=40)
+        self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=40, font=("微软雅黑", 10))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        self.ipv6_info_entry.config(state="normal")  # 允许手动输入
+        # 绑定事件，在输入完成后更新历史记录
+        self.ipv6_info_entry.bind("<FocusOut>", self.update_ipv6_history)
+        self.ipv6_info_entry.bind("<Return>", self.update_ipv6_history)
         
         # CIDR下拉列表（IPv6支持1-128）
         ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
@@ -3335,23 +3346,31 @@ class IPSubnetSplitterApp:
         range_frame = ttk.LabelFrame(right_frame, text="IP地址范围", padding="10")
         range_frame.pack(fill=tk.BOTH, expand=True)
         
-        # 起始IP
+        # 起始IP - 使用Combobox，支持下拉选择和记忆功能
         start_frame = ttk.Frame(range_frame)
         start_frame.pack(fill=tk.X, pady=(0, 5))
         
         ttk.Label(start_frame, text="起始IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_start_entry = ttk.Entry(start_frame, width=20)
+        self.range_start_entry = ttk.Combobox(start_frame, values=self.range_start_history, width=20, font=("微软雅黑", 10))
         self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_start_entry.insert(0, "192.168.0.1")
+        self.range_start_entry.config(state="normal")  # 允许手动输入
+        # 绑定事件，在输入完成后更新历史记录
+        self.range_start_entry.bind("<FocusOut>", self.update_range_start_history)
+        self.range_start_entry.bind("<Return>", self.update_range_start_history)
         
-        # 结束IP
+        # 结束IP - 使用Combobox，支持下拉选择和记忆功能
         end_frame = ttk.Frame(range_frame)
         end_frame.pack(fill=tk.X, pady=(5, 0))
         
         ttk.Label(end_frame, text="结束IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_end_entry = ttk.Entry(end_frame, width=20)
+        self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=20, font=("微软雅黑", 10))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.0.254")
+        self.range_end_entry.config(state="normal")  # 允许手动输入
+        # 绑定事件，在输入完成后更新历史记录
+        self.range_end_entry.bind("<FocusOut>", self.update_range_end_history)
+        self.range_end_entry.bind("<Return>", self.update_range_end_history)
         
         # 范围转CIDR按钮
         self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
@@ -3384,11 +3403,15 @@ class IPSubnetSplitterApp:
         input_frame = ttk.LabelFrame(self.ipv4_info_frame, text="IPv4地址信息查询", padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # IP地址输入
+        # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
         ttk.Label(input_frame, text="IP地址:").pack(side=tk.LEFT, padx=(0, 5))
-        self.ip_info_entry = ttk.Entry(input_frame, width=30)
+        self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=30, font=("微软雅黑", 10))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
+        self.ip_info_entry.config(state="normal")  # 允许手动输入
+        # 绑定事件，在输入完成后更新历史记录
+        self.ip_info_entry.bind("<FocusOut>", self.update_ipv4_history)
+        self.ip_info_entry.bind("<Return>", self.update_ipv4_history)
         
         # 常用子网掩码与CIDR的映射关系，包含所有CIDR 1~32
         self.subnet_mask_cidr_map = {
@@ -4089,6 +4112,54 @@ class IPSubnetSplitterApp:
             self.show_info("错误", f"转换失败: {str(e)}")
         except Exception as e:
             self.show_info("错误", f"操作失败: {str(e)}")
+    
+    def update_ipv4_history(self, event=None):
+        """更新IPv4地址查询历史记录"""
+        ip_value = self.ip_info_entry.get().strip()
+        if ip_value and ip_value not in self.ipv4_history:
+            # 将新地址添加到历史记录开头
+            self.ipv4_history.insert(0, ip_value)
+            # 限制历史记录数量为10条
+            if len(self.ipv4_history) > 10:
+                self.ipv4_history.pop()
+            # 更新Combobox的values属性
+            self.ip_info_entry['values'] = self.ipv4_history
+    
+    def update_ipv6_history(self, event=None):
+        """更新IPv6地址查询历史记录"""
+        ipv6_value = self.ipv6_info_entry.get().strip()
+        if ipv6_value and ipv6_value not in self.ipv6_history:
+            # 将新地址添加到历史记录开头
+            self.ipv6_history.insert(0, ipv6_value)
+            # 限制历史记录数量为10条
+            if len(self.ipv6_history) > 10:
+                self.ipv6_history.pop()
+            # 更新Combobox的values属性
+            self.ipv6_info_entry['values'] = self.ipv6_history
+    
+    def update_range_start_history(self, event=None):
+        """更新IP范围起始地址历史记录"""
+        start_value = self.range_start_entry.get().strip()
+        if start_value and start_value not in self.range_start_history:
+            # 将新地址添加到历史记录开头
+            self.range_start_history.insert(0, start_value)
+            # 限制历史记录数量为10条
+            if len(self.range_start_history) > 10:
+                self.range_start_history.pop()
+            # 更新Combobox的values属性
+            self.range_start_entry['values'] = self.range_start_history
+    
+    def update_range_end_history(self, event=None):
+        """更新IP范围结束地址历史记录"""
+        end_value = self.range_end_entry.get().strip()
+        if end_value and end_value not in self.range_end_history:
+            # 将新地址添加到历史记录开头
+            self.range_end_history.insert(0, end_value)
+            # 限制历史记录数量为10条
+            if len(self.range_end_history) > 10:
+                self.range_end_history.pop()
+            # 更新Combobox的values属性
+            self.range_end_entry['values'] = self.range_end_history
     
     def on_subnet_mask_change(self, event):
         """当子网掩码改变时，更新CIDR值"""
