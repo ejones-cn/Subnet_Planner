@@ -2484,6 +2484,9 @@ class IPSubnetSplitterApp:
         """显示自定义的居中对话框，支持info、error、warning类型"""
         result = None
         
+        # 确保主窗口完全初始化，先更新主窗口布局
+        self.root.update_idletasks()
+        
         # 创建Toplevel窗口
         dialog = tk.Toplevel(self.root)
         dialog.title(title)
@@ -2491,8 +2494,8 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
         
-        # 设置对话框最小高度
-        dialog.minsize(width=300, height=150)
+        # 设置对话框最小宽度和高度
+        dialog.minsize(width=500, height=150)
         
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
@@ -2504,8 +2507,8 @@ class IPSubnetSplitterApp:
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(2, weight=1)
         
-        # 添加消息文本，居中显示
-        msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
+        # 添加消息文本，居中显示，使用合适的wraplength
+        msg_label = ttk.Label(frame, text=message, wraplength=450, font=('微软雅黑', 10))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         # 创建按钮框架
@@ -2553,19 +2556,25 @@ class IPSubnetSplitterApp:
     
     def show_info(self, title, message):
         """显示信息对话框"""
-        return self.show_custom_dialog(title, message, "info")
+        import tkinter.messagebox as messagebox
+        return messagebox.showinfo(title, message)
     
     def show_error(self, title, message):
         """显示错误对话框"""
-        return self.show_custom_dialog(title, message, "error")
+        import tkinter.messagebox as messagebox
+        return messagebox.showerror(title, message)
     
     def show_warning(self, title, message):
         """显示警告对话框"""
-        return self.show_custom_dialog(title, message, "warning")
+        import tkinter.messagebox as messagebox
+        return messagebox.showwarning(title, message)
     
     def show_custom_confirm(self, title, message):
         """显示自定义的居中确认对话框"""
         result = None
+        
+        # 确保主窗口完全初始化，先更新主窗口布局
+        self.root.update_idletasks()
         
         # 创建Toplevel窗口
         dialog = tk.Toplevel(self.root)
@@ -2574,8 +2583,8 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框
         
-        # 设置对话框最小高度
-        dialog.minsize(width=300, height=150)
+        # 设置对话框最小宽度和高度
+        dialog.minsize(width=500, height=150)
         
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
@@ -2587,8 +2596,8 @@ class IPSubnetSplitterApp:
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(2, weight=1)
         
-        # 添加消息文本，居中显示
-        msg_label = ttk.Label(frame, text=message, wraplength=300, font=('微软雅黑', 10))
+        # 添加消息文本，居中显示，使用合适的wraplength
+        msg_label = ttk.Label(frame, text=message, wraplength=450, font=('微软雅黑', 10))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
         
         # 创建按钮框架
@@ -4753,7 +4762,7 @@ class IPSubnetSplitterApp:
         def calculate_pixel_width(text):
             return font.measure(text)
 
-        # 基于像素宽度的截断函数
+        # 基于字符宽度估算的截断函数，更适合中英文混排
         def truncate_text_by_pixel(text, icon, max_pixel_width):
             # 计算图标的宽度
             icon_width = calculate_pixel_width(icon)
@@ -4774,6 +4783,94 @@ class IPSubnetSplitterApp:
             # print(f"完整文本宽度: {full_width}px")
             # print(f"是否需要截断: {full_width > max_pixel_width}")
             
+            if full_width <= max_pixel_width:
+                return text
+
+            # 计算省略号的宽度
+            ellipsis_width = calculate_pixel_width("...")
+            
+            # 使用整个文本长度范围进行二分查找，确保中英文混排时截断位置一致
+            low = 0
+            high = len(text)
+            best_length = 0
+
+            while low <= high:
+                mid = (low + high) // 2
+                current_text = text[:mid]
+                current_width = calculate_pixel_width(current_text)
+
+                if current_width <= available_width - ellipsis_width:
+                    best_length = mid
+                    low = mid + 1
+                else:
+                    high = mid - 1
+
+            # 确保截断后的文本不会过长
+            truncated = text[:best_length]
+
+            # 确保至少显示一些文本
+            if best_length == 0:
+                return "..."
+            
+            # 返回截断后的文本（加上省略号）
+            return text[:best_length] + "..."
+
+        # 获取信息栏的实际宽度
+        # 确保使用一致的宽度计算逻辑，无论是第一次还是第二次显示
+        # 始终使用主窗口宽度作为参考，确保第一次和第二次显示时截断一致
+        main_window_width = self.root.winfo_width()
+        # 使用主窗口宽度的85%作为信息栏宽度，放大截断位置
+        info_bar_width = int(main_window_width * 0.96)
+        # 再增加字符宽度（约0像素）
+        info_bar_width += 0
+        # 确保不小于原始的最小宽度
+        if info_bar_width < self.MIN_INFO_BAR_WIDTH:
+            info_bar_width = self.MIN_INFO_BAR_WIDTH
+        
+        # 确保info_bar_frame已经添加到父容器中
+        if self.info_bar_frame.winfo_manager() == "":
+            # 先临时显示，以便获取宽度
+            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 0), padx=10)
+            
+        # 更新窗口，确保能获取到准确的宽度
+        self.root.update_idletasks()
+        
+        # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
+        # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
+        # 增加内边距减去值，确保能显示更多字符
+        max_pixel_width = info_bar_width - 20 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
+        
+        # 确保最大像素宽度为正数
+        if max_pixel_width < self.MIN_PIXEL_WIDTH:
+            max_pixel_width = self.MIN_PIXEL_WIDTH
+            
+        # 基于像素宽度的文本截断算法，解决英文不等宽问题
+        # 使用tkinter的Font.measure方法计算实际显示宽度
+
+        # 创建字体对象，用于测量文本宽度
+        
+        try:
+            font = tkfont.Font(family="微软雅黑", size=9)
+        except Exception:
+            font = tkfont.Font(family="Arial", size=9)
+
+        # 计算字符串的实际像素宽度
+        def calculate_pixel_width(text):
+            return font.measure(text)
+
+        # 基于像素宽度的截断函数
+        def truncate_text_by_pixel(text, icon, max_pixel_width):
+            # 计算图标的宽度
+            icon_width = calculate_pixel_width(icon)
+            
+            # 可用宽度：总宽度减去图标宽度
+            available_width = max_pixel_width - icon_width
+            
+            # 先尝试显示完整文本（加上图标）
+            full_text_with_icon = icon + text
+            full_width = calculate_pixel_width(full_text_with_icon)
+            
+            # 如果完整文本可以显示，直接返回
             if full_width <= max_pixel_width:
                 return text
 
@@ -4807,23 +4904,8 @@ class IPSubnetSplitterApp:
                 best_length -= 1
 
             return "..."
-
-        # 获取信息栏的实际宽度 - 现在info_bar_frame已经使用pack布局，直接获取其宽度
-        # 先更新窗口，确保能获取到准确的宽度
-        self.root.update_idletasks()
-        info_bar_width = self.info_bar_frame.winfo_width()
         
-        if info_bar_width < self.MIN_INFO_BAR_WIDTH:
-            info_bar_width = self.MIN_INFO_BAR_WIDTH
-        
-        # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
-        # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
-        max_pixel_width = info_bar_width - 10 - self.CLOSE_BTN_WIDTH  # 减去内边距和关闭按钮宽度
-        
-        # 确保最大像素宽度为正数
-        if max_pixel_width < self.MIN_PIXEL_WIDTH:
-            max_pixel_width = self.MIN_PIXEL_WIDTH
-            
+        # 调用截断函数
         truncated_text = truncate_text_by_pixel(text, icon, max_pixel_width)
 
         # 显示完整文本（带有图标）
