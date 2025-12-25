@@ -19,6 +19,7 @@ import json
 import time
 from io import BytesIO
 import ipaddress
+import csv
 
 # 外部库导入
 from PIL import Image, ImageDraw, ImageFont
@@ -2189,8 +2190,7 @@ class IPSubnetSplitterApp:
                     self._temp_label.config(text=cell_value)
                     cell_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
                     # 确保cell_width和max_width都是有效的数值
-                    if cell_width > max_width:
-                        max_width = cell_width
+                    max_width = max(max_width, cell_width)
 
             # 应用默认最小宽度，如果计算出的宽度小于默认值
             if header in default_min_widths and max_width < default_min_widths[header]:
@@ -4191,7 +4191,6 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=("相关RFC", rfc_ref))
 
             # 9. 扩展信息
-            has_extended_info = False
 
             # 检查是否为IPv4映射地址
             if ip_address.startswith("::ffff:"):
@@ -4619,7 +4618,7 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.show_info("错误", f"执行子网重叠检测失败: {str(e)}")
 
-    def update_ipv4_history(self, event=None):
+    def update_ipv4_history(self, _event=None):
         """更新IPv4地址查询历史记录"""
         ip_value = self.ip_info_entry.get().strip()
         if ip_value and ip_value not in self.ipv4_history:
@@ -4631,7 +4630,7 @@ class IPSubnetSplitterApp:
             # 更新Combobox的values属性
             self.ip_info_entry['values'] = self.ipv4_history
 
-    def update_ipv6_history(self, event=None):
+    def update_ipv6_history(self, _event=None):
         """更新IPv6地址查询历史记录"""
         ipv6_value = self.ipv6_info_entry.get().strip()
         if ipv6_value and ipv6_value not in self.ipv6_history:
@@ -4643,7 +4642,7 @@ class IPSubnetSplitterApp:
             # 更新Combobox的values属性
             self.ipv6_info_entry['values'] = self.ipv6_history
 
-    def update_range_start_history(self, event=None):
+    def update_range_start_history(self, _event=None):
         """更新IP范围起始地址历史记录"""
         start_value = self.range_start_entry.get().strip()
         if start_value and start_value not in self.range_start_history:
@@ -4655,7 +4654,7 @@ class IPSubnetSplitterApp:
             # 更新Combobox的values属性
             self.range_start_entry['values'] = self.range_start_history
 
-    def update_range_end_history(self, event=None):
+    def update_range_end_history(self, _event=None):
         """更新IP范围结束地址历史记录"""
         end_value = self.range_end_entry.get().strip()
         if end_value and end_value not in self.range_end_history:
@@ -4667,21 +4666,21 @@ class IPSubnetSplitterApp:
             # 更新Combobox的values属性
             self.range_end_entry['values'] = self.range_end_history
 
-    def on_subnet_mask_change(self, event):
+    def on_subnet_mask_change(self, _event):
         """当子网掩码改变时，更新CIDR值"""
         selected_mask = self.ip_mask_var.get()
         if selected_mask in self.subnet_mask_cidr_map:
             cidr = self.subnet_mask_cidr_map[selected_mask]
             self.ip_cidr_var.set(cidr)
 
-    def on_cidr_change(self, event):
+    def on_cidr_change(self, _event):
         """当CIDR改变时，更新子网掩码值"""
         selected_cidr = self.ip_cidr_var.get()
         if selected_cidr in self.cidr_subnet_mask_map:
             subnet_mask = self.cidr_subnet_mask_map[selected_cidr]
             self.ip_mask_var.set(subnet_mask)
 
-    def toggle_test_info_bar(self, event=None):
+    def toggle_test_info_bar(self, _event=None):
         """打开功能调试对话框（彩蛋功能）
         快捷键：Ctrl+Shift+I
         """
@@ -5094,8 +5093,6 @@ class IPSubnetSplitterApp:
         anchor=tk.W,
         fill="#ffffff",
         stroke_color="#000000",
-        stroke_width=1.5,
-        letter_spacing=1.5,
     ):
         """绘制带描边的文字（使用4方向基础描边，平衡性能和可读性）
 
@@ -5107,8 +5104,6 @@ class IPSubnetSplitterApp:
             anchor: 文字锚点
             fill: 文字颜色
             stroke_color: 描边颜色
-            stroke_width: 描边宽度
-            letter_spacing: 字间距
         """
         try:
             # 使用4个方向的基础描边，平衡性能和可读性
@@ -5122,7 +5117,7 @@ class IPSubnetSplitterApp:
 
             # 绘制主文字
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
-        except (AttributeError, ValueError) as e:
+        except (AttributeError, ValueError):
             # 出错时直接绘制文字，不添加描边
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
 
@@ -5138,7 +5133,6 @@ class IPSubnetSplitterApp:
 
             # 获取父框架尺寸，确保Canvas宽度不会超过父框架
             parent_width = self.chart_frame.winfo_width()
-            parent_height = self.chart_frame.winfo_height()
 
             # 获取Canvas尺寸
             width = self.chart_canvas.winfo_width()
@@ -5546,7 +5540,6 @@ class IPSubnetSplitterApp:
 
     def _export_to_csv(self, file_path, main_data, main_headers, remaining_tree):
         """导出数据为CSV格式"""
-        import csv
         with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
 
@@ -5568,9 +5561,6 @@ class IPSubnetSplitterApp:
 
     def _export_to_excel(self, file_path, main_data, main_headers, remaining_tree, remaining_headers):
         """导出数据为Excel格式"""
-        from openpyxl import Workbook
-        from openpyxl.styles import Font, Alignment
-
         wb = Workbook()
 
         # 创建主数据工作表
@@ -7047,8 +7037,8 @@ class IPSubnetSplitterApp:
                     max_col_widths[col_idx] = text_width
 
         # 确保最小宽度
-        for i in range(len(max_col_widths)):
-            if max_col_widths[i] < min_col_width:
+        for i, width in enumerate(max_col_widths):
+            if width < min_col_width:
                 max_col_widths[i] = min_col_width
 
         # 计算总宽度
@@ -7059,8 +7049,8 @@ class IPSubnetSplitterApp:
         if total_width > table_width:
             scale_factor = table_width / total_width
             print(f"  总宽度超过页面宽度，应用缩放因子: {scale_factor}")
-            for i in range(len(max_col_widths)):
-                max_col_widths[i] *= scale_factor
+            for i, width in enumerate(max_col_widths):
+                max_col_widths[i] = width * scale_factor
 
         print(f"  最终自适应列宽: {max_col_widths}")
         return max_col_widths
@@ -7102,10 +7092,6 @@ class IPSubnetSplitterApp:
 
     def register_chinese_fonts(self):
         """注册中文字体供PDF导出使用"""
-        # 导入所需模块
-        import sys
-        import os
-
         # 尝试查找系统中的中文字体
         font_path = None
 
@@ -7392,7 +7378,7 @@ if __name__ == "__main__":
         icon_path = None
         if hasattr(sys, "_MEIPASS"):
             # 打包后的路径
-            icon_path = os.path.join(sys._MEIPASS, "icon.ico")
+            icon_path = os.path.join(sys._MEIPASS, "icon.ico")  # pylint: disable=protected-access
         else:
             # 开发环境路径
             icon_path = "icon.ico"
