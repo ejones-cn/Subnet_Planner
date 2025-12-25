@@ -2468,7 +2468,7 @@ class IPSubnetSplitterApp:
         dialog_x = root_x + (root_width - width) // 2
         dialog_y = root_y + title_bar_height + (root_height - title_bar_height - height) // 2
 
-        # 涓€娆℃€ц缃璇濇鐨勫昂瀵稿拰浣嶇疆
+        # 一次性设置对话框的尺寸和位置
         window.geometry(f"{width}x{height}+{dialog_x}+{dialog_y}")
 
     def delete_subnet_requirement(self):
@@ -2595,7 +2595,7 @@ class IPSubnetSplitterApp:
         dialog_x = root_x + (root_width - dialog_width) // 2
         dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 璁剧疆瀵硅瘽妗嗕綅缃?
+        # 设置对话框位置
         dialog.geometry(f"+{dialog_x}+{dialog_y}")
 
         # 等待对话框关闭
@@ -2687,7 +2687,7 @@ class IPSubnetSplitterApp:
         dialog_x = root_x + (root_width - dialog_width) // 2
         dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 璁剧疆瀵硅瘽妗嗕綅缃?
+        # 设置对话框位置
         dialog.geometry(f"+{dialog_x}+{dialog_y}")
 
         # 等待对话框关闭
@@ -4815,7 +4815,7 @@ class IPSubnetSplitterApp:
         dialog_x = root_x + (root_width - dialog_width) // 2
         dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 璁剧疆瀵硅瘽妗嗗ぇ灏忓拰浣嶇疆
+        # 设置对话框大小和位置
         test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
         # 创建对话框内容框架
