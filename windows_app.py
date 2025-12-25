@@ -385,8 +385,8 @@ class IPSubnetSplitterApp:
             else:
                 entry.config(foreground='black' if is_valid else 'red')
 
-        # 对于validatecommand，返回"1"表示有效
-        return "1" if is_valid else False
+        # 对于validatecommand，返回"1"表示有效；否则返回布尔值
+        return "1" if is_valid else False if entry else is_valid
 
     def __init__(self, root):
         # 导入版本管理模块
@@ -741,10 +741,10 @@ class IPSubnetSplitterApp:
         self.INFO_BAR_PLACE_HEIGHT = 30
         self.MIN_INFO_BAR_PLACE_WIDTH = 300
 
-    def validate_split_cidr_local(self, text):
-        return self.validate_cidr(text, self.split_entry)
+
+        
     
-    def is_valid_cidr(self, cidr):
+
         """验证CIDR格式是否有效
         
         Args:
@@ -753,7 +753,7 @@ class IPSubnetSplitterApp:
         Returns:
             bool: 如果CIDR格式有效则返回True，否则返回False
         """
-        return bool(re.match(self.cidr_pattern, cidr.strip())) if cidr.strip() else False
+
     
     def update_history_tree(self):
         """更新历史记录列表"""
@@ -1194,7 +1194,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="切分段", anchor="w", font=("微软雅黑", 10)).grid(
             row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(0, 5)
         )
-        vcmd = (self.root.register(self.validate_split_cidr_local), '%P')
+        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
         self.split_entry = ttk.Combobox(
             input_frame, values=self.split_networks, width=22, font=(
             "微软雅黑", 10), validate='focusout', validatecommand=vcmd
@@ -2914,7 +2914,7 @@ class IPSubnetSplitterApp:
             self.show_error("错误", "请输入父网段")
             return
 
-        if not self.is_valid_cidr(parent):
+        if not self.validate_cidr(parent):
             self.show_error("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
             return
 
@@ -3037,7 +3037,7 @@ class IPSubnetSplitterApp:
             return
 
         # 验证CIDR格式
-        if not self.is_valid_cidr(parent):
+        if not self.validate_cidr(parent):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
@@ -3045,7 +3045,7 @@ class IPSubnetSplitterApp:
             )
             self.show_error("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
             return
-        if not self.is_valid_cidr(split):
+        if not self.validate_cidr(split):
             self.clear_result()
             self.split_tree.delete(*self.split_tree.get_children())
             self.split_tree.insert(
