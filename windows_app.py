@@ -27,7 +27,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-import reportlab.lib.colors as colors
+from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
@@ -202,13 +202,16 @@ class ColoredNotebook(ttk.Frame):
                 # 获取父容器的子组件
                 children = self.master.winfo_children()
                 for child in children:
+                    # 检查子组件是否有cget方法
+                    if not hasattr(child, 'cget'):
+                        continue
+                    
                     # 尝试从子组件获取背景色
                     try:
-                        if hasattr(child, 'cget'):
-                            child_bg = child.cget("background")
-                            if child_bg and not child_bg.startswith("system."):
-                                bg_color = child_bg
-                                break
+                        child_bg = child.cget("background")
+                        if child_bg and not child_bg.startswith("system."):
+                            bg_color = child_bg
+                            break
                     except (AttributeError, tk.TclError):
                         continue
 
@@ -2228,8 +2231,8 @@ class IPSubnetSplitterApp:
         except AttributeError:
             # 忽略属性不存在的错误
             pass
-        except Exception as e:
-            # 如果发生其他错误，不影响程序运行
+        except (tk.TclError, TypeError):
+            # 忽略Tcl和类型错误，不影响程序运行
             pass
 
     def auto_resize_columns(self, tree):
@@ -2306,14 +2309,14 @@ class IPSubnetSplitterApp:
                 # 调整剩余网段表格，根据内容自动调整列宽
                 if hasattr(self, 'planning_remaining_tree'):
                     self.auto_resize_columns(self.planning_remaining_tree)
-        except AttributeError as e:
+        except AttributeError:
             # 忽略属性不存在的错误
             pass
-        except ValueError as e:
+        except ValueError:
             # 忽略值错误
             pass
-        except Exception as e:
-            # 忽略其他错误
+        except (tk.TclError, TypeError):
+            # 忽略Tcl和类型错误
             pass
 
     def add_subnet_requirement(self):
@@ -2361,7 +2364,7 @@ class IPSubnetSplitterApp:
         hosts_entry.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
 
         # 定义回车键事件处理函数
-        def on_return_key(event):
+        def on_return_key(_event):
             save_requirement()
 
         # 只在窗口创建时绑定一次回车键事件
@@ -6300,11 +6303,11 @@ class IPSubnetSplitterApp:
                                     parent_cidr = row[1]
                                     break
                                 # 检查其他可能的父网段字段名
-                                elif "父网段" in str(row[0]) or "父网络" in str(row[0]):
+                                if "父网段" in str(row[0]) or "父网络" in str(row[0]):
                                     parent_cidr = row[1]
                                     break
                                 # 检查第一行是否包含父网段信息
-                                elif row[0] and isinstance(row[0], str) and "/" in str(row[0]):
+                                if row[0] and isinstance(row[0], str) and "/" in str(row[0]):
                                     parent_cidr = row[0]
                                     break
 
