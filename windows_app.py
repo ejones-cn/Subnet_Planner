@@ -22,13 +22,11 @@ import ipaddress
 
 # 外部库导入
 from PIL import Image, ImageDraw, ImageFont
-import openpyxl
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import reportlab.lib.colors as colors
-from reportlab.lib.colors import black, white, lightgrey, grey, darkgrey, blue, lightblue, red, green, yellow
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
@@ -42,8 +40,6 @@ from ip_subnet_calculator import (
     get_subnet_info,
     suggest_subnet_planning,
     merge_subnets,
-    ipv4_to_ipv6,
-    ipv6_to_ipv4,
     get_ip_info,
     range_to_cidr,
     check_subnet_overlap,
@@ -3884,21 +3880,21 @@ class IPSubnetSplitterApp:
             if ipv6_info.get("subnet_mask"):
                 subnet_mask = ipv6_info["subnet_mask"]
                 subnet_bin = subnet_mask.replace(':', '').zfill(32)
-                subnet_bin_grouped = ' '.join([subnet_bin[i : i + 4] for i in range(0, 32, 4)])
+                subnet_bin_grouped = ' '.join([subnet_bin[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=("子网掩码", subnet_bin_grouped))
 
             # 计算并显示网络地址的二进制表示
             if ipv6_info.get("network_address"):
                 network_addr = ipv6_info["network_address"]
                 network_bin = network_addr.replace(':', '').zfill(32)
-                network_bin_grouped = ' '.join([network_bin[i : i + 4] for i in range(0, 32, 4)])
+                network_bin_grouped = ' '.join([network_bin[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=("网络地址", network_bin_grouped))
 
             # 计算并显示广播地址的二进制表示
             if ipv6_info.get("broadcast_address"):
                 broadcast_addr = ipv6_info["broadcast_address"]
                 broadcast_bin = broadcast_addr.replace(':', '').zfill(32)
-                broadcast_bin_grouped = ' '.join([broadcast_bin[i : i + 4] for i in range(0, 32, 4)])
+                broadcast_bin_grouped = ' '.join([broadcast_bin[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=("广播地址", broadcast_bin_grouped))
 
             # 6. 十六进制表示
@@ -3952,12 +3948,12 @@ class IPSubnetSplitterApp:
                     self.ipv6_info_tree.insert(
                         "",
                         tk.END,
-                        values=(f"第{i+1}段", f"{segment} (十六进制) = {dec_value} (十进制) = {bin_value} (二进制)"),
+                        values=(f"第{i + 1}段", f"{segment} (十六进制) = {dec_value} (十进制) = {bin_value} (二进制)"),
                     )
                 else:
                     # 处理空段（压缩的0）
                     self.ipv6_info_tree.insert(
-                        "", tk.END, values=(f"第{i+1}段", f"0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)")
+                        "", tk.END, values=(f"第{i + 1}段", "0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)")
                     )
 
             # 6. 网络规模与用途
@@ -4113,7 +4109,7 @@ class IPSubnetSplitterApp:
             if cidr:
                 try:
                     network_str = f"{ip}/{cidr}"
-                except:
+                except Exception:
                     pass
 
             if not network_str and subnet_mask:
@@ -4122,7 +4118,7 @@ class IPSubnetSplitterApp:
                     mask_int = ip_to_int(subnet_mask)
                     prefix_len = bin(mask_int).count('1')
                     network_str = f"{ip}/{prefix_len}"
-                except:
+                except Exception:
                     pass
 
             # 如果无法构造网络地址，只显示基本IP信息
@@ -4134,7 +4130,7 @@ class IPSubnetSplitterApp:
                     # 获取子网信息
                     subnet_info = get_subnet_info(network_str)
                     basic_info = False
-                except:
+                except Exception:
                     pass
 
             # 获取基本IP信息
@@ -6547,8 +6543,6 @@ class IPSubnetSplitterApp:
                             final_pdf_width = available_width
                             final_pdf_height = final_pdf_width / image_ratio
 
-                        # 计算实际DPI：1点=1/72英寸
-                        actual_dpi = high_res_width / (final_pdf_width / 72.0)
 
                         # 9. 只添加图像，不添加额外的标题文字
                         # 图表本身已经包含了"网段分布图"标题，所以不需要在PDF页面上重复显示
