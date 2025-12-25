@@ -383,6 +383,22 @@ class IPSubnetSplitterApp:
         # 对于validatecommand，返回"1"表示有效；否则返回布尔值
         return "1" if is_valid else False if entry else is_valid
 
+    def _show_tree_error(self, tree, error_msg, dialog_title=None, dialog_msg=None):
+        """显示树状视图错误信息
+
+        Args:
+            tree: 树状视图控件
+            error_msg: 树中显示的错误信息
+            dialog_title: 对话框标题，None表示不显示对话框
+            dialog_msg: 对话框消息，None表示不显示对话框
+        """
+        # 清空指定的树状视图
+        for item in tree.get_children():
+            tree.delete(item)
+        tree.insert("", tk.END, values=("错误", error_msg), tags=("error",))
+        if dialog_title and dialog_msg:
+            self.show_error(dialog_title, dialog_msg)
+
     def __init__(self, root):
         # 应用程序信息
         self.app_name = "IP子网切分工具"
@@ -2972,14 +2988,16 @@ class IPSubnetSplitterApp:
         if not parent or not split:
             # 清空表格并显示错误信息
             self.clear_result()
-            self.split_tree.delete(*self.split_tree.get_children())
+            for item in self.split_tree.get_children():
+                self.split_tree.delete(item)
             self.split_tree.insert("", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",))
             return
 
         # 验证CIDR格式
         if not self.validate_cidr(parent):
             self.clear_result()
-            self.split_tree.delete(*self.split_tree.get_children())
+            for item in self.split_tree.get_children():
+                self.split_tree.delete(item)
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
@@ -2987,7 +3005,8 @@ class IPSubnetSplitterApp:
             return
         if not self.validate_cidr(split):
             self.clear_result()
-            self.split_tree.delete(*self.split_tree.get_children())
+            for item in self.split_tree.get_children():
+                self.split_tree.delete(item)
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
@@ -5533,17 +5552,18 @@ class IPSubnetSplitterApp:
         import csv
         with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
-            
+
             # 写入主数据
             writer.writerow(main_headers)
             for values in main_data:
                 writer.writerow(values)
-            
+
             # 添加空行分隔主数据和剩余数据
             writer.writerow([])
-            
+
             # 写入剩余数据
-            remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
+            remaining_headers = [remaining_tree.heading(col, "text") or "" 
+                               for col in remaining_tree["columns"]]
             writer.writerow(remaining_headers)
             for item in remaining_tree.get_children():
                 values = remaining_tree.item(item, "values")
@@ -5553,39 +5573,39 @@ class IPSubnetSplitterApp:
         """导出数据为Excel格式"""
         from openpyxl import Workbook
         from openpyxl.styles import Font, Alignment
-        
+
         wb = Workbook()
-        
+
         # 创建主数据工作表
         main_sheet = wb.active
         main_sheet.title = "主数据"
-        
+
         # 写入主数据表头
         for col_idx, header in enumerate(main_headers, 1):
             cell = main_sheet.cell(row=1, column=col_idx, value=header)
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal="center")
-        
+
         # 写入主数据
         for row_idx, values in enumerate(main_data, 2):
             for col_idx, value in enumerate(values, 1):
                 main_sheet.cell(row=row_idx, column=col_idx, value=value)
-        
+
         # 创建剩余数据工作表
         remaining_sheet = wb.create_sheet(title="剩余数据")
-        
+
         # 写入剩余数据表头
         for col_idx, header in enumerate(remaining_headers, 1):
             cell = remaining_sheet.cell(row=1, column=col_idx, value=header)
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal="center")
-        
+
         # 写入剩余数据
         for row_idx, item in enumerate(remaining_tree.get_children(), 2):
             values = remaining_tree.item(item, "values")
             for col_idx, value in enumerate(values, 1):
                 remaining_sheet.cell(row=row_idx, column=col_idx, value=value)
-        
+
         # 保存Excel文件
         wb.save(file_path)
 
@@ -7269,7 +7289,7 @@ class IPSubnetSplitterApp:
         y = main_y + (main_height // 2) - (dialog_height // 2)
 
         # 一次性设置对话框的尺寸和位置
-        about_window.geometry("{}x{}+{}+{}".format(dialog_width, dialog_height, x, y))
+        about_window.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
 
         # 显示对话框
         about_window.deiconify()
