@@ -3337,12 +3337,12 @@ class IPSubnetSplitterApp:
         self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
 
         # 右侧：CIDR结果
-        result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding=(10, 10, 0, 10))
-        result_frame.pack(fill=tk.BOTH, expand=True)
+        self.merge_result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding=(10, 10, 0, 10))
+        self.merge_result_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建正常的结果树（非转置）
         columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "主机数"]
-        self.merge_result_tree = ttk.Treeview(result_frame, columns=columns, show="headings")
+        self.merge_result_tree = ttk.Treeview(self.merge_result_frame, columns=columns, show="headings")
 
         # 设置列标题和初始宽度
         for i, col in enumerate(columns):
@@ -3359,8 +3359,8 @@ class IPSubnetSplitterApp:
                 self.merge_result_tree.column(col, width=40, minwidth=40)
 
         # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
-        self.merge_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        self.create_scrollable_treeview(result_frame, self.merge_result_tree, self.merge_result_scrollbar)
+        self.merge_result_scrollbar = ttk.Scrollbar(self.merge_result_frame, orient=tk.VERTICAL)
+        self.create_scrollable_treeview(self.merge_result_frame, self.merge_result_tree, self.merge_result_scrollbar)
 
         self.configure_treeview_styles(self.merge_result_tree)
 
@@ -3673,10 +3673,14 @@ class IPSubnetSplitterApp:
                 elif i == 4:  # 主机数列
                     self.merge_result_tree.column(col, width=40, minwidth=40)
 
-            # 重新绑定滚动条
+            # 重新绑定滚动条，保持自动隐藏功能
             if hasattr(self, 'merge_result_scrollbar'):
-                self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
-                self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
+                # 重新调用create_scrollable_treeview方法来重新绑定滚动条
+                self.create_scrollable_treeview(
+                    self.merge_result_frame, 
+                    self.merge_result_tree, 
+                    self.merge_result_scrollbar
+                )
 
             # 获取输入的子网合并列表
             subnets_text = self.subnet_merge_text.get(1.0, tk.END).strip()
@@ -4475,10 +4479,14 @@ class IPSubnetSplitterApp:
                 else:  # 其他列
                     self.merge_result_tree.column(col, width=120)
 
-            # 重新绑定滚动条
+            # 重新绑定滚动条，保持自动隐藏功能
             if hasattr(self, 'merge_result_scrollbar'):
-                self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
-                self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
+                # 重新调用create_scrollable_treeview方法来重新绑定滚动条
+                self.create_scrollable_treeview(
+                    self.merge_result_frame, 
+                    self.merge_result_tree, 
+                    self.merge_result_scrollbar
+                )
 
             # 定义要显示的属性列表
             properties = [
