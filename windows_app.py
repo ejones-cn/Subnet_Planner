@@ -1828,22 +1828,26 @@ class IPSubnetSplitterApp:
         # 规划子网按钮已移动到规划结果区域，此处不再显示
 
         # 添加示例数据 - 带斑马条纹标签
-        # 先插入不带序号的数据
-        self.requirements_tree.insert("", tk.END, values=("", "办公室", "20"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "人事部", "10"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "财务部", "10"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "规划部", "30"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "法务部", "10"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "采购部", "10"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "安管办", "10"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "党群部", "20"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "纪委办", "10"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "信息部", "20"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "工程部", "20"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "销售部", "20"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "研发部", "15"), tags=("odd",))
-        self.requirements_tree.insert("", tk.END, values=("", "生产部", "100"), tags=("even",))
-        self.requirements_tree.insert("", tk.END, values=("", "运输部", "20"), tags=("odd",))
+        requirements_data = [
+            ("办公室", "20"),
+            ("人事部", "10"),
+            ("财务部", "10"),
+            ("规划部", "30"),
+            ("法务部", "10"),
+            ("采购部", "10"),
+            ("安管办", "10"),
+            ("党群部", "20"),
+            ("纪委办", "10"),
+            ("信息部", "20"),
+            ("工程部", "20"),
+            ("销售部", "20"),
+            ("研发部", "15"),
+            ("生产部", "100"),
+            ("运输部", "20"),
+        ]
+        for index, (name, hosts) in enumerate(requirements_data, 1):
+            tag = "even" if index % 2 == 0 else "odd"
+            self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=(tag,))
 
         # 调用方法更新序号
         self.update_requirements_tree_zebra_stripes()
@@ -3027,22 +3031,35 @@ class IPSubnetSplitterApp:
                 return
 
             # 添加切分网段信息，同时设置斑马条纹标签
-            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd",))
+            row_index = 0
+            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
 
             # 添加切分后的网段信息
             split_info = result["split_info"]
-            self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd",))
-            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("even",))
-            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd",))
+            self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("odd" if row_index % 2 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd" if row_index % 2 else "even",))
 
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
@@ -3457,7 +3474,7 @@ class IPSubnetSplitterApp:
                 if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
                     try:
                         treeview.column("name", width=110)  # 减小name列宽度
-                    except:
+                    except Exception:
                         pass  # 如果列不存在则忽略
             else:
                 # 隐藏滚动条
@@ -4613,7 +4630,8 @@ class IPSubnetSplitterApp:
 
             # 如果没有重叠，显示无重叠信息
             if not overlaps:
-                self.overlap_result_tree.insert("", tk.END, values=("无", "未检测到子网重叠"), tags=("odd",))
+                tag = "even" if row_index % 2 == 0 else "odd"
+                self.overlap_result_tree.insert("", tk.END, values=("无", "未检测到子网重叠"), tags=(tag,))
             else:
                 # 显示所有重叠信息
                 for overlap in overlaps:
