@@ -1658,21 +1658,23 @@ class IPSubnetSplitterApp:
         # 直接使用self.planning_frame，移除中间层main_planning_frame
 
         # 设置grid布局
-        self.planning_frame.grid_columnconfigure(0, weight=1)  # 增加权重，让需求池面板和子网需求面板平均分配宽度
-        self.planning_frame.grid_columnconfigure(1, weight=1)  # 增加权重，让子网需求面板和规划结果面板占据更多宽度
-        self.planning_frame.grid_rowconfigure(0, weight=0)
-        self.planning_frame.grid_rowconfigure(1, weight=0)
-        self.planning_frame.grid_rowconfigure(2, weight=1)
+        self.planning_frame.grid_columnconfigure(0, weight=1)  # 左侧列可伸缩
+        self.planning_frame.grid_columnconfigure(1, weight=1)  # 右侧列可伸缩
+        self.planning_frame.grid_rowconfigure(0, weight=0)  # 父网段设置行，固定高度
+        self.planning_frame.grid_rowconfigure(1, weight=0)  # 需求池和子网需求行，固定高度
+        self.planning_frame.grid_rowconfigure(2, weight=1)  # 规划结果行，可伸缩
 
         # 父网段设置区域
-        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding="10")
-        parent_frame.grid(row=0, column=0, sticky="nwse", pady=(0, 0))
+        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding=(5, 10, 10, 10))
+        parent_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 0))  # 左上角
+        # 设置父网段设置面板的固定宽度
+        parent_frame.configure(width=250)
 
         # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
         self.planning_parent_networks = ["10.21.48.0/20"]  # 默认父网段
 
         # 父网段下拉文本框
-        ttk.Label(parent_frame, text="父网段").pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(parent_frame, text="").pack(side=tk.LEFT, padx=(0, 0))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Combobox(
             parent_frame,
@@ -1682,19 +1684,23 @@ class IPSubnetSplitterApp:
             validate='focusout',
             validatecommand=vcmd,
         )
-        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 0), fill=tk.X, expand=True)
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
 
         # 需求池区域
         history_frame = ttk.LabelFrame(self.planning_frame, text="需求池", padding=(10, 10, 0, 10))
-        history_frame.grid(row=1, column=0, sticky="nwse", pady=(0, 10))  # 靠左放置
+        history_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(0, 10))  # 左下角
+        # 设置需求池面板的固定宽度
+        history_frame.configure(width=250)
 
         # 子网需求区域
         requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding=(10, 10, 0, 10))
         requirements_frame.grid(
-            row=0, column=1, rowspan=2, sticky="nwse", padx=(10, 0), pady=(0, 10)
-        )  # 跨两行，靠右放置
+            row=0, column=1, rowspan=2, sticky="nsew", padx=(5, 0), pady=(0, 10)
+        )  # 右侧跨两行
+        # 设置子网需求面板的固定宽度
+        requirements_frame.configure(width=250)
 
         # 内部容器框架，用于组织表格和按钮
         inner_frame = ttk.Frame(requirements_frame)
@@ -1713,7 +1719,7 @@ class IPSubnetSplitterApp:
 
         # 设置列宽，与子网需求表保持一致
         self.pool_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
-        self.pool_tree.column("name", width=140, minwidth=140, stretch=True)
+        self.pool_tree.column("name", width=130, minwidth=100, stretch=True)  # 减小初始宽度，允许伸缩
         self.pool_tree.column("hosts", width=30, minwidth=30, stretch=True)
 
         # 配置斑马条纹样式
@@ -1723,19 +1729,10 @@ class IPSubnetSplitterApp:
         self.pool_tree.bind("<Double-1>", self.on_pool_tree_double_click)
 
         # 添加滚动条，确保只作用于表格，位于表格右侧
-        history_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.pool_tree.yview)
+        self.pool_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
 
-        # 创建滚动条回调函数，始终显示滚动条
-        def pool_scrollbar_callback(*args):
-            # 只更新滚动条位置，不隐藏滚动条
-            history_scrollbar.set(*args)
-
-        self.pool_tree.configure(yscroll=pool_scrollbar_callback)
-
-        # 放置需求池表格和滚动条
-        self.pool_tree.grid(row=0, column=0, sticky="nsew")
-        history_scrollbar.grid(row=0, column=1, sticky="ns")
-        pool_scrollbar_callback(0.0, 1.0)
+        # 使用通用方法创建带自动隐藏滚动条的Treeview
+        self.create_scrollable_treeview(history_frame, self.pool_tree, self.pool_scrollbar)
 
         # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做按钮操作
         # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
@@ -1761,7 +1758,7 @@ class IPSubnetSplitterApp:
         self.requirements_tree.heading("hosts", text="主机数量")
         # 字段宽度设置
         self.requirements_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
-        self.requirements_tree.column("name", width=140, minwidth=140, stretch=True)
+        self.requirements_tree.column("name", width=130, minwidth=100, stretch=True)  # 减小初始宽度，允许伸缩
         self.requirements_tree.column("hosts", width=30, minwidth=30, stretch=True)
 
         # 绑定双击事件以实现编辑功能
@@ -1771,18 +1768,14 @@ class IPSubnetSplitterApp:
         self.requirements_tree.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
         # 添加滚动条，确保只作用于表格，位于表格右侧
-        requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL, command=self.requirements_tree.yview)
+        self.requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL)
 
-        # 创建滚动条回调函数，始终显示滚动条
-        def requirements_scrollbar_callback(*args):
-            # 只更新滚动条位置，不隐藏滚动条
-            requirements_scrollbar.set(*args)
-
-        self.requirements_tree.configure(yscroll=requirements_scrollbar_callback)
-
-        # 放置滚动条在表格右侧
-        requirements_scrollbar.grid(row=0, column=2, sticky="ns", padx=(0, 0))
-        requirements_scrollbar_callback(0.0, 1.0)
+        # 使用通用方法创建带自动隐藏滚动条的Treeview
+        self.create_scrollable_treeview_with_grid(
+            inner_frame, self.requirements_tree, self.requirements_scrollbar, 
+            tree_row=0, tree_column=1, scrollbar_row=0, scrollbar_column=2,
+            tree_padx=(10, 0), scrollbar_padx=(0, 0)
+        )
 
         # 允许同时选择两张表中的记录，移除选择事件绑定
 
@@ -3390,11 +3383,25 @@ class IPSubnetSplitterApp:
                 scrollbar.grid(row=0, column=1, sticky=tk.NS)
                 # 调整Treeview的grid配置，移除右边距
                 treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+                
+                # 如果是需求池表或子网需求表，减小name列宽度为滚动条留出空间
+                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
+                    try:
+                        treeview.column("name", width=110)  # 减小name列宽度
+                    except:
+                        pass  # 如果列不存在则忽略
             else:
                 # 隐藏滚动条
                 scrollbar.grid_remove()
                 # 调整Treeview的grid配置，添加右边距
                 treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=no_scrollbar_padx)
+                
+                # 如果是需求池表或子网需求表，恢复name列宽度
+                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
+                    try:
+                        treeview.column("name", width=130)  # 恢复name列宽度
+                    except:
+                        pass  # 如果列不存在则忽略
 
         # 绑定滚动条和Treeview
         scrollbar.config(command=treeview.yview)
@@ -3407,6 +3414,77 @@ class IPSubnetSplitterApp:
         # 配置grid权重，使Treeview可以扩展
         parent_frame.grid_rowconfigure(0, weight=1)
         parent_frame.grid_columnconfigure(0, weight=1)
+
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
+
+    def create_scrollable_treeview_with_grid(self, parent_frame, treeview, scrollbar, 
+                                           tree_row=0, tree_column=0, scrollbar_row=0, scrollbar_column=1,
+                                           tree_padx=(0, 0), scrollbar_padx=(0, 0), no_scrollbar_padx=(0, 10)):
+        """
+        创建带自动隐藏滚动条的Treeview，并实现滚动条隐藏时自动调整外边距
+        支持自定义grid位置
+
+        参数:
+            parent_frame: Treeview和滚动条的父容器
+            treeview: 要添加滚动条的Treeview组件
+            scrollbar: 滚动条组件
+            tree_row: Treeview的grid行位置，默认0
+            tree_column: Treeview的grid列位置，默认0
+            scrollbar_row: 滚动条的grid行位置，默认0
+            scrollbar_column: 滚动条的grid列位置，默认1
+            tree_padx: Treeview的grid padx参数，默认(0, 0)
+            scrollbar_padx: 滚动条的grid padx参数，默认(0, 0)
+            no_scrollbar_padx: 滚动条隐藏时Treeview的右边距，默认(0, 10)
+        """
+
+        # 创建滚动条回调函数，实现自动隐藏和外边距调整
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+
+            # 检查是否需要显示滚动条
+            yview = treeview.yview()
+            need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+
+            # 根据是否需要滚动条调整Treeview的右边距
+            if need_scrollbar:
+                # 显示滚动条
+                scrollbar.grid(row=scrollbar_row, column=scrollbar_column, sticky=tk.NS, padx=scrollbar_padx)
+                # 调整Treeview的grid配置，移除右边距
+                treeview.grid_configure(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=tree_padx)
+                
+                # 如果是需求池表或子网需求表，减小name列宽度为滚动条留出空间
+                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
+                    try:
+                        treeview.column("name", width=110)  # 减小name列宽度
+                    except:
+                        pass  # 如果列不存在则忽略
+            else:
+                # 隐藏滚动条
+                scrollbar.grid_remove()
+                # 调整Treeview的grid配置，添加右边距
+                adjusted_padx = (tree_padx[0], tree_padx[1] + no_scrollbar_padx[1]) if tree_padx else no_scrollbar_padx
+                treeview.grid_configure(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=adjusted_padx)
+                
+                # 如果是需求池表或子网需求表，恢复name列宽度
+                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
+                    try:
+                        treeview.column("name", width=130)  # 恢复name列宽度
+                    except:
+                        pass  # 如果列不存在则忽略
+
+        # 绑定滚动条和Treeview
+        scrollbar.config(command=treeview.yview)
+        treeview.config(yscrollcommand=scrollbar_callback)
+
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        treeview.grid(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=tree_padx)
+        scrollbar.grid(row=scrollbar_row, column=scrollbar_column, sticky=tk.NS, padx=scrollbar_padx)
+
+        # 配置grid权重，使Treeview可以扩展
+        parent_frame.grid_rowconfigure(tree_row, weight=1)
+        parent_frame.grid_columnconfigure(tree_column, weight=1)
 
         # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
