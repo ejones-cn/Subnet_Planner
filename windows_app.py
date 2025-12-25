@@ -2988,16 +2988,14 @@ class IPSubnetSplitterApp:
         if not parent or not split:
             # 清空表格并显示错误信息
             self.clear_result()
-            for item in self.split_tree.get_children():
-                self.split_tree.delete(item)
+            self.clear_tree_items(self.split_tree)
             self.split_tree.insert("", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",))
             return
 
         # 验证CIDR格式
         if not self.validate_cidr(parent):
             self.clear_result()
-            for item in self.split_tree.get_children():
-                self.split_tree.delete(item)
+            self.clear_tree_items(self.split_tree)
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
@@ -3005,8 +3003,7 @@ class IPSubnetSplitterApp:
             return
         if not self.validate_cidr(split):
             self.clear_result()
-            for item in self.split_tree.get_children():
-                self.split_tree.delete(item)
+            self.clear_tree_items(self.split_tree)
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
