@@ -7,6 +7,7 @@
 
 import re
 
+
 def main():
     # 读取文件内容
     with open('windows_app.py', 'r', encoding='utf-8') as f:
@@ -160,6 +161,7 @@ def main():
         f.writelines(new_lines)
     
     print("文件更新完成！")
+
 
 if __name__ == "__main__":
     main()

@@ -27,13 +27,13 @@ if start_line is not None:
     
     if redundant_start is not None and redundant_end is not None:
         # 移除冗余代码
-        del lines[redundant_start:redundant_end+1]
+        del lines[redundant_start:redundant_end + 1]
         
         # 将修改后的内容写回文件
         with open('windows_app.py', 'w', encoding='utf-8') as f:
             f.writelines(lines)
         
-        print(f"已移除冗余代码，从行 {redundant_start+1} 到行 {redundant_end+1}")
+        print(f"已移除冗余代码，从行 {redundant_start + 1} 到行 {redundant_end + 1}")
     else:
         print("未找到冗余代码")
 else:

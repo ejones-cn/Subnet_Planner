@@ -557,7 +557,7 @@ def get_ip_info(ip_str):
             # 生成二进制表示
             binary = ip.exploded.replace(':', '').zfill(32)
             # 每4位分组，便于阅读
-            binary_grouped = ' '.join([binary[i:i+4] for i in range(0, 32, 4)])
+            binary_grouped = ' '.join([binary[i:i + 4] for i in range(0, 32, 4)])
             
             return {
                 "ip_address": str(ip),

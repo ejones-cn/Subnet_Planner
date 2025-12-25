@@ -10,7 +10,7 @@ import tkinter as tk
 import math
 import re
 import datetime
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 import tkinter.font as tkfont
 import sys
 import os
@@ -31,7 +31,18 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Image as RLImage, PageBreak, BaseDocTemplate, Frame, PageTemplate, NextPageTemplate
+from reportlab.platypus import (
+    Image as RLImage, 
+    PageBreak, 
+    BaseDocTemplate, 
+    Frame, 
+    PageTemplate, 
+    NextPageTemplate,
+    Table,
+    TableStyle,
+    Paragraph,
+    Spacer
+)
 
 # 导入自定义模块
 from ip_subnet_calculator import (
@@ -44,6 +55,9 @@ from ip_subnet_calculator import (
     range_to_cidr,
     check_subnet_overlap,
 )
+
+# 版本管理模块
+from version import get_version
 
 
 # 自定义的ColoredNotebook类，支持每个标签不同颜色
@@ -370,11 +384,6 @@ class IPSubnetSplitterApp:
         return "1" if is_valid else False if entry else is_valid
 
     def __init__(self, root):
-        # 导入版本管理模块
-
-        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-        from version import get_version
-
         # 应用程序信息
         self.app_name = "IP子网切分工具"
         self.app_version = get_version()
@@ -895,18 +904,6 @@ class IPSubnetSplitterApp:
         # 注意：由于操作记录功能已改为需求池功能，以下历史记录相关功能已不再需要
         # self.update_planning_history_tree()
         # self.update_undo_redo_buttons_state()
-
-    def update_undo_redo_buttons_state(self):
-        """更新撤销/重做按钮的状态"""
-        # 撤销按钮：如果当前索引大于0，则可以撤销
-        self.undo_btn.config(state=tk.NORMAL if self.current_history_index > 0 else tk.DISABLED)
-
-        # 重做按钮：如果当前索引小于历史记录长度-1，则可以重做
-        self.redo_btn.config(
-            state=tk.NORMAL if self.current_history_index < len(self.history_states) - 1 else tk.DISABLED
-        )
-
-        # 移除不存在的方法调用
 
     def move_left(self):
         """向左移：从子网需求表向需求池移动记录（支持多条记录，移动后保持选中）"""
@@ -2500,20 +2497,14 @@ class IPSubnetSplitterApp:
 
     def show_info(self, title, message):
         """显示信息对话框"""
-        import tkinter.messagebox as messagebox
-
         return messagebox.showinfo(title, message)
 
     def show_error(self, title, message):
         """显示错误对话框"""
-        import tkinter.messagebox as messagebox
-
         return messagebox.showerror(title, message)
 
     def show_warning(self, title, message):
         """显示警告对话框"""
-        import tkinter.messagebox as messagebox
-
         return messagebox.showwarning(title, message)
 
     def show_custom_confirm(self, title, message):
@@ -3714,6 +3705,145 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
+    def _insert_treeview_item(self, tree, label, value=""):
+        """向Treeview中插入一行数据
+        
+        Args:
+            tree: Treeview控件
+            label: 标签
+            value: 值
+        """
+        tree.insert("", tk.END, values=(label, value))
+    
+    def _insert_treeview_section(self, tree, section_name):
+        """向Treeview中插入一个新的部分
+        
+        Args:
+            tree: Treeview控件
+            section_name: 部分名称
+        """
+        tree.insert("", tk.END, values=())
+        tree.insert("", tk.END, values=(section_name, ""))
+    
+    def _analyze_ipv6_address_type(self, ipv6_info):
+        """分析IPv6地址类型
+        
+        Args:
+            ipv6_info: IPv6信息字典
+            
+        Returns:
+            str: 地址类型
+        """
+        ip_address = ipv6_info.get("ip_address", "")
+        address_type = "未知"
+        
+        if ipv6_info.get("is_loopback"):
+            address_type = "回环地址"
+        elif ipv6_info.get("is_unspecified"):
+            address_type = "未指定地址"
+        elif ipv6_info.get("is_multicast"):
+            address_type = "组播地址"
+        elif ipv6_info.get("is_link_local"):
+            address_type = "链路本地单播地址"
+        elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
+            address_type = "唯一本地单播地址 (ULA)"
+        elif ip_address.startswith("2001:0db8:"):
+            address_type = "文档/测试地址"
+        elif ip_address.startswith("2000:"):
+            address_type = "全球单播地址"
+        elif "::ffff:" in ip_address:
+            address_type = "IPv4映射的IPv6地址"
+        
+        return address_type
+    
+    def _analyze_ipv6_prefix(self, ipv6_info):
+        """分析IPv6地址前缀
+        
+        Args:
+            ipv6_info: IPv6信息字典
+            
+        Returns:
+            str: 前缀分析
+        """
+        ip_address = ipv6_info.get("ip_address", "")
+        prefix_analysis = ""
+        
+        if ipv6_info.get("is_multicast"):
+            prefix_analysis = "多播地址前缀"
+            if ip_address.startswith("ff01:"):
+                prefix_analysis += " (接口本地多播)"
+            elif ip_address.startswith("ff02:"):
+                prefix_analysis += " (链路本地多播)"
+            elif ip_address.startswith("ff05:"):
+                prefix_analysis += " (站点本地多播)"
+            elif ip_address.startswith("ff0e:"):
+                prefix_analysis += " (全球多播)"
+            else:
+                prefix_analysis += " (其他多播类型)"
+        elif ip_address.startswith("fe80:"):
+            prefix_analysis = "链路本地前缀 (fe80::/10)"
+        elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
+            prefix_analysis = "唯一本地地址前缀 (fc00::/7)"
+        elif ip_address.startswith("2000:") or ip_address.startswith("2001:") or ip_address.startswith("2002:"):
+            prefix_analysis = "全球单播地址前缀 (2000::/3)"
+        elif ip_address.startswith("::ffff:"):
+            prefix_analysis = "IPv4映射地址前缀 (::ffff:0:0/96)"
+        elif ip_address.startswith("64:ff9b::"):
+            prefix_analysis = "IPv4/IPv6转换地址前缀 (64:ff9b::/96)"
+        elif ip_address.startswith("2001:db8::"):
+            prefix_analysis = "文档地址前缀 (2001:db8::/32)"
+        elif ip_address == "::1":
+            prefix_analysis = "回环地址 (::1/128)"
+        elif ip_address == "::":
+            prefix_analysis = "未指定地址 (::/128)"
+        elif ip_address.startswith("100::"):
+            prefix_analysis = "黑洞地址前缀 (100::/64)"
+        elif ip_address.startswith("2001:10::"):
+            prefix_analysis = "ORCHID地址前缀 (2001:10::/28)"
+        elif ip_address.startswith("fec0:"):
+            prefix_analysis = "站点本地地址前缀 (已弃用)"
+        else:
+            if ipv6_info.get("is_global"):
+                prefix_analysis = "全球单播地址前缀"
+            elif ipv6_info.get("is_private"):
+                prefix_analysis = "私有地址前缀"
+            elif ipv6_info.get("is_link_local"):
+                prefix_analysis = "链路本地地址前缀"
+            else:
+                prefix_analysis = "未知地址前缀"
+        
+        return prefix_analysis
+    
+    def _insert_ipv6_binary_representation(self, tree, ipv6_info):
+        """插入IPv6二进制表示
+        
+        Args:
+            tree: Treeview控件
+            ipv6_info: IPv6信息字典
+        """
+        self._insert_treeview_item(tree, "IP地址", ipv6_info.get("binary", ""))
+        
+        # 计算并显示子网掩码的二进制表示
+        if ipv6_info.get("subnet_mask"):
+            subnet_mask = ipv6_info["subnet_mask"]
+            subnet_bin = subnet_mask.replace(':', '').zfill(32)
+            subnet_bin_grouped = ' '.join([subnet_bin[i:i + 4] for i in range(0, 32, 4)])
+            self._insert_treeview_item(tree, "子网掩码", subnet_bin_grouped)
+        
+        # 计算并显示网络地址的二进制表示
+        if ipv6_info.get("network_address"):
+            network_addr = ipv6_info["network_address"]
+            network_bin = network_addr.replace(':', '').zfill(32)
+            network_bin_grouped = ' '.join([network_bin[i:i + 4] for i in range(0, 32, 4)])
+            self._insert_treeview_item(tree, "网络地址", network_bin_grouped)
+        
+        # 计算并显示广播地址的二进制表示
+        if ipv6_info.get("broadcast_address"):
+            broadcast_addr = ipv6_info["broadcast_address"]
+            broadcast_bin = broadcast_addr.replace(':', '').zfill(32)
+            broadcast_bin_grouped = ' '.join([broadcast_bin[i:i + 4] for i in range(0, 32, 4)])
+            self._insert_treeview_item(tree, "广播地址", broadcast_bin_grouped)
+    
     def execute_ipv6_info(self):
         """执行IPv6地址信息查询"""
         try:
@@ -4109,7 +4239,7 @@ class IPSubnetSplitterApp:
             if cidr:
                 try:
                     network_str = f"{ip}/{cidr}"
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             if not network_str and subnet_mask:
@@ -4118,7 +4248,7 @@ class IPSubnetSplitterApp:
                     mask_int = ip_to_int(subnet_mask)
                     prefix_len = bin(mask_int).count('1')
                     network_str = f"{ip}/{prefix_len}"
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             # 如果无法构造网络地址，只显示基本IP信息
@@ -4130,7 +4260,7 @@ class IPSubnetSplitterApp:
                     # 获取子网信息
                     subnet_info = get_subnet_info(network_str)
                     basic_info = False
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             # 获取基本IP信息
@@ -4700,7 +4830,7 @@ class IPSubnetSplitterApp:
                         foreground="#9E9E9E",
                         width=2,  # 字符宽度，配合padding使用
                     )
-            except Exception as e:
+            except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
                 self.style.theme_use("vista")
@@ -5259,7 +5389,7 @@ class IPSubnetSplitterApp:
                 fill="#ffffff",
             )
 
-        except Exception as e:
+        except (tk.TclError, ValueError, TypeError) as e:
             # 出现错误时显示提示
             self.chart_canvas.delete("all")
             width = self.chart_canvas.winfo_width() or 600
@@ -5278,6 +5408,186 @@ class IPSubnetSplitterApp:
         # 窗口大小变化时不需要重新配置斑马条纹，样式已在初始化时设置
         # 图表将在 on_chart_resize 中单独处理，避免重复绘制
         # 重新绘制所有Treeview的表格线 - 使用ttk样式方案不需要手动绘制
+
+    def _prepare_export_data(self, data_source):
+        """准备导出数据
+        
+        Args:
+            data_source: 字典，包含导出数据的源信息
+            
+        Returns:
+            tuple: (main_data, main_headers, remaining_data, remaining_headers)
+        """
+        main_data = []
+        main_tree = data_source["main_tree"]
+        main_filter = data_source.get("main_filter", None)
+        main_headers = data_source.get("main_headers")
+
+        if main_headers is None:
+            main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
+
+        # 用于去重的集合，存储已经添加过的项目
+        added_items = set()
+        for item in main_tree.get_children():
+            values = main_tree.item(item, "values")
+            if main_filter:
+                if main_filter(values):
+                    # 去重：如果是键值对格式，确保每个项目只出现一次
+                    if len(values) >= 2 and values[0] != "":
+                        item_key = values[0]
+                        if item_key not in added_items:
+                            added_items.add(item_key)
+                            main_data.append(values)
+                    else:
+                        main_data.append(values)
+            elif values:
+                # 去重：如果是键值对格式，确保每个项目只出现一次
+                if len(values) >= 2 and values[0] != "":
+                    item_key = values[0]
+                    if item_key not in added_items:
+                        added_items.add(item_key)
+                        main_data.append(values)
+                    else:
+                        main_data.append(values)
+
+        # 二次去重：确保所有数据行都是唯一的，解决切分网段信息重复的问题
+        unique_main_data = []
+        seen_rows = set()
+        for row in main_data:
+            # 将行转换为可哈希的元组
+            row_tuple = tuple(row)
+            if row_tuple not in seen_rows:
+                seen_rows.add(row_tuple)
+                unique_main_data.append(row)
+        main_data = unique_main_data
+
+        # 准备剩余数据
+        remaining_tree = data_source["remaining_tree"]
+        remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
+        remaining_data = []
+        for item in remaining_tree.get_children():
+            values = remaining_tree.item(item, "values")
+            if values:
+                remaining_data.append(dict(zip(remaining_headers, values)))
+
+        return main_data, main_headers, remaining_data, remaining_headers
+
+    def _export_to_json(self, file_path, data_source, main_data, main_headers, remaining_data):
+        """导出数据为JSON格式"""
+        if data_source["main_name"] == "切分网段信息":
+            # 子网切分结果特殊处理
+            export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
+        else:
+            # 子网规划结果格式
+            export_data = {
+                f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
+                "remaining_subnets": remaining_data,
+            }
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(export_data, f, ensure_ascii=False, indent=2)
+
+    def _export_to_txt(self, file_path, data_source, main_data, main_headers, remaining_tree, remaining_headers):
+        """导出数据为TXT格式"""
+        with open(file_path, "w", encoding="utf-8") as f:
+            # 写入主数据
+            f.write(f"{data_source['main_name']}\n")
+            f.write("=" * 80 + "\n")
+
+            # 如果是键值对格式（如切分网段信息）
+            if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
+                for values in main_data:
+                    f.write(f"{values[0]:<20}: {values[1]}\n")
+            else:
+                # 写入列标题
+                for header in main_headers:
+                    f.write(f"{header:<15}")
+                f.write("\n")
+                f.write("-" * 80 + "\n")
+
+                # 写入数据
+                for values in main_data:
+                    for value in values:
+                        f.write(f"{str(value):<15}")
+                    f.write("\n")
+
+            # 写入剩余数据
+            f.write(f"\n\n{data_source['remaining_name']}\n")
+            f.write("=" * 80 + "\n")
+
+            # 写入剩余数据列标题
+            for header in remaining_headers:
+                f.write(f"{header:<15}")
+            f.write("\n")
+            f.write("-" * 80 + "\n")
+
+            # 写入剩余数据
+            for item in data_source["remaining_tree"].get_children():
+                values = data_source["remaining_tree"].item(item, "values")
+                for value in values:
+                    f.write(f"{str(value):<15}")
+                f.write("\n")
+
+    def _export_to_csv(self, file_path, main_data, main_headers, remaining_tree):
+        """导出数据为CSV格式"""
+        import csv
+        with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            
+            # 写入主数据
+            writer.writerow(main_headers)
+            for values in main_data:
+                writer.writerow(values)
+            
+            # 添加空行分隔主数据和剩余数据
+            writer.writerow([])
+            
+            # 写入剩余数据
+            remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
+            writer.writerow(remaining_headers)
+            for item in remaining_tree.get_children():
+                values = remaining_tree.item(item, "values")
+                writer.writerow(values)
+
+    def _export_to_excel(self, file_path, main_data, main_headers, remaining_tree, remaining_headers):
+        """导出数据为Excel格式"""
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, Alignment
+        
+        wb = Workbook()
+        
+        # 创建主数据工作表
+        main_sheet = wb.active
+        main_sheet.title = "主数据"
+        
+        # 写入主数据表头
+        for col_idx, header in enumerate(main_headers, 1):
+            cell = main_sheet.cell(row=1, column=col_idx, value=header)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+        
+        # 写入主数据
+        for row_idx, values in enumerate(main_data, 2):
+            for col_idx, value in enumerate(values, 1):
+                main_sheet.cell(row=row_idx, column=col_idx, value=value)
+        
+        # 创建剩余数据工作表
+        remaining_sheet = wb.create_sheet(title="剩余数据")
+        
+        # 写入剩余数据表头
+        for col_idx, header in enumerate(remaining_headers, 1):
+            cell = remaining_sheet.cell(row=1, column=col_idx, value=header)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+        
+        # 写入剩余数据
+        for row_idx, item in enumerate(remaining_tree.get_children(), 2):
+            values = remaining_tree.item(item, "values")
+            for col_idx, value in enumerate(values, 1):
+                remaining_sheet.cell(row=row_idx, column=col_idx, value=value)
+        
+        # 保存Excel文件
+        wb.save(file_path)
 
     def _export_data(self, data_source, title, success_msg, failure_msg):
         """通用数据导出函数
@@ -5322,76 +5632,11 @@ class IPSubnetSplitterApp:
             file_ext = os.path.splitext(file_path)[1].lower()
 
             # 准备数据
-            main_data = []
-            main_tree = data_source["main_tree"]
-            main_filter = data_source.get("main_filter", None)
-            main_headers = data_source.get("main_headers")
-
-            if main_headers is None:
-                main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
-
-            # 用于去重的集合，存储已经添加过的项目
-            added_items = set()
-            for item in main_tree.get_children():
-                values = main_tree.item(item, "values")
-                if main_filter:
-                    if main_filter(values):
-                        # 去重：如果是键值对格式，确保每个项目只出现一次
-                        if len(values) >= 2 and values[0] != "":
-                            item_key = values[0]
-                            if item_key not in added_items:
-                                added_items.add(item_key)
-                                main_data.append(values)
-                        else:
-                            main_data.append(values)
-                elif values:
-                    # 去重：如果是键值对格式，确保每个项目只出现一次
-                    if len(values) >= 2 and values[0] != "":
-                        item_key = values[0]
-                        if item_key not in added_items:
-                            added_items.add(item_key)
-                            main_data.append(values)
-                    else:
-                        main_data.append(values)
-
-            # 二次去重：确保所有数据行都是唯一的，解决切分网段信息重复的问题
-            print(f"main_data原始长度: {len(main_data)}")
-            unique_main_data = []
-            seen_rows = set()
-            for row in main_data:
-                # 将行转换为可哈希的元组
-                row_tuple = tuple(row)
-                if row_tuple not in seen_rows:
-                    seen_rows.add(row_tuple)
-                    unique_main_data.append(row)
-            main_data = unique_main_data
-            print(f"main_data去重后长度: {len(main_data)}")
-
-            # 准备剩余数据
-            remaining_tree = data_source["remaining_tree"]
-            remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
-            remaining_data = []
-            for item in remaining_tree.get_children():
-                values = remaining_tree.item(item, "values")
-                if values:
-                    remaining_data.append(dict(zip(remaining_headers, values)))
-
+            main_data, main_headers, remaining_data, remaining_headers = self._prepare_export_data(data_source)
             # 根据文件扩展名选择导出格式
             if file_ext == ".json":
                 # JSON格式导出
-
-                if data_source["main_name"] == "切分网段信息":
-                    # 子网切分结果特殊处理
-                    export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
-                else:
-                    # 子网规划结果格式
-                    export_data = {
-                        f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
-                        "remaining_subnets": remaining_data,
-                    }
-
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(export_data, f, ensure_ascii=False, indent=2)
+                self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data)
 
             elif file_ext == ".txt":
                 # 文本格式导出
@@ -5428,11 +5673,19 @@ class IPSubnetSplitterApp:
                     f.write("-" * 80 + "\n")
 
                     # 写入剩余数据
-                    for item in remaining_tree.get_children():
-                        values = remaining_tree.item(item, "values")
+                    for item in data_source["remaining_tree"].get_children():
+                        values = data_source["remaining_tree"].item(item, "values")
                         for value in values:
                             f.write(f"{str(value):<15}")
                         f.write("\n")
+
+            elif file_ext == ".csv":
+                # CSV格式导出
+                self._export_to_csv(file_path, main_data, main_headers, data_source["remaining_tree"])
+
+            elif file_ext == ".xlsx":
+                # Excel格式导出
+                self._export_to_excel(file_path, main_data, main_headers, data_source["remaining_tree"], remaining_headers)
 
             elif file_ext == ".pdf":
                 # PDF格式导出
@@ -5441,13 +5694,6 @@ class IPSubnetSplitterApp:
                     print(f"文件路径: {file_path}")
                     print(f"文件扩展名: {file_ext}")
                     print("进入PDF导出分支")
-
-                    from reportlab.platypus import (
-                        Table,
-                        TableStyle,
-                        Paragraph,
-                        Spacer,
-                    )
 
                 except ImportError as e:
                     # 处理reportlab库缺失的情况
@@ -5748,8 +5994,8 @@ class IPSubnetSplitterApp:
                 # 添加剩余网段信息
                 elements.append(Paragraph(data_source["remaining_name"], heading2_style))
                 remaining_table_data = [[Paragraph(h, table_text_style) for h in remaining_headers]]
-                for item in remaining_tree.get_children():
-                    values = remaining_tree.item(item, "values")
+                for item in data_source["remaining_tree"].get_children():
+                    values = data_source["remaining_tree"].item(item, "values")
                     if values:
                         remaining_table_data.append(
                             [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
@@ -5953,8 +6199,8 @@ class IPSubnetSplitterApp:
                         else:
                             # 如果直接找不到父网段，尝试从main_tree中获取
                             print("直接从main_data中找不到父网段，尝试从main_tree中获取")
-                            for item in main_tree.get_children():
-                                values = main_tree.item(item, "values")
+                            for item in data_source["main_tree"].get_children():
+                                values = data_source["main_tree"].item(item, "values")
                                 print(f"检查树节点: {values}")
                                 if values and len(values) >= 2:
                                     if values[0] == "父网段":
@@ -5965,8 +6211,8 @@ class IPSubnetSplitterApp:
 
                             # 从remaining_tree中提取剩余网段信息
                             remaining_networks = []
-                            for item in remaining_tree.get_children():
-                                values = remaining_tree.item(item, "values")
+                            for item in data_source["remaining_tree"].get_children():
+                                values = data_source["remaining_tree"].item(item, "values")
                                 if values and len(values) >= 1:
                                     remaining_networks.append(values[0])
 
@@ -6654,8 +6900,8 @@ class IPSubnetSplitterApp:
                     cell.alignment = Alignment(horizontal="center")
 
                 # 添加剩余数据
-                for tree_item in remaining_tree.get_children():
-                    row_values = remaining_tree.item(tree_item, "values")
+                for tree_item in data_source["remaining_tree"].get_children():
+                    row_values = data_source["remaining_tree"].item(tree_item, "values")
                     if row_values:
                         remaining_sheet.append([str(v) for v in row_values])
 
@@ -6683,8 +6929,8 @@ class IPSubnetSplitterApp:
                     csv_file.write(f"{data_source['remaining_name']},\n")
                     csv_file.write(",".join(remaining_headers) + "\n")
 
-                    for tree_item in remaining_tree.get_children():
-                        row_values = remaining_tree.item(tree_item, "values")
+                    for tree_item in data_source["remaining_tree"].get_children():
+                        row_values = data_source["remaining_tree"].item(tree_item, "values")
                         csv_file.write(",".join(map(str, row_values)) + "\n")
 
             # 显示导出成功信息，保留原有数据
@@ -7095,26 +7341,23 @@ class IPSubnetSplitterApp:
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
     # 创建主窗口
     root = tk.Tk()
 
     # 设置窗口初始大小 - 调整高度以确保子网需求和规划结果两个表格都显示5行
-    window_width = 800
-    window_height = 700  # 调整窗口高度，确保两个表格都能显示5行
+    WINDOW_WIDTH = 800
+    WINDOW_HEIGHT = 700  # 调整窗口高度，确保两个表格都能显示5行
 
     # 获取屏幕尺寸
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
 
     # 计算窗口居中的坐标
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 2
+    x = (screen_width - WINDOW_WIDTH) // 2
+    y = (screen_height - WINDOW_HEIGHT) // 2
 
     # 设置窗口大小和位置
-    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{x}+{y}")
 
     # 设置窗口最小大小 - 最小高度设为当前满意高度，只能拉大不能缩小
     root.minsize(800, 700)
@@ -7149,9 +7392,9 @@ if __name__ == "__main__":
                 # 这里先尝试直接加载，如果失败则忽略
                 icon = tk.PhotoImage(file=icon_path)
                 root.iconphoto(True, icon)
-            except Exception:
+            except tk.TclError:
                 pass  # 如果PhotoImage方法失败，继续执行
-    except Exception as e:
+    except (tk.TclError, OSError) as e:
         print(f"设置窗口图标失败: {e}")
 
     # 创建应用实例并运行
