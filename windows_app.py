@@ -5757,45 +5757,7 @@ class IPSubnetSplitterApp:
 
             elif file_ext == ".txt":
                 # 文本格式导出
-                with open(file_path, "w", encoding="utf-8") as f:
-                    # 写入主数据
-                    f.write(f"{data_source['main_name']}\n")
-                    f.write("=" * 80 + "\n")
-
-                    # 如果是键值对格式（如切分网段信息）
-                    if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
-                        for values in main_data:
-                            f.write(f"{values[0]:<20}: {values[1]}\n")
-                    else:
-                        # 写入列标题
-                        for header in main_headers:
-                            f.write(f"{header:<15}")
-                        f.write("\n")
-                        f.write("-" * 80 + "\n")
-
-                        # 写入数据
-                        for values in main_data:
-                            for value in values:
-                                f.write(f"{str(value):<15}")
-                            f.write("\n")
-
-                    # 写入剩余数据
-                    f.write(f"\n\n{data_source['remaining_name']}\n")
-                    f.write("=" * 80 + "\n")
-
-                    # 写入剩余数据列标题
-                    for header in remaining_headers:
-                        f.write(f"{header:<15}")
-                    f.write("\n")
-                    f.write("-" * 80 + "\n")
-
-                    # 写入剩余数据
-                    for item in data_source["remaining_tree"].get_children():
-                        values = data_source["remaining_tree"].item(item, "values")
-                        for value in values:
-                            f.write(f"{str(value):<15}")
-                        f.write("\n")
-
+                self._export_to_txt(file_path, data_source, main_data, main_headers, remaining_headers)
             elif file_ext == ".csv":
                 # CSV格式导出
                 self._export_to_csv(file_path, main_data, main_headers, data_source["remaining_tree"])
