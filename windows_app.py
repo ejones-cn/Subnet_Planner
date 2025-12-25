@@ -3064,7 +3064,7 @@ class IPSubnetSplitterApp:
             else:
                 message = f"子网规划失败: {error_msg}"
             self.show_error("错误", message)
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
 
     def execute_split(self, from_history=False):
@@ -3243,7 +3243,7 @@ class IPSubnetSplitterApp:
                 message = error_msg
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", message), tags=("error",))
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
 
@@ -3559,7 +3559,7 @@ class IPSubnetSplitterApp:
                 if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
                     try:
                         treeview.column("name", width=110)  # 减小name列宽度
-                    except Exception:
+                    except tk.TclError:
                         pass  # 如果列不存在则忽略
             else:
                 # 隐藏滚动条
@@ -3895,7 +3895,7 @@ class IPSubnetSplitterApp:
 
         except ValueError as e:
             self.show_info("错误", f"合并失败: {str(e)}")
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
     def _insert_treeview_item(self, tree, label, value=""):
@@ -4358,7 +4358,7 @@ class IPSubnetSplitterApp:
 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
     def execute_ipv4_info(self):
@@ -4597,7 +4597,7 @@ class IPSubnetSplitterApp:
 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
     def execute_range_to_cidr(self):
@@ -4682,7 +4682,7 @@ class IPSubnetSplitterApp:
 
         except ValueError as e:
             self.show_info("错误", f"转换失败: {str(e)}")
-        except Exception as e:
+        except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
     def execute_check_overlap(self):
@@ -4726,7 +4726,7 @@ class IPSubnetSplitterApp:
                     self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
                     row_index += 1
 
-        except Exception as e:
+        except (ValueError, tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"执行子网重叠检测失败: {str(e)}")
 
     def update_ipv4_history(self, _event=None):
@@ -5036,7 +5036,7 @@ class IPSubnetSplitterApp:
         # 创建字体对象，用于测量文本宽度
         try:
             font = tkfont.Font(family="微软雅黑", size=9)
-        except Exception:
+        except tk.TclError:
             font = tkfont.Font(family="Arial", size=9)
 
         # 计算字符串的实际像素宽度
@@ -5181,7 +5181,7 @@ class IPSubnetSplitterApp:
 
             # 按起始地址排序
             self.chart_data["networks"].sort(key=lambda x: x["start"])
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             # 如果出现任何错误，就不绘制图表
             self.chart_data = None
 
@@ -6012,7 +6012,7 @@ class IPSubnetSplitterApp:
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
                         col_widths = auto_col_widths
-                    except Exception as e:
+                    except (ValueError, TypeError, AttributeError) as e:
                         print(f"  计算自适应列宽错误: {type(e).__name__}: {e}")
                         traceback.print_exc()
                         # 如果自适应列宽计算失败，使用默认列宽
@@ -6059,7 +6059,7 @@ class IPSubnetSplitterApp:
                         elif not isinstance(width, (int, float)):
                             try:
                                 valid_col_widths.append(float(width))
-                            except Exception:
+                            except ValueError:
                                 valid_col_widths.append(100)
                         elif width <= 0:
                             valid_col_widths.append(100)
@@ -6191,7 +6191,7 @@ class IPSubnetSplitterApp:
                         print(f"自适应列宽: {auto_col_widths}")
                         # 使用自适应列宽
                         col_widths = auto_col_widths
-                    except Exception as e:
+                    except (ValueError, TypeError, AttributeError) as e:
                         print(f"  计算剩余表格自适应列宽错误: {type(e).__name__}: {e}")
 
                         traceback.print_exc()
@@ -6223,7 +6223,7 @@ class IPSubnetSplitterApp:
                         elif not isinstance(width, (int, float)):
                             try:
                                 valid_col_widths.append(float(width))
-                            except Exception:
+                            except ValueError:
                                 valid_col_widths.append(100)
                         elif width <= 0:
                             valid_col_widths.append(100)
@@ -6491,7 +6491,7 @@ class IPSubnetSplitterApp:
                                             font_loaded = True
                                             print(f"成功加载{font_name}字体: {font_path}，字号: {font_size}")
                                             break
-                                        except Exception as e:
+                                        except (FileNotFoundError, IOError, OSError, ValueError, TypeError) as e:
                                             print(f"尝试加载{font_name}失败: {e}")
                                             continue
 
@@ -6500,7 +6500,7 @@ class IPSubnetSplitterApp:
                                     font = ImageFont.load_default()
                                     bold_font = ImageFont.load_default()
                                     print("使用默认字体，可能不支持中文")
-                            except Exception as e:
+                            except (FileNotFoundError, IOError, OSError, ValueError, TypeError) as e:
                                 print(f"加载中文字体失败: {e}")
                                 font = ImageFont.load_default()
                                 bold_font = ImageFont.load_default()
@@ -6531,14 +6531,13 @@ class IPSubnetSplitterApp:
                             title_font_size = 76  # 108 * 0.7 = 75.6，取整为76
                             title_font = None
                             try:
-
                                 system_font_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
                                 title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
                                 if os.path.exists(title_font_path):
                                     title_font = ImageFont.truetype(title_font_path, title_font_size)
                                 else:
                                     title_font = bold_font
-                            except Exception:
+                            except (FileNotFoundError, IOError, OSError, ValueError, TypeError):
                                 title_font = bold_font
 
                             title_bbox = draw.textbbox((0, 0), title, font=title_font)
@@ -6576,7 +6575,7 @@ class IPSubnetSplitterApp:
                                 else:
                                     text_font = font
                                     bold_text_font = bold_font
-                            except Exception:
+                            except (FileNotFoundError, IOError, OSError, ValueError, TypeError):
                                 text_font = font
                                 bold_text_font = bold_font
 
@@ -6923,7 +6922,7 @@ class IPSubnetSplitterApp:
                         elements.append(PageBreak())
 
                         print("网段分布图成功添加到PDF")
-                    except Exception as e:
+                    except (IOError, OSError, ValueError, TypeError, AttributeError) as e:
                         print(f"添加网段分布图到PDF失败: {type(e).__name__}: {e}")
                         traceback.print_exc()
                     finally:
@@ -6967,14 +6966,14 @@ class IPSubnetSplitterApp:
                         else:
                             print("未注册中文字体，尝试重新注册")
                             self.has_chinese_font = self.register_chinese_fonts()
-                    except Exception as e:
+                    except (FileNotFoundError, IOError, OSError, ValueError, TypeError) as e:
                         print(f"处理中文字体失败: {e}")
                         traceback.print_exc()
 
                     # 移除未定义的add_footer回调
                     doc.build(elements)
                     print("PDF文档生成成功")
-                except Exception as e:
+                except (IOError, OSError, ValueError, TypeError) as e:
                     print(f"PDF文档生成失败: {type(e).__name__}: {e}")
                     traceback.print_exc()
                 print("=== PDF导出调试信息结束 ===")
@@ -7054,7 +7053,7 @@ class IPSubnetSplitterApp:
             self.show_result(success_msg.format(file_path=file_path), keep_data=True)
             return file_path  # 返回导出的文件路径
 
-        except Exception as e:
+        except (IOError, OSError, ValueError, TypeError, tk.TclError, AttributeError) as e:
 
             # 显示导出错误信息和堆栈跟踪
             error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
