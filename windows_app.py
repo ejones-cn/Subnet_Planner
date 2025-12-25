@@ -4198,35 +4198,31 @@ class IPSubnetSplitterApp:
                 self.ipv6_info_tree.insert("", tk.END, values=())
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""))
                 self.ipv6_info_tree.insert("", tk.END, values=("IPv4映射地址", ipv4_mapped))
-                has_extended_info = True
+
             # 检查是否为文档/测试地址
             elif ip_address.startswith("2001:0db8:"):
                 self.ipv6_info_tree.insert("", tk.END, values=())
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""))
                 self.ipv6_info_tree.insert("", tk.END, values=("地址用途", "文档/测试地址 (RFC 3849)"))
                 self.ipv6_info_tree.insert("", tk.END, values=("RFC规范", "RFC 3849 - IPv6文档地址分配"))
-                has_extended_info = True
             # 检查是否为唯一本地地址 (ULA)
             elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
                 self.ipv6_info_tree.insert("", tk.END, values=())
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""))
                 self.ipv6_info_tree.insert("", tk.END, values=("地址用途", "唯一本地地址 (ULA)"))
                 self.ipv6_info_tree.insert("", tk.END, values=("RFC规范", "RFC 4193 - IPv6唯一本地地址"))
-                has_extended_info = True
             # 检查是否为链路本地地址
             elif ip_address.startswith("fe80:"):
                 self.ipv6_info_tree.insert("", tk.END, values=())
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""))
                 self.ipv6_info_tree.insert("", tk.END, values=("地址用途", "链路本地地址"))
                 self.ipv6_info_tree.insert("", tk.END, values=("RFC规范", "RFC 4291 - IPv6寻址架构"))
-                has_extended_info = True
             # 检查是否为组播地址
             elif ipv6_info.get("is_multicast"):
                 self.ipv6_info_tree.insert("", tk.END, values=())
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""))
                 self.ipv6_info_tree.insert("", tk.END, values=("地址用途", "组播地址"))
                 self.ipv6_info_tree.insert("", tk.END, values=("RFC规范", "RFC 4291 - IPv6寻址架构"))
-                has_extended_info = True
 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
@@ -4867,14 +4863,13 @@ class IPSubnetSplitterApp:
         )
         close_btn.grid(row=0, column=1, padx=5)
 
-    def show_result(self, text, error=False, keep_data=False, message_type="info"):
+    def show_result(self, text, error=False, keep_data=False):
         """显示结果
 
         Args:
             text: 要显示的文本
             error: 是否为错误信息
             keep_data: 是否保留数据
-            message_type: 信息类型（info, success, error等）
         """
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
@@ -5497,7 +5492,7 @@ class IPSubnetSplitterApp:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(export_data, f, ensure_ascii=False, indent=2)
 
-    def _export_to_txt(self, file_path, data_source, main_data, main_headers, remaining_tree, remaining_headers):
+    def _export_to_txt(self, file_path, data_source, main_data, main_headers, remaining_headers):
         """导出数据为TXT格式"""
         with open(file_path, "w", encoding="utf-8") as f:
             # 写入主数据
