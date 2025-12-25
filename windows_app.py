@@ -2172,7 +2172,7 @@ class IPSubnetSplitterApp:
                 self.update_table_zebra_stripes(self.allocated_tree)
             if hasattr(self, 'planning_remaining_tree'):
                 self.update_table_zebra_stripes(self.planning_remaining_tree)
-        except Exception:
+        except (tk.TclError, AttributeError):
             pass
 
     def configure_treeview_styles(self, tree, include_special_tags=False):
@@ -2193,7 +2193,7 @@ class IPSubnetSplitterApp:
             if include_special_tags:
                 tree.tag_configure("error", foreground="red")
                 tree.tag_configure("info", foreground="blue")
-        except Exception:
+        except (tk.TclError, AttributeError):
             pass
 
     def update_table_zebra_stripes(self, tree, update_index=False):
