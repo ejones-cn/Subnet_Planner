@@ -3351,7 +3351,7 @@ class IPSubnetSplitterApp:
         
         # 子网合并按钮 - 固定在右下角
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
-        self.merge_btn.grid(row=1, column=0, columnspan=2, sticky="e", pady=(5, 0), padx=(0, 10))
+        self.merge_btn.grid(row=1, column=0, columnspan=1, sticky="w", pady=(5, 0), padx=(0, 10))
         
         # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
@@ -3383,9 +3383,9 @@ class IPSubnetSplitterApp:
         self.range_end_entry.bind("<FocusOut>", self.update_range_end_history)
         self.range_end_entry.bind("<Return>", self.update_range_end_history)
         
-        # 范围转CIDR按钮 - 靠右放置
+        # 范围转CIDR按钮 - 靠左放置
         self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
-        self.range_to_cidr_btn.pack(side=tk.RIGHT, pady=(5, 0))
+        self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
         
         # 右侧：CIDR结果
         result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding=(10, 10, 0, 10))
@@ -3640,60 +3640,6 @@ class IPSubnetSplitterApp:
         scrollbar_callback(0.0, 1.0)
         
         self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
-        
-    def create_range_to_cidr_section(self):
-        """创建IP地址范围转CIDR功能界面"""
-        # 创建输入区域
-        input_frame = ttk.LabelFrame(self.range_to_cidr_frame, text="IP地址范围", padding="10")
-        input_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # 开始IP
-        start_frame = ttk.Frame(input_frame)
-        start_frame.pack(fill=tk.X, pady=(0, 5))
-        
-        ttk.Label(start_frame, text="起始IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_start_entry = ttk.Entry(start_frame, width=30)
-        self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
-        self.range_start_entry.insert(0, "192.168.0.1")
-        
-        # 结束IP
-        end_frame = ttk.Frame(input_frame)
-        end_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        ttk.Label(end_frame, text="结束IP:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_end_entry = ttk.Entry(end_frame, width=30)
-        self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
-        self.range_end_entry.insert(0, "192.168.0.254")
-        
-        # 转换按钮
-        button_frame = ttk.Frame(input_frame)
-        button_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        self.range_to_cidr_btn = ttk.Button(button_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
-        self.range_to_cidr_btn.pack(side=tk.RIGHT)
-        
-        # 创建结果区域
-        result_frame = ttk.LabelFrame(self.range_to_cidr_frame, text="CIDR结果", padding="10")
-        result_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.range_result_tree = ttk.Treeview(result_frame, columns=("cidr", "network", "netmask", "broadcast", "hosts"), show="headings")
-        self.range_result_tree.heading("cidr", text="CIDR")
-        self.range_result_tree.heading("network", text="网络地址")
-        self.range_result_tree.heading("netmask", text="子网掩码")
-        self.range_result_tree.heading("broadcast", text="广播地址")
-        self.range_result_tree.heading("hosts", text="主机数")
-        
-        self.range_result_tree.column("cidr", width=90)
-        self.range_result_tree.column("network", width=90)
-        self.range_result_tree.column("netmask", width=90)
-        self.range_result_tree.column("broadcast", width=90)
-        self.range_result_tree.column("hosts", width=50, anchor="e")
-        
-        # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Treeview
-        range_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        self.create_scrollable_treeview(result_frame, self.range_result_tree, range_result_scrollbar)
-        
-        self.configure_treeview_styles(self.range_result_tree)
         
     def create_subnet_overlap_section(self):
         """创建子网重叠检测功能界面"""
@@ -4748,72 +4694,6 @@ class IPSubnetSplitterApp:
             icon = "✅ "  # 使用带框钩 (U+2705)，与带框叉风格一致
 
         # 更新信息标签和框架样式
-        # 基于像素宽度的文本截断算法，解决英文不等宽问题
-        # 使用tkinter的Font.measure方法计算实际显示宽度
-
-        # 创建字体对象，用于测量文本宽度
-        
-        try:
-            font = tkfont.Font(family="微软雅黑", size=9)
-        except Exception:
-            font = tkfont.Font(family="Arial", size=9)
-
-        # 计算字符串的实际像素宽度
-        def calculate_pixel_width(text):
-            return font.measure(text)
-
-        # 基于字符宽度估算的截断函数，更适合中英文混排
-        def truncate_text_by_pixel(text, icon, max_pixel_width):
-            # 计算图标的宽度
-            icon_width = calculate_pixel_width(icon)
-            
-            # 可用宽度：总宽度减去图标宽度
-            available_width = max_pixel_width - icon_width
-            
-            # 先尝试显示完整文本（加上图标）
-            full_text_with_icon = icon + text
-            full_width = calculate_pixel_width(full_text_with_icon)
-            
-            # 注释掉调试信息，避免在生产环境中显示
-            # print(f"\n--- 文本截断调试信息 ---")
-            # print(f"原始文本长度: {len(text)}")
-            # print(f"图标宽度: {icon_width}px")
-            # print(f"最大像素宽度: {max_pixel_width}px")
-            # print(f"可用宽度: {available_width}px")
-            # print(f"完整文本宽度: {full_width}px")
-            # print(f"是否需要截断: {full_width > max_pixel_width}")
-            
-            if full_width <= max_pixel_width:
-                return text
-
-            # 计算省略号的宽度
-            ellipsis_width = calculate_pixel_width("...")
-            
-            # 使用整个文本长度范围进行二分查找，确保中英文混排时截断位置一致
-            low = 0
-            high = len(text)
-            best_length = 0
-
-            while low <= high:
-                mid = (low + high) // 2
-                current_text = text[:mid]
-                current_width = calculate_pixel_width(current_text)
-
-                if current_width <= available_width - ellipsis_width:
-                    best_length = mid
-                    low = mid + 1
-                else:
-                    high = mid - 1
-
-            # 确保截断后的文本不会过长
-            truncated = text[:best_length]
-
-            # 确保至少显示一些文本
-            if best_length == 0:
-                return "..."
-            
-            # 返回截断后的文本（加上省略号）
-            return text[:best_length] + "..."
 
         # 获取信息栏的实际宽度
         # 确保使用一致的宽度计算逻辑，无论是第一次还是第二次显示
@@ -4821,11 +4701,8 @@ class IPSubnetSplitterApp:
         main_window_width = self.root.winfo_width()
         # 使用主窗口宽度的85%作为信息栏宽度，放大截断位置
         info_bar_width = int(main_window_width * 0.96)
-        # 再增加字符宽度（约0像素）
-        info_bar_width += 0
         # 确保不小于原始的最小宽度
-        if info_bar_width < self.MIN_INFO_BAR_WIDTH:
-            info_bar_width = self.MIN_INFO_BAR_WIDTH
+        info_bar_width = max(info_bar_width, self.MIN_INFO_BAR_WIDTH)
         
         # 确保info_bar_frame已经添加到父容器中
         if self.info_bar_frame.winfo_manager() == "":
@@ -4841,14 +4718,9 @@ class IPSubnetSplitterApp:
         max_pixel_width = info_bar_width - 20 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
         
         # 确保最大像素宽度为正数
-        if max_pixel_width < self.MIN_PIXEL_WIDTH:
-            max_pixel_width = self.MIN_PIXEL_WIDTH
+        max_pixel_width = max(max_pixel_width, self.MIN_PIXEL_WIDTH)
             
-        # 基于像素宽度的文本截断算法，解决英文不等宽问题
-        # 使用tkinter的Font.measure方法计算实际显示宽度
-
         # 创建字体对象，用于测量文本宽度
-        
         try:
             font = tkfont.Font(family="微软雅黑", size=9)
         except Exception:
@@ -4874,7 +4746,10 @@ class IPSubnetSplitterApp:
             if full_width <= max_pixel_width:
                 return text
 
-            # 二分查找合适的截断位置
+            # 计算省略号的宽度
+            ellipsis_width = calculate_pixel_width("...")
+            
+            # 二分查找合适的截断位置，考虑省略号宽度
             low = 0
             high = len(text)
             best_length = 0
@@ -4884,7 +4759,7 @@ class IPSubnetSplitterApp:
                 current_text = text[:mid]
                 current_width = calculate_pixel_width(current_text)
 
-                if current_width <= available_width:
+                if current_width <= available_width - ellipsis_width:
                     best_length = mid
                     low = mid + 1
                 else:
@@ -4892,8 +4767,6 @@ class IPSubnetSplitterApp:
 
             # 确保截断后的文本不会过长
             truncated = text[:best_length]
-            # 计算省略号的宽度
-            ellipsis_width = calculate_pixel_width("...")
 
             # 调整截断位置，确保加上省略号和图标后不会超过最大宽度
             while best_length > 0:
