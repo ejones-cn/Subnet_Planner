@@ -3700,7 +3700,7 @@ class IPSubnetSplitterApp:
         text_frame = ttk.Frame(input_frame)
         text_frame.pack(fill=tk.BOTH, expand=False)
         
-        self.overlap_text = tk.Text(text_frame, height=12, width=60, font=("微软雅黑", 10))
+        self.overlap_text = tk.Text(text_frame, height=10, width=60, font=("微软雅黑", 10))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
         
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
