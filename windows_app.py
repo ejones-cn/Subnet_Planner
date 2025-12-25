@@ -1718,9 +1718,9 @@ class IPSubnetSplitterApp:
         self.pool_tree.heading("hosts", text="主机数量")
 
         # 设置列宽，与子网需求表保持一致
-        self.pool_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
-        self.pool_tree.column("name", width=130, minwidth=100, stretch=True)  # 减小初始宽度，允许伸缩
-        self.pool_tree.column("hosts", width=30, minwidth=30, stretch=True)
+        self.pool_tree.column("index", width=40, minwidth=20, stretch=False, anchor="e")
+        self.pool_tree.column("name", width=80, minwidth=80, stretch=True)  # 减小初始宽度，允许伸缩
+        self.pool_tree.column("hosts", width=80, minwidth=40, stretch=False)
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.pool_tree)
@@ -1732,7 +1732,13 @@ class IPSubnetSplitterApp:
         self.pool_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
 
         # 使用通用方法创建带自动隐藏滚动条的Treeview
-        self.create_scrollable_treeview(history_frame, self.pool_tree, self.pool_scrollbar)
+        # self.create_scrollable_treeview(history_frame, self.pool_tree, self.pool_scrollbar)
+
+        # 直接创建Treeview和滚动条，不使用自动隐藏功能
+        self.pool_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        self.pool_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        self.pool_scrollbar.config(command=self.pool_tree.yview)
+        self.pool_tree.config(yscrollcommand=self.pool_scrollbar.set)
 
         # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做按钮操作
         # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
@@ -1758,8 +1764,8 @@ class IPSubnetSplitterApp:
         self.requirements_tree.heading("hosts", text="主机数量")
         # 字段宽度设置
         self.requirements_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
-        self.requirements_tree.column("name", width=130, minwidth=100, stretch=True)  # 减小初始宽度，允许伸缩
-        self.requirements_tree.column("hosts", width=30, minwidth=30, stretch=True)
+        self.requirements_tree.column("name", width=80, minwidth=80, stretch=True)  # 减小初始宽度，允许伸缩
+        self.requirements_tree.column("hosts", width=80, minwidth=80, stretch=False)
 
         # 绑定双击事件以实现编辑功能
         self.requirements_tree.bind("<Double-1>", self.on_requirements_tree_double_click)
@@ -1771,11 +1777,17 @@ class IPSubnetSplitterApp:
         self.requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL)
 
         # 使用通用方法创建带自动隐藏滚动条的Treeview
-        self.create_scrollable_treeview_with_grid(
-            inner_frame, self.requirements_tree, self.requirements_scrollbar, 
-            tree_row=0, tree_column=1, scrollbar_row=0, scrollbar_column=2,
-            tree_padx=(10, 0), scrollbar_padx=(0, 0)
-        )
+        # self.create_scrollable_treeview_with_grid(
+        #     inner_frame, self.requirements_tree, self.requirements_scrollbar, 
+        #     tree_row=0, tree_column=1, scrollbar_row=0, scrollbar_column=2,
+        #     tree_padx=(10, 0), scrollbar_padx=(0, 0)
+        # )
+
+        # 直接创建Treeview和滚动条，不使用自动隐藏功能
+        self.requirements_tree.grid(row=0, column=1, sticky=tk.NSEW)
+        self.requirements_scrollbar.grid(row=0, column=2, sticky=tk.NS)
+        self.requirements_scrollbar.config(command=self.requirements_tree.yview)
+        self.requirements_tree.config(yscrollcommand=self.requirements_scrollbar.set)
 
         # 允许同时选择两张表中的记录，移除选择事件绑定
 
@@ -3384,24 +3396,11 @@ class IPSubnetSplitterApp:
                 # 调整Treeview的grid配置，移除右边距
                 treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
                 
-                # 如果是需求池表或子网需求表，减小name列宽度为滚动条留出空间
-                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
-                    try:
-                        treeview.column("name", width=110)  # 减小name列宽度
-                    except:
-                        pass  # 如果列不存在则忽略
             else:
                 # 隐藏滚动条
                 scrollbar.grid_remove()
                 # 调整Treeview的grid配置，添加右边距
                 treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=no_scrollbar_padx)
-                
-                # 如果是需求池表或子网需求表，恢复name列宽度
-                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
-                    try:
-                        treeview.column("name", width=130)  # 恢复name列宽度
-                    except:
-                        pass  # 如果列不存在则忽略
 
         # 绑定滚动条和Treeview
         scrollbar.config(command=treeview.yview)
@@ -3466,13 +3465,6 @@ class IPSubnetSplitterApp:
                 # 调整Treeview的grid配置，添加右边距
                 adjusted_padx = (tree_padx[0], tree_padx[1] + no_scrollbar_padx[1]) if tree_padx else no_scrollbar_padx
                 treeview.grid_configure(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=adjusted_padx)
-                
-                # 如果是需求池表或子网需求表，恢复name列宽度
-                if treeview in [getattr(self, 'pool_tree', None), getattr(self, 'requirements_tree', None)]:
-                    try:
-                        treeview.column("name", width=130)  # 恢复name列宽度
-                    except:
-                        pass  # 如果列不存在则忽略
 
         # 绑定滚动条和Treeview
         scrollbar.config(command=treeview.yview)
