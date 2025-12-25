@@ -400,7 +400,7 @@ class IPSubnetSplitterApp:
         if dialog_title and dialog_msg:
             self.show_error(dialog_title, dialog_msg)
 
-    def __init__(self, root):
+    def __init__(self, main_window):
         # 应用程序信息
         self.app_name = "IP子网切分工具"
         self.app_version = get_version()
@@ -503,7 +503,7 @@ class IPSubnetSplitterApp:
         self.has_chinese_font = None
         self.is_pinned = None
 
-        self.root = root
+        self.root = main_window
         self.root.title(f"IP子网切分工具 v{self.app_version}")
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
         # 这里只设置窗口标题
@@ -626,7 +626,7 @@ class IPSubnetSplitterApp:
 
             print("标签样式设置完成")
 
-        except Exception:
+        except (tk.TclError, AttributeError):
             pass
         # 为Treeview添加表格线样式配置 - Windows系统专用解决方案
         # 在Windows上强制显示表格线的最终解决方案
@@ -830,7 +830,7 @@ class IPSubnetSplitterApp:
                 # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
                 formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
                 self.history_tree.insert("", tk.END, values=(formatted_record,), tags=tags)
-        except Exception as e:
+        except (tk.TclError, AttributeError) as e:
             # 错误处理，确保GUI更新失败不会导致程序崩溃
             print(f"更新历史记录列表失败: {str(e)}")
 
