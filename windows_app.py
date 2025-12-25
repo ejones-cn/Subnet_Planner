@@ -209,14 +209,14 @@ class ColoredNotebook(ttk.Frame):
                             if child_bg and not child_bg.startswith("system."):
                                 bg_color = child_bg
                                 break
-                    except Exception:
+                    except (AttributeError, tk.TclError):
                         continue
 
             # 如果无法从子组件获取背景色，尝试直接从父容器获取
             if not bg_color or bg_color.startswith("system."):
                 try:
                     bg_color = self.master.cget("background")
-                except Exception:
+                except (AttributeError, tk.TclError):
                     pass
 
             # 如果还是无法获取背景色，使用默认的背景色
@@ -233,7 +233,7 @@ class ColoredNotebook(ttk.Frame):
             self.tab_bar_spacer.configure(style=temp_style_name)
             self.content_area.configure(style=temp_style_name)
 
-        except Exception:
+        except (tk.TclError, AttributeError, ValueError):
             # 发生错误时，不设置自定义背景色，使用默认样式
             pass
 
@@ -420,6 +420,88 @@ class IPSubnetSplitterApp:
         self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]  # IPv6地址查询历史
         self.range_start_history = ["192.168.0.1"]  # IP范围起始地址历史
         self.range_end_history = ["192.168.0.254"]  # IP范围结束地址历史
+
+        # 切分子网相关属性
+        self.split_parent_networks = []
+        self.split_networks = []
+        self.parent_entry = None
+        self.split_entry = None
+        self.execute_btn = None
+        self.reexecute_btn = None
+        self.history_tree = None
+        self.export_btn = None
+        self.notebook = None
+        self.split_info_frame = None
+        self.split_tree = None
+        self.remaining_frame = None
+        self.remaining_tree = None
+        self.chart_frame = None
+        self.chart_scrollbar = None
+        self.chart_canvas = None
+        self.remaining_scroll_v = None
+        self.chart_data = None
+
+        # 网段规划相关属性
+        self.planning_parent_networks = []
+        self.planning_parent_entry = None
+        self.pool_tree = None
+        self.pool_scrollbar = None
+        self.requirements_tree = None
+        self.requirements_scrollbar = None
+        self.undo_delete_btn = None
+        self.undo_btn = None
+        self.swap_btn = None
+        self.redo_btn = None
+        self.planning_notebook = None
+        self.execute_planning_btn = None
+        self.allocated_frame = None
+        self.allocated_tree = None
+        self.planning_remaining_frame = None
+        self.planning_remaining_tree = None
+
+        # 编辑相关属性
+        self.edit_entry = None
+        self.current_edit_item = None
+        self.current_edit_column = None
+        self.current_edit_column_index = None
+        self.current_edit_tree = None
+
+        # 高级工具相关属性
+        self.advanced_notebook = None
+        self.ipv4_info_frame = None
+        self.ipv6_info_frame = None
+        self.merge_frame = None
+        self.overlap_frame = None
+        self.ipv6_info_entry = None
+        self.ipv6_cidr_var = None
+        self.ipv6_cidr_combobox = None
+        self.ipv6_info_btn = None
+        self.ipv6_info_tree = None
+        self.subnet_merge_text = None
+        self.merge_btn = None
+        self.range_start_entry = None
+        self.range_end_entry = None
+        self.range_to_cidr_btn = None
+        self.merge_result_frame = None
+        self.merge_result_tree = None
+        self.merge_result_scrollbar = None
+        self.ip_info_entry = None
+        self.subnet_mask_cidr_map = None
+        self.cidr_subnet_mask_map = None
+        self.ip_mask_var = None
+        self.ip_mask_combobox = None
+        self.ip_cidr_var = None
+        self.ip_cidr_combobox = None
+        self.ip_info_btn = None
+        self.ip_info_tree = None
+        self.overlap_text = None
+        self.overlap_btn = None
+        self.overlap_result_tree = None
+
+        # 其他属性
+        self.theme_var = None
+        self.has_chinese_font = None
+        self.is_pinned = None
 
         self.root = root
         self.root.title(f"IP子网切分工具 v{self.app_version}")
@@ -7152,7 +7234,7 @@ class IPSubnetSplitterApp:
                 # 注册字体
                 pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
                 return True
-            except Exception as e:
+            except (OSError, ValueError, ImportError) as e:
                 print(f"注册字体失败: {e}")
                 return False
         else:
@@ -7293,11 +7375,11 @@ class IPSubnetSplitterApp:
         dialog_height = 220
 
         # 计算对话框在主窗口中心的位置
-        x = main_x + (main_width // 2) - (dialog_width // 2)
-        y = main_y + (main_height // 2) - (dialog_height // 2)
+        dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
+        dialog_y = main_y + (main_height // 2) - (dialog_height // 2)
 
         # 一次性设置对话框的尺寸和位置
-        about_window.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        about_window.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
         # 显示对话框
         about_window.deiconify()
