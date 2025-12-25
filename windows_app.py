@@ -3287,16 +3287,9 @@ class IPSubnetSplitterApp:
         
         # 添加垂直滚动条
         ipv6_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        ipv6_info_scrollbar.config(command=self.ipv6_info_tree.yview)
-        self.ipv6_info_tree.config(yscrollcommand=ipv6_info_scrollbar.set)
         
-        # 使用grid布局，确保Treeview和滚动条正确对齐
-        self.ipv6_info_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        ipv6_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重，使Treeview可以扩展
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
+        # 使用通用方法创建带自动隐藏滚动条的Treeview
+        self.create_scrollable_treeview(result_frame, self.ipv6_info_tree, ipv6_info_scrollbar)
         
         self.configure_treeview_styles(self.ipv6_info_tree, include_special_tags=True)
         
@@ -3335,18 +3328,8 @@ class IPSubnetSplitterApp:
         self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=("微软雅黑", 10))
         
         # 添加垂直滚动条
-        subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL, command=self.subnet_merge_text.yview)
-        subnet_merge_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # 配置文本框使用滚动条
-        self.subnet_merge_text.configure(yscrollcommand=subnet_merge_scrollbar.set)
-        
-        self.subnet_merge_text.pack(fill=tk.BOTH, expand=True)
+        subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
-        
-        # 先删除滚动条和文本框的pack布局
-        subnet_merge_scrollbar.pack_forget()
-        self.subnet_merge_text.pack_forget()
         
         # 配置子网合并列表面板的grid布局
         subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
@@ -3354,11 +3337,8 @@ class IPSubnetSplitterApp:
         subnet_frame.grid_rowconfigure(0, weight=1)  # 文本框行
         subnet_frame.grid_rowconfigure(1, weight=0)  # 按钮行
         
-        # 重新使用grid布局放置文本框
-        self.subnet_merge_text.grid(row=0, column=0, sticky="nsew")
-        
-        # 重新使用grid布局放置滚动条
-        subnet_merge_scrollbar.grid(row=0, column=1, sticky="ns")
+        # 使用通用方法创建带自动隐藏滚动条的Text组件
+        self.create_scrollable_text(subnet_frame, self.subnet_merge_text, subnet_merge_scrollbar)
         
         # 子网合并按钮 - 固定在右下角
         self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
@@ -3422,18 +3402,101 @@ class IPSubnetSplitterApp:
         
         # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
         self.merge_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        self.merge_result_scrollbar.config(command=self.merge_result_tree.yview)
-        self.merge_result_tree.config(yscrollcommand=self.merge_result_scrollbar.set)
-        
-        # 使用grid布局，确保Treeview和滚动条正确对齐
-        self.merge_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        self.merge_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重，使Treeview可以扩展
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
+        self.create_scrollable_treeview(result_frame, self.merge_result_tree, self.merge_result_scrollbar)
         
         self.configure_treeview_styles(self.merge_result_tree)
+    
+    def create_scrollable_treeview(self, parent_frame, treeview, scrollbar, no_scrollbar_padx=(0, 10)):
+        """
+        创建带自动隐藏滚动条的Treeview，并实现滚动条隐藏时自动调整外边距
+        
+        参数:
+            parent_frame: Treeview和滚动条的父容器
+            treeview: 要添加滚动条的Treeview组件
+            scrollbar: 滚动条组件
+            no_scrollbar_padx: 滚动条隐藏时Treeview的右边距，默认(0, 10)
+        """
+        # 创建滚动条回调函数，实现自动隐藏和外边距调整
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+            
+            # 检查是否需要显示滚动条
+            yview = treeview.yview()
+            need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+            
+            # 根据是否需要滚动条调整Treeview的右边距
+            if need_scrollbar:
+                # 显示滚动条
+                scrollbar.grid(row=0, column=1, sticky=tk.NS)
+                # 调整Treeview的grid配置，移除右边距
+                treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+            else:
+                # 隐藏滚动条
+                scrollbar.grid_remove()
+                # 调整Treeview的grid配置，添加右边距
+                treeview.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=no_scrollbar_padx)
+        
+        # 绑定滚动条和Treeview
+        scrollbar.config(command=treeview.yview)
+        treeview.config(yscrollcommand=scrollbar_callback)
+        
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        treeview.grid(row=0, column=0, sticky=tk.NSEW)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Treeview可以扩展
+        parent_frame.grid_rowconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
+    
+    def create_scrollable_text(self, parent_frame, text_widget, scrollbar, no_scrollbar_padx=(0, 10)):
+        """
+        创建带自动隐藏滚动条的Text组件，并实现滚动条隐藏时自动调整外边距
+        
+        参数:
+            parent_frame: Text组件和滚动条的父容器
+            text_widget: 要添加滚动条的Text组件
+            scrollbar: 滚动条组件
+            no_scrollbar_padx: 滚动条隐藏时Text组件的右边距，默认(0, 10)
+        """
+        # 创建滚动条回调函数，实现自动隐藏和外边距调整
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+            
+            # 检查是否需要显示滚动条
+            yview = text_widget.yview()
+            need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+            
+            # 根据是否需要滚动条调整Text组件的右边距
+            if need_scrollbar:
+                # 显示滚动条
+                scrollbar.grid(row=0, column=1, sticky=tk.NS)
+                # 调整Text组件的grid配置，移除右边距
+                text_widget.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+            else:
+                # 隐藏滚动条
+                scrollbar.grid_remove()
+                # 调整Text组件的grid配置，添加右边距
+                text_widget.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=no_scrollbar_padx)
+        
+        # 绑定滚动条和Text组件
+        scrollbar.config(command=text_widget.yview)
+        text_widget.configure(yscrollcommand=scrollbar_callback)
+        
+        # 使用grid布局，确保Text组件和滚动条正确对齐
+        text_widget.grid(row=0, column=0, sticky=tk.NSEW)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置grid权重，使Text组件可以扩展
+        parent_frame.grid_rowconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
     
     def create_ipv4_info_section(self):
         """创建IPv4地址信息查询功能界面"""
@@ -3532,7 +3595,29 @@ class IPSubnetSplitterApp:
         # 添加垂直滚动条
         ip_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
         ip_info_scrollbar.config(command=self.ip_info_tree.yview)
-        self.ip_info_tree.config(yscrollcommand=ip_info_scrollbar.set)
+        
+        # 创建滚动条回调函数，实现自动隐藏和外边距调整
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            ip_info_scrollbar.set(*args)
+            
+            # 检查是否需要显示滚动条
+            yview = self.ip_info_tree.yview()
+            need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+            
+            # 根据是否需要滚动条调整Treeview的右边距
+            if need_scrollbar:
+                # 显示滚动条
+                ip_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+                # 调整Treeview的grid配置，移除右边距
+                self.ip_info_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+            else:
+                # 隐藏滚动条
+                ip_info_scrollbar.grid_remove()
+                # 调整Treeview的grid配置，添加右边距
+                self.ip_info_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=(0, 10))
+        
+        self.ip_info_tree.config(yscrollcommand=scrollbar_callback)
         
         # 使用grid布局，确保Treeview和滚动条正确对齐
         self.ip_info_tree.grid(row=0, column=0, sticky=tk.NSEW)
@@ -3541,6 +3626,9 @@ class IPSubnetSplitterApp:
         # 配置grid权重，使Treeview可以扩展
         result_frame.grid_rowconfigure(0, weight=1)
         result_frame.grid_columnconfigure(0, weight=1)
+        
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
         
         self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
         
@@ -3592,18 +3680,9 @@ class IPSubnetSplitterApp:
         self.range_result_tree.column("broadcast", width=90)
         self.range_result_tree.column("hosts", width=50, anchor="e")
         
-        # 添加垂直滚动条
+        # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Treeview
         range_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        range_result_scrollbar.config(command=self.range_result_tree.yview)
-        self.range_result_tree.config(yscrollcommand=range_result_scrollbar.set)
-        
-        # 使用grid布局，确保Treeview和滚动条正确对齐
-        self.range_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        range_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重，使Treeview可以扩展
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
+        self.create_scrollable_treeview(result_frame, self.range_result_tree, range_result_scrollbar)
         
         self.configure_treeview_styles(self.range_result_tree)
         
@@ -3624,17 +3703,11 @@ class IPSubnetSplitterApp:
         self.overlap_text = tk.Text(text_frame, height=12, width=60, font=("微软雅黑", 10))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16")
         
-        # 添加垂直滚动条
-        overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.overlap_text.yview)
-        self.overlap_text.configure(yscrollcommand=overlap_text_scrollbar.set)
+        # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
+        overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
         
-        # 使用grid布局放置文本框和滚动条
-        self.overlap_text.grid(row=0, column=0, sticky=tk.NSEW)
-        overlap_text_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重
-        text_frame.grid_rowconfigure(0, weight=1)
-        text_frame.grid_columnconfigure(0, weight=1)
+        # 使用通用方法创建带自动隐藏滚动条的Text组件
+        self.create_scrollable_text(text_frame, self.overlap_text, overlap_text_scrollbar)
         
         # 直接创建检测重叠按钮 - 靠右放置
         self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
@@ -3653,16 +3726,9 @@ class IPSubnetSplitterApp:
         
         # 添加垂直滚动条
         overlap_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
-        overlap_result_scrollbar.config(command=self.overlap_result_tree.yview)
-        self.overlap_result_tree.config(yscrollcommand=overlap_result_scrollbar.set)
         
-        # 使用grid布局放置Treeview和滚动条
-        self.overlap_result_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        overlap_result_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        
-        # 配置grid权重
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
+        # 使用通用方法创建带自动隐藏滚动条的Treeview
+        self.create_scrollable_treeview(result_frame, self.overlap_result_tree, overlap_result_scrollbar)
         
         self.configure_treeview_styles(self.overlap_result_tree)
         
