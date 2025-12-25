@@ -2465,11 +2465,11 @@ class IPSubnetSplitterApp:
 
         # 计算对话框的居中位置（不包含主窗口标题栏）
         title_bar_height = 30  # 通常标题栏高度约为30像素
-        x = root_x + (root_width - width) // 2
-        y = root_y + title_bar_height + (root_height - title_bar_height - height) // 2
+        dialog_x = root_x + (root_width - width) // 2
+        dialog_y = root_y + title_bar_height + (root_height - title_bar_height - height) // 2
 
-        # 一次性设置对话框的尺寸和位置
-        window.geometry(f"{width}x{height}+{x}+{y}")
+        # 涓€娆℃€ц缃璇濇鐨勫昂瀵稿拰浣嶇疆
+        window.geometry(f"{width}x{height}+{dialog_x}+{dialog_y}")
 
     def delete_subnet_requirement(self):
         """删除选中的子网需求或需求池记录，并重新应用斑马条纹"""
@@ -2592,11 +2592,11 @@ class IPSubnetSplitterApp:
         root_height = self.root.winfo_height()
 
         # 计算对话框在主窗口中心的坐标
-        x = root_x + (root_width - dialog_width) // 2
-        y = root_y + (root_height - dialog_height) // 2
+        dialog_x = root_x + (root_width - dialog_width) // 2
+        dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 设置对话框位置
-        dialog.geometry(f"+{x}+{y}")
+        # 璁剧疆瀵硅瘽妗嗕綅缃?
+        dialog.geometry(f"+{dialog_x}+{dialog_y}")
 
         # 等待对话框关闭
         self.root.wait_window(dialog)
@@ -2684,11 +2684,11 @@ class IPSubnetSplitterApp:
         root_height = self.root.winfo_height()
 
         # 计算对话框在主窗口中心的坐标
-        x = root_x + (root_width - dialog_width) // 2
-        y = root_y + (root_height - dialog_height) // 2
+        dialog_x = root_x + (root_width - dialog_width) // 2
+        dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 设置对话框位置
-        dialog.geometry(f"+{x}+{y}")
+        # 璁剧疆瀵硅瘽妗嗕綅缃?
+        dialog.geometry(f"+{dialog_x}+{dialog_y}")
 
         # 等待对话框关闭
         self.root.wait_window(dialog)
@@ -2759,7 +2759,7 @@ class IPSubnetSplitterApp:
         current_value = self.requirements_tree.item(item, "values")[column_index]
 
         # 获取单元格的坐标和大小
-        x, y, width, height = self.requirements_tree.bbox(item, column)
+        cell_x, cell_y, width, height = self.requirements_tree.bbox(item, column)
 
         # 创建编辑框
         self.edit_entry = ttk.Entry(self.requirements_tree, width=width // 10)  # 估算字符宽度
@@ -2767,8 +2767,8 @@ class IPSubnetSplitterApp:
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
 
-        # 放置编辑框在单元格上
-        self.edit_entry.place(x=x, y=y, width=width, height=height)
+        # 设置编辑框在单元格上
+        self.edit_entry.place(x=cell_x, y=cell_y, width=width, height=height)
 
         # 保存当前编辑的信息
         self.current_edit_item = item
@@ -2806,7 +2806,7 @@ class IPSubnetSplitterApp:
         current_value = self.pool_tree.item(item, "values")[column_index]
 
         # 获取单元格的坐标和大小
-        x, y, width, height = self.pool_tree.bbox(item, column)
+        cell_x, cell_y, width, height = self.pool_tree.bbox(item, column)
 
         # 创建编辑框
         self.edit_entry = ttk.Entry(self.pool_tree, width=width // 10)  # 估算字符宽度
@@ -2814,8 +2814,8 @@ class IPSubnetSplitterApp:
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
 
-        # 放置编辑框在单元格上
-        self.edit_entry.place(x=x, y=y, width=width, height=height)
+        # 设置编辑框在单元格上
+        self.edit_entry.place(x=cell_x, y=cell_y, width=width, height=height)
 
         # 保存当前编辑的信息
         self.current_edit_item = item
@@ -4812,11 +4812,11 @@ class IPSubnetSplitterApp:
         root_height = self.root.winfo_height()
 
         # 计算对话框居中位置
-        x = root_x + (root_width - dialog_width) // 2
-        y = root_y + (root_height - dialog_height) // 2
+        dialog_x = root_x + (root_width - dialog_width) // 2
+        dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 设置对话框大小和位置
-        test_dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        # 璁剧疆瀵硅瘽妗嗗ぇ灏忓拰浣嶇疆
+        test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
         # 创建对话框内容框架
         content_frame = ttk.Frame(test_dialog, padding="15")
@@ -5155,7 +5155,7 @@ class IPSubnetSplitterApp:
                 )
 
             # 添加剩余网段 - 使用更现代化的颜色方案
-            colors = [
+            subnet_colors = [
                 "#4caf50",
                 "#ff9800",
                 "#f44336",
@@ -5174,7 +5174,7 @@ class IPSubnetSplitterApp:
                         "end": subnet_end,
                         "range": subnet_end - subnet_start + 1,
                         "name": subnet.get("cidr", ""),
-                        "color": colors[index % len(colors)],  # 循环使用颜色
+                        "color": subnet_colors[index % len(subnet_colors)],  # 寰幆浣跨敤棰滆壊循环使用颜色
                         "type": "remaining",
                     }
                 )
@@ -6963,7 +6963,7 @@ class IPSubnetSplitterApp:
                     main_sheet.append(list(row_data))
 
                 # 调整列宽
-                for col_index, header in enumerate(main_headers, 1):
+                for col_index, _ in enumerate(main_headers, 1):
                     main_sheet.column_dimensions[chr(64 + col_index)].width = 20
 
                 # 添加剩余数据工作表
@@ -6984,7 +6984,7 @@ class IPSubnetSplitterApp:
                         remaining_sheet.append([str(v) for v in row_values])
 
                 # 调整列宽
-                for col_index, header in enumerate(remaining_headers, 1):
+                for col_index, _ in enumerate(remaining_headers, 1):
                     remaining_sheet.column_dimensions[chr(64 + col_index)].width = 20
 
                 # 保存Excel文件
@@ -7427,11 +7427,11 @@ if __name__ == "__main__":
     screen_height = root.winfo_screenheight()
 
     # 计算窗口居中的坐标
-    x = (screen_width - WINDOW_WIDTH) // 2
-    y = (screen_height - WINDOW_HEIGHT) // 2
+    window_x = (screen_width - WINDOW_WIDTH) // 2
+    window_y = (screen_height - WINDOW_HEIGHT) // 2
 
     # 设置窗口大小和位置
-    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{x}+{y}")
+    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{window_x}+{window_y}")
 
     # 设置窗口最小大小 - 最小高度设为当前满意高度，只能拉大不能缩小
     root.minsize(800, 700)
@@ -7464,8 +7464,8 @@ if __name__ == "__main__":
             try:
                 # 注意：PhotoImage可能无法直接处理.ico文件，需要转换
                 # 这里先尝试直接加载，如果失败则忽略
-                icon = tk.PhotoImage(file=icon_path)
-                root.iconphoto(True, icon)
+                photo_icon = tk.PhotoImage(file=icon_path)
+                root.iconphoto(True, photo_icon)
             except tk.TclError:
                 pass  # 如果PhotoImage方法失败，继续执行
     except (tk.TclError, OSError) as e:
