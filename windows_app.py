@@ -3804,34 +3804,34 @@ class IPSubnetSplitterApp:
 
             # 添加切分段信息，同时设置斑马条纹标签
             row_index = 0
-            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
 
             # 添加切分后的网段信息
             split_info = result["split_info"]
-            self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd" if row_index % 2 else "even",))
+            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
 
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
@@ -4584,7 +4584,7 @@ class IPSubnetSplitterApp:
                     info["broadcast"],  # 广播地址
                     info["usable_addresses"],  # 可用主机数
                 ]
-                tag = "even" if row_index % 2 == 0 else "odd"
+                tag = "odd" if row_index % 2 == 0 else "even"
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
@@ -5375,7 +5375,7 @@ class IPSubnetSplitterApp:
                 for cidr in cidr_list:
                     info = get_subnet_info(cidr)
                     row_values.append(prop_func(info, cidr))
-                tag = "even" if row_index % 2 == 0 else "odd"
+                tag = "odd" if row_index % 2 == 0 else "even"
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
@@ -5414,14 +5414,14 @@ class IPSubnetSplitterApp:
 
             # 如果没有重叠，显示无重叠信息
             if not overlaps:
-                tag = "even" if row_index % 2 == 0 else "odd"
+                tag = "odd" if row_index % 2 == 0 else "even"
                 self.overlap_result_tree.insert("", tk.END, values=("无", "未检测到子网重叠"), tags=(tag,))
             else:
                 # 显示所有重叠信息
                 for overlap in overlaps:
                     status = "重叠"
                     description = f"{overlap['subnet1']} 与 {overlap['subnet2']} ({overlap['type']})"
-                    tag = "even" if row_index % 2 == 0 else "odd"
+                    tag = "odd" if row_index % 2 == 0 else "even"
                     self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
                     row_index += 1
 
