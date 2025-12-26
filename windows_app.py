@@ -555,7 +555,7 @@ class IPSubnetSplitterApp:
             # 直接为每个标签样式配置完整的样式属性
 
             # 为三个标签页分别创建不同颜色的标签样式 - 现代化配色方案
-            # 蓝色标签样式 - 切分网段信息
+            # 蓝色标签样式 - 切分段信息
             self.style.configure(
                 "Blue.TNotebook.Tab",
                 background="#e3f2fd",  # 浅蓝色背景
@@ -1428,8 +1428,10 @@ class IPSubnetSplitterApp:
         history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 10, 5))
         history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
 
-        # 创建历史记录列表，去掉表头，显示4行
+        # 创建历史记录表格
         self.history_tree = ttk.Treeview(history_frame, columns=('record'), show='', height=4)
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.history_tree)
 
         # 设置列宽
         self.history_tree.column('record', width=180, stretch=True)
@@ -1572,11 +1574,13 @@ class IPSubnetSplitterApp:
         # 将导出结果按钮提升到最上层，避免被遮挡
         self.export_btn.lift()
 
-        # 切分网段信息页面
+        # 切分段信息页面
         self.split_info_frame = ttk.Frame(self.notebook.content_area, padding="5", style=self.notebook.light_blue_style)
 
-        # 创建切分网段信息表格
+        # 创建切分段信息表格
         self.split_tree = ttk.Treeview(self.split_info_frame, columns=("item", "value"), show="headings", height=5)
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.split_tree)
         self.split_tree.heading("item", text="项目")
         self.split_tree.heading("value", text="值")
         # 设置合适的列宽
@@ -1597,6 +1601,8 @@ class IPSubnetSplitterApp:
             show="headings",
             height=5,
         )
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.remaining_tree)
         self.remaining_tree.heading("index", text="序号")
         self.remaining_tree.heading("cidr", text="CIDR")
         self.remaining_tree.heading("network", text="网络地址")
@@ -1619,8 +1625,8 @@ class IPSubnetSplitterApp:
         self.chart_frame = ttk.Frame(self.notebook.content_area, padding="5", style=self.notebook.light_purple_style)
 
         # 添加标签页，每个标签页设置不同的颜色
-        self.notebook.add_tab("切分网段信息", self.split_info_frame, "#e3f2fd")  # 浅蓝色
-        self.notebook.add_tab("剩余网段表", self.remaining_frame, "#e8f5e9")  # 浅绿色
+        self.notebook.add_tab("切分段信息", self.split_info_frame, "#e3f2fd")  # 浅蓝色
+        self.notebook.add_tab("剩余网段", self.remaining_frame, "#e8f5e9")  # 浅绿色
         self.notebook.add_tab("网段分布图", self.chart_frame, "#f3e5f5")  # 浅紫色
 
         # 配置chart_frame的grid布局
@@ -1739,12 +1745,14 @@ class IPSubnetSplitterApp:
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
     def _create_split_info_page(self):
-        """创建切分网段信息页面"""
-        # 切分网段信息页面
+        """创建切分段信息页面"""
+        # 切分段信息页面
         self.split_info_frame = ttk.Frame(self.notebook.content_area, padding="5", style=self.notebook.light_blue_style)
 
-        # 创建切分网段信息表格
+        # 创建切分段信息表格
         self.split_tree = ttk.Treeview(self.split_info_frame, columns=("item", "value"), show="headings", height=5)
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.split_tree)
         self.split_tree.heading("item", text="项目")
         self.split_tree.heading("value", text="值")
         # 设置合适的列宽
@@ -1767,6 +1775,8 @@ class IPSubnetSplitterApp:
             show="headings",
             height=5,
         )
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.remaining_tree)
         self.remaining_tree.heading("index", text="序号")
         self.remaining_tree.heading("cidr", text="CIDR")
         self.remaining_tree.heading("network", text="网络地址")
@@ -1846,8 +1856,8 @@ class IPSubnetSplitterApp:
     def _add_result_tabs(self):
         """添加标签页到笔记本"""
         # 添加标签页，每个标签页设置不同的颜色
-        self.notebook.add_tab("切分网段信息", self.split_info_frame, "#e3f2fd")  # 浅蓝色
-        self.notebook.add_tab("剩余网段表", self.remaining_frame, "#e8f5e9")  # 浅绿色
+        self.notebook.add_tab("切分段信息", self.split_info_frame, "#e3f2fd")  # 浅蓝色
+        self.notebook.add_tab("剩余网段", self.remaining_frame, "#e8f5e9")  # 浅绿色
         self.notebook.add_tab("网段分布图", self.chart_frame, "#f3e5f5")  # 浅紫色
 
     def _setup_scrollbars(self):
@@ -1956,6 +1966,8 @@ class IPSubnetSplitterApp:
 
         # 创建需求池表格，结构与子网需求表相同
         self.pool_tree = ttk.Treeview(history_frame, columns=("index", "name", "hosts"), show="headings", height=6)
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.pool_tree)
         self.pool_tree.heading("index", text="序号")
         self.pool_tree.heading("name", text="子网名称")
         self.pool_tree.heading("hosts", text="主机数量")
@@ -2002,6 +2014,8 @@ class IPSubnetSplitterApp:
         self.requirements_tree = ttk.Treeview(
             inner_frame, columns=("index", "name", "hosts"), show="headings", height=5  # 设置为5行高度，添加序号列
         )
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.requirements_tree)
         self.requirements_tree.heading("index", text="序号")
         self.requirements_tree.heading("name", text="子网名称")
         self.requirements_tree.heading("hosts", text="主机数量")
@@ -2186,6 +2200,9 @@ class IPSubnetSplitterApp:
             height=5,  # 设置为5行高度
         )
 
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.allocated_tree)
+
         # 设置列标题
         self.allocated_tree.heading("index", text="序号")
         self.allocated_tree.heading("name", text="子网名称")
@@ -2247,6 +2264,9 @@ class IPSubnetSplitterApp:
             show="headings",
             height=5,  # 设置为5行高度
         )
+
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.planning_remaining_tree)
 
         # 设置列标题
         self.planning_remaining_tree.heading("index", text="序号")
@@ -2948,6 +2968,8 @@ class IPSubnetSplitterApp:
 
         result_tree = ttk.Treeview(tree_frame, columns=("row", "name", "hosts", "status"), 
                                   show="headings", height=12)
+        # 添加右键复制功能
+        result_tree.bind("<Button-3>", lambda event, t=result_tree: self.copy_cell_data(event, t))
         result_tree.heading("row", text="行号")
         result_tree.heading("name", text="子网名称")
         result_tree.heading("hosts", text="主机数量")
@@ -3106,9 +3128,6 @@ class IPSubnetSplitterApp:
         try:
             if template_type == "excel":
                 # 生成Excel模板
-                from openpyxl import Workbook
-                from openpyxl.styles import Font, Alignment
-
                 wb = Workbook()
                 ws = wb.active
                 ws.title = "子网需求"
@@ -3152,6 +3171,43 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.show_error("错误", f"模板生成失败: {str(e)}")
 
+    def copy_cell_data(self, event, tree):
+        """复制表格中单元格数据的通用功能"""
+        # 获取点击位置的行和列
+        region = tree.identify_region(event.x, event.y)
+        if region != "cell":
+            return
+        
+        # 获取点击的行ID和列
+        item = tree.identify_row(event.y)
+        column = tree.identify_column(event.x)
+        
+        if not item:
+            return
+        
+        # 获取列索引
+        column_index = int(column.replace("#", "")) - 1
+        
+        # 获取行数据
+        values = tree.item(item, "values")
+        if not values or column_index >= len(values):
+            return
+        
+        # 获取单元格数据
+        cell_data = str(values[column_index])
+        
+        # 将数据复制到剪贴板
+        self.root.clipboard_clear()
+        self.root.clipboard_append(cell_data)
+        
+        # 可选：显示复制成功的提示
+        self.show_result("已复制到剪贴板", keep_data=True)
+    
+    def bind_treeview_right_click(self, tree):
+        """为Treeview绑定右键复制功能"""
+        # 绑定右键菜单事件
+        tree.bind("<Button-3>", lambda event, t=tree: self.copy_cell_data(event, t))
+    
     def show_custom_dialog(self, title, message, dialog_type="info"):
         """显示自定义的居中对话框，支持info、error、warning类型"""
         result = None
@@ -3740,7 +3796,7 @@ class IPSubnetSplitterApp:
                 self.split_tree.insert("", tk.END, values=("错误", result["error"]), tags=("error",))
                 return
 
-            # 添加切分网段信息，同时设置斑马条纹标签
+            # 添加切分段信息，同时设置斑马条纹标签
             row_index = 0
             self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 else "even",))
             row_index += 1
@@ -3967,6 +4023,8 @@ class IPSubnetSplitterApp:
 
         # 创建Treeview和垂直滚动条
         self.ipv6_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.ipv6_info_tree)
         self.ipv6_info_tree.heading("item", text="项目")
         self.ipv6_info_tree.heading("value", text="值")
 
@@ -4075,6 +4133,8 @@ class IPSubnetSplitterApp:
         # 创建正常的结果树（非转置）
         columns = ["CIDR", "网络地址", "子网掩码", "广播地址", "主机数"]
         self.merge_result_tree = ttk.Treeview(self.merge_result_frame, columns=columns, show="headings")
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.merge_result_tree)
 
         # 设置列标题和初始宽度
         for i, col in enumerate(columns):
@@ -4347,6 +4407,8 @@ class IPSubnetSplitterApp:
 
         # 创建Treeview和垂直滚动条
         self.ip_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.ip_info_tree)
         self.ip_info_tree.heading("item", text="项目")
         self.ip_info_tree.heading("value", text="值")
 
@@ -4425,6 +4487,8 @@ class IPSubnetSplitterApp:
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
+        # 添加右键复制功能
+        self.bind_treeview_right_click(self.overlap_result_tree)
         self.overlap_result_tree.heading("status", text="状态")
         self.overlap_result_tree.heading("message", text="描述")
 
@@ -6209,7 +6273,7 @@ class IPSubnetSplitterApp:
                 else:
                     main_data.append(values)
 
-        # 二次去重：确保所有数据行都是唯一的，解决切分网段信息重复的问题
+        # 二次去重：确保所有数据行都是唯一的，解决切分段信息重复的问题
         unique_main_data = []
         seen_rows = set()
         for row in main_data:
@@ -6233,7 +6297,7 @@ class IPSubnetSplitterApp:
 
     def _export_to_json(self, file_path, data_source, main_data, main_headers, remaining_data):
         """导出数据为JSON格式"""
-        if data_source["main_name"] == "切分网段信息":
+        if data_source["main_name"] == "切分段信息":
             # 子网切分结果特殊处理
             export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
         else:
@@ -6253,7 +6317,7 @@ class IPSubnetSplitterApp:
             f.write(f"{data_source['main_name']}\n")
             f.write("=" * 80 + "\n")
 
-            # 如果是键值对格式（如切分网段信息）
+            # 如果是键值对格式（如切分段信息）
             if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
                 for values in main_data:
                     f.write(f"{values[0]:<20}: {values[1]}\n")
@@ -6375,8 +6439,8 @@ class IPSubnetSplitterApp:
             is_valid = True
             error_msg = ""
             
-            if data_source["main_name"] == "切分网段信息":
-                # 检查切分网段信息是否为空（排除提示行）
+            if data_source["main_name"] == "切分段信息":
+                # 检查切分段信息是否为空（排除提示行）
                 if not main_data:
                     is_valid = False
                     error_msg = "未找到切分数据，请先执行子网切分！"
@@ -6553,7 +6617,7 @@ class IPSubnetSplitterApp:
                 # 添加主数据信息
                 elements.append(Paragraph(data_source["main_name"], heading2_style))
 
-                # 如果是键值对格式（如切分网段信息）
+                # 如果是键值对格式（如切分段信息）
                 if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
                     main_table_data = [["项目", "值"]]
                     for values in main_data:
@@ -6904,8 +6968,8 @@ class IPSubnetSplitterApp:
                 chart_data = None
 
                 # 只有在子网切分功能中导出时才生成网段分布图
-                # 检查当前导出的主数据名称，如果是"切分网段信息"，则生成网段分布图
-                if data_source["main_name"] == "切分网段信息":
+                # 检查当前导出的主数据名称，如果是"切分段信息"，则生成网段分布图
+                if data_source["main_name"] == "切分段信息":
                     # 检查是否已有chart_data
                     if (
                         hasattr(self, 'chart_data')
@@ -6958,7 +7022,7 @@ class IPSubnetSplitterApp:
                                 if values and len(values) >= 1:
                                     remaining_networks.append(values[0])
 
-                            # 从main_data中提取切分网段信息
+                            # 从main_data中提取切分段信息
                             split_networks = []
                             for row in main_data:
                                 if len(row) >= 2 and row[0] == "切分网段":
@@ -7692,8 +7756,8 @@ class IPSubnetSplitterApp:
         """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
         data_source = {
             "main_tree": self.split_tree,
-            "main_name": "切分网段信息",
-            "main_filter": lambda values: values[0] not in ["提示", "错误", "-", "切分网段信息", "剩余网段信息"],
+            "main_name": "切分段信息",
+            "main_filter": lambda values: values[0] not in ["提示", "错误", "-", "切分段信息", "剩余网段信息"],
             "main_headers": ["项目", "值"],
             "remaining_tree": self.remaining_tree,
             "remaining_name": "剩余网段信息",
@@ -7794,11 +7858,11 @@ class IPSubnetSplitterApp:
 
     def clear_result(self):
         """清空结果表格和图表"""
-        # 清空切分网段信息表格
+        # 清空切分段信息表格
         self.clear_tree_items(self.split_tree)
         # 添加提示行
         self.split_tree.insert("", tk.END, values=("提示", "点击'执行切分'按钮开始操作..."), tags=('odd',))
-        # 更新切分网段表格的斑马条纹标签
+        # 更新切分段表格的斑马条纹标签
         self.update_table_zebra_stripes(self.split_tree)
 
         # 清空剩余网段表表格
