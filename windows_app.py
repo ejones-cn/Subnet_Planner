@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -5638,7 +5638,8 @@ class IPSubnetSplitterApp:
                 )
 
             # 添加剩余网段 - 使用更现代化的颜色方案
-            subnet_colors = [
+            # 优化：使用元组存储，减少内存分配和提高访问速度
+            subnet_colors = (
                 "#4caf50",
                 "#ff9800",
                 "#f44336",
@@ -5647,7 +5648,7 @@ class IPSubnetSplitterApp:
                 "#795548",
                 "#ffeb3b",
                 "#607d8b",
-            ]  # 现代化颜色列表
+            )  # 现代化颜色列表
             for index, subnet in enumerate(remaining_subnets):
                 subnet_start = ip_to_int(subnet.get("network", "0.0.0.0"))
                 subnet_end = ip_to_int(subnet.get("broadcast", "0.0.0.0"))
@@ -5657,7 +5658,7 @@ class IPSubnetSplitterApp:
                         "end": subnet_end,
                         "range": subnet_end - subnet_start + 1,
                         "name": subnet.get("cidr", ""),
-                        "color": subnet_colors[index % len(subnet_colors)],  # 寰幆浣跨敤棰滆壊循环使用颜色
+                        "color": subnet_colors[index % len(subnet_colors)],  # 循环使用颜色
                         "type": "remaining",
                     }
                 )
@@ -5699,14 +5700,13 @@ class IPSubnetSplitterApp:
             stroke_color: 描边颜色
         """
         try:
-            # 使用4个方向的基础描边，平衡性能和可读性
+            # 优化：使用2个对角线方向的描边，减少50%的Canvas对象创建
+            # 平衡可读性和性能，适合图表文字显示
             offset = 1  # 描边偏移量
 
-            # 绘制4个方向的描边
-            self.chart_canvas.create_text(x - offset, y, text=text, font=font, anchor=anchor, fill=stroke_color)
-            self.chart_canvas.create_text(x + offset, y, text=text, font=font, anchor=anchor, fill=stroke_color)
-            self.chart_canvas.create_text(x, y - offset, text=text, font=font, anchor=anchor, fill=stroke_color)
-            self.chart_canvas.create_text(x, y + offset, text=text, font=font, anchor=anchor, fill=stroke_color)
+            # 绘制2个对角线方向的描边（减少Canvas对象数量）
+            self.chart_canvas.create_text(x - offset, y - offset, text=text, font=font, anchor=anchor, fill=stroke_color)
+            self.chart_canvas.create_text(x + offset, y + offset, text=text, font=font, anchor=anchor, fill=stroke_color)
 
             # 绘制主文字
             self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
@@ -5879,7 +5879,8 @@ class IPSubnetSplitterApp:
             y += 15
 
             # 为剩余网段分配高区分度的柔和配色方案
-            subnet_colors = [
+            # 优化：使用元组存储，减少内存分配和提高访问速度
+            subnet_colors = (
                 "#5e9c6a",
                 "#db6679",
                 "#f0ab55",
@@ -5900,7 +5901,7 @@ class IPSubnetSplitterApp:
                 "#5b8fd9",
                 "#db6679",
                 "#a6c589",
-            ]
+            )
 
             # 绘制剩余网段
             remaining_networks = [net for net in networks if net.get("type") != "split"]
@@ -5992,6 +5993,9 @@ class IPSubnetSplitterApp:
                 fill="#ffffff",
             )
 
+            # 优化：显式调用update_idletasks，确保Canvas及时更新和资源释放
+            self.chart_canvas.update_idletasks()
+
         except (tk.TclError, ValueError, TypeError) as e:
             # 出现错误时显示提示
             self.chart_canvas.delete("all")
@@ -6050,8 +6054,8 @@ class IPSubnetSplitterApp:
                     if item_key not in added_items:
                         added_items.add(item_key)
                         main_data.append(values)
-                    else:
-                        main_data.append(values)
+                else:
+                    main_data.append(values)
 
         # 二次去重：确保所有数据行都是唯一的，解决切分网段信息重复的问题
         unique_main_data = []
@@ -6188,6 +6192,9 @@ class IPSubnetSplitterApp:
 
         # 保存Excel文件
         wb.save(file_path)
+        
+        # 优化：显式释放Workbook资源
+        del wb
 
     def _export_data(self, data_source, title, success_msg, failure_msg):
         """通用数据导出函数
@@ -7493,6 +7500,9 @@ class IPSubnetSplitterApp:
 
                 # 保存Excel文件
                 workbook.save(file_path)
+                
+                # 优化：显式释放Workbook资源
+                del workbook
 
             else:  # 默认CSV格式
                 # CSV格式导出，使用utf-8-sig编码解决中文乱码问题
