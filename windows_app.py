@@ -8,9 +8,9 @@
 # 所有导入语句放在最顶部
 import tkinter as tk
 import math
-import re
 import datetime
-from tkinter import ttk, filedialog, messagebox
+import re
+from tkinter import HIDDEN, ttk, filedialog, messagebox
 import tkinter.font as tkfont
 import sys
 import os
@@ -2551,9 +2551,9 @@ class IPSubnetSplitterApp:
         # 先隐藏对话框，避免定位过程中的闪现
         dialog.withdraw()
 
-        # 计算居中位置
-        window_width = 500
-        window_height = 300
+        # 计算居中位置，增加高度确保取消按钮能完整显示
+        window_width = 350
+        window_height = 270
         self.center_window(dialog, window_width, window_height)
 
         # 显示对话框
@@ -2567,25 +2567,31 @@ class IPSubnetSplitterApp:
         info_text = "请选择导入方式："
         ttk.Label(main_frame, text=info_text, font=('微软雅黑', 10)).pack(pady=(0, 15))
 
-        # 按钮框架
+        # 按钮框架 - 纵向排列，居中放置
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=10)
+        button_frame.pack(fill=tk.X, pady=0)
 
         # 导入文件按钮
         import_file_btn = ttk.Button(button_frame, text="从文件导入", 
                                     command=lambda: self._import_from_file(dialog),
-                                    width=15)
-        import_file_btn.pack(side=tk.LEFT, padx=5)
+                                    width=18)
+        import_file_btn.pack(pady=15)
 
-        # 下载模板按钮
-        download_template_btn = ttk.Button(button_frame, text="下载模板", 
-                                         command=lambda: self._download_template(dialog),
-                                         width=15)
-        download_template_btn.pack(side=tk.LEFT, padx=5)
+        # 下载Excel模板按钮
+        download_excel_btn = ttk.Button(button_frame, text="下载Excel模板", 
+                                         command=lambda: self._generate_template("excel", dialog),
+                                         width=18)
+        download_excel_btn.pack(pady=0)
 
-        # 取消按钮
-        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
-        cancel_btn.pack(side=tk.RIGHT, padx=5)
+        # 下载CSV模板按钮
+        download_csv_btn = ttk.Button(button_frame, text="下载CSV模板", 
+                                      command=lambda: self._generate_template("csv", dialog),
+                                      width=18)
+        download_csv_btn.pack(pady=5)
+
+        # 取消按钮 - 直接放在主框架中，使用pack布局
+        cancel_btn = ttk.Button(main_frame, text="取消", command=dialog.destroy, width=10)
+        cancel_btn.pack(pady=(20, 10), side=tk.RIGHT, padx=10)
 
     def _import_from_file(self, parent_dialog):
         """从文件导入数据
@@ -2601,7 +2607,6 @@ class IPSubnetSplitterApp:
             filetypes=[
                 ("Excel文件", "*.xlsx"),
                 ("CSV文件", "*.csv"),
-                ("所有文件", "*.*"),
             ],
             initialdir=""
         )
@@ -2761,7 +2766,7 @@ class IPSubnetSplitterApp:
         """
         dialog = tk.Toplevel(self.root)
         dialog.title("导入数据验证")
-        dialog.resizable(True, True)
+        dialog.resizable(False, False)
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -2799,10 +2804,10 @@ class IPSubnetSplitterApp:
         result_tree.heading("hosts", text="主机数量")
         result_tree.heading("status", text="状态")
 
-        result_tree.column("row", width=60, minwidth=40, anchor="e")
-        result_tree.column("name", width=150, minwidth=80)
+        result_tree.column("row", width=20, minwidth=20, anchor="e")
+        result_tree.column("name", width=200, minwidth=80)
         result_tree.column("hosts", width=80, minwidth=40)
-        result_tree.column("status", width=150, minwidth=80)
+        result_tree.column("status", width=100, minwidth=80)
 
         # 添加滚动条
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
@@ -2837,19 +2842,26 @@ class IPSubnetSplitterApp:
         # 配置标签样式
         result_tree.tag_configure("valid", foreground="green")
         result_tree.tag_configure("invalid", foreground="red")
+        
+        # 配置斑马条纹样式
+        result_tree.tag_configure("even", background="#d8d8d8")
+        result_tree.tag_configure("odd", background="#ffffff")
+        
+        # 应用斑马条纹效果
+        for index, item in enumerate(result_tree.get_children()):
+            # 获取当前标签
+            current_tags = result_tree.item(item, "tags")
+            # 添加斑马纹标签
+            stripe_tag = "even" if index % 2 == 0 else "odd"
+            # 合并标签，保持原有状态标签和新的斑马纹标签
+            result_tree.item(item, tags=(*current_tags, stripe_tag))
 
         # 预先计算有效数据列表，避免在按钮点击时重复计算
         valid_data = [d for d in data_list if d.get("row", 0) not in error_dict]
 
-        # 按钮框架
+        # 按钮框架 - 使用pack布局让按钮排列更整齐
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X)
-
-        # 导入到子网需求表按钮
-        import_req_btn = ttk.Button(button_frame, text="导入子网需求", 
-                                    command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
-                                    width=12)
-        import_req_btn.pack(side=tk.LEFT, padx=5)
+        button_frame.pack(fill=tk.X, pady=(15, 0))
 
         # 导入到需求池表按钮
         import_pool_btn = ttk.Button(button_frame, text="导入需求池", 
@@ -2857,7 +2869,13 @@ class IPSubnetSplitterApp:
                                      width=12)
         import_pool_btn.pack(side=tk.LEFT, padx=5)
 
-        # 取消按钮
+        # 导入到子网需求表按钮
+        import_req_btn = ttk.Button(button_frame, text="导入子网需求", 
+                                    command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
+                                    width=12)
+        import_req_btn.pack(side=tk.LEFT, padx=5)
+
+        # 取消按钮 - 靠右显示，与其他按钮并排
         cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
         cancel_btn.pack(side=tk.RIGHT, padx=5)
 
@@ -2910,69 +2928,13 @@ class IPSubnetSplitterApp:
         if dialog:
             dialog.destroy()
 
-    def _download_template(self, parent_dialog):
-        """下载导入模板
-
-        Args:
-            parent_dialog: 父对话框
-        """
-        parent_dialog.destroy()
-
-        # 显示模板格式选择对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title("下载模板")
-        dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        # 先隐藏对话框，避免定位过程中的闪现
-        dialog.withdraw()
-
-        # 计算居中位置
-        window_width = 400
-        window_height = 200
-        self.center_window(dialog, window_width, window_height)
-
-        # 显示对话框
-        dialog.deiconify()
-
-        # 创建主内容框架
-        main_frame = ttk.Frame(dialog, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # 说明文本
-        info_text = "请选择模板格式："
-        ttk.Label(main_frame, text=info_text, font=('微软雅黑', 10)).pack(pady=(0, 15))
-
-        # 按钮框架
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=10)
-
-        # Excel模板按钮
-        excel_btn = ttk.Button(button_frame, text="Excel模板", 
-                               command=lambda: self._generate_template("excel", dialog),
-                               width=15)
-        excel_btn.pack(side=tk.LEFT, padx=5)
-
-        # CSV模板按钮
-        csv_btn = ttk.Button(button_frame, text="CSV模板", 
-                            command=lambda: self._generate_template("csv", dialog),
-                            width=15)
-        csv_btn.pack(side=tk.LEFT, padx=5)
-
-        # 取消按钮
-        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
-        cancel_btn.pack(side=tk.RIGHT, padx=5)
-
-    def _generate_template(self, template_type, dialog):
+    def _generate_template(self, template_type, parent_dialog):
         """生成模板文件
 
         Args:
             template_type: 模板类型，"excel"或"csv"
-            dialog: 对话框
+            parent_dialog: 父对话框
         """
-        dialog.destroy()
-
         # 选择保存位置
         if template_type == "excel":
             default_ext = ".xlsx"
@@ -3055,21 +3017,20 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
 
-        # 设置对话框最小宽度和高度
-        dialog.minsize(width=500, height=150)
+        # 设置对话框最小宽度和高度，适当调高高度使其更加协调
+        dialog.minsize(width=300, height=180)
 
         # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        # 设置frame的grid布局，让按钮垂直居中
+        # 设置frame的grid布局，删除第2行的weight设置，避免按钮下面出现过多空白
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_rowconfigure(1, weight=0)
         frame.grid_columnconfigure(0, weight=1)
-        frame.grid_rowconfigure(2, weight=1)
 
-        # 添加消息文本，居中显示，使用合适的wraplength
-        msg_label = ttk.Label(frame, text=message, wraplength=450, font=('微软雅黑', 10))
+        # 添加消息文本，居中显示，调整wraplength适应新的宽度
+        msg_label = ttk.Label(frame, text=message, wraplength=250, font=('微软雅黑', 10))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
 
         # 创建按钮框架
@@ -3117,15 +3078,15 @@ class IPSubnetSplitterApp:
 
     def show_info(self, title, message):
         """显示信息对话框"""
-        return messagebox.showinfo(title, message)
+        return self.show_custom_dialog(title, message, "info")
 
     def show_error(self, title, message):
         """显示错误对话框"""
-        return messagebox.showerror(title, message)
+        return self.show_custom_dialog(title, message, "error")
 
     def show_warning(self, title, message):
         """显示警告对话框"""
-        return messagebox.showwarning(title, message)
+        return self.show_custom_dialog(title, message, "warning")
 
     def show_custom_confirm(self, title, message):
         """显示自定义的居中确认对话框"""
@@ -3245,6 +3206,9 @@ class IPSubnetSplitterApp:
         else:
             action_type = "撤销删除"
         self.save_current_state(action_type)
+        
+        # 显示成功提示
+        self.show_info("成功", f"成功恢复了 {len(deleted_records)} 条记录")
 
     def on_requirements_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能（子网需求表）"""
@@ -5607,6 +5571,9 @@ class IPSubnetSplitterApp:
 
             return "..."
 
+        # 移除文本中的换行符，确保在信息框中单行显示
+        text = text.replace('\n', ' ')
+        
         # 调用截断函数
         truncated_text = truncate_text_by_pixel(text, icon, max_pixel_width)
 
@@ -6242,6 +6209,30 @@ class IPSubnetSplitterApp:
         """
 
         try:
+            # 准备数据
+            main_data, main_headers, remaining_data, remaining_headers = self._prepare_export_data(data_source)
+            
+            # 数据有效性验证
+            is_valid = True
+            error_msg = ""
+            
+            if data_source["main_name"] == "切分网段信息":
+                # 检查切分网段信息是否为空（排除提示行）
+                if not main_data:
+                    is_valid = False
+                    error_msg = "未找到切分数据，请先执行子网切分！"
+            elif data_source["main_name"] == "已分配子网信息":
+                # 检查已分配子网表是否为空
+                if not main_data:
+                    is_valid = False
+                    error_msg = "未找到规划数据，请先执行子网规划！"
+            
+            if not is_valid:
+                # 使用统一的show_error方法显示错误对话框
+                self.show_error("提示", error_msg)
+                return
+            
+            # 数据验证通过后，再显示文件选择对话框
             # 使用文件对话框，支持多种格式
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
@@ -6261,11 +6252,8 @@ class IPSubnetSplitterApp:
                 return  # 用户取消了保存
 
             # 获取文件扩展名
-
             file_ext = os.path.splitext(file_path)[1].lower()
-
-            # 准备数据
-            main_data, main_headers, remaining_data, remaining_headers = self._prepare_export_data(data_source)
+            
             # 根据文件扩展名选择导出格式
             if file_ext == ".json":
                 # JSON格式导出
