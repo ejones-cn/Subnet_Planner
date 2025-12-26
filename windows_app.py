@@ -1793,6 +1793,7 @@ class IPSubnetSplitterApp:
 
         # 设置grid布局
         history_frame.grid_rowconfigure(0, weight=1)
+        history_frame.grid_rowconfigure(1, weight=0)
         history_frame.grid_columnconfigure(0, weight=1)
         history_frame.grid_columnconfigure(1, weight=0)
 
@@ -1825,7 +1826,7 @@ class IPSubnetSplitterApp:
         self.pool_scrollbar.config(command=self.pool_tree.yview)
         self.pool_tree.config(yscrollcommand=self.pool_scrollbar.set)
 
-        # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做按钮操作
+        # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做操作
         # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
 
         # 设置grid布局
@@ -1880,10 +1881,11 @@ class IPSubnetSplitterApp:
         button_frame.grid_rowconfigure(0, weight=0)  # 添加按钮
         button_frame.grid_rowconfigure(1, weight=0)  # 删除按钮
         button_frame.grid_rowconfigure(2, weight=0)  # 撤销按钮
-        button_frame.grid_rowconfigure(3, weight=1)  # 空白区域，将底部三个按钮推到底部
-        button_frame.grid_rowconfigure(4, weight=0)  # 向左移按钮
-        button_frame.grid_rowconfigure(5, weight=0)  # 交换记录按钮
-        button_frame.grid_rowconfigure(6, weight=0)  # 向右移按钮
+        button_frame.grid_rowconfigure(3, weight=0)  # 导入按钮
+        button_frame.grid_rowconfigure(4, weight=1)  # 空白区域，将底部三个按钮推到底部
+        button_frame.grid_rowconfigure(5, weight=0)  # 向左移按钮
+        button_frame.grid_rowconfigure(6, weight=0)  # 交换记录按钮
+        button_frame.grid_rowconfigure(7, weight=0)  # 向右移按钮
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
@@ -1898,17 +1900,21 @@ class IPSubnetSplitterApp:
         self.undo_delete_btn = ttk.Button(button_frame, text="撤销", command=self.undo_delete, width=7)
         self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
 
+        # 导入按钮
+        import_btn = ttk.Button(button_frame, text="导入", command=self.import_requirements, width=7)
+        import_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+
         # 向左移按钮 - 使用向左箭头，位于底部三个按钮的最上方
         self.undo_btn = ttk.Button(button_frame, text="←", command=self.move_left, width=7)
-        self.undo_btn.grid(row=4, column=0, sticky="ew", pady=(0, 5))
+        self.undo_btn.grid(row=5, column=0, sticky="ew", pady=(0, 5))
 
         # 交换记录按钮 - 使用交换图标，位于向左移和向右移按钮中间
         self.swap_btn = ttk.Button(button_frame, text="↔", command=self.swap_records, width=7)
-        self.swap_btn.grid(row=5, column=0, sticky="ew", pady=(0, 5))
+        self.swap_btn.grid(row=6, column=0, sticky="ew", pady=(0, 5))
 
         # 向右移按钮 - 使用向右箭头，位于交换按钮下方
         self.redo_btn = ttk.Button(button_frame, text="→", command=self.move_right, width=7)
-        self.redo_btn.grid(row=6, column=0, sticky="ew", pady=(0, 5))
+        self.redo_btn.grid(row=7, column=0, sticky="ew", pady=(0, 5))
 
         # 规划子网按钮已移动到规划结果区域，此处不再显示
 
@@ -2528,6 +2534,512 @@ class IPSubnetSplitterApp:
     def update_pool_tree_zebra_stripes(self):
         """更新需求池表的斑马条纹和序号"""
         self.update_table_zebra_stripes(self.pool_tree, update_index=True)
+
+    def import_requirements(self):
+        """导入子网需求数据"""
+        self._import_data()
+
+    def _import_data(self):
+        """导入数据的主方法"""
+        # 显示导入选项对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("导入数据")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # 先隐藏对话框，避免定位过程中的闪现
+        dialog.withdraw()
+
+        # 计算居中位置
+        window_width = 500
+        window_height = 300
+        self.center_window(dialog, window_width, window_height)
+
+        # 显示对话框
+        dialog.deiconify()
+
+        # 创建主内容框架
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 说明文本
+        info_text = "请选择导入方式："
+        ttk.Label(main_frame, text=info_text, font=('微软雅黑', 10)).pack(pady=(0, 15))
+
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        # 导入文件按钮
+        import_file_btn = ttk.Button(button_frame, text="从文件导入", 
+                                    command=lambda: self._import_from_file(dialog),
+                                    width=15)
+        import_file_btn.pack(side=tk.LEFT, padx=5)
+
+        # 下载模板按钮
+        download_template_btn = ttk.Button(button_frame, text="下载模板", 
+                                         command=lambda: self._download_template(dialog),
+                                         width=15)
+        download_template_btn.pack(side=tk.LEFT, padx=5)
+
+        # 取消按钮
+        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
+        cancel_btn.pack(side=tk.RIGHT, padx=5)
+
+    def _import_from_file(self, parent_dialog):
+        """从文件导入数据
+
+        Args:
+            parent_dialog: 父对话框
+        """
+        parent_dialog.destroy()
+
+        # 选择文件
+        file_path = filedialog.askopenfilename(
+            title="选择要导入的文件",
+            filetypes=[
+                ("Excel文件", "*.xlsx"),
+                ("CSV文件", "*.csv"),
+                ("所有文件", "*.*"),
+            ],
+            initialdir=""
+        )
+
+        if not file_path:
+            return
+
+        # 解析文件
+        try:
+            data_list = self._parse_import_file(file_path)
+        except Exception as e:
+            self.show_error("错误", f"文件解析失败: {str(e)}")
+            return
+
+        if not data_list:
+            self.show_info("提示", "文件中没有找到有效数据")
+            return
+
+        # 验证数据（包含重复性检查）
+        errors = self._validate_import_data(data_list)
+
+        # 显示验证结果对话框
+        self._show_import_result(errors, data_list)
+
+    def _parse_import_file(self, file_path):
+        """解析导入文件
+
+        Args:
+            file_path: 文件路径
+
+        Returns:
+            list: 解析后的数据列表，每个元素是包含"name"和"hosts"的字典
+        """
+        file_ext = os.path.splitext(file_path)[1].lower()
+        data_list = []
+
+        if file_ext == ".xlsx":
+            # Excel文件解析
+            from openpyxl import load_workbook
+            wb = load_workbook(file_path, read_only=True)
+            ws = wb.active
+
+            # 跳过表头，从第二行开始读取
+            for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if row and len(row) >= 2:
+                    name = str(row[0]).strip() if row[0] else ""
+                    hosts = str(row[1]).strip() if row[1] else ""
+                    if name and hosts:
+                        data_list.append({"name": name, "hosts": hosts, "row": row_idx})
+
+            wb.close()
+
+        elif file_ext == ".csv":
+            # CSV文件解析，尝试多种编码
+            encodings = ['utf-8-sig', 'utf-8', 'gbk', 'gb2312']
+            csv_data = None
+
+            for encoding in encodings:
+                try:
+                    with open(file_path, 'r', encoding=encoding, newline='') as f:
+                        csv_data = list(csv.reader(f))
+                    break
+                except UnicodeDecodeError:
+                    continue
+
+            if csv_data is None:
+                raise Exception("无法识别文件编码，请确保文件使用UTF-8或GBK编码")
+
+            # 跳过表头，从第二行开始读取
+            for row_idx, row in enumerate(csv_data[1:], start=2):
+                if row and len(row) >= 2:
+                    name = str(row[0]).strip() if row[0] else ""
+                    hosts = str(row[1]).strip() if row[1] else ""
+                    if name and hosts:
+                        data_list.append({"name": name, "hosts": hosts, "row": row_idx})
+
+        else:
+            raise Exception("不支持的文件格式，请使用Excel (.xlsx) 或CSV (.csv) 文件")
+
+        return data_list
+
+    def _validate_import_data(self, data_list):
+        """验证导入数据
+
+        Args:
+            data_list: 数据列表
+
+        Returns:
+            list: 错误列表，每个元素是包含"row"、"name"、"hosts"、"error"的字典
+        """
+        errors = []
+
+        # 获取现有数据名称（同时检查子网需求表和需求池表）
+        existing_names = set()
+
+        # 检查子网需求表
+        for item in self.requirements_tree.get_children():
+            values = self.requirements_tree.item(item, "values")
+            existing_names.add(values[1])
+
+        # 检查需求池表
+        for item in self.pool_tree.get_children():
+            values = self.pool_tree.item(item, "values")
+            existing_names.add(values[1])
+
+        # 验证每条数据
+        for idx, data in enumerate(data_list):
+            row = data.get("row", idx + 1)
+            name = data.get("name", "")
+            hosts = data.get("hosts", "")
+
+            # 检查必填字段
+            if not name:
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "子网名称不能为空"})
+                continue
+
+            if not hosts:
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "主机数量不能为空"})
+                continue
+
+            # 检查主机数量是否为正整数
+            if not hosts.isdigit():
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "主机数量必须是正整数"})
+                continue
+
+            if int(hosts) <= 0:
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "主机数量必须大于0"})
+                continue
+
+            # 检查同批次重复
+            if any(d["name"] == name for d in data_list[:idx]):
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "文件中存在重复的子网名称"})
+                continue
+
+            # 检查重复性（同时检查两张表）
+            if name in existing_names:
+                errors.append({"row": row, "name": name, "hosts": hosts, 
+                              "error": "子网名称已存在"})
+                continue
+
+            # 添加到已存在名称集合中，避免同批次重复
+            existing_names.add(name)
+
+        return errors
+
+    def _show_import_result(self, errors, data_list):
+        """显示导入验证结果对话框（显示所有数据，包括有效和无效）
+
+        Args:
+            errors: 错误列表
+            data_list: 数据列表
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title("导入数据验证")
+        dialog.resizable(True, True)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # 先隐藏对话框，避免定位过程中的闪现
+        dialog.withdraw()
+
+        # 计算居中位置
+        window_width = 750
+        window_height = 500
+        self.center_window(dialog, window_width, window_height)
+
+        # 显示对话框
+        dialog.deiconify()
+
+        # 创建主内容框架
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 统计信息
+        error_count = len(errors)
+        total_count = len(data_list)
+        valid_count = total_count - error_count
+
+        summary_text = f"共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效"
+        ttk.Label(main_frame, text=summary_text, font=('微软雅黑', 10, 'bold')).pack(pady=(0, 10))
+
+        # 创建表格显示所有数据
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+
+        result_tree = ttk.Treeview(tree_frame, columns=("row", "name", "hosts", "status"), 
+                                  show="headings", height=12)
+        result_tree.heading("row", text="行号")
+        result_tree.heading("name", text="子网名称")
+        result_tree.heading("hosts", text="主机数量")
+        result_tree.heading("status", text="状态")
+
+        result_tree.column("row", width=60, minwidth=40, anchor="e")
+        result_tree.column("name", width=150, minwidth=80)
+        result_tree.column("hosts", width=80, minwidth=40)
+        result_tree.column("status", width=150, minwidth=80)
+
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        result_tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=result_tree.yview)
+
+        result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # 将错误列表转换为字典，提高查找效率
+        error_dict = {e["row"]: e for e in errors}
+
+        # 填充所有数据
+        for data in data_list:
+            row = data.get("row", 0)
+            name = data.get("name", "")
+            hosts = data.get("hosts", "")
+
+            # 从字典中查找对应的错误信息（O(1)复杂度）
+            error = error_dict.get(row)
+            if error:
+                status = error["error"]
+                # 无效数据用红色标签
+                tag = "invalid"
+            else:
+                status = "有效"
+                # 有效数据用绿色标签
+                tag = "valid"
+
+            result_tree.insert("", tk.END, values=(row, name, hosts, status), tags=(tag,))
+
+        # 配置标签样式
+        result_tree.tag_configure("valid", foreground="green")
+        result_tree.tag_configure("invalid", foreground="red")
+
+        # 预先计算有效数据列表，避免在按钮点击时重复计算
+        valid_data = [d for d in data_list if d.get("row", 0) not in error_dict]
+
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+
+        # 导入到子网需求表按钮
+        import_req_btn = ttk.Button(button_frame, text="导入子网需求", 
+                                    command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
+                                    width=12)
+        import_req_btn.pack(side=tk.LEFT, padx=5)
+
+        # 导入到需求池表按钮
+        import_pool_btn = ttk.Button(button_frame, text="导入需求池", 
+                                     command=lambda: self._import_valid_data(valid_data, "pool", dialog),
+                                     width=12)
+        import_pool_btn.pack(side=tk.LEFT, padx=5)
+
+        # 取消按钮
+        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
+        cancel_btn.pack(side=tk.RIGHT, padx=5)
+
+    def _import_valid_data(self, valid_data, target_table, dialog=None):
+        """导入有效数据
+
+        Args:
+            valid_data: 有效数据列表
+            target_table: 目标表
+            dialog: 对话框（可选）
+        """
+        if not valid_data:
+            self.show_info("提示", "没有可导入的数据")
+            if dialog:
+                dialog.destroy()
+            return
+
+        # 导入数据
+        for data in valid_data:
+            name = data["name"]
+            hosts = data["hosts"]
+
+            if target_table == "requirements":
+                # 添加到子网需求表
+                current_rows = len(self.requirements_tree.get_children())
+                new_index = current_rows + 1
+                tag = "even" if new_index % 2 == 0 else "odd"
+                self.requirements_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
+            else:
+                # 添加到需求池表
+                current_rows = len(self.pool_tree.get_children())
+                new_index = current_rows + 1
+                tag = "even" if new_index % 2 == 0 else "odd"
+                self.pool_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
+
+        # 更新斑马条纹
+        if target_table == "requirements":
+            self.update_requirements_tree_zebra_stripes()
+        else:
+            self.update_pool_tree_zebra_stripes()
+
+        # 保存状态
+        self.save_current_state(f"导入数据: {len(valid_data)} 条记录")
+
+        # 显示成功消息
+        target_name = "子网需求表" if target_table == "requirements" else "需求池表"
+        self.show_info("成功", f"成功导入 {len(valid_data)} 条记录到{target_name}")
+
+        # 关闭对话框
+        if dialog:
+            dialog.destroy()
+
+    def _download_template(self, parent_dialog):
+        """下载导入模板
+
+        Args:
+            parent_dialog: 父对话框
+        """
+        parent_dialog.destroy()
+
+        # 显示模板格式选择对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("下载模板")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # 先隐藏对话框，避免定位过程中的闪现
+        dialog.withdraw()
+
+        # 计算居中位置
+        window_width = 400
+        window_height = 200
+        self.center_window(dialog, window_width, window_height)
+
+        # 显示对话框
+        dialog.deiconify()
+
+        # 创建主内容框架
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 说明文本
+        info_text = "请选择模板格式："
+        ttk.Label(main_frame, text=info_text, font=('微软雅黑', 10)).pack(pady=(0, 15))
+
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        # Excel模板按钮
+        excel_btn = ttk.Button(button_frame, text="Excel模板", 
+                               command=lambda: self._generate_template("excel", dialog),
+                               width=15)
+        excel_btn.pack(side=tk.LEFT, padx=5)
+
+        # CSV模板按钮
+        csv_btn = ttk.Button(button_frame, text="CSV模板", 
+                            command=lambda: self._generate_template("csv", dialog),
+                            width=15)
+        csv_btn.pack(side=tk.LEFT, padx=5)
+
+        # 取消按钮
+        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
+        cancel_btn.pack(side=tk.RIGHT, padx=5)
+
+    def _generate_template(self, template_type, dialog):
+        """生成模板文件
+
+        Args:
+            template_type: 模板类型，"excel"或"csv"
+            dialog: 对话框
+        """
+        dialog.destroy()
+
+        # 选择保存位置
+        if template_type == "excel":
+            default_ext = ".xlsx"
+            filetypes = [("Excel文件", "*.xlsx")]
+        else:
+            default_ext = ".csv"
+            filetypes = [("CSV文件", "*.csv")]
+
+        file_path = filedialog.asksaveasfilename(
+            title="保存模板",
+            defaultextension=default_ext,
+            filetypes=filetypes,
+            initialfile=f"子网需求导入模板{default_ext}",
+            initialdir=""
+        )
+
+        if not file_path:
+            return
+
+        try:
+            if template_type == "excel":
+                # 生成Excel模板
+                from openpyxl import Workbook
+                from openpyxl.styles import Font, Alignment
+
+                wb = Workbook()
+                ws = wb.active
+                ws.title = "子网需求"
+
+                # 设置表头
+                headers = ["子网名称", "主机数量"]
+                for col_idx, header in enumerate(headers, 1):
+                    cell = ws.cell(row=1, column=col_idx, value=header)
+                    cell.font = Font(bold=True)
+                    cell.alignment = Alignment(horizontal="center")
+
+                # 添加示例数据
+                example_data = [
+                    ["办公室", "20"],
+                    ["人事部", "10"],
+                    ["财务部", "10"],
+                    ["规划部", "30"],
+                    ["信息部", "20"],
+                ]
+                for row_idx, row_data in enumerate(example_data, 2):
+                    for col_idx, value in enumerate(row_data, 1):
+                        ws.cell(row=row_idx, column=col_idx, value=value)
+
+                wb.save(file_path)
+
+            else:
+                # 生成CSV模板
+                with open(file_path, 'w', encoding='utf-8-sig', newline='') as f:
+                    writer = csv.writer(f)
+                    # 写入表头
+                    writer.writerow(["子网名称", "主机数量"])
+                    # 写入示例数据
+                    writer.writerow(["办公室", "20"])
+                    writer.writerow(["人事部", "10"])
+                    writer.writerow(["财务部", "10"])
+                    writer.writerow(["规划部", "30"])
+                    writer.writerow(["信息部", "20"])
+
+            self.show_info("成功", f"模板已保存到: {file_path}")
+
+        except Exception as e:
+            self.show_error("错误", f"模板生成失败: {str(e)}")
 
     def show_custom_dialog(self, title, message, dialog_type="info"):
         """显示自定义的居中对话框，支持info、error、warning类型"""
@@ -4043,16 +4555,19 @@ class IPSubnetSplitterApp:
             for item in self.ipv6_info_tree.get_children():
                 self.ipv6_info_tree.delete(item)
 
-            ipv6 = self.ipv6_info_entry.get().strip()
-            if not ipv6:
+            ipv6_full = self.ipv6_info_entry.get().strip()
+            if not ipv6_full:
                 self.show_info("提示", "请输入IPv6地址")
                 return
 
+            # 移除CIDR前缀，获取纯IPv6地址
+            ipv6 = ipv6_full.split('/')[0]
             cidr = self.ipv6_cidr_var.get()
 
             network_str = f"{ipv6}/{cidr}"
 
             ipv6_info = get_ip_info(network_str)
+            original_ip_info = get_ip_info(ipv6)
 
             self.ipv6_info_tree.insert("", tk.END, values=("IP地址", ipv6_info.get("ip_address", "")))
             self.ipv6_info_tree.insert("", tk.END, values=("IP版本", ipv6_info.get("version", "")))
@@ -4172,9 +4687,10 @@ class IPSubnetSplitterApp:
             full_prefix_analysis = f"{prefix_analysis}，网络前缀：/{user_cidr}"
             self.ipv6_info_tree.insert("", tk.END, values=("前缀分析", full_prefix_analysis))
 
-            segments = ip_address.split(":")
-            if len(segments) > 1:
-                self.ipv6_info_tree.insert("", tk.END, values=("地址段数量", f"{len(segments)}"))
+            # 使用原始IP地址的展开格式计算段数（总是8段）
+            original_segments = original_ip_info.get("exploded", "").split(":")
+            if len(original_segments) > 1:
+                self.ipv6_info_tree.insert("", tk.END, values=("地址段数量", f"{len(original_segments)}"))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=("二进制表示", ""), tags=("section",))
@@ -4227,7 +4743,7 @@ class IPSubnetSplitterApp:
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=("地址段详情", ""), tags=("section",))
-            exploded = ipv6_info.get("exploded", "")
+            exploded = original_ip_info.get("exploded", "")
             if exploded:
                 segments = exploded.split(":")
             else:
