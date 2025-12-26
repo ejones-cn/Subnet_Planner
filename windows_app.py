@@ -4593,26 +4593,6 @@ class IPSubnetSplitterApp:
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"操作失败: {str(e)}")
 
-    def _insert_treeview_item(self, tree, label, value=""):
-        """向Treeview中插入一行数据
-        
-        Args:
-            tree: Treeview控件
-            label: 标签
-            value: 值
-        """
-        tree.insert("", tk.END, values=(label, value))
-    
-    def _insert_treeview_section(self, tree, section_name):
-        """向Treeview中插入一个新的部分
-        
-        Args:
-            tree: Treeview控件
-            section_name: 部分名称
-        """
-        tree.insert("", tk.END, values=())
-        tree.insert("", tk.END, values=(section_name, ""))
-    
     def execute_ipv6_info(self):
         """执行IPv6地址信息查询"""
         try:
