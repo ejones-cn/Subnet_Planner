@@ -716,7 +716,7 @@ class IPSubnetSplitterApp:
         self.test_info_bar_enabled = False
 
         # 创建主框架 - 调整内边距使其更加紧凑
-        self.main_frame = ttk.Frame(root, padding="15")
+        self.main_frame = ttk.Frame(self.root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建信息栏框架 - 放置在main_frame中，位于底部
@@ -1092,6 +1092,163 @@ class IPSubnetSplitterApp:
         # 移动完成后，在子网需求表中选中刚刚移动的记录
         if new_req_items:
             self.requirements_tree.selection_set(*new_req_items)
+
+    def move_records(self):
+        """根据选中情况自动判断移动方向：
+        - 仅选中子网需求表数据：移动到需求池
+        - 仅选中需求池数据：移动到子网需求表
+        - 同时选中两个表数据：交换数据
+        """
+        # 获取两个表格中的选中记录
+        selected_requirements = self.requirements_tree.selection()
+        selected_pool_items = self.pool_tree.selection()
+        
+        # 情况1：仅选中子网需求表数据，移动到需求池
+        if selected_requirements and not selected_pool_items:
+            # 获取选中的子网需求记录
+            items_to_move = []
+            for selected_item in selected_requirements:
+                values = self.requirements_tree.item(selected_item, "values")
+                name = values[1]
+                hosts = values[2]
+                items_to_move.append({"name": name, "hosts": hosts})
+
+                # 检查需求池中是否已存在相同名称的记录
+                for item in self.pool_tree.get_children():
+                    pool_values = self.pool_tree.item(item, "values")
+                    if pool_values[1] == name:
+                        self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                        return
+
+            # 执行移动操作，并保存新插入记录的ID
+            new_pool_items = []
+            for selected_item in selected_requirements:
+                self.requirements_tree.delete(selected_item)
+
+            # 插入记录到需求池
+            for data in items_to_move:
+                new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+                new_pool_items.append(new_item_id)
+
+            # 更新序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            self.update_pool_tree_zebra_stripes()
+
+            # 移动完成后，在需求池中选中刚刚移动的记录
+            if new_pool_items:
+                self.pool_tree.selection_set(*new_pool_items)
+        
+        # 情况2：仅选中需求池数据，移动到子网需求表
+        elif not selected_requirements and selected_pool_items:
+            # 获取选中的需求池记录
+            items_to_move = []
+            for selected_item in selected_pool_items:
+                values = self.pool_tree.item(selected_item, "values")
+                name = values[1]
+                hosts = values[2]
+                items_to_move.append({"name": name, "hosts": hosts})
+
+                # 检查子网需求表中是否已存在相同名称的记录
+                for item in self.requirements_tree.get_children():
+                    req_values = self.requirements_tree.item(item, "values")
+                    if req_values[1] == name:
+                        self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                        return
+
+            # 执行移动操作
+            new_req_items = []
+            for selected_item in selected_pool_items:
+                self.pool_tree.delete(selected_item)
+
+            # 插入记录到子网需求表
+            for data in items_to_move:
+                new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+                new_req_items.append(new_item_id)
+
+            # 更新序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            self.update_pool_tree_zebra_stripes()
+
+            # 移动完成后，在子网需求表中选中刚刚移动的记录
+            if new_req_items:
+                self.requirements_tree.selection_set(*new_req_items)
+        
+        # 情况3：同时选中两个表数据，交换数据
+        elif selected_requirements and selected_pool_items:
+            # 准备交换的记录数据
+            req_items_to_move = []
+            for item in selected_requirements:
+                values = self.requirements_tree.item(item, "values")
+                req_items_to_move.append({"name": values[1], "hosts": values[2]})
+
+            pool_items_to_move = []
+            for item in selected_pool_items:
+                values = self.pool_tree.item(item, "values")
+                pool_items_to_move.append({"name": values[1], "hosts": values[2]})
+
+            # 检查交换后是否会导致重复名称
+            req_names_to_swap = [data["name"] for data in req_items_to_move]
+            pool_names_to_swap = [data["name"] for data in pool_items_to_move]
+
+            # 检查需求池表
+            all_pool_names = []
+            for item in self.pool_tree.get_children():
+                if item not in selected_pool_items:
+                    values = self.pool_tree.item(item, "values")
+                    all_pool_names.append(values[1])
+
+            for name in req_names_to_swap:
+                if name in all_pool_names:
+                    self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                    return
+
+            # 检查子网需求表
+            all_req_names = []
+            for item in self.requirements_tree.get_children():
+                if item not in selected_requirements:
+                    values = self.requirements_tree.item(item, "values")
+                    all_req_names.append(values[1])
+
+            for name in pool_names_to_swap:
+                if name in all_req_names:
+                    self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                    return
+
+            # 执行交换操作
+            new_req_items = []
+            new_pool_items = []
+
+            # 删除所有选中的记录
+            for item in selected_requirements:
+                self.requirements_tree.delete(item)
+
+            for item in selected_pool_items:
+                self.pool_tree.delete(item)
+
+            # 将需求池的记录添加到子网需求表
+            for data in pool_items_to_move:
+                new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+                new_req_items.append(new_item_id)
+
+            # 将子网需求表的记录添加到需求池
+            for data in req_items_to_move:
+                new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+                new_pool_items.append(new_item_id)
+
+            # 更新两个表格的序号和斑马条纹
+            self.update_requirements_tree_zebra_stripes()
+            self.update_pool_tree_zebra_stripes()
+            
+            # 交换完成后，选中所有新插入的记录
+            if new_req_items:
+                self.requirements_tree.selection_set(*new_req_items)
+            if new_pool_items:
+                self.pool_tree.selection_set(*new_pool_items)
+        
+        # 情况4：未选中任何记录
+        else:
+            self.show_info("提示", "请选择要移动或交换的记录")
+            return
 
     def swap_records(self):
         """交换两个表格中选中的记录（支持多条记录，完全交换所有选中记录）"""
@@ -1882,10 +2039,9 @@ class IPSubnetSplitterApp:
         button_frame.grid_rowconfigure(1, weight=0)  # 删除按钮
         button_frame.grid_rowconfigure(2, weight=0)  # 撤销按钮
         button_frame.grid_rowconfigure(3, weight=0)  # 导入按钮
-        button_frame.grid_rowconfigure(4, weight=1)  # 空白区域，将底部三个按钮推到底部
-        button_frame.grid_rowconfigure(5, weight=0)  # 向左移按钮
+        button_frame.grid_rowconfigure(4, weight=1)  # 空白区域，将底部按钮推到底部
+        button_frame.grid_rowconfigure(5, weight=0)  # 空白行，保持原有结构
         button_frame.grid_rowconfigure(6, weight=0)  # 交换记录按钮
-        button_frame.grid_rowconfigure(7, weight=0)  # 向右移按钮
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
@@ -1900,21 +2056,14 @@ class IPSubnetSplitterApp:
         self.undo_delete_btn = ttk.Button(button_frame, text="撤销", command=self.undo_delete, width=7)
         self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
 
+        # 移动/交换按钮（根据选中情况自动判断操作）
+        # 交换记录按钮 - 使用交换图标
+        self.swap_btn = ttk.Button(button_frame, text="↔", command=self.move_records, width=7)
+        self.swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+
         # 导入按钮
         import_btn = ttk.Button(button_frame, text="导入", command=self.import_requirements, width=7)
-        import_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
-
-        # 向左移按钮 - 使用向左箭头，位于底部三个按钮的最上方
-        self.undo_btn = ttk.Button(button_frame, text="←", command=self.move_left, width=7)
-        self.undo_btn.grid(row=5, column=0, sticky="ew", pady=(0, 5))
-
-        # 交换记录按钮 - 使用交换图标，位于向左移和向右移按钮中间
-        self.swap_btn = ttk.Button(button_frame, text="↔", command=self.swap_records, width=7)
-        self.swap_btn.grid(row=6, column=0, sticky="ew", pady=(0, 5))
-
-        # 向右移按钮 - 使用向右箭头，位于交换按钮下方
-        self.redo_btn = ttk.Button(button_frame, text="→", command=self.move_right, width=7)
-        self.redo_btn.grid(row=7, column=0, sticky="ew", pady=(0, 5))
+        import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
 
         # 规划子网按钮已移动到规划结果区域，此处不再显示
 
@@ -3018,10 +3167,10 @@ class IPSubnetSplitterApp:
         dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
 
         # 设置对话框最小宽度和高度，适当调高高度使其更加协调
-        dialog.minsize(width=300, height=180)
+        dialog.minsize(width=350, height=180)
 
         # 设置对话框内容
-        frame = ttk.Frame(dialog, padding=20)
+        frame = ttk.Frame(dialog, padding=40)
         frame.pack(fill=tk.BOTH, expand=True)
 
         # 设置frame的grid布局，删除第2行的weight设置，避免按钮下面出现过多空白
@@ -5649,6 +5798,9 @@ class IPSubnetSplitterApp:
                 "#ffeb3b",
                 "#607d8b",
             )  # 现代化颜色列表
+            # 优化：预先计算颜色数量，避免循环中重复计算
+            colors_count = len(subnet_colors)
+            
             for index, subnet in enumerate(remaining_subnets):
                 subnet_start = ip_to_int(subnet.get("network", "0.0.0.0"))
                 subnet_end = ip_to_int(subnet.get("broadcast", "0.0.0.0"))
@@ -5658,7 +5810,7 @@ class IPSubnetSplitterApp:
                         "end": subnet_end,
                         "range": subnet_end - subnet_start + 1,
                         "name": subnet.get("cidr", ""),
-                        "color": subnet_colors[index % len(subnet_colors)],  # 循环使用颜色
+                        "color": subnet_colors[index % colors_count],  # 循环使用颜色
                         "type": "remaining",
                     }
                 )
