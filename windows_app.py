@@ -5599,7 +5599,7 @@ class IPSubnetSplitterApp:
 
         # 计算对话框居中显示的位置（相对于主窗口）
         dialog_width = 400
-        dialog_height = 450  # 增加对话框高度，确保主题切换控件能显示完整
+        dialog_height = 550  # 增加对话框高度，确保所有控件能完整显示
 
         # 获取主窗口的位置和大小
         root_x = self.root.winfo_x()
@@ -5623,7 +5623,8 @@ class IPSubnetSplitterApp:
         content_frame.grid_rowconfigure(1, weight=0)  # 说明行不扩展
         content_frame.grid_rowconfigure(2, weight=1)  # 按钮矩阵行扩展，用于垂直居中
         content_frame.grid_rowconfigure(3, weight=0)  # 主题切换行不扩展
-        content_frame.grid_rowconfigure(4, weight=0)  # 关闭按钮行不扩展
+        content_frame.grid_rowconfigure(4, weight=0)  # 窗口锁定行不扩展
+        content_frame.grid_rowconfigure(5, weight=0)  # 关闭按钮行不扩展
         content_frame.grid_columnconfigure(0, weight=1)  # 唯一列扩展
 
         # 添加标题标签
