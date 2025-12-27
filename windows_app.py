@@ -43,6 +43,18 @@ from version import get_version
 
 # 自定义的ColoredNotebook类，支持每个标签不同颜色
 class ColoredNotebook(ttk.Frame):
+    """自定义的ColoredNotebook组件，用于显示带有颜色的标签页
+    
+    这个组件扩展了ttk.Frame，实现了类似Notebook的标签页功能，
+    支持为不同标签页设置不同的背景颜色，提供更好的视觉区分。
+    
+    参数:
+        master: 父容器
+        style: 样式对象
+        tab_change_callback: 标签页切换回调函数
+        is_top_level: 是否为顶级标签页
+        **kwargs: 传递给ttk.Frame的其他参数
+    """
     def __init__(self, master, style=None, tab_change_callback=None, is_top_level=False, **kwargs):
         super().__init__(master, **kwargs)
         # 标识是否为顶级标签页
@@ -344,6 +356,11 @@ class ColoredNotebook(ttk.Frame):
 
 
 class IPSubnetSplitterApp:
+    """IP子网分割工具主应用程序类
+    
+    这个类实现了一个IP子网分割工具的GUI应用程序，
+    支持子网分割、子网规划、IP信息查询等功能。
+    """
     def validate_cidr(self, text, entry=None, style_based=False):
         """通用CIDR验证函数
 
@@ -1720,7 +1737,7 @@ class IPSubnetSplitterApp:
         """创建网段分布图页面"""
         # 网段分布图页面
         self.chart_frame = ttk.Frame(
-            self.notebook.content_area, padding="5", style=self.notebook.get_light_purple_style()
+            self.notebook.content_area, padding="5", style=self.notebook.light_purple_style
         )
 
         # 配置chart_frame的grid布局
