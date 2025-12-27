@@ -17,7 +17,6 @@ import os
 import traceback
 import json
 import time
-from io import BytesIO
 import ipaddress
 import csv
 
@@ -498,12 +497,10 @@ class IPSubnetSplitterApp:
 
         # 其他属性
         self.theme_var = None
-        self.has_chinese_font = None
         self.is_pinned = None
 
         # 初始化导出工具
         self.export_utils = ExportUtils()
-        self.has_chinese_font = self.export_utils.has_chinese_font
 
         self.root = main_window
         self.root.title(f"IP子网切分工具 v{self.app_version}")
