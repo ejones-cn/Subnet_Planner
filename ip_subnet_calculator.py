@@ -97,18 +97,11 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
 
 
 def ip_to_int(ip_str):
-    """
-    将IP地址字符串转换为整数
-    """
-    parts = ip_str.split(".")
-    return int(parts[0]) << 24 | int(parts[1]) << 16 | int(parts[2]) << 8 | int(parts[3])
+    return int(ipaddress.IPv4Address(ip_str))
 
 
 def int_to_ip(ip_int):
-    """
-    将整数转换为IP地址字符串
-    """
-    return f"{ip_int >> 24}.{(ip_int >> 16) & 0xFF}.{(ip_int >> 8) & 0xFF}.{ip_int & 0xFF}"
+    return str(ipaddress.IPv4Address(ip_int))
 
 
 def ipv4_to_ipv6(ipv4_str):
@@ -365,42 +358,75 @@ def merge_subnets(subnets):
         for subnet in ipv4_subnets[1:]:
             last_merged = merged[-1]
             
-            # 检查当前子网是否与最后一个合并的子网连续或重叠
-            # 计算两个子网可能的共同超网
-            possible_supernet = None
-            for prefix_len in range(min(last_merged.prefixlen, subnet.prefixlen), -1, -1):
-                supernet1 = last_merged.supernet(new_prefix=prefix_len)
-                supernet2 = subnet.supernet(new_prefix=prefix_len)
-                if supernet1 == supernet2:
-                    possible_supernet = supernet1
-                    break
-            
             # 检查是否可以合并
-            if possible_supernet and (last_merged.broadcast_address + 1 == subnet.network_address or last_merged.overlaps(subnet)):
-                # 合并两个子网
-                merged.pop()
-                merged.append(possible_supernet)
+            # 条件1：连续（broadcast + 1 == next network）
+            # 条件2：可以合并成更小的前缀
+            is_contiguous = last_merged.broadcast_address + 1 == subnet.network_address
+            is_overlapping = last_merged.overlaps(subnet)
+            
+            if (is_contiguous or is_overlapping):
+                # 查找可以同时包含两个子网的最小超网
+                min_prefix = min(last_merged.prefixlen, subnet.prefixlen)
+                candidate_supernet = None
                 
-                # 尝试继续合并（可能需要多次合并）
-                while len(merged) > 1:
-                    prev = merged[-2]
-                    curr = merged[-1]
-                    
-                    # 查找前一个子网和当前子网的共同超网
-                    common_supernet = None
-                    for prefix_len in range(min(prev.prefixlen, curr.prefixlen), -1, -1):
-                        supernet_prev = prev.supernet(new_prefix=prefix_len)
-                        supernet_curr = curr.supernet(new_prefix=prefix_len)
-                        if supernet_prev == supernet_curr:
-                            common_supernet = supernet_prev
+                for prefix_len in range(min_prefix - 1, -1, -1):
+                    supernet = ipaddress.IPv4Network(
+                        f"{last_merged.network_address}/{prefix_len}",
+                        strict=False
+                    )
+                    # 检查超网是否包含两个子网
+                    if (supernet.network_address <= last_merged.network_address and 
+                        supernet.broadcast_address >= last_merged.broadcast_address and
+                        supernet.network_address <= subnet.network_address and 
+                        supernet.broadcast_address >= subnet.broadcast_address):
+                        # 检查超网是否恰好等于两个子网的合并（即不包含其他地址）
+                        expected_size = (int(last_merged.broadcast_address) - int(last_merged.network_address) + 1 +
+                                        int(subnet.broadcast_address) - int(subnet.network_address) + 1)
+                        if supernet.num_addresses == expected_size:
+                            candidate_supernet = supernet
                             break
+                
+                if candidate_supernet:
+                    merged.pop()
+                    merged.append(candidate_supernet)
                     
-                    if common_supernet and (prev.broadcast_address + 1 == curr.network_address or prev.overlaps(curr)):
-                        merged.pop()
-                        merged.pop()
-                        merged.append(common_supernet)
-                    else:
-                        break
+                    # 尝试继续合并
+                    while len(merged) > 1:
+                        prev = merged[-2]
+                        curr = merged[-1]
+                        
+                        prev_contiguous = prev.broadcast_address + 1 == curr.network_address
+                        prev_overlap = prev.overlaps(curr)
+                        
+                        if prev_contiguous or prev_overlap:
+                            min_prefix = min(prev.prefixlen, curr.prefixlen)
+                            candidate = None
+                            
+                            for prefix_len in range(min_prefix - 1, -1, -1):
+                                supernet = ipaddress.IPv4Network(
+                                    f"{prev.network_address}/{prefix_len}",
+                                    strict=False
+                                )
+                                if (supernet.network_address <= prev.network_address and 
+                                    supernet.broadcast_address >= prev.broadcast_address and
+                                    supernet.network_address <= curr.network_address and 
+                                    supernet.broadcast_address >= curr.broadcast_address):
+                                    expected_size = (int(prev.broadcast_address) - int(prev.network_address) + 1 +
+                                                    int(curr.broadcast_address) - int(curr.network_address) + 1)
+                                    if supernet.num_addresses == expected_size:
+                                        candidate = supernet
+                                        break
+                            
+                            if candidate:
+                                merged.pop()
+                                merged.pop()
+                                merged.append(candidate)
+                            else:
+                                break
+                        else:
+                            break
+                else:
+                    merged.append(subnet)
             else:
                 merged.append(subnet)
         
@@ -621,30 +647,21 @@ def range_to_cidr(start_ip, end_ip):
         expanded_start = start
         expanded_end = end
         
-        # 检查是否可以扩展为一个完整的子网
-        # 例如：192.168.0.1-192.168.0.254 可以扩展为 192.168.0.0-192.168.0.255 (192.168.0.0/24)
-        if start == ipaddress.IPv4Address("192.168.0.1") and end == ipaddress.IPv4Address("192.168.0.254"):
-            # 特殊处理常见的/24子网情况
-            expanded_start = ipaddress.IPv4Address("192.168.0.0")
-            expanded_end = ipaddress.IPv4Address("192.168.0.255")
-        elif start == ipaddress.IPv4Address("192.168.1.1") and end == ipaddress.IPv4Address("192.168.1.254"):
-            expanded_start = ipaddress.IPv4Address("192.168.1.0")
-            expanded_end = ipaddress.IPv4Address("192.168.1.255")
-        elif start == ipaddress.IPv4Address("10.0.0.1") and end == ipaddress.IPv4Address("10.0.0.254"):
-            expanded_start = ipaddress.IPv4Address("10.0.0.0")
-            expanded_end = ipaddress.IPv4Address("10.0.0.255")
-        else:
-            # 通用处理：尝试找到包含当前范围的最小子网
-            for prefix in range(min_prefix, 0, -1):
-                try:
-                    # 计算起始IP所在的子网
-                    network = ipaddress.IPv4Network(f"{start}/{prefix}", strict=False)
-                    if network.network_address <= start and network.broadcast_address >= end:
-                        expanded_start = network.network_address
-                        expanded_end = network.broadcast_address
-                        break
-                except ValueError:
-                    continue
+        # 通用处理：尝试找到包含当前范围的最小子网
+        # 通过查找起始IP和结束IP的共同超网来确定
+        expanded_start = start
+        expanded_end = end
+        
+        # 尝试从/24到/0，找到包含整个范围的最小子网
+        for prefix in range(24, -1, -1):
+            try:
+                network = ipaddress.IPv4Network(f"{start}/{prefix}", strict=False)
+                if network.network_address <= start and network.broadcast_address >= end:
+                    expanded_start = network.network_address
+                    expanded_end = network.broadcast_address
+                    break
+            except ValueError:
+                continue
         
         # 使用ipaddress模块的summary_addresses函数获取CIDR列表
         cidr_list = list(ipaddress.summarize_address_range(expanded_start, expanded_end))
@@ -808,26 +825,6 @@ if __name__ == "__main__":
         print(f"\n剩余网段 ({len(plan['remaining_subnets'])} 个):")
         for idx, sub in enumerate(plan["remaining_subnets_info"], 1):
             print(f"\n网段 {idx}: {sub['cidr']}")
-    
-    # 测试子网合并功能
-    print("\n=== 测试子网合并功能 ===")
-    test_subnets = [
-        "192.168.0.0/24",
-        "192.168.1.0/24",
-        "192.168.2.0/24",
-        "192.168.3.0/24"
-    ]
-    
-    merge_result = merge_subnets(test_subnets)
-    if "error" in merge_result:
-        print(f"错误: {merge_result['error']}")
-    else:
-        print(f"原始子网 ({merge_result['original_count']} 个):")
-        for subnet in merge_result["original_subnets"]:
-            print(f"  {subnet}")
-        print(f"\n合并后子网 ({merge_result['merged_count']} 个):")
-        for subnet in merge_result["merged_subnets"]:
-            print(f"  {subnet}")
     
     # 测试IP信息获取功能
     print("\n=== 测试IP信息获取功能 ===")

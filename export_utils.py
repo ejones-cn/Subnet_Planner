@@ -45,6 +45,43 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 
+MAIN_TABLE_COLORS = {
+    "header_bg": "#3498db",
+    "header_text": "white",
+    "box": "#3498db",
+    "row_even": "#f0f4f8",
+}
+
+REMAINING_TABLE_COLORS = {
+    "header_bg": "#27ae60",
+    "header_text": "white",
+    "box": "#27ae60",
+    "row_even": "#f0f4f8",
+}
+
+TABLE_COMMON_STYLE = [
+    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+    ("GRID", (0, 0), (-1, -1), 1, "#bdc3c7"),
+    ("BACKGROUND", (0, 1), (-1, -1), "#f8f9fa"),
+    ("ROWBACKGROUNDS", (0, 1), (-1, -1), ["white", "#f0f4f8"]),
+    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ("LEFTPADDING", (0, 0), (-1, -1), 8),
+    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+    ("TOPPADDING", (0, 1), (-1, -1), 6),
+    ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+]
+
+HEADER_STYLE = [
+    ("BACKGROUND", (0, 0), (-1, 0), None),
+    ("TEXTCOLOR", (0, 0), (-1, 0), None),
+    ("FONTNAME", (0, 0), (-1, 0), None),
+    ("FONTSIZE", (0, 0), (-1, 0), 11),
+    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+    ("TOPPADDING", (0, 0), (-1, 0), 8),
+]
+
+K2V_HEADERS = ["项目", "值"]
+
 
 class ExportUtils:
     """数据导出工具类"""
@@ -138,6 +175,54 @@ class ExportUtils:
 
         return max_col_widths
 
+    def _is_k2v_headers(self, headers):
+        return len(headers) == 2 and headers[0] == "项目" and headers[1] == "值"
+
+    def _get_col_widths(self, table_data, table_width, col_widths, num_cols, is_k2v=False):
+        if col_widths is None or len(col_widths) != num_cols:
+            if is_k2v:
+                col_widths = [table_width * 0.3, table_width * 0.7]
+            else:
+                col_widths = [table_width / num_cols] * num_cols
+        else:
+            processed = []
+            for width in col_widths:
+                try:
+                    numeric = float(width) if width is not None else table_width / num_cols
+                    if numeric <= 10:
+                        numeric = table_width / num_cols
+                    processed.append(numeric)
+                except (ValueError, TypeError):
+                    processed.append(table_width / num_cols)
+            col_widths = processed if len(processed) == num_cols else [table_width / num_cols] * num_cols
+
+        try:
+            auto_col_widths = self._calculate_auto_col_widths(table_data, table_width)
+            col_widths = auto_col_widths
+        except (ValueError, TypeError, AttributeError):
+            traceback.print_exc()
+            col_widths = [table_width / num_cols] * num_cols
+
+        valid = []
+        for width in col_widths:
+            if width is None or not isinstance(width, (int, float)) or width <= 0:
+                try:
+                    valid.append(float(width) if width else 100)
+                except ValueError:
+                    valid.append(100)
+            else:
+                valid.append(width)
+        return valid
+
+    def _get_table_style(self, colors, has_chinese_font):
+        style = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors["header_bg"]),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors["header_text"]),
+            ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
+            ("BOX", (0, 0), (-1, -1), 1.5, colors["box"]),
+        ]
+        return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE)
+
     def _prepare_export_data(self, data_source):
         """准备导出数据
 
@@ -208,13 +293,13 @@ class ExportUtils:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(export_data, f, ensure_ascii=False, indent=2)
 
-    def _export_to_txt(self, file_path, data_source, main_data, main_headers, remaining_headers):
+    def _export_to_txt(self, file_path, data_source, main_data, main_headers):
         """导出数据为TXT格式（UTF-8编码）"""
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(f"{data_source['main_name']}\n")
             f.write("=" * 80 + "\n")
 
-            if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
+            if self._is_k2v_headers(main_headers):
                 for values in main_data:
                     f.write(f"{values[0]:<20}: {values[1]}\n")
             else:
@@ -289,7 +374,6 @@ class ExportUtils:
                 remaining_sheet.cell(row=row_idx, column=col_idx, value=value)
 
         wb.save(file_path)
-        del wb
 
     def _export_to_pdf(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         """导出数据为PDF格式（支持中文）"""
@@ -378,7 +462,7 @@ class ExportUtils:
 
         elements.append(Paragraph(data_source["main_name"], heading2_style))
 
-        if len(main_headers) == 2 and main_headers[0] == "项目" and main_headers[1] == "值":
+        if self._is_k2v_headers(main_headers):
             main_table_data = [["项目", "值"]]
             for values in main_data:
                 main_table_data.append(
@@ -399,86 +483,21 @@ class ExportUtils:
             table_cols = len(main_table_data[0])
 
             col_widths = data_source.get("main_table_cols")
-
             if isinstance(col_widths, str):
                 try:
                     col_ratios = [float(w) for w in col_widths.split(":")]
                     if all(ratio < 10 for ratio in col_ratios):
                         total_ratio = sum(col_ratios)
-                        if total_ratio > 0:
-                            col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios]
-                        else:
-                            col_widths = None
+                        col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios] if total_ratio > 0 else None
                     else:
                         col_widths = col_ratios
                 except (ValueError, TypeError):
                     col_widths = None
 
-            if not col_widths or len(col_widths) != table_cols:
-                if len(main_headers) == 2:
-                    col_widths = [table_width * 0.3, table_width * 0.7]
-                else:
-                    col_widths = [table_width / table_cols] * table_cols
-            else:
-                processed_col_widths = []
-                for width in col_widths:
-                    try:
-                        numeric_width = float(width) if width is not None else table_width / table_cols
-                        if numeric_width <= 10:
-                            numeric_width = table_width / table_cols
-                        processed_col_widths.append(numeric_width)
-                    except (ValueError, TypeError):
-                        processed_col_widths.append(table_width / table_cols)
-
-                if len(processed_col_widths) != table_cols:
-                    col_widths = [table_width / table_cols] * table_cols
-                else:
-                    col_widths = processed_col_widths
-
-            try:
-                auto_col_widths = self._calculate_auto_col_widths(main_table_data, table_width)
-                col_widths = auto_col_widths
-            except (ValueError, TypeError, AttributeError) as e:
-                traceback.print_exc()
-                col_widths = [table_width / table_cols] * table_cols
-
-            valid_col_widths = []
-            for width in col_widths:
-                if width is None:
-                    valid_col_widths.append(100)
-                elif not isinstance(width, (int, float)):
-                    try:
-                        valid_col_widths.append(float(width))
-                    except ValueError:
-                        valid_col_widths.append(100)
-                elif width <= 0:
-                    valid_col_widths.append(100)
-                else:
-                    valid_col_widths.append(width)
+            valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols, self._is_k2v_headers(main_headers))
 
             main_table = Table(main_table_data, colWidths=valid_col_widths)
-            main_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3498db")),
-                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                        ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
-                        ("FONTSIZE", (0, 0), (-1, 0), 11),
-                        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                        ("TOPPADDING", (0, 0), (-1, 0), 8),
-                        ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),
-                        ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#3498db")),
-                        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),
-                        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),
-                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                        ("TOPPADDING", (0, 1), (-1, -1), 6),
-                        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
-                    ]
-                )
-            )
+            main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
             elements.append(main_table)
         else:
             elements.append(Paragraph(f"无{data_source['main_name']}", normal_style))
@@ -499,83 +518,21 @@ class ExportUtils:
             table_cols = len(remaining_table_data[0])
 
             col_widths = data_source.get("remaining_table_cols")
-
             if isinstance(col_widths, str):
                 try:
                     col_ratios = [float(w) for w in col_widths.split(":")]
                     if all(ratio < 10 for ratio in col_ratios):
                         total_ratio = sum(col_ratios)
-                        if total_ratio > 0:
-                            col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios]
-                        else:
-                            col_widths = None
+                        col_widths = [table_width * (ratio / total_ratio) for ratio in col_ratios] if total_ratio > 0 else None
                     else:
                         col_widths = col_ratios
                 except (ValueError, TypeError):
                     col_widths = None
 
-            if not col_widths or len(col_widths) != table_cols:
-                col_widths = [table_width / table_cols] * table_cols
-            else:
-                processed_col_widths = []
-                for width in col_widths:
-                    try:
-                        numeric_width = float(width) if width is not None else table_width / table_cols
-                        if numeric_width <= 10:
-                            numeric_width = table_width / table_cols
-                        processed_col_widths.append(numeric_width)
-                    except (ValueError, TypeError):
-                        processed_col_widths.append(table_width / table_cols)
-
-                if len(processed_col_widths) != table_cols:
-                    col_widths = [table_width / table_cols] * table_cols
-                else:
-                    col_widths = processed_col_widths
-
-            try:
-                auto_col_widths = self._calculate_auto_col_widths(remaining_table_data, table_width)
-                col_widths = auto_col_widths
-            except (ValueError, TypeError, AttributeError) as e:
-                traceback.print_exc()
-                col_widths = [table_width / table_cols] * table_cols
-
-            valid_col_widths = []
-            for width in col_widths:
-                if width is None:
-                    valid_col_widths.append(100)
-                elif not isinstance(width, (int, float)):
-                    try:
-                        valid_col_widths.append(float(width))
-                    except ValueError:
-                        valid_col_widths.append(100)
-                elif width <= 0:
-                    valid_col_widths.append(100)
-                else:
-                    valid_col_widths.append(width)
+            valid_col_widths = self._get_col_widths(remaining_table_data, table_width, col_widths, table_cols)
 
             remaining_table = Table(remaining_table_data, colWidths=valid_col_widths)
-            remaining_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#27ae60")),
-                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                        ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if self.has_chinese_font else "Helvetica-Bold"),
-                        ("FONTSIZE", (0, 0), (-1, 0), 11),
-                        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                        ("TOPPADDING", (0, 0), (-1, 0), 8),
-                        ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#bdc3c7")),
-                        ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#27ae60")),
-                        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8f9fa")),
-                        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f4f8")]),
-                        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                        ("TOPPADDING", (0, 1), (-1, -1), 6),
-                        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
-                    ]
-                )
-            )
+            remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_chinese_font))
             elements.append(remaining_table)
         else:
             elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
@@ -981,7 +938,7 @@ class ExportUtils:
             if file_ext == ".json":
                 self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data)
             elif file_ext == ".txt":
-                self._export_to_txt(file_path, data_source, main_data, main_headers, remaining_headers)
+                self._export_to_txt(file_path, data_source, main_data, main_headers)
             elif file_ext == ".csv":
                 self._export_to_csv(file_path, main_data, main_headers, data_source["remaining_tree"])
             elif file_ext == ".xlsx":
