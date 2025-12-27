@@ -20,7 +20,7 @@ import csv
 # 外部库导入
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
-from PIL import Image, ImageDraw, ImageFont, ImageTk
+
 
 # 导入自定义模块
 from ip_subnet_calculator import (
@@ -687,14 +687,15 @@ class IPSubnetSplitterApp:
         self.main_frame = ttk.Frame(self.root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 创建信息栏框架 - 放置在main_frame中，位于底部
-        self.info_bar_frame = ttk.Frame(self.main_frame, style="InfoBar.TFrame")
-        # 默认隐藏，使用pack_forget()
-        self.info_bar_frame.pack_forget()
-        # 先设置信息栏的布局，确保它在底部
-        self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 10), padx=10)
-        # 立即隐藏，等待需要时显示
-        self.info_bar_frame.pack_forget()
+        # 创建信息栏 spacer - 固定高度的占位空间
+        self.info_spacer = ttk.Frame(self.main_frame, style="Placeholder.TFrame")
+        self.info_spacer.pack(side="bottom", fill="x")
+        self.info_spacer.pack_forget()
+        self.info_spacer.configure(height=30)
+
+        # 创建信息栏框架 - 放在 spacer 内，使用 place 布局
+        self.info_bar_frame = ttk.Frame(self.info_spacer, style="InfoBar.TFrame")
+        self.info_bar_frame.place(x=10, y=30, relwidth=0, height=30)
 
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
@@ -702,58 +703,44 @@ class IPSubnetSplitterApp:
         # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
 
-        # 信息栏高度统一为30px，与place布局一致
-        self.info_bar_frame.configure(height=30)  # 使用正确的高度值30px
-
         # 确保信息栏框架的grid布局配置正确
-        self.info_bar_frame.grid_rowconfigure(0, weight=1)  # 行填充整个高度
-        # 信息标签列占满所有剩余空间
-        self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 权重1，占据所有剩余空间
-        # 关闭按钮列固定宽度，不占据剩余空间
-        self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 权重0，固定宽度
+        self.info_bar_frame.grid_rowconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
-        # 设置关闭按钮样式，使其宽度与高度一致（30px）
         self.style.configure(
             "InfoBarCloseButton.TButton",
-            padding=(2, 0),  # 按用户要求设置padding为(2, 0)
+            padding=(2, 0),
             foreground="#9E9E9E",
             font=("微软雅黑", 8),
-            width=2,  # 字符宽度，配合padding使用
+            width=2,
         )
-        # 使用默认的颜色和其他样式
 
-        # 改用grid布局，确保关闭按钮始终可见
-        # 重置grid配置
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
-        self.info_bar_frame.grid_columnconfigure(0, weight=1)  # 信息标签占主要空间
-        self.info_bar_frame.grid_columnconfigure(1, weight=0)  # 关闭按钮固定宽度
+        self.info_bar_frame.grid_columnconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
-        # 信息标签使用grid布局，不设置固定宽度，为边框留出空间
-        # 调整padding，为边框留出空间
-        # padding格式：(left, top, right, bottom)
         self.info_label = ttk.Label(
             self.info_bar_frame, text="", padding=(3, 3, 0, 0), anchor="w"
-        )  # 减小内边距，为边框留出空间
-        # 为边框留出空间，上下各2px，左右各3px
-        self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)  # 为边框留出空间
+        )
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
 
-        # 关闭按钮使用grid布局，减小左侧边距，让文字能更接近关闭按钮
-        # 使用tk.Button而非ttk.Button，避免Windows平台样式限制
         self.info_close_btn = ttk.Button(
             self.info_bar_frame,
             text="✕",
             command=self.hide_info_bar,
-            style="InfoBarCloseButton.TButton",  # 使用自定义样式，确保宽度与高度一致
+            style="InfoBarCloseButton.TButton",
             cursor="hand2",
         )
-        # 调整sticky参数为"ns"，确保垂直居中
-        # 减小左侧边距，从0改为0px，右侧边距6px，调整pady为1，与信息栏高度一致
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=2)  # 左侧边距0px，右侧边距6px，与信息栏高度一致
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=2)
 
-        # 初始化信息栏状态
-        self.info_auto_hide_id = None  # 保存自动隐藏的定时器ID
+        self.info_auto_hide_id = None
+        self.info_bar_animating = False
 
-        # 确保信息标签显示在关闭按钮上层
+        # 初始化时获取并保存参考宽度
+        self.root.update_idletasks()
+        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
+
         self.info_label.lift(self.info_close_btn)
 
         # 初始化图表数据
@@ -4046,12 +4033,54 @@ class IPSubnetSplitterApp:
 
     def hide_info_bar(self):
         """隐藏信息栏"""
-        # 取消自动隐藏定时器
         if self.info_auto_hide_id:
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
-        # 隐藏信息栏 - 使用place_forget()
-        self.info_bar_frame.pack_forget()
+
+        if self.info_bar_frame.winfo_manager() == "":
+            return
+
+        if self.info_bar_animating:
+            return
+        self.info_bar_animating = True
+
+        # 获取 spacer 的实际宽度
+        spacer_width = self.info_spacer.winfo_width()
+
+        # 计算左边距和宽度
+        bar_x = 10
+        bar_width = spacer_width - 20
+
+        # 如果宽度计算不正确，使用主窗口实际宽度计算
+        if bar_width < 100:
+            # 使用主窗口实际宽度，减去左右边距
+            main_width = self.main_frame.winfo_width()
+            bar_x = 10
+            bar_width = main_width - 20  # 减去左右边距
+
+        # 确保宽度不超过主窗口宽度
+        main_width = self.main_frame.winfo_width()
+        if bar_width > main_width - 20:
+            bar_width = main_width - 20
+
+        current_y = 0
+        target_y = 30
+        step = 3
+        delay = 10
+
+        def slide_out():
+            nonlocal current_y
+            current_y += step
+            if current_y >= target_y:
+                self.info_bar_frame.place_forget()
+                self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
+                self.info_spacer.pack_forget()
+                self.info_bar_animating = False
+            else:
+                self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
+                self.root.after(delay, slide_out)
+
+        slide_out()
 
     def setup_advanced_tools_page(self):
         """设置高级工具功能的界面"""
@@ -5877,16 +5906,63 @@ class IPSubnetSplitterApp:
         self.info_label.config(text=icon + truncated_text, style=label_style)
         self.info_bar_frame.configure(style=frame_style)
 
-        # 显示信息栏 - 使用pack布局，放置在main_frame底部
+        # 显示信息栏 - 使用高度动画实现滑入效果
 
-        if self.info_bar_frame.winfo_manager() == "":
-            # 放置在main_frame底部
-            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 0), padx=10)
-        else:
-            # 如果已经显示，确保布局正确
-            self.info_bar_frame.pack_configure(side="bottom", fill="x", pady=(0, 0), padx=10)
+        if self.info_bar_animating:
+            return
 
-        # 去掉自动隐藏功能，需要手动隐藏
+        self.info_bar_animating = True
+
+        # 显示 spacer，固定高度30px
+        self.info_spacer.pack(side="bottom", fill="x")
+
+        # 延迟一下再获取宽度，让布局稳定
+        def show_with_width():
+            # 获取 spacer 的实际宽度
+            spacer_width = self.info_spacer.winfo_width()
+
+            # 计算左边距和宽度
+            bar_x = 10
+            bar_width = spacer_width - 20
+
+            # 如果宽度计算不正确，使用主窗口实际宽度计算
+            if bar_width < 100:
+                # 使用主窗口实际宽度，减去左右边距
+                main_width = self.main_frame.winfo_width()
+                bar_x = 10
+                bar_width = main_width - 20  # 减去左右边距
+
+            # 确保宽度不超过主窗口宽度
+            main_width = self.main_frame.winfo_width()
+            if bar_width > main_width - 20:
+                bar_width = main_width - 20
+
+            # 初始位置在 spacer 底部下方
+            self.info_bar_frame.place(x=bar_x, y=30, width=bar_width, height=30)
+            self.info_bar_frame.lift()
+
+            target_y = 0
+            current_y = 30
+            step = 4
+            delay = 10
+
+            def slide_in():
+                nonlocal current_y
+                current_y -= step
+                if current_y <= target_y:
+                    current_y = target_y
+                    self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
+                    self.info_bar_animating = False
+                else:
+                    self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
+                    self.root.after(delay, slide_in)
+
+            self.root.after(delay, slide_in)
+
+            # 设置3秒后自动隐藏
+            self.info_auto_hide_id = self.root.after(3000, self.hide_info_bar)
+
+        self.root.after(50, show_with_width)
 
     def prepare_chart_data(self, result, split_info, remaining_subnets):
         """准备图表数据"""
@@ -5985,7 +6061,7 @@ class IPSubnetSplitterApp:
         font,
         anchor=tk.W,
         fill="#ffffff",
-        stroke_color="#000000",
+        _stroke_color="#000000",  # 已废弃，保留兼容性
     ):
         """绘制带背景的文字
 
@@ -5996,7 +6072,7 @@ class IPSubnetSplitterApp:
             font: 字体设置
             anchor: 文字锚点
             fill: 文字颜色
-            stroke_color: 描边颜色（已废弃，保留兼容性）
+            _stroke_color: 描边颜色（已废弃，保留兼容性）
         """
         # 获取文字尺寸用于绘制背景矩形
         temp_text = self.chart_canvas.create_text(0, 0, text=text, font=font, anchor=anchor)
