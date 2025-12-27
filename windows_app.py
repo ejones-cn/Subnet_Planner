@@ -416,9 +416,7 @@ class IPSubnetSplitterApp:
         self.requirements_tree = None
         self.requirements_scrollbar = None
         self.undo_delete_btn = None
-        self.undo_btn = None
         self.swap_btn = None
-        self.redo_btn = None
         self.planning_notebook = None
         self.execute_planning_btn = None
         self.allocated_frame = None
