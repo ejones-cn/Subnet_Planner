@@ -18,8 +18,10 @@ import traceback
 import csv
 
 # 外部库导入
+import ipaddress
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
+from openpyxl import load_workbook
 
 
 # 导入自定义模块
@@ -32,6 +34,7 @@ from ip_subnet_calculator import (
     get_ip_info,
     range_to_cidr,
     check_subnet_overlap,
+    handle_ip_subnet_error,
 )
 
 # 导出工具模块
@@ -2793,7 +2796,6 @@ class IPSubnetSplitterApp:
 
         if file_ext == ".xlsx":
             # Excel文件解析
-            from openpyxl import load_workbook
             wb = load_workbook(file_path, read_only=True)
             ws = wb.active
 
@@ -4857,11 +4859,9 @@ class IPSubnetSplitterApp:
             
             # 验证IPv6地址格式
             try:
-                import ipaddress
                 ipaddress.IPv6Address(ipv6)
             except ValueError as e:
                 # 使用handle_ip_subnet_error函数获取友好的中文错误信息
-                from ip_subnet_calculator import handle_ip_subnet_error
                 error_info = handle_ip_subnet_error(e, "IP地址验证")
                 self.show_info("错误", error_info["error"])
                 return
@@ -5195,11 +5195,9 @@ class IPSubnetSplitterApp:
             
             # 验证IPv4地址格式
             try:
-                import ipaddress
                 ipaddress.IPv4Address(ip)
             except ValueError as e:
                 # 使用handle_ip_subnet_error函数获取友好的中文错误信息
-                from ip_subnet_calculator import handle_ip_subnet_error
                 error_info = handle_ip_subnet_error(e, "IP地址验证")
                 self.show_info("错误", error_info["error"])
                 return
