@@ -6300,16 +6300,7 @@ class IPSubnetSplitterApp:
             failure_msg: 失败消息格式字符串
         """
         try:
-            # 使用导出工具准备数据
-            success, message, data = self.export_utils.export_data(data_source, title, success_msg, failure_msg)
-
-            if not success:
-                self.show_error("提示", message)
-                return
-
-            main_data, main_headers, remaining_data, remaining_headers = data
-
-            # 显示文件选择对话框
+            # 先显示文件选择对话框，不准备数据
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[
@@ -6326,6 +6317,15 @@ class IPSubnetSplitterApp:
 
             if not file_path:
                 return
+
+            # 用户确认文件路径后，再准备数据
+            success, message, data = self.export_utils.export_data(data_source, title, success_msg, failure_msg)
+
+            if not success:
+                self.show_error("提示", message)
+                return
+
+            main_data, main_headers, remaining_data, remaining_headers = data
 
             # 使用导出工具导出到文件
             success, message = self.export_utils.export_to_file(
