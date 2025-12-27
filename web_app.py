@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Web应用程序，提供子网规划和计算功能。"""
 
-from flask import Flask, request, render_template_string
 import ipaddress
 import json
+import re
+from flask import Flask, request, render_template_string
 from ip_subnet_calculator import split_subnet, suggest_subnet_planning, ipv4_to_ipv6, ipv6_to_ipv4, merge_subnets, get_ip_info, range_to_cidr, check_subnet_overlap
 from web_version import __version__
 

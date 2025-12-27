@@ -679,7 +679,7 @@ class ExportUtils:
         title_font_size = 76
         title_font = None
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\Windows'), 'Fonts')
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
             title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
             if os.path.exists(title_font_path):
                 title_font = ImageFont.truetype(title_font_path, title_font_size)
@@ -709,7 +709,7 @@ class ExportUtils:
         text_font = None
         bold_text_font = None
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\Windows'), 'Fonts')
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
             text_font_path = os.path.join(system_font_dir, 'msyh.ttc')
             if os.path.exists(text_font_path):
                 text_font = ImageFont.truetype(text_font_path, text_font_size)
@@ -966,7 +966,7 @@ class ExportUtils:
             # 根据文件扩展名选择相应的导出方法
             file_ext = os.path.splitext(file_path)[1].lower()
             if file_ext == ".json":
-                self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
+                self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data)
             elif file_ext == ".txt":
                 self._export_to_txt(file_path, data_source, main_data, main_headers)
             elif file_ext == ".csv":
