@@ -24,17 +24,6 @@ import csv
 from PIL import Image, ImageDraw, ImageFont
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.lib.units import cm
-from reportlab.platypus import (
-    Table,
-    TableStyle,
-    Paragraph,
-    Spacer
-)
 
 # 导入自定义模块
 from ip_subnet_calculator import (
