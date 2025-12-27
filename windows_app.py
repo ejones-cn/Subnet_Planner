@@ -1039,6 +1039,7 @@ class IPSubnetSplitterApp:
         # 移动完成后，在目标树中选中刚刚移动的记录
         if new_items:
             self.pool_tree.selection_set(*new_items)
+
     def move_right(self):
         """向右移：从需求池向子网需求表移动记录（支持多条记录，移动后保持选中）"""
         selected_items = self.pool_tree.selection()
@@ -1053,6 +1054,7 @@ class IPSubnetSplitterApp:
         # 移动完成后，在目标树中选中刚刚移动的记录
         if new_items:
             self.requirements_tree.selection_set(*new_items)
+
     def move_records(self):
         """根据选中情况自动判断移动方向：
         - 仅选中子网需求表数据：移动到需求池
@@ -1167,6 +1169,7 @@ class IPSubnetSplitterApp:
         else:
             self.show_info("提示", "请选择要移动或交换的记录")
             return
+
     def swap_records(self):
         """交换两个表格中选中的记录（支持多条记录，完全交换所有选中记录）"""
         # 获取两个表格中的选中记录
@@ -2519,10 +2522,10 @@ class IPSubnetSplitterApp:
                 values = self.requirements_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
-                        self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
-                        # 重新将焦点设置到子网名称输入框
-                        name_entry.focus_set()
-                        return
+                    self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    # 重新将焦点设置到子网名称输入框
+                    name_entry.focus_set()
+                    return
 
             # 检查需求池表
             for item in self.pool_tree.get_children():
