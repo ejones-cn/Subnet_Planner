@@ -20,6 +20,7 @@ import csv
 # 外部库导入
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 # 导入自定义模块
 from ip_subnet_calculator import (
@@ -5986,7 +5987,7 @@ class IPSubnetSplitterApp:
         fill="#ffffff",
         stroke_color="#000000",
     ):
-        """绘制带描边的文字（使用4方向基础描边，平衡性能和可读性）
+        """绘制带背景的文字
 
         Args:
             text: 要绘制的文字
@@ -5995,23 +5996,25 @@ class IPSubnetSplitterApp:
             font: 字体设置
             anchor: 文字锚点
             fill: 文字颜色
-            stroke_color: 描边颜色
+            stroke_color: 描边颜色（已废弃，保留兼容性）
         """
-        # 直接使用4方向描边，这是最稳定和清晰的实现方式
-        # 4个方向：左上、左下、右上、右下
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        # 获取文字尺寸用于绘制背景矩形
+        temp_text = self.chart_canvas.create_text(0, 0, text=text, font=font, anchor=anchor)
+        bbox = self.chart_canvas.bbox(temp_text)
+        self.chart_canvas.delete(temp_text)
 
-        # 绘制描边
-        for dx, dy in directions:
-            self.chart_canvas.create_text(
-                x + dx, y + dy,
-                text=text,
-                font=font,
-                anchor=anchor,
-                fill=stroke_color
+        if bbox:
+            # 绘制深色背景矩形作为文字底板
+            padding = 4
+            self.chart_canvas.create_rectangle(
+                bbox[0] - padding, bbox[1] - padding,
+                bbox[2] + padding, bbox[3] + padding,
+                fill="#2d2d2d",
+                outline="",
+                width=0
             )
 
-        # 绘制主文字，覆盖在描边上
+        # 绘制主文字
         self.chart_canvas.create_text(
             x, y,
             text=text,
