@@ -15,13 +15,9 @@ import tkinter.font as tkfont
 import sys
 import os
 import traceback
-import json
-import time
-import ipaddress
 import csv
 
 # 外部库导入
-from PIL import Image, ImageDraw, ImageFont
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 
@@ -1378,7 +1374,7 @@ class IPSubnetSplitterApp:
             input_frame,
             values=self.split_parent_networks,
             width=22,
-            font= ("微软雅黑", 10),
+            font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
         )
@@ -5897,20 +5893,28 @@ class IPSubnetSplitterApp:
             fill: 文字颜色
             stroke_color: 描边颜色
         """
-        try:
-            # 优化：使用2个对角线方向的描边，减少50%的Canvas对象创建
-            # 平衡可读性和性能，适合图表文字显示
-            offset = 1  # 描边偏移量
+        # 直接使用4方向描边，这是最稳定和清晰的实现方式
+        # 4个方向：左上、左下、右上、右下
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-            # 绘制2个对角线方向的描边（减少Canvas对象数量）
-            self.chart_canvas.create_text(x - offset, y - offset, text=text, font=font, anchor=anchor, fill=stroke_color)
-            self.chart_canvas.create_text(x + offset, y + offset, text=text, font=font, anchor=anchor, fill=stroke_color)
+        # 绘制描边
+        for dx, dy in directions:
+            self.chart_canvas.create_text(
+                x + dx, y + dy,
+                text=text,
+                font=font,
+                anchor=anchor,
+                fill=stroke_color
+            )
 
-            # 绘制主文字
-            self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
-        except (AttributeError, ValueError):
-            # 出错时直接绘制文字，不添加描边
-            self.chart_canvas.create_text(x, y, text=text, font=font, anchor=anchor, fill=fill)
+        # 绘制主文字，覆盖在描边上
+        self.chart_canvas.create_text(
+            x, y,
+            text=text,
+            font=font,
+            anchor=anchor,
+            fill=fill
+        )
 
     def draw_distribution_chart(self):
         """绘制网段分布柱状图 - 参考Web版本的呈现方式"""

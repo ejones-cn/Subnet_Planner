@@ -631,6 +631,37 @@ class ExportUtils:
         margin_top = 280
         chart_width = high_res_width - margin_left - margin_right
         chart_x = margin_left
+        
+        # 定义绘制带描边文字的辅助函数
+        def draw_text_with_stroke(draw_obj, position, text, font, fill, stroke_color="#000000", stroke_width=4):
+            """绘制带描边的文字
+            
+            Args:
+                draw_obj: ImageDraw对象
+                position: (x, y) 坐标
+                text: 要绘制的文字
+                font: 字体对象
+                fill: 文字颜色
+                stroke_color: 描边颜色
+                stroke_width: 描边宽度
+            """
+            # 使用PIL的描边参数绘制文字
+            try:
+                draw_obj.text(
+                    position,
+                    text,
+                    font=font,
+                    fill=fill,
+                    stroke_width=stroke_width,
+                    stroke_fill=stroke_color
+                )
+            except (TypeError, AttributeError):
+                # 如果PIL版本不支持描边参数，使用方向性格式
+                x, y = position
+                directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+                for dx, dy in directions:
+                    draw_obj.text((x + dx, y + dy), text, font=font, fill=stroke_color)
+                draw_obj.text((x, y), text, font=font, fill=fill)
 
         # 使用对数比例尺
         log_max = math.log10(parent_range)
@@ -657,7 +688,7 @@ class ExportUtils:
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
         title_y = 100
-        draw.text((title_x, title_y), title, fill="#ffffff", font=title_font)
+        draw_text_with_stroke(draw, (title_x, title_y), title, title_font, "#ffffff")
 
         y = margin_top
 
@@ -698,8 +729,8 @@ class ExportUtils:
         address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
         address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-        draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=bold_text_font)
-        draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=bold_text_font)
+        draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
         y += bar_height + padding
 
@@ -721,8 +752,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-            draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=bold_text_font)
-            draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=bold_text_font)
+            draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+            draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
             y += bar_height + padding
 
@@ -736,7 +767,7 @@ class ExportUtils:
 
         title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
         title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
-        draw.text((chart_x, title_text_y), title_text, fill="#ffffff", font=bold_text_font)
+        draw_text_with_stroke(draw, (chart_x, title_text_y), title_text, bold_text_font, "#ffffff")
         y += 100
 
         # 为剩余网段分配颜色
@@ -768,8 +799,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
 
-            draw.text((chart_x + 30, segment_text_y), segment_text, fill="#ffffff", font=text_font)
-            draw.text((address_x, address_text_y), address_text, fill="#ffffff", font=text_font)
+            draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, text_font, "#ffffff")
+            draw_text_with_stroke(draw, (address_x, address_text_y), address_text, text_font, "#ffffff")
 
             y += bar_height + padding
 
@@ -778,7 +809,7 @@ class ExportUtils:
         legend_title = "图例说明"
         legend_title_bbox = draw.textbbox((0, 0), legend_title, font=bold_text_font)
         legend_title_y = y + (bar_height - (legend_title_bbox[3] - legend_title_bbox[1])) // 2
-        draw.text((chart_x, legend_title_y), legend_title, fill="#ffffff", font=bold_text_font)
+        draw_text_with_stroke(draw, (chart_x, legend_title_y), legend_title, bold_text_font, "#ffffff")
         y += 100
 
         legend_y = y
@@ -805,8 +836,7 @@ class ExportUtils:
 
         draw.rectangle([parent_x, parent_block_y, parent_x + parent_block_size, parent_block_y + parent_block_size],
                       fill=parent_color, outline=None, width=0)
-        draw.text((parent_x + parent_block_size + 25, parent_label_y), parent_label,
-                  fill="#ffffff", font=parent_text_font)
+        draw_text_with_stroke(draw, (parent_x + parent_block_size + 25, parent_label_y), parent_label, parent_text_font, "#ffffff")
 
         # 切分网段图例
         split_x = parent_x + 300
@@ -821,8 +851,7 @@ class ExportUtils:
 
         draw.rectangle([split_x, split_block_y, split_x + split_block_size, split_block_y + split_block_size],
                       fill=split_color, outline=None, width=0)
-        draw.text((split_x + split_block_size + 25, split_label_y), split_label,
-                  fill="#ffffff", font=split_text_font)
+        draw_text_with_stroke(draw, (split_x + split_block_size + 25, split_label_y), split_label, split_text_font, "#ffffff")
 
         # 剩余网段图例
         remaining_x = split_x + 320
@@ -844,9 +873,9 @@ class ExportUtils:
                 fill=color, outline=None, width=0
             )
 
-        draw.text(
+        draw_text_with_stroke(draw, 
             (remaining_x + len(legend_colors) * (remaining_block_size + remaining_block_gap) + 40, remaining_label_y),
-            remaining_label, fill="#ffffff", font=text_font
+            remaining_label, text_font, "#ffffff"
         )
 
         print("成功创建网段分布图")

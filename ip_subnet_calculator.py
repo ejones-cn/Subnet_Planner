@@ -18,7 +18,6 @@
 
 # 导入标准库模块
 import re
-import math
 import ipaddress
 
 # 导入本地模块
@@ -70,35 +69,35 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
         # 处理Only decimal digits permitted错误
         (lambda msg: "Only decimal digits permitted" in msg,
          lambda m: f"Invalid IP address format: {m}",
-         lambda m: f"无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）"),
+         lambda m: "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）"),
         
         # 处理Unexpected '/'错误
         (lambda msg: "Unexpected '/'" in msg,
-         lambda m: f"Invalid IP address format: unexpected '/' in IP address",
-         lambda m: f"无效的IPv4地址格式: IP地址中包含不允许的字符'/'（例如：192.168.1.1）"),
+         lambda m: "Invalid IP address format: unexpected '/' in IP address",
+         lambda m: "无效的IPv4地址格式: IP地址中包含不允许的字符'/'（例如：192.168.1.1）"),
         
         # 处理IPv6地址错误
         (lambda msg: "does not appear to be an IPv6 address" in msg,
-         lambda m: f"Invalid IPv6 address format",
-         lambda m: f"无效的IPv6地址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
+         lambda m: "Invalid IPv6 address format",
+         lambda m: "无效的IPv6地址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
         
         (lambda msg: "at most 4 hex digits per group" in msg,
-         lambda m: f"Invalid IPv6 address: at most 4 hex digits per group",
-         lambda m: f"无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
+         lambda m: "Invalid IPv6 address: at most 4 hex digits per group",
+         lambda m: "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
         
         (lambda msg: "too many colons" in msg,
-         lambda m: f"Invalid IPv6 address: too many colons",
-         lambda m: f"无效的IPv6地址: 冒号数量过多（例如：2001:0db8::1）"),
+         lambda m: "Invalid IPv6 address: too many colons",
+         lambda m: "无效的IPv6地址: 冒号数量过多（例如：2001:0db8::1）"),
         
         # 处理Only hex digits permitted错误
         (lambda msg: "Only hex digits permitted" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）"),
         
         # 处理IPv4的At most 3 characters permitted错误（优先匹配IPv4错误）
         (lambda msg: "At most 3 characters permitted" in msg,
-         lambda m: f"Invalid IP address: octet too long, max 3 characters allowed",
-         lambda m: f"无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）"),
+         lambda m: "Invalid IP address: octet too long, max 3 characters allowed",
+         lambda m: "无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）"),
         
         # 处理IPv6的At most 4 characters permitted错误
         (lambda msg: "At most 4 characters permitted" in msg,
@@ -108,37 +107,37 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
         # 处理IPv6的At most 8 colons permitted错误
         (lambda msg: "At most 8 colons permitted" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 冒号数量过多, 最多允许8个冒号（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 冒号数量过多, 最多允许8个冒号（例如：2001:0db8::1）"),
         
         # 处理IPv6的At most 45 characters expected错误
         (lambda msg: "At most 45 characters expected" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）"),
         
         # 处理其他IPv6的At most X characters permitted错误
         (lambda msg: "At most" in msg and "characters permitted" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
         
         # 处理Trailing ':' only permitted as part of '::'错误
         (lambda msg: "Trailing ':' only permitted as part of '::'" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）"),
         
         # 处理Exactly 8 parts expected错误
         (lambda msg: "Exactly 8 parts expected" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: IPv6地址需要8个部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
+         lambda m: "无效的IPv6地址: IPv6地址需要8个部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
         
         # 处理IPv6地址部分过多或过少的错误
         (lambda msg: "parts expected" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: IPv6地址格式不正确（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: IPv6地址格式不正确（例如：2001:0db8::1）"),
         
         # 处理IPv6地址中冒号相关的其他错误 - 更严格的匹配，只匹配IPv6特定错误
         (lambda msg: "IPv6" in msg or ("colon" in msg.lower() and "hex" in msg.lower()),
          lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: f"无效的IPv6地址: 格式错误（例如：2001:0db8::1）"),
+         lambda m: "无效的IPv6地址: 格式错误（例如：2001:0db8::1）"),
         
         # 处理Expected 4 octets错误（添加示例）
         (lambda msg: "Expected 4 octets" in msg,
@@ -725,9 +724,6 @@ def range_to_cidr(start_ip, end_ip):
         
         # 智能扩展范围，尝试找到包含当前范围的最小子网
         # 将起始IP向左扩展到网络地址，结束IP向右扩展到广播地址
-        # 计算当前范围所在的可能子网
-        current_range = int(end) - int(start) + 1
-        
         # 尝试找到包含整个范围的子网
         expanded_start = start
         expanded_end = end
