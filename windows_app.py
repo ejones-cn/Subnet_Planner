@@ -430,6 +430,7 @@ class IPSubnetSplitterApp:
         
         # 窗口锁定相关属性
         self.width_locked = True  # 默认锁定窗口横向尺寸
+        self.width_lock_var = None  # 初始化width_lock_var属性
 
         # 编辑相关属性
         self.edit_entry = None
