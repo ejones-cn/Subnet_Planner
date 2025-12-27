@@ -4039,56 +4039,94 @@ class IPSubnetSplitterApp:
         if children:
             tree.delete(*children)
 
-    def hide_info_bar(self):
-        """隐藏信息栏"""
-        if self.info_auto_hide_id:
+    def animate_info_bar(self, animation_type):
+        """通用信息栏动画函数
+        
+        Args:
+            animation_type: 动画类型，'show' 或 'hide'
+        """
+        if self.info_auto_hide_id and animation_type == 'hide':
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
 
-        if self.info_bar_frame.winfo_manager() == "":
+        if animation_type == 'hide' and self.info_bar_frame.winfo_manager() == "":
             return
 
         if self.info_bar_animating:
             return
         self.info_bar_animating = True
 
-        # 获取 spacer 的实际宽度
-        spacer_width = self.info_spacer.winfo_width()
-
-        # 计算左边距和宽度
-        bar_x = 10
-        bar_width = spacer_width - 20
-
-        # 如果宽度计算不正确，使用主窗口实际宽度计算
-        if bar_width < 100:
-            # 使用主窗口实际宽度，减去左右边距
-            main_width = self.main_frame.winfo_width()
-            bar_x = 10
-            bar_width = main_width - 20  # 减去左右边距
-
-        # 确保宽度不超过主窗口宽度
+        # 获取 spacer 的实际宽度或主窗口宽度
         main_width = self.main_frame.winfo_width()
-        if bar_width > main_width - 20:
-            bar_width = main_width - 20
+        spacer_width = self.info_spacer.winfo_width()
+        bar_x = 10
+        # 使用主窗口宽度减去左右边距共50作为信息栏宽度
+        bar_width = int(main_width * 1) - 50
+        
+        # 确保宽度在合理范围内
+        bar_width = max(bar_width, 100)
+        bar_width = min(bar_width, main_width - 20)
 
-        current_y = 0
-        target_y = 30
-        step = 3
-        delay = 10
+        # 动画参数配置
+        animation_config = {
+            'show': {
+                'current_y': 30,
+                'target_y': 0,
+                'step': 4,
+                'delay': 10,
+                'condition': lambda y, t: y <= t,
+                'update_y': lambda y, s: y - s,
+                'on_complete': lambda: self._on_show_animation_complete(bar_x, bar_width)
+            },
+            'hide': {
+                'current_y': 0,
+                'target_y': 30,
+                'step': 3,
+                'delay': 10,
+                'condition': lambda y, t: y >= t,
+                'update_y': lambda y, s: y + s,
+                'on_complete': lambda: self._on_hide_animation_complete(bar_x, bar_width)
+            }
+        }
 
-        def slide_out():
+        config = animation_config[animation_type]
+        current_y = config['current_y']
+        target_y = config['target_y']
+        step = config['step']
+        delay = config['delay']
+        condition = config['condition']
+        update_y = config['update_y']
+        on_complete = config['on_complete']
+
+        def animate():
             nonlocal current_y
-            current_y += step
-            if current_y >= target_y:
-                self.info_bar_frame.place_forget()
-                self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
-                self.info_spacer.pack_forget()
-                self.info_bar_animating = False
+            current_y = update_y(current_y, step)
+            if condition(current_y, target_y):
+                current_y = target_y
+                on_complete()
             else:
                 self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
-                self.root.after(delay, slide_out)
+                self.root.after(delay, animate)
 
-        slide_out()
+        animate()
+        
+    def _on_show_animation_complete(self, bar_x, bar_width):
+        """显示动画完成后的回调"""
+        self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
+        self.info_bar_animating = False
+        # 设置3秒后自动隐藏
+        self.info_auto_hide_id = self.root.after(3000, self.hide_info_bar)
+        
+    def _on_hide_animation_complete(self, bar_x, bar_width):
+        """隐藏动画完成后的回调"""
+        self.info_bar_frame.place_forget()
+        self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
+        self.info_spacer.pack_forget()
+        self.info_bar_animating = False
+
+    def hide_info_bar(self):
+        """隐藏信息栏"""
+        self.animate_info_bar('hide')
 
     def setup_advanced_tools_page(self):
         """设置高级工具功能的界面"""
@@ -5960,8 +5998,6 @@ class IPSubnetSplitterApp:
         if self.info_bar_animating:
             return
 
-        self.info_bar_animating = True
-
         # 显示 spacer，固定高度30px
         self.info_spacer.pack(side="bottom", fill="x")
 
@@ -5972,44 +6008,20 @@ class IPSubnetSplitterApp:
 
             # 计算左边距和宽度
             bar_x = 10
-            bar_width = spacer_width - 20
-
-            # 如果宽度计算不正确，使用主窗口实际宽度计算
-            if bar_width < 100:
-                # 使用主窗口实际宽度，减去左右边距
-                main_width = self.main_frame.winfo_width()
-                bar_x = 10
-                bar_width = main_width - 20  # 减去左右边距
-
-            # 确保宽度不超过主窗口宽度
+            # 使用主窗口宽度的88%作为信息栏宽度，减去左右边距
             main_width = self.main_frame.winfo_width()
-            if bar_width > main_width - 20:
-                bar_width = main_width - 20
+            bar_width = int(main_width * 0.88) - 20
+            
+            # 确保宽度在合理范围内
+            bar_width = max(bar_width, 100)
+            bar_width = min(bar_width, main_width - 20)
 
             # 初始位置在 spacer 底部下方
             self.info_bar_frame.place(x=bar_x, y=30, width=bar_width, height=30)
             self.info_bar_frame.lift()
 
-            target_y = 0
-            current_y = 30
-            step = 4
-            delay = 10
-
-            def slide_in():
-                nonlocal current_y
-                current_y -= step
-                if current_y <= target_y:
-                    current_y = target_y
-                    self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
-                    self.info_bar_animating = False
-                else:
-                    self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
-                    self.root.after(delay, slide_in)
-
-            self.root.after(delay, slide_in)
-
-            # 设置3秒后自动隐藏
-            self.info_auto_hide_id = self.root.after(3000, self.hide_info_bar)
+            # 使用通用动画函数执行显示动画
+            self.animate_info_bar('show')
 
         self.root.after(50, show_with_width)
 
