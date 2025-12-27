@@ -644,8 +644,6 @@ def range_to_cidr(start_ip, end_ip):
         # 将起始IP向左扩展到网络地址，结束IP向右扩展到广播地址
         # 计算当前范围所在的可能子网
         current_range = int(end) - int(start) + 1
-        # 计算最小可能的子网掩码位数
-        min_prefix = 32 - int(math.log2(current_range))
         
         # 尝试找到包含整个范围的子网
         expanded_start = start
