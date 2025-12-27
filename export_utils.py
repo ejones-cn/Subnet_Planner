@@ -549,7 +549,99 @@ class ExportUtils:
                 traceback.print_exc()
 
         doc.build(elements)
+    
+    def _load_font(self, font_size=36):
+        """加载系统中文字体
+        
+        Args:
+            font_size: 字体大小
+            
+        Returns:
+            tuple: (font, bold_font, font_loaded)
+        """
+        font = None
+        bold_font = None
+        font_loaded = False
+        try:
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
+            font_candidates = [
+                ('msyh.ttc', font_size, '微软雅黑'),
+                ('simhei.ttf', font_size, '黑体'),
+                ('simsun.ttc', font_size - 2, '宋体'),
+                ('simkai.ttf', font_size - 2, '楷体'),
+            ]
 
+            for font_file, size, font_name in font_candidates:
+                font_path = os.path.join(system_font_dir, font_file)
+                if os.path.exists(font_path):
+                    try:
+                        font = ImageFont.truetype(font_path, size)
+                        bold_font = ImageFont.truetype(font_path, size + 4)
+                        font_loaded = True
+                        print(f"成功加载{font_name}字体: {font_path}")
+                        break
+                    except (FileNotFoundError, IOError, OSError, ValueError, TypeError) as e:
+                        print(f"尝试加载{font_name}失败: {e}")
+                        continue
+
+            if not font_loaded:
+                font = ImageFont.load_default()
+                bold_font = ImageFont.load_default()
+                print("使用默认字体")
+        except (IOError, OSError, ValueError, TypeError) as e:
+            print(f"加载中文字体失败: {e}")
+            font = ImageFont.load_default()
+            bold_font = ImageFont.load_default()
+        return font, bold_font, font_loaded
+    
+    def _calculate_chart_dimensions(self, networks):
+        """计算图表所需的尺寸
+        
+        Args:
+            networks: 网段列表
+            
+        Returns:
+            tuple: (segment_height, required_height)
+        """
+        split_networks = [net for net in networks if net.get("type") == "split"]
+        remaining_networks = [net for net in networks if net.get("type") != "split"]
+        total_networks = len(split_networks) + len(remaining_networks)
+        
+        segment_height = 100 + 34
+        # 动态计算基础高度和所需总高度
+        base_height = 280 + 100 + 100 + 150 + 300
+        required_height = base_height + total_networks * segment_height
+        return segment_height, required_height
+    
+    def _draw_title(self, draw, high_res_width, title="网段分布图"):
+        """绘制图表标题
+        
+        Args:
+            draw: ImageDraw对象
+            high_res_width: 图像宽度
+            title: 标题文字
+            
+        Returns:
+            tuple: (title_font, title_x, title_y)
+        """
+        title_font_size = 76
+        title_font = None
+        try:
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
+            title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
+            if os.path.exists(title_font_path):
+                title_font = ImageFont.truetype(title_font_path, title_font_size)
+            else:
+                # 如果主字体加载失败，使用默认字体
+                title_font = ImageFont.load_default()
+        except (IOError, OSError, ValueError, TypeError):
+            title_font = ImageFont.load_default()
+        
+        title_bbox = draw.textbbox((0, 0), title, font=title_font)
+        title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
+        title_y = 100
+        return title_font, title_x, title_y
+    
     def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, _portrait_height):
         """添加网段分布图到PDF元素列表
 
