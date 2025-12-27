@@ -5752,10 +5752,21 @@ class IPSubnetSplitterApp:
                     self.style.configure(
                         "InfoBarCloseButton.TButton",
                         padding=(2, 0),  # 按用户要求统一设置padding为(2, 0)
-                        font=("微软雅黑", 8),  # 字体设置为微软雅黑，大小为8
+                        font=('微软雅黑', 8),  # 字体设置为微软雅黑，大小为8
                         foreground="#9E9E9E",
                         width=2,  # 字符宽度，配合padding使用
                     )
+                    
+                    # 重新配置信息栏标签样式，确保错误信息颜色正确
+                    self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
+                    self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 10), relief="flat")
+                    self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
+                    
+                    # 重新配置信息栏框架样式
+                    self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
+                    self.style.configure("SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
+                    self.style.configure("ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
+                    self.style.configure("InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
