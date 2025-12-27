@@ -30,15 +30,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.units import cm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    Image as RLImage, 
-    PageBreak, 
-    BaseDocTemplate, 
-    Frame, 
-    PageTemplate, 
-    NextPageTemplate,
     Table,
     TableStyle,
     Paragraph,
@@ -6361,50 +6353,6 @@ class IPSubnetSplitterApp:
             self.chart_scrollbar.set(0.0, 1.0)
             # 使用grid_remove()直接隐藏滚动条
             self.chart_scrollbar.grid_remove()
-
-    def register_chinese_fonts(self):
-        """注册中文字体供PDF导出使用"""
-        # 尝试查找系统中的中文字体
-        font_path = None
-
-        # Windows系统字体路径
-        if sys.platform == "win32":
-            font_dir = "C:\\Windows\\Fonts"
-            if os.path.exists(font_dir):
-                # 检查常用中文字体（包含.ttf和.ttc格式）
-                font_candidates = [
-                    ("simhei.ttf", "SimHei"),  # 黑体
-                    ("simsun.ttc", "SimSun"),  # 宋体
-                    ("msyh.ttf", "Microsoft YaHei"),  # 微软雅黑
-                    ("msyhbd.ttf", "Microsoft YaHei Bold"),  # 微软雅黑粗体
-                    ("msyhui.ttf", "Microsoft YaHei UI"),
-                    ("stsong.ttf", "STSong"),  # 华文宋体
-                    ("stheiti.ttf", "STHeiti"),  # 华文黑体
-                    ("stkaiti.ttf", "STKaiti"),  # 华文楷体
-                ]
-
-                # 查找所有可用的字体，优先使用黑体
-                for font_file, _ in font_candidates:
-                    potential_path = os.path.join(font_dir, font_file)
-                    if os.path.exists(potential_path):
-                        font_path = potential_path
-
-                        # 如果找到黑体，直接使用
-                        if font_file.lower() == "simhei.ttf":
-                            break
-
-        # 如果找到中文字体，注册它
-        if font_path:
-            try:
-                # 注册字体
-                pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
-                return True
-            except (OSError, ValueError, ImportError) as e:
-                print(f"注册字体失败: {e}")
-                return False
-        else:
-            print("未找到可用的中文字体")
-            return False
 
     def create_about_link(self):
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""
