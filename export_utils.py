@@ -211,13 +211,13 @@ class ExportUtils:
                 valid.append(width)
         return valid
 
-    def _get_table_style(self, colors, has_chinese_font):
+    def _get_table_style(self, table_colors, has_chinese_font):
         header_font = "ChineseFont" if has_chinese_font else "Helvetica-Bold"
         style = [
-            ("BACKGROUND", (0, 0), (-1, 0), colors["header_bg"]),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors["header_text"]),
+            ("BACKGROUND", (0, 0), (-1, 0), table_colors["header_bg"]),
+            ("TEXTCOLOR", (0, 0), (-1, 0), table_colors["header_text"]),
             ("FONTNAME", (0, 0), (-1, 0), header_font),
-            ("BOX", (0, 0), (-1, -1), 1.5, colors["box"]),
+            ("BOX", (0, 0), (-1, -1), 1.5, table_colors["box"]),
         ]
         return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE)
 
@@ -376,7 +376,7 @@ class ExportUtils:
 
         wb.save(file_path)
 
-    def _export_to_pdf(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
+    def _export_to_pdf(self, file_path, data_source, main_data, main_headers, _remaining_data, remaining_headers):
         """导出数据为PDF格式（支持中文）"""
         margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)
 
@@ -544,13 +544,13 @@ class ExportUtils:
             try:
                 print("开始添加网段分布图到PDF...")
                 self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height)
-            except Exception as e:
+            except (IOError, ValueError, TypeError, AttributeError) as e:
                 print(f"添加网段分布图失败: {e}")
                 traceback.print_exc()
 
         doc.build(elements)
 
-    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, portrait_height):
+    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, _portrait_height):
         """添加网段分布图到PDF元素列表
 
         Args:
@@ -623,7 +623,7 @@ class ExportUtils:
                 font = ImageFont.load_default()
                 bold_font = ImageFont.load_default()
                 print("使用默认字体")
-        except Exception as e:
+        except (IOError, OSError, ValueError, TypeError) as e:
             print(f"加载中文字体失败: {e}")
             font = ImageFont.load_default()
             bold_font = ImageFont.load_default()
@@ -679,13 +679,13 @@ class ExportUtils:
         title_font_size = 76
         title_font = None
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts')
+            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\Windows'), 'Fonts')
             title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
             if os.path.exists(title_font_path):
                 title_font = ImageFont.truetype(title_font_path, title_font_size)
             else:
                 title_font = bold_font
-        except Exception:
+        except (IOError, OSError, ValueError, TypeError):
             title_font = bold_font
 
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
@@ -709,15 +709,15 @@ class ExportUtils:
         text_font = None
         bold_text_font = None
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts')
-            font_path = os.path.join(system_font_dir, 'msyh.ttc')
-            if os.path.exists(font_path):
-                text_font = ImageFont.truetype(font_path, text_font_size)
-                bold_text_font = ImageFont.truetype(font_path, text_font_size + 6)
+            system_font_dir = os.path.join(os.environ.get('WINDIR', 'C:\Windows'), 'Fonts')
+            text_font_path = os.path.join(system_font_dir, 'msyh.ttc')
+            if os.path.exists(text_font_path):
+                text_font = ImageFont.truetype(text_font_path, text_font_size)
+                bold_text_font = ImageFont.truetype(text_font_path, text_font_size + 6)
             else:
                 text_font = font
                 bold_text_font = bold_font
-        except Exception:
+        except (IOError, OSError, ValueError, TypeError):
             text_font = font
             bold_text_font = bold_font
 
@@ -912,7 +912,7 @@ class ExportUtils:
 
         print("网段分布图成功添加到PDF")
 
-    def export_data(self, data_source, title, success_msg, failure_msg):
+    def export_data(self, data_source, _title, _success_msg, failure_msg):
         """通用数据导出函数
 
         Args:
@@ -944,7 +944,7 @@ class ExportUtils:
 
             return True, "data_prepared", (main_data, main_headers, remaining_data, remaining_headers)
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             traceback.print_exc()
             return False, f"{failure_msg}: {str(e)}", None
 
@@ -963,10 +963,10 @@ class ExportUtils:
             tuple: (success: bool, message: str)
         """
         try:
+            # 根据文件扩展名选择相应的导出方法
             file_ext = os.path.splitext(file_path)[1].lower()
-
             if file_ext == ".json":
-                self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data)
+                self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
             elif file_ext == ".txt":
                 self._export_to_txt(file_path, data_source, main_data, main_headers)
             elif file_ext == ".csv":
@@ -979,7 +979,6 @@ class ExportUtils:
                 return False, f"不支持的文件格式: {file_ext}"
 
             return True, f"成功导出到: {file_path}"
-
-        except Exception as e:
+        except (IOError, OSError, ValueError, TypeError) as e:
             traceback.print_exc()
             return False, f"导出失败: {str(e)}"
