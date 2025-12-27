@@ -1537,8 +1537,8 @@ class IPSubnetSplitterApp:
         self.setup_advanced_tools_page()
 
         # 添加顶级标签页 - 使用不同颜色
-        self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("子网规划", self.planning_frame, "#fce4ec")  # 淡粉色
+        self.top_level_notebook.add_tab("子网切分", self.split_frame, "#fff3e0")  # 浅橙色
         self.top_level_notebook.add_tab("高级工具", self.advanced_frame, "#e8f5e9")  # 浅绿色
 
     def create_split_result_section(self):
