@@ -2768,7 +2768,7 @@ class IPSubnetSplitterApp:
         # 解析文件
         try:
             data_list = self._parse_import_file(file_path)
-        except Exception as e:
+        except (ValueError, IOError, UnicodeDecodeError, TypeError) as e:
             self.show_error("错误", f"文件解析失败: {str(e)}")
             return
 
@@ -2823,7 +2823,7 @@ class IPSubnetSplitterApp:
                     continue
 
             if csv_data is None:
-                raise Exception("无法识别文件编码，请确保文件使用UTF-8或GBK编码")
+                raise ValueError("无法识别文件编码，请确保文件使用UTF-8或GBK编码")
 
             # 跳过表头，从第二行开始读取
             for row_idx, row in enumerate(csv_data[1:], start=2):
@@ -2834,7 +2834,7 @@ class IPSubnetSplitterApp:
                         data_list.append({"name": name, "hosts": hosts, "row": row_idx})
 
         else:
-            raise Exception("不支持的文件格式，请使用Excel (.xlsx) 或CSV (.csv) 文件")
+            raise ValueError("不支持的文件格式，请使用Excel (.xlsx) 或CSV (.csv) 文件")
 
         return data_list
 
@@ -3151,7 +3151,7 @@ class IPSubnetSplitterApp:
 
             self.show_info("成功", f"模板已保存到: {file_path}")
 
-        except Exception as e:
+        except (IOError, ValueError, TypeError) as e:
             self.show_error("错误", f"模板生成失败: {str(e)}")
 
     def copy_cell_data(self, event, tree):
@@ -6594,7 +6594,7 @@ class IPSubnetSplitterApp:
             else:
                 self.show_result(message, error=True)
 
-        except Exception as e:
+        except (IOError, ValueError, TypeError, PermissionError) as e:
             error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
             self.show_result(error_msg, error=True)
 
