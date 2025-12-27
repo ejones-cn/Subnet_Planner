@@ -405,7 +405,7 @@ class IPSubnetSplitterApp:
         self.ipv4_history = ["192.168.1.1"]  # IPv4地址查询历史
         self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]  # IPv6地址查询历史
         self.range_start_history = ["192.168.0.1"]  # IP范围起始地址历史
-        self.range_end_history = ["192.168.0.254"]  # IP范围结束地址历史
+        self.range_end_history = ["192.168.30.254"]  # IP范围结束地址历史
 
         # 切分子网相关属性
         self.split_parent_networks = []
@@ -3990,9 +3990,27 @@ class IPSubnetSplitterApp:
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
         self.ipv6_info_entry.config(state="normal")  # 允许手动输入
+        
+        # IPv6地址验证函数
+        def validate_ipv6(text):
+            """验证IPv6地址格式"""
+            text = text.strip()
+            # IPv6地址正则表达式（简化版，支持压缩格式）
+            ipv6_pattern = r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
+            is_valid = bool(re.match(ipv6_pattern, text)) if text else True
+            # 设置文本颜色
+            self.ipv6_info_entry.config(foreground='black' if is_valid else 'red')
+            return "1" if is_valid else False
+        
+        # 配置验证
+        self.ipv6_info_entry.config(validate="all", validatecommand=(self.ipv6_info_entry.register(validate_ipv6), "%P"))
+        
         # 绑定事件，在输入完成后更新历史记录
         self.ipv6_info_entry.bind("<FocusOut>", self.update_ipv6_history)
         self.ipv6_info_entry.bind("<Return>", self.update_ipv6_history)
+        
+        # 初始验证一次
+        validate_ipv6(self.ipv6_info_entry.get())
 
         # CIDR下拉列表（IPv6支持1-128）
         ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
@@ -4065,7 +4083,7 @@ class IPSubnetSplitterApp:
 
         # 添加垂直滚动条
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
-        self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24")
+        self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26")
 
         # 配置子网合并列表面板的grid布局
         subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
@@ -4106,7 +4124,7 @@ class IPSubnetSplitterApp:
         ttk.Label(end_frame, text="结束:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=("微软雅黑", 10))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
-        self.range_end_entry.insert(0, "192.168.0.254")
+        self.range_end_entry.insert(0, "192.168.30.254")
         self.range_end_entry.config(state="normal")  # 允许手动输入
         # 绑定事件，在输入完成后更新历史记录
         self.range_end_entry.bind("<FocusOut>", self.update_range_end_history)
@@ -4321,9 +4339,27 @@ class IPSubnetSplitterApp:
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
         self.ip_info_entry.config(state="normal")  # 允许手动输入
+        
+        # IPv4地址验证函数
+        def validate_ipv4(text):
+            """验证IPv4地址格式"""
+            text = text.strip()
+            # IPv4地址正则表达式
+            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            is_valid = bool(re.match(ipv4_pattern, text)) if text else True
+            # 设置文本颜色
+            self.ip_info_entry.config(foreground='black' if is_valid else 'red')
+            return "1" if is_valid else False
+        
+        # 配置验证
+        self.ip_info_entry.config(validate="all", validatecommand=(self.ip_info_entry.register(validate_ipv4), "%P"))
+        
         # 绑定事件，在输入完成后更新历史记录
         self.ip_info_entry.bind("<FocusOut>", self.update_ipv4_history)
         self.ip_info_entry.bind("<Return>", self.update_ipv4_history)
+        
+        # 初始验证一次
+        validate_ipv4(self.ip_info_entry.get())
 
         # 常用子网掩码与CIDR的映射关系，包含所有CIDR 1~32
         self.subnet_mask_cidr_map = {
@@ -4514,15 +4550,15 @@ class IPSubnetSplitterApp:
             for i, col in enumerate(columns):
                 self.merge_result_tree.heading(col, text=col)
                 if i == 0:  # CIDR列
-                    self.merge_result_tree.column(col, width=110, minwidth=110, stretch=False)
+                    self.merge_result_tree.column(col, minwidth=110, stretch=True)
                 elif i == 1:  # 网络地址列
-                    self.merge_result_tree.column(col, width=70, minwidth=70)
+                    self.merge_result_tree.column(col, minwidth=100, stretch=True)
                 elif i == 2:  # 子网掩码列
-                    self.merge_result_tree.column(col, width=70, minwidth=70)
+                    self.merge_result_tree.column(col, minwidth=120, stretch=True)
                 elif i == 3:  # 广播地址列
-                    self.merge_result_tree.column(col, width=70, minwidth=70)
+                    self.merge_result_tree.column(col, minwidth=100, stretch=True)
                 elif i == 4:  # 主机数列
-                    self.merge_result_tree.column(col, width=40, minwidth=40)
+                    self.merge_result_tree.column(col, minwidth=60, stretch=True)
 
             # 重新绑定滚动条，保持自动隐藏功能
             if hasattr(self, 'merge_result_scrollbar'):
