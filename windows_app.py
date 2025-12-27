@@ -367,22 +367,6 @@ class IPSubnetSplitterApp:
         # 对于直接调用，返回布尔值表示验证结果
         return "1" if entry else is_valid
 
-    def _show_tree_error(self, tree, error_msg, dialog_title=None, dialog_msg=None):
-        """显示树状视图错误信息
-
-        Args:
-            tree: 树状视图控件
-            error_msg: 树中显示的错误信息
-            dialog_title: 对话框标题，None表示不显示对话框
-            dialog_msg: 对话框消息，None表示不显示对话框
-        """
-        # 清空指定的树状视图
-        for item in tree.get_children():
-            tree.delete(item)
-        tree.insert("", tk.END, values=("错误", error_msg), tags=("error",))
-        if dialog_title and dialog_msg:
-            self.show_error(dialog_title, dialog_msg)
-
     def __init__(self, main_window):
         # 应用程序信息
         self.app_name = "子网规划师"
