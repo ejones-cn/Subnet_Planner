@@ -367,8 +367,9 @@ class IPSubnetSplitterApp:
             else:
                 entry.config(foreground='black' if is_valid else 'red')
 
-        # 对于validatecommand，返回"1"表示有效；否则返回布尔值
-        return "1" if is_valid else False if entry else is_valid
+        # 对于validatecommand，始终返回"1"，允许所有输入，只做视觉提示
+        # 对于直接调用，返回布尔值表示验证结果
+        return "1" if entry else is_valid
 
     def _show_tree_error(self, tree, error_msg, dialog_title=None, dialog_msg=None):
         """显示树状视图错误信息
@@ -393,7 +394,7 @@ class IPSubnetSplitterApp:
 
         # CIDR格式验证正则表达式
         self.cidr_pattern = (
-            r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}'
+            r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
             + r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/'
             + r'([0-9]|[1-2][0-9]|3[0-2])$'
         )
@@ -1371,14 +1372,14 @@ class IPSubnetSplitterApp:
         self.split_parent_networks = ["10.0.0.0/8"]  # 子网切分的父网段历史记录
         self.split_networks = ["10.21.60.0/23"]  # 子网切分的切分段历史记录
 
-        # 父网段 - 使用Combobox，支持下拉选择
+        # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,
             width=22,
-            font=("微软雅黑", 10),
-            validate='focusout',
+            font= ("微软雅黑", 10),
+            validate='all',
             validatecommand=vcmd,
         )
         self.parent_entry.grid(row=1, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
@@ -1395,7 +1396,7 @@ class IPSubnetSplitterApp:
             values=self.split_networks,
             width=22,
             font=("微软雅黑", 10),
-            validate='focusout',
+            validate='all',
             validatecommand=vcmd,
         )
         self.split_entry.grid(row=2, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
@@ -1918,7 +1919,7 @@ class IPSubnetSplitterApp:
             values=self.planning_parent_networks,
             width=16,
             font=("微软雅黑", 10),
-            validate='focusout',
+            validate='all',
             validatecommand=vcmd,
         )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 0), fill=tk.X, expand=True)
@@ -2516,12 +2517,30 @@ class IPSubnetSplitterApp:
         name_entry.grid(row=0, column=2, sticky=tk.W, pady=15, padx=(0, 10))
         # 自动获得焦点，方便直接输入
         name_entry.focus_set()
+        
+        # 为子网名称添加验证
+        def validate_name(text):
+            is_valid = bool(text.strip())
+            name_entry.config(foreground='black' if is_valid else 'red')
+            return "1"  # 始终允许输入，只做视觉提示
+        name_entry.config(validate="all", validatecommand=(temp_window.register(validate_name), "%P"))
 
         # 主机数量 - 标签在中间列左侧，输入框在中间列右侧
         ttk.Label(main_frame, text="主机数量:").grid(row=1, column=1, sticky=tk.E, pady=15, padx=(10, 10))
         hosts_var = tk.StringVar()
         hosts_entry = ttk.Entry(main_frame, textvariable=hosts_var, width=20)
         hosts_entry.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
+        
+        # 为主机数量添加验证
+        def validate_hosts(text):
+            # 允许空输入，只验证非空时是否为正整数
+            if not text:
+                hosts_entry.config(foreground='black')
+                return "1"
+            is_valid = text.isdigit() and int(text) > 0
+            hosts_entry.config(foreground='black' if is_valid else 'red')
+            return "1"  # 始终允许输入，只做视觉提示
+        hosts_entry.config(validate="all", validatecommand=(temp_window.register(validate_hosts), "%P"))
 
         # 定义回车键事件处理函数
         def on_return_key(_event):
@@ -3437,6 +3456,18 @@ class IPSubnetSplitterApp:
         self.edit_entry.insert(0, current_value)
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
+        
+        # 添加验证和即时反红功能
+        def validate_edit(text):
+            if column_index == 1:  # 子网名称列
+                is_valid = bool(text.strip())
+            elif column_index == 2:  # 主机数量列
+                is_valid = text.isdigit() and int(text) > 0 if text else True
+            else:
+                is_valid = True
+            self.edit_entry.config(foreground='black' if is_valid else 'red')
+            return "1"  # 始终允许输入，只做视觉提示
+        self.edit_entry.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
 
         # 设置编辑框在单元格上
         self.edit_entry.place(x=cell_x, y=cell_y, width=width, height=height)
@@ -3484,6 +3515,18 @@ class IPSubnetSplitterApp:
         self.edit_entry.insert(0, current_value)
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
+        
+        # 添加验证和即时反红功能
+        def validate_edit(text):
+            if column_index == 1:  # 子网名称列
+                is_valid = bool(text.strip())
+            elif column_index == 2:  # 主机数量列
+                is_valid = text.isdigit() and int(text) > 0 if text else True
+            else:
+                is_valid = True
+            self.edit_entry.config(foreground='black' if is_valid else 'red')
+            return "1"  # 始终允许输入，只做视觉提示
+        self.edit_entry.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
 
         # 设置编辑框在单元格上
         self.edit_entry.place(x=cell_x, y=cell_y, width=width, height=height)
@@ -4000,14 +4043,11 @@ class IPSubnetSplitterApp:
             is_valid = bool(re.match(ipv6_pattern, text)) if text else True
             # 设置文本颜色
             self.ipv6_info_entry.config(foreground='black' if is_valid else 'red')
-            return "1" if is_valid else False
+            # 始终返回"1"，允许所有输入，只做视觉提示
+            return "1"
         
         # 配置验证
         self.ipv6_info_entry.config(validate="all", validatecommand=(self.ipv6_info_entry.register(validate_ipv6), "%P"))
-        
-        # 绑定事件，在输入完成后更新历史记录
-        self.ipv6_info_entry.bind("<FocusOut>", self.update_ipv6_history)
-        self.ipv6_info_entry.bind("<Return>", self.update_ipv6_history)
         
         # 初始验证一次
         validate_ipv6(self.ipv6_info_entry.get())
@@ -4113,9 +4153,26 @@ class IPSubnetSplitterApp:
         self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_start_entry.insert(0, "192.168.0.1")
         self.range_start_entry.config(state="normal")  # 允许手动输入
-        # 绑定事件，在输入完成后更新历史记录
-        self.range_start_entry.bind("<FocusOut>", self.update_range_start_history)
-        self.range_start_entry.bind("<Return>", self.update_range_start_history)
+        
+        # IP范围地址验证函数
+        def validate_range_ip(text, entry):
+            """验证IP范围地址格式"""
+            text = text.strip()
+            # IPv4地址正则表达式 - 修复了点号匹配问题，使用\.转义点号
+            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            is_valid = bool(re.match(ipv4_pattern, text)) if text else True
+            # 设置文本颜色
+            entry.config(foreground='black' if is_valid else 'red')
+            # 始终返回"1"，允许所有输入，只做视觉提示
+            return "1"
+        
+        # 为起始IP添加验证
+        def validate_start_ip(text):
+            return validate_range_ip(text, self.range_start_entry)
+        self.range_start_entry.config(validate="all", validatecommand=(self.range_start_entry.register(validate_start_ip), "%P"))
+        
+        # 初始验证一次
+        validate_start_ip(self.range_start_entry.get())
 
         # 结束IP - 使用Combobox，支持下拉选择和记忆功能
         end_frame = ttk.Frame(range_frame)
@@ -4126,9 +4183,14 @@ class IPSubnetSplitterApp:
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.30.254")
         self.range_end_entry.config(state="normal")  # 允许手动输入
-        # 绑定事件，在输入完成后更新历史记录
-        self.range_end_entry.bind("<FocusOut>", self.update_range_end_history)
-        self.range_end_entry.bind("<Return>", self.update_range_end_history)
+        
+        # 为结束IP添加验证
+        def validate_end_ip(text):
+            return validate_range_ip(text, self.range_end_entry)
+        self.range_end_entry.config(validate="all", validatecommand=(self.range_end_entry.register(validate_end_ip), "%P"))
+        
+        # 初始验证一次
+        validate_end_ip(self.range_end_entry.get())
 
         # 范围转CIDR按钮 - 靠左放置
         self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
@@ -4344,19 +4406,16 @@ class IPSubnetSplitterApp:
         def validate_ipv4(text):
             """验证IPv4地址格式"""
             text = text.strip()
-            # IPv4地址正则表达式
-            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            # IPv4地址正则表达式 - 修复了点号匹配问题，使用\.转义点号
+            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
             is_valid = bool(re.match(ipv4_pattern, text)) if text else True
             # 设置文本颜色
             self.ip_info_entry.config(foreground='black' if is_valid else 'red')
-            return "1" if is_valid else False
+            # 始终返回"1"，允许所有输入，只做视觉提示
+            return "1"
         
         # 配置验证
         self.ip_info_entry.config(validate="all", validatecommand=(self.ip_info_entry.register(validate_ipv4), "%P"))
-        
-        # 绑定事件，在输入完成后更新历史记录
-        self.ip_info_entry.bind("<FocusOut>", self.update_ipv4_history)
-        self.ip_info_entry.bind("<Return>", self.update_ipv4_history)
         
         # 初始验证一次
         validate_ipv4(self.ip_info_entry.get())
@@ -4607,6 +4666,10 @@ class IPSubnetSplitterApp:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
+            
+            # 操作成功完成，添加到历史记录
+            self.update_range_start_history()
+            self.update_range_end_history()
 
         except ValueError as e:
             self.show_info("错误", f"合并失败: {str(e)}")
@@ -4946,6 +5009,9 @@ class IPSubnetSplitterApp:
                 self.ipv6_info_tree.insert("", tk.END, values=("扩展信息", ""), tags=("section",))
                 self.ipv6_info_tree.insert("", tk.END, values=("地址用途", "组播地址"))
                 self.ipv6_info_tree.insert("", tk.END, values=("RFC规范", "RFC 4291 - IPv6寻址架构"))
+            
+            # 操作成功完成，添加到历史记录
+            self.update_ipv6_history()
 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
@@ -5196,6 +5262,9 @@ class IPSubnetSplitterApp:
                 else:
                     config_advice = "建议配置静态路由和防火墙规则"
                 self.ip_info_tree.insert("", tk.END, values=("配置建议", config_advice))
+            
+            # 操作成功完成，添加到历史记录
+            self.update_ipv4_history()
 
         except ValueError as e:
             self.show_info("错误", f"查询失败: {str(e)}")
@@ -5281,6 +5350,10 @@ class IPSubnetSplitterApp:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
+            
+            # 操作成功完成，添加到历史记录
+            self.update_range_start_history()
+            self.update_range_end_history()
 
         except ValueError as e:
             self.show_info("错误", f"转换失败: {str(e)}")

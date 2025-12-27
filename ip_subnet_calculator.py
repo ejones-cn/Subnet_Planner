@@ -58,13 +58,14 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
          lambda m: f"CIDR address has host bits set: {m.split()[0]}",
          lambda m: f"CIDR地址包含主机位: {m.split()[0]}"),
         
-        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
-         lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
-         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效, 必须≤255"),
-        
         (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL),
          lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
-         lambda m: "IP地址格式错误, 需要4个八位组" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'"),
+         lambda m: "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'（例如：192.168.1.1）"),
+        
+        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
+         lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
+         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效, 必须≤255（例如：192.168.1.1）"),
+        
         
         # 处理Only decimal digits permitted错误
         (lambda msg: "Only decimal digits permitted" in msg,
@@ -94,6 +95,36 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
          lambda m: f"Invalid IPv6 address: {m}",
          lambda m: f"无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）"),
         
+        # 处理IPv4的At most 3 characters permitted错误（优先匹配IPv4错误）
+        (lambda msg: "At most 3 characters permitted" in msg,
+         lambda m: f"Invalid IP address: octet too long, max 3 characters allowed",
+         lambda m: f"无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）"),
+        
+        # 处理IPv6的At most 4 characters permitted错误
+        (lambda msg: "At most 4 characters permitted" in msg,
+         lambda m: f"Invalid IPv6 address: group '{re.search(r"'([^']+)'", m).group(1)}' too long, max 4 hex characters allowed",
+         lambda m: f"无效的IPv6地址: 组 '{re.search(r"'([^']+)'", m).group(1)}' 过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
+        
+        # 处理IPv6的At most 8 colons permitted错误
+        (lambda msg: "At most 8 colons permitted" in msg,
+         lambda m: f"Invalid IPv6 address: {m}",
+         lambda m: f"无效的IPv6地址: 冒号数量过多, 最多允许8个冒号（例如：2001:0db8::1）"),
+        
+        # 处理IPv6的At most 45 characters expected错误
+        (lambda msg: "At most 45 characters expected" in msg,
+         lambda m: f"Invalid IPv6 address: {m}",
+         lambda m: f"无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）"),
+        
+        # 处理其他IPv6的At most X characters permitted错误
+        (lambda msg: "At most" in msg and "characters permitted" in msg,
+         lambda m: f"Invalid IPv6 address: {m}",
+         lambda m: f"无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
+        
+        # 处理Trailing ':' only permitted as part of '::'错误
+        (lambda msg: "Trailing ':' only permitted as part of '::'" in msg,
+         lambda m: f"Invalid IPv6 address: {m}",
+         lambda m: f"无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）"),
+        
         # 处理Exactly 8 parts expected错误
         (lambda msg: "Exactly 8 parts expected" in msg,
          lambda m: f"Invalid IPv6 address: {m}",
@@ -104,15 +135,15 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
          lambda m: f"Invalid IPv6 address: {m}",
          lambda m: f"无效的IPv6地址: IPv6地址格式不正确（例如：2001:0db8::1）"),
         
-        # 处理IPv4地址格式错误
-        (lambda msg: "expected 4 octets" in msg,
-         lambda m: f"Invalid IP format: expected 4 octets",
-         lambda m: f"无效的IPv4地址格式: 需要4个八位组（例如：192.168.1.1）"),
+        # 处理IPv6地址中冒号相关的其他错误 - 更严格的匹配，只匹配IPv6特定错误
+        (lambda msg: "IPv6" in msg or ("colon" in msg.lower() and "hex" in msg.lower()),
+         lambda m: f"Invalid IPv6 address: {m}",
+         lambda m: f"无效的IPv6地址: 格式错误（例如：2001:0db8::1）"),
         
-        # 处理八位组无效错误
-        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
-         lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
-         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效, 必须≤255（例如：192.168.1.1）"),
+        # 处理Expected 4 octets错误（添加示例）
+        (lambda msg: "Expected 4 octets" in msg,
+         lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
+         lambda m: "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'（例如：192.168.1.1）"),
     ]
 
     # 检查错误模式
