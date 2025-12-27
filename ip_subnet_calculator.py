@@ -375,13 +375,15 @@ def merge_subnets(subnets):
                         strict=False
                     )
                     # 检查超网是否包含两个子网
-                    if (supernet.network_address <= last_merged.network_address and 
-                        supernet.broadcast_address >= last_merged.broadcast_address and
-                        supernet.network_address <= subnet.network_address and 
-                        supernet.broadcast_address >= subnet.broadcast_address):
+                    if (supernet.network_address <= last_merged.network_address
+                        and supernet.broadcast_address >= last_merged.broadcast_address
+                        and supernet.network_address <= subnet.network_address
+                        and supernet.broadcast_address >= subnet.broadcast_address):
                         # 检查超网是否恰好等于两个子网的合并（即不包含其他地址）
-                        expected_size = (int(last_merged.broadcast_address) - int(last_merged.network_address) + 1 +
-                                        int(subnet.broadcast_address) - int(subnet.network_address) + 1)
+                        expected_size = (
+                            int(last_merged.broadcast_address) - int(last_merged.network_address) + 1
+                            + int(subnet.broadcast_address) - int(subnet.network_address) + 1
+                        )
                         if supernet.num_addresses == expected_size:
                             candidate_supernet = supernet
                             break
@@ -407,12 +409,14 @@ def merge_subnets(subnets):
                                     f"{prev.network_address}/{prefix_len}",
                                     strict=False
                                 )
-                                if (supernet.network_address <= prev.network_address and 
-                                    supernet.broadcast_address >= prev.broadcast_address and
-                                    supernet.network_address <= curr.network_address and 
-                                    supernet.broadcast_address >= curr.broadcast_address):
-                                    expected_size = (int(prev.broadcast_address) - int(prev.network_address) + 1 +
-                                                    int(curr.broadcast_address) - int(curr.network_address) + 1)
+                                if (supernet.network_address <= prev.network_address
+                                    and supernet.broadcast_address >= prev.broadcast_address
+                                    and supernet.network_address <= curr.network_address
+                                    and supernet.broadcast_address >= curr.broadcast_address):
+                                    expected_size = (
+                                        int(prev.broadcast_address) - int(prev.network_address) + 1
+                                        + int(curr.broadcast_address) - int(curr.network_address) + 1
+                                    )
                                     if supernet.num_addresses == expected_size:
                                         candidate = supernet
                                         break

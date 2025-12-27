@@ -9,7 +9,7 @@ import re
 
 def optimize_data_structures(file_path):
     """优化数据结构和算法以提高性能"""
-    
+
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -222,8 +222,9 @@ def optimize_data_structures(file_path):
     new_length = len(content)
     saved_bytes = original_length - new_length
     print(f"\n优化完成! 共节省 {saved_bytes} 字节")
-    
+
     return saved_bytes
+
 
 if __name__ == "__main__":
     file_path = r"f:\trae_projects\Netsub tools\windows_app.py"

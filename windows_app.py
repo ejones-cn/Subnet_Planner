@@ -2732,15 +2732,21 @@ class IPSubnetSplitterApp:
         import_file_btn.pack(pady=15)
 
         # 下载Excel模板按钮
-        download_excel_btn = ttk.Button(button_frame, text="下载Excel模板", 
-                                         command=lambda: self._generate_template("excel"),
-                                         width=18)
+        download_excel_btn = ttk.Button(
+            button_frame,
+            text="下载Excel模板",
+            command=lambda: self._generate_template("excel"),
+            width=18
+        )
         download_excel_btn.pack(pady=0)
 
         # 下载CSV模板按钮
-        download_csv_btn = ttk.Button(button_frame, text="下载CSV模板", 
-                                      command=lambda: self._generate_template("csv"),
-                                      width=18)
+        download_csv_btn = ttk.Button(
+            button_frame,
+            text="下载CSV模板",
+            command=lambda: self._generate_template("csv"),
+            width=18
+        )
         download_csv_btn.pack(pady=5)
 
         # 取消按钮 - 直接放在主框架中，使用pack布局

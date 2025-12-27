@@ -9,7 +9,7 @@ import re
 
 def add_optimization_comments(file_path):
     """为优化过的代码添加注释说明"""
-    
+
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -121,8 +121,9 @@ def add_optimization_comments(file_path):
     # 写回文件
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print("\n优化注释添加完成!")
+
 
 if __name__ == "__main__":
     file_path = r"f:\trae_projects\Netsub tools\windows_app.py"

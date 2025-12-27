@@ -9,7 +9,7 @@ import re
 
 def remove_unused_functions(file_path):
     """删除未使用的函数"""
-    
+
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -39,8 +39,9 @@ def remove_unused_functions(file_path):
     # 写回文件
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
-    
+
     print("优化完成!")
+
 
 if __name__ == "__main__":
     file_path = r"f:\trae_projects\Netsub tools\windows_app.py"

@@ -9,7 +9,7 @@ import re
 
 def fix_complete_init_method(file_path):
     """完整修复__init__方法"""
-    
+
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -108,8 +108,9 @@ def fix_complete_init_method(file_path):
     # 写回文件
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
-    
+
     print("修复完成!")
+
 
 if __name__ == "__main__":
     file_path = r"f:\trae_projects\Netsub tools\windows_app.py"
