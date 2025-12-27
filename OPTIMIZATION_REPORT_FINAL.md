@@ -6,18 +6,20 @@
 
 ## 优化统计
 
-### 删除的函数数量：9个
-1. `_export_to_json` - JSON导出（已被ExportUtils替代）
-2. `_export_to_txt` - TXT导出（已被ExportUtils替代）
-3. `_export_to_csv` - CSV导出（已被ExportUtils替代）
-4. `_export_to_excel` - Excel导出（已被ExportUtils替代）
-5. `_analyze_ipv6_address_type` - 分析IPv6地址类型（未使用）
-6. `_analyze_ipv6_prefix` - 分析IPv6地址前缀（未使用）
-7. `_insert_ipv6_binary_representation` - 插入IPv6二进制表示（未使用）
-8. `_insert_treeview_item` - 插入树形视图项（未使用）
-9. `_insert_treeview_section` - 插入树形视图部分（未使用）
+### 删除的函数数量：10个
+1. `_export_to_pdf` - PDF导出（约1000行，未被调用）
+2. `_export_to_json` - JSON导出（已被ExportUtils替代）
+3. `_export_to_txt` - TXT导出（已被ExportUtils替代）
+4. `_export_to_csv` - CSV导出（已被ExportUtils替代）
+5. `_export_to_excel` - Excel导出（已被ExportUtils替代）
+6. `_analyze_ipv6_address_type` - 分析IPv6地址类型（未使用）
+7. `_analyze_ipv6_prefix` - 分析IPv6地址前缀（未使用）
+8. `_insert_ipv6_binary_representation` - 插入IPv6二进制表示（未使用）
+9. `_insert_treeview_item` - 插入树形视图项（未使用）
+10. `_insert_treeview_section` - 插入树形视图部分（未使用）
 
-### 删除的代码行数：约257行
+### 删除的代码行数：约1260行
+- `_export_to_pdf`：约1000行
 - `_export_to_json`：约15行
 - `_export_to_txt`：约41行
 - `_export_to_csv`：约21行
@@ -28,71 +30,82 @@
 - `_insert_treeview_item`：约10行
 - `_insert_treeview_section`：约10行
 
-### 代码减少比例：约3.2%
+### 代码减少比例：约15.9%
 
 ## 优化详情
 
-### 1. 删除未使用的导出函数
+### 1. 删除大型未使用函数
 
-#### 1.1 `_export_to_json`
+#### 1.1 `_export_to_pdf`
+**优化点：** 删除大型PDF导出函数
+
+**原因：** 该函数约1000行，未被调用
+
+**删除行数：** 约1000行
+
+**影响：** 显著减少了代码体积
+
+### 2. 删除未使用的导出函数
+
+#### 2.1 `_export_to_json`
 **优化点：** 删除未使用的JSON导出函数
 
 **原因：** 该函数已被 `ExportUtils` 替代，没有被调用
 
 **删除行数：** 约15行
 
-#### 1.2 `_export_to_txt`
+#### 2.2 `_export_to_txt`
 **优化点：** 删除未使用的TXT导出函数
 
 **原因：** 该函数已被 `ExportUtils` 替代，没有被调用
 
 **删除行数：** 约41行
 
-#### 1.3 `_export_to_csv`
+#### 2.3 `_export_to_csv`
 **优化点：** 删除未使用的CSV导出函数
 
 **原因：** 该函数已被 `ExportUtils` 替代，没有被调用
 
 **删除行数：** 约21行
 
-#### 1.4 `_export_to_excel`
+#### 2.4 `_export_to_excel`
 **优化点：** 删除未使用的Excel导出函数
 
 **原因：** 该函数已被 `ExportUtils` 替代，没有被调用
 
 **删除行数：** 约40行
 
-### 2. 删除未使用的辅助函数
+### 3. 删除未使用的辅助函数
 
-#### 2.1 `_analyze_ipv6_address_type`
+#### 3.1 `_analyze_ipv6_address_type`
 **优化点：** 删除未使用的IPv6地址类型分析函数
 
 **原因：** 该函数没有被调用
 
 **删除行数：** 约30行
 
-#### 2.2 `_analyze_ipv6_prefix`
+#### 3.2 `_analyze_ipv6_prefix`
 **优化点：** 删除未使用的IPv6地址前缀分析函数
 
 **原因：** 该函数没有被调用
 
 **删除行数：** 约60行
 
-#### 2.3 `_insert_ipv6_binary_representation`
+#### 3.3 `_insert_ipv6_binary_representation`
 **优化点：** 删除未使用的IPv6二进制表示插入函数
 
 **原因：** 该函数没有被调用
 
 **删除行数：** 约30行
 
-#### 2.4 `_insert_treeview_item`
+#### 3.4 `_insert_treeview_item`
 **优化点：** 删除未使用的树形视图项插入函数
 
 **原因：** 该函数没有被调用
 
 **删除行数：** 约10行
 
-#### 2.5 `_insert_treeview_section`
+#### 3.5 `_insert_treeview_section`
 **优化点：** 删除未使用的树形视图部分插入函数
 
 **原因：** 该函数没有被调用
@@ -124,6 +137,8 @@
 16. 测试程序是否能正常运行
 17. 删除 `_insert_treeview_section` 函数
 18. 测试程序是否能正常运行
+19. 删除 `_export_to_pdf` 函数
+20. 测试程序是否能正常运行
 
 ## 测试结果
 
@@ -143,17 +158,18 @@ python windows_app.py
 
 | 优化项 | 优化前 | 优化后 | 提升 |
 |--------|--------|--------|------|
-| 代码行数 | 7937行 | 7681行 | 减少256行 |
-| 函数数量 | 约100个 | 约91个 | 减少9个 |
+| 代码行数 | 7937行 | 6677行 | 减少1260行 |
+| 函数数量 | 约100个 | 约90个 | 减少10个 |
+| 代码减少比例 | 100% | 84.1% | 减少15.9% |
 | 语法错误 | 0个 | 0个 | 保持0个 |
 | 程序运行 | 正常 | 正常 | 保持正常 |
 
 ## 建议
 
 ### 1. 继续优化
-- 考虑删除 `_export_to_pdf` 函数（约1000行）
 - 考虑合并重复的代码逻辑
 - 考虑优化数据结构和算法
+- 考虑使用更高效的数据结构
 
 ### 2. 代码规范
 - 统一方法命名规范
@@ -167,10 +183,12 @@ python windows_app.py
 
 ## 结论
 
-本次优化成功删除了9个未使用的函数，总共删除了约257行代码，代码减少约3.2%。所有优化都通过了语法检查和运行测试，确保了代码的正确性。程序能够正常启动和运行。
+本次优化成功删除了10个未使用的函数，总共删除了约1260行代码，代码减少约15.9%。所有优化都通过了语法检查和运行测试，确保了代码的正确性。程序能够正常启动和运行。
+
+这是一个重大的优化成果，代码体积减少了约1/6！
 
 ---
 
 **优化日期：** 2025-12-27
 **优化人员：** AI Code Assistant
-**优化版本：** v3.0
+**优化版本：** v4.0
