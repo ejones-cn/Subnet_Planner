@@ -4591,6 +4591,17 @@ class IPSubnetSplitterApp:
             # 移除CIDR前缀，获取纯IPv6地址
             ipv6 = ipv6_full.split('/')[0]
             cidr = self.ipv6_cidr_var.get()
+            
+            # 验证IPv6地址格式
+            try:
+                import ipaddress
+                ipaddress.IPv6Address(ipv6)
+            except ValueError as e:
+                # 使用handle_ip_subnet_error函数获取友好的中文错误信息
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_info = handle_ip_subnet_error(e, "IP地址验证")
+                self.show_info("错误", error_info["error"])
+                return
 
             network_str = f"{ipv6}/{cidr}"
 
@@ -4914,6 +4925,17 @@ class IPSubnetSplitterApp:
             ip = self.ip_info_entry.get().strip()
             if not ip:
                 self.show_info("提示", "请输入IP地址")
+                return
+            
+            # 验证IPv4地址格式
+            try:
+                import ipaddress
+                ipaddress.IPv4Address(ip)
+            except ValueError as e:
+                # 使用handle_ip_subnet_error函数获取友好的中文错误信息
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_info = handle_ip_subnet_error(e, "IP地址验证")
+                self.show_info("错误", error_info["error"])
                 return
 
             subnet_mask = self.ip_mask_var.get()
