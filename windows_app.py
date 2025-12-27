@@ -3561,13 +3561,13 @@ class IPSubnetSplitterApp:
         # 获取点击位置的信息
         tree = event.widget
         region = tree.identify_region(event.x, event.y)
-        if region != "cell" and region != "row":
-            return
+        if region not in ("cell", "row"):
+            return "break"
         
         # 获取点击的行
         item = tree.identify_row(event.y)
         if not item:
-            return
+            return "break"
         
         # 获取当前选中的所有项
         selected_items = list(tree.selection())
@@ -5634,7 +5634,7 @@ class IPSubnetSplitterApp:
         self.test_dialog.transient(self.root)
         
         # 绑定关闭事件，确保对话框关闭时更新状态
-        self.test_dialog.protocol("WM_DELETE_WINDOW", lambda: self.close_test_dialog())
+        self.test_dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
         
         # 设置对话框为焦点
         self.test_dialog.focus_force()
@@ -6852,8 +6852,8 @@ class IPSubnetSplitterApp:
         ok_button.pack(pady=(0, 2))
         
         # 将焦点聚焦到确定按钮上，使用更可靠的方式
-        about_window.after_idle(lambda: ok_button.focus_set())
-        about_window.after_idle(lambda: ok_button.focus_force())
+        about_window.after_idle(ok_button.focus_set)
+        about_window.after_idle(ok_button.focus_force)
         
         # 绑定回车键事件，确保按回车键能关闭对话框
         about_window.bind('<Return>', lambda e: ok_button.invoke())
