@@ -415,6 +415,9 @@ class IPSubnetSplitterApp:
         self.pool_scrollbar = None
         self.requirements_tree = None
         self.requirements_scrollbar = None
+        
+        # 功能调试面板相关属性
+        self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
         self.undo_delete_btn = None
         self.swap_btn = None
         self.planning_notebook = None
@@ -2500,10 +2503,14 @@ class IPSubnetSplitterApp:
 
             if not name:
                 self.show_error("错误", "请输入子网名称")
+                # 重新将焦点设置到子网名称输入框
+                name_entry.focus_set()
                 return
 
             if not hosts.isdigit() or int(hosts) <= 0:
                 self.show_error("错误", "请输入有效的主机数量")
+                # 重新将焦点设置到主机数量输入框
+                hosts_entry.focus_set()
                 return
 
             # 检查是否存在相同名称的子网，同时检查子网需求表和需求池表
@@ -2512,8 +2519,10 @@ class IPSubnetSplitterApp:
                 values = self.requirements_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
-                    self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
-                    return
+                        self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                        # 重新将焦点设置到子网名称输入框
+                        name_entry.focus_set()
+                        return
 
             # 检查需求池表
             for item in self.pool_tree.get_children():
@@ -2665,10 +2674,16 @@ class IPSubnetSplitterApp:
 
         # 显示对话框
         dialog.deiconify()
+        
+        # 设置对话框为焦点
+        dialog.focus_force()
 
         # 创建主内容框架
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 设置对话框为焦点
+        dialog.focus_force()
 
         # 说明文本
         info_text = "请选择导入方式："
@@ -2683,6 +2698,9 @@ class IPSubnetSplitterApp:
                                     command=lambda: self._import_from_file(dialog),
                                     width=18)
         import_file_btn.pack(pady=15)
+        
+        # 将焦点聚焦到第一个按钮上
+        import_file_btn.focus_force()
 
         # 下载Excel模板按钮
         download_excel_btn = ttk.Button(
@@ -2893,6 +2911,9 @@ class IPSubnetSplitterApp:
 
         # 显示对话框
         dialog.deiconify()
+        
+        # 设置对话框为焦点
+        dialog.focus_force()
 
         # 创建主内容框架
         main_frame = ttk.Frame(dialog, padding="20")
@@ -3158,11 +3179,16 @@ class IPSubnetSplitterApp:
         # 确保主窗口完全初始化，先更新主窗口布局
         self.root.update_idletasks()
 
-        # 创建Toplevel窗口
-        dialog = tk.Toplevel(self.root)
+        # 获取当前焦点窗口，作为新对话框的父窗口
+        parent_window = self.root.focus_get()
+        if not parent_window or parent_window == self.root:
+            parent_window = self.root
+
+        # 创建Toplevel窗口，将父窗口设置为当前焦点窗口
+        dialog = tk.Toplevel(parent_window)
         dialog.title(title)
         dialog.resizable(False, False)
-        dialog.transient(self.root)  # 设置为父窗口的子窗口
+        dialog.transient(parent_window)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
 
         # 设置对话框最小宽度和高度，适当调高高度使其更加协调
@@ -3222,7 +3248,20 @@ class IPSubnetSplitterApp:
 
         # 设置对话框位置
         dialog.geometry(f"+{dialog_x}+{dialog_y}")
-
+        
+        # 显示对话框并设置焦点
+        dialog.deiconify()
+        
+        # 在对话框显示后强制设置焦点
+        def set_focus():
+            dialog.lift()  # 确保对话框在最上层
+            dialog.focus_force()  # 强制设置对话框为焦点
+            if 'ok_btn' in locals():
+                ok_btn.focus_force()  # 强制设置确定按钮为焦点
+        
+        # 使用after_idle确保在所有事件处理完成后再设置焦点
+        dialog.after_idle(set_focus)
+        
         # 等待对话框关闭
         self.root.wait_window(dialog)
 
@@ -3247,11 +3286,16 @@ class IPSubnetSplitterApp:
         # 确保主窗口完全初始化，先更新主窗口布局
         self.root.update_idletasks()
 
-        # 创建Toplevel窗口
-        dialog = tk.Toplevel(self.root)
+        # 获取当前焦点窗口，作为新对话框的父窗口
+        parent_window = self.root.focus_get()
+        if not parent_window or parent_window == self.root:
+            parent_window = self.root
+
+        # 创建Toplevel窗口，将父窗口设置为当前焦点窗口
+        dialog = tk.Toplevel(parent_window)
         dialog.title(title)
         dialog.resizable(False, False)
-        dialog.transient(self.root)  # 设置为父窗口的子窗口
+        dialog.transient(parent_window)  # 设置为父窗口的子窗口
         dialog.grab_set()  # 模态对话框
 
         # 设置对话框最小宽度和高度
@@ -3292,14 +3336,13 @@ class IPSubnetSplitterApp:
 
         ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
         ok_btn.pack(side=tk.RIGHT)
+        
+        # 按钮创建后立即设置焦点
+        ok_btn.focus_force()
 
         # 绑定回车键和Esc键
         dialog.bind('<Return>', lambda e: on_ok())
         dialog.bind('<Escape>', lambda e: on_cancel())
-        
-        # 设置对话框为焦点，并将焦点聚焦到确定按钮上
-        dialog.focus_set()
-        ok_btn.focus_set()
 
         # 计算并设置对话框居中位置
         dialog.update_idletasks()
@@ -3318,7 +3361,20 @@ class IPSubnetSplitterApp:
 
         # 设置对话框位置
         dialog.geometry(f"+{dialog_x}+{dialog_y}")
-
+        
+        # 显示对话框并设置焦点
+        dialog.deiconify()
+        
+        # 在对话框显示后强制设置焦点
+        def set_focus():
+            dialog.lift()  # 确保对话框在最上层
+            dialog.focus_force()  # 强制设置对话框为焦点
+            if 'ok_btn' in locals():
+                ok_btn.focus_force()  # 强制设置确定按钮为焦点
+        
+        # 使用after_idle确保在所有事件处理完成后再设置焦点
+        dialog.after_idle(set_focus)
+        
         # 等待对话框关闭
         self.root.wait_window(dialog)
 
@@ -3572,6 +3628,8 @@ class IPSubnetSplitterApp:
             # 验证数据
             if not new_value:
                 self.show_error("错误", "输入不能为空")
+                # 重新将焦点设置到编辑框
+                self.edit_entry.focus_set()
                 return
 
             # 获取原始值
@@ -3620,6 +3678,8 @@ class IPSubnetSplitterApp:
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
                         self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                        # 重新将焦点设置到编辑框
+                        self.edit_entry.focus_set()
                         return
                 # 2. 检查需求池表
                 for item in self.pool_tree.get_children():
@@ -3637,9 +3697,13 @@ class IPSubnetSplitterApp:
                     hosts = int(new_value)
                     if hosts <= 0:
                         self.show_error("错误", "主机数量必须大于0")
+                        # 重新将焦点设置到编辑框
+                        self.edit_entry.focus_set()
                         return
                 except ValueError:
                     self.show_error("错误", "主机数量必须是整数")
+                    # 重新将焦点设置到编辑框
+                    self.edit_entry.focus_set()
                     return
 
             # 根据当前编辑的表格，更新相应的Treeview数据
@@ -5474,11 +5538,28 @@ class IPSubnetSplitterApp:
         """打开功能调试对话框（彩蛋功能）
         快捷键：Ctrl+Shift+I
         """
+        # 检查调试面板是否已经存在
+        if hasattr(self, 'test_dialog') and self.test_dialog is not None:
+            try:
+                # 尝试将对话框显示在最上层并设置焦点
+                self.test_dialog.lift()
+                self.test_dialog.focus_force()
+                return
+            except tk.TclError:
+                # 如果对话框已被销毁，忽略错误并创建新对话框
+                self.test_dialog = None
+        
         # 创建功能调试对话框
-        test_dialog = tk.Toplevel(self.root)
-        test_dialog.title("功能调试")
-        test_dialog.resizable(False, False)  # 固定对话框大小，不可调节
-        test_dialog.transient(self.root)
+        self.test_dialog = tk.Toplevel(self.root)
+        self.test_dialog.title("功能调试")
+        self.test_dialog.resizable(False, False)  # 固定对话框大小，不可调节
+        self.test_dialog.transient(self.root)
+        
+        # 绑定关闭事件，确保对话框关闭时更新状态
+        self.test_dialog.protocol("WM_DELETE_WINDOW", lambda: self.close_test_dialog())
+        
+        # 设置对话框为焦点
+        self.test_dialog.focus_force()
 
         # 计算对话框居中显示的位置（相对于主窗口）
         dialog_width = 400
@@ -5495,10 +5576,10 @@ class IPSubnetSplitterApp:
         dialog_y = root_y + (root_height - dialog_height) // 2
 
         # 设置对话框大小和位置
-        test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
+        self.test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
         # 创建对话框内容框架
-        content_frame = ttk.Frame(test_dialog, padding="15")
+        content_frame = ttk.Frame(self.test_dialog, padding="15")
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # 使用grid布局管理器来精确控制各个组件的位置
@@ -5534,6 +5615,9 @@ class IPSubnetSplitterApp:
             command=lambda: self.show_result("测试正确信息：操作成功！", error=False),
         )
         success_btn.grid(row=0, column=0, padx=5, pady=5)
+        
+        # 将焦点聚焦到第一个按钮上
+        success_btn.focus_force()
 
         error_btn = ttk.Button(
             button_frame,
@@ -5653,9 +5737,18 @@ class IPSubnetSplitterApp:
 
         # 添加关闭按钮到右下角
         close_btn = ttk.Button(
-            close_frame, text="关闭", width=button_width, style=button_style, command=test_dialog.destroy
+            close_frame, text="关闭", width=button_width, style=button_style, command=self.close_test_dialog
         )
         close_btn.grid(row=0, column=1, padx=5)
+        
+    def close_test_dialog(self):
+        """关闭功能调试对话框并更新状态"""
+        if hasattr(self, 'test_dialog') and self.test_dialog is not None:
+            try:
+                self.test_dialog.destroy()
+            finally:
+                # 确保无论如何都将test_dialog设置为None
+                self.test_dialog = None
 
     def show_result(self, text, error=False, keep_data=False):
         """显示结果
@@ -6575,10 +6668,9 @@ class IPSubnetSplitterApp:
         bottom_spacer = ttk.Frame(content_frame)
         bottom_spacer.pack(side="top", expand=True, fill="y")
 
-        # 移除对话框的焦点指示
-        about_window.focus_set()
-        about_window.bind("<FocusIn>", lambda e: None)
-        about_window.bind("<FocusOut>", lambda e: None)
+        # 移除可能影响焦点的事件绑定
+        about_window.unbind("<FocusIn>")
+        about_window.unbind("<FocusOut>")
 
         # 为关于对话框中的标签和按钮添加焦点样式，移除虚线
         # 创建对话框专用的样式，避免影响主窗口
@@ -6615,9 +6707,17 @@ class IPSubnetSplitterApp:
         email_label.pack()
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
-        # 添加确定按钮
-        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12, style="About.TButton")
+        # 添加确定按钮，使用默认样式
+        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12)
         ok_button.pack(pady=(0, 2))
+        
+        # 将焦点聚焦到确定按钮上，使用更可靠的方式
+        about_window.after_idle(lambda: ok_button.focus_set())
+        about_window.after_idle(lambda: ok_button.focus_force())
+        
+        # 绑定回车键事件，确保按回车键能关闭对话框
+        about_window.bind('<Return>', lambda e: ok_button.invoke())
+        about_window.bind('<Escape>', lambda e: ok_button.invoke())
 
         # 添加版权信息
         copyright_label = ttk.Label(
