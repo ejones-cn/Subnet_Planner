@@ -488,16 +488,19 @@ class IPSubnetSplitterApp:
         # 使用默认主题
         self.style.theme_use("vista")
 
-        self.style.configure("TLabel", font=("微软雅黑", 10))
-        self.style.configure("TButton", font=("微软雅黑", 10), focuscolor="#888888", focuswidth=1)
-        self.style.configure("TEntry", font=("微软雅黑", 10))
+        # 统一设置基本控件的字体样式
+        base_font_style = {"font": ("微软雅黑", 10)}
+        self.style.configure("TLabel", **base_font_style)
+        self.style.configure("TEntry", **base_font_style)
+        # 按钮除了基本字体外还有额外的样式配置
+        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1)
+        
         # 设置滚动条宽度一致 - 针对Windows平台的特殊处理
         # 恢复默认滚动条布局，包含完整的箭头元素
         # 当滚动条未激活时，通过回调函数隐藏整个滚动条
-        # 设置滚动条宽度
-        self.style.configure("TScrollbar", width=5)
-        self.style.configure("Vertical.TScrollbar", width=5)
-        self.style.configure("Horizontal.TScrollbar", width=5)
+        scrollbar_style = {"width": 5}
+        for scrollbar_type in ["TScrollbar", "Vertical.TScrollbar", "Horizontal.TScrollbar"]:
+            self.style.configure(scrollbar_type, **scrollbar_style)
 
         # 为按钮添加焦点样式映射，进一步控制焦点效果
         self.style.map(
@@ -661,15 +664,17 @@ class IPSubnetSplitterApp:
 
         # 7. 信息栏样式配置 - 紧凑设计，调大字体
         # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
-        self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
-        self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 10), relief="flat")
-        self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
+        # 统一设置信息栏标签的基本样式，只修改不同的前景色
+        base_info_label_style = {"font": ("微软雅黑", 10), "relief": "flat"}
+        self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
+        self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
+        self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
 
         # 信息栏框架样式 - 使用极淡灰色边框
-        self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-        self.style.configure("SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-        self.style.configure("ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-        self.style.configure("InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
+        # 所有信息栏框架使用相同的基础样式，使用循环批量配置
+        info_bar_frame_style = {"borderwidth": 1, "relief": "solid", "bordercolor": "#F5F5F5"}
+        for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
+            self.style.configure(frame_style, **info_bar_frame_style)
 
         # 8. 斑马条纹样式配置
         # 在Treeview中通过标签(tags)实现斑马条纹效果
@@ -724,7 +729,7 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
         self.info_label = ttk.Label(
-            self.info_bar_frame, text="", padding=(3, 3, 0, 0), anchor="w"
+            self.info_bar_frame, text="", padding=(2, 0, 0, 0), anchor="w"
         )
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
 
@@ -735,7 +740,7 @@ class IPSubnetSplitterApp:
             style="InfoBarCloseButton.TButton",
             cursor="hand2",
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=2)
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1)
 
         self.info_auto_hide_id = None
         self.info_bar_animating = False
@@ -5762,11 +5767,10 @@ class IPSubnetSplitterApp:
                     self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 10), relief="flat")
                     self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
                     
-                    # 重新配置信息栏框架样式
-                    self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-                    self.style.configure("SuccessInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-                    self.style.configure("ErrorInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
-                    self.style.configure("InfoInfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
+                    # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
+                    info_bar_frame_style = {"borderwidth": 1, "relief": "solid", "bordercolor": "#F5F5F5"}
+                    for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
+                        self.style.configure(frame_style, **info_bar_frame_style)
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
@@ -5825,8 +5829,6 @@ class IPSubnetSplitterApp:
             self.root.maxsize(800, 10000)
         else:
             self.root.resizable(width=True, height=True)
-            current_width = self.root.winfo_width()
-            current_height = self.root.winfo_height()
             self.root.minsize(800, 700)
             self.root.maxsize(10000, 10000)
 
