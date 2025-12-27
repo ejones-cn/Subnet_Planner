@@ -633,7 +633,7 @@ class ExportUtils:
         chart_x = margin_left
         
         # 定义绘制带描边文字的辅助函数
-        def draw_text_with_stroke(draw_obj, position, text, font, fill, stroke_color="#000000", stroke_width=4):
+        def draw_text_with_stroke(draw_obj, position, text, font, fill, stroke_color="#666666", stroke_width=4):
             """绘制带描边的文字
             
             Args:
