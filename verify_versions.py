@@ -17,7 +17,7 @@ windows_version = get_windows_version()
 web_version = get_web_version()
 
 print("=" * 60)
-print("IP子网切分工具版本验证")
+print("子网规划师版本验证")
 print("=" * 60)
 
 # Windows版版本验证
@@ -27,7 +27,7 @@ print("-" * 40)
 # 检查README.md (Windows版)
 with open("README.md", "r", encoding="utf-8") as f:
     readme_content = f.read()
-match = re.search(r"# IP子网切分工具 v(\d+\.\d+\.\d+)", readme_content)
+match = re.search(r"# 子网规划师 v(\d+\.\d+\.\d+)", readme_content)
 if match:
     readme_version = match.group(1)
     print(f"README.md 版本: v{readme_version}")

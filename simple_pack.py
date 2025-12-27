@@ -38,7 +38,7 @@ def create_pack_config(pack_type="onefile"):
         f"--{pack_type}",  # 打包模式
         "--windowed",  # 窗口模式，无控制台
         "--icon=icon.ico",  # 指定图标
-        "--name=IP子网分割工具",  # 程序名称
+        "--name=子网规划师",  # 程序名称
         "--distpath=dist",  # 输出目录
         "--workpath=build",  # 工作目录
         "--clean",  # 清理临时文件
@@ -100,7 +100,7 @@ def test_pack_result(sign_info=None):
     # 查找EXE文件
     import glob
 
-    exe_files = glob.glob(os.path.join("dist", "**", "IP子网分割工具.exe"), recursive=True)
+    exe_files = glob.glob(os.path.join("dist", "**", "子网规划师.exe"), recursive=True)
 
     if exe_files:
         exe_path = exe_files[0]
@@ -179,7 +179,7 @@ def sign_exe(exe_path, sign_info):
 # 主函数
 def main():
     # 设置命令行参数解析
-    parser = argparse.ArgumentParser(description="IP子网分割工具打包程序 - 仅生成单文件版本")
+    parser = argparse.ArgumentParser(description="子网规划师打包程序 - 仅生成单文件版本")
 
     # 代码签名参数
     parser.add_argument("--sign", action="store_true", help="为生成的EXE文件添加数字签名")
@@ -190,7 +190,7 @@ def main():
     args = parser.parse_args()
 
     # 打印欢迎信息
-    print("IP子网分割工具打包程序")
+    print("子网规划师打包程序")
     print("=" * 40)
     print("仅生成单文件版本 (--onefile) [独立运行，优化减少误报]")
     print("=" * 40)

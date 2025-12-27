@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-IP子网切分计算器
+子网规划师 - IP子网计算核心
 
-提供IP子网切分的核心功能，包括:
+提供IP子网计算的核心功能，包括:
 1. IP地址和整数之间的转换
 2. 获取子网的详细信息
 3. 检查子网关系
@@ -34,8 +34,8 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
 
     参数:
     error: 捕获的ValueError异常
-    error_type: 错误类型前缀（如"子网计算"、"子网规划"）
-    language: 错误信息语言，"zh"表示中文，"en"表示英文
+    error_type: 错误类型前缀(如"子网计算","子网规划")
+    language: 错误信息语言, "zh"表示中文, "en"表示英文
 
     返回:
     包含错误信息的字典
@@ -43,7 +43,7 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
     error_msg = str(error)
     error_info = None
 
-    # 定义错误模式匹配列表，包含错误类型、匹配模式和错误信息模板
+    # 定义错误模式匹配列表, 包含错误类型、匹配模式和错误信息模板
     error_patterns = [
         # (匹配函数, 英文模板, 中文模板)
         (lambda msg: "not a valid netmask" in msg,
@@ -60,11 +60,11 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
         
         (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
          lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
-         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效，必须≤255"),
+         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效, 必须≤255"),
         
         (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL),
          lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
-         lambda m: "IP地址格式错误，需要4个八位组" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误，需要4个八位组，实际为 '{re.search(r"'([^']+)'", m).group(1)}'"),
+         lambda m: "IP地址格式错误, 需要4个八位组" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'"),
     ]
 
     # 检查错误模式
@@ -76,7 +76,7 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
                 error_info = zh_template(error_msg)
             break
 
-    # 检查octet长度错误（特殊处理）
+    # 检查octet长度错误(特殊处理)
     if not error_info and re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
@@ -84,7 +84,7 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
             if language == "en":
                 error_info = f"Invalid octet '{invalid_octet}' in IP, max 3 chars (0-255) allowed"
             else:
-                error_info = f"IP地址中八位组 '{invalid_octet}' 无效，最多允许3个字符（0-255）"
+                error_info = f"IP地址中八位组 '{invalid_octet}' 无效, 最多允许3个字符(0-255)"
 
     # 使用默认错误信息
     if not error_info:
@@ -106,13 +106,13 @@ def int_to_ip(ip_int):
 
 def ipv4_to_ipv6(ipv4_str):
     """
-    将IPv4地址转换为IPv6地址（IPv4映射格式）
+    将IPv4地址转换为IPv6地址(IPv4映射格式)
     
     参数:
     ipv4_str: IPv4地址字符串
     
     返回:
-    IPv6地址字符串（::ffff:ipv4格式）
+    IPv6地址字符串(::ffff:ipv4格式)
     """
     try:
         # 验证IPv4地址格式
@@ -125,7 +125,7 @@ def ipv4_to_ipv6(ipv4_str):
 
 def ipv6_to_ipv4(ipv6_str):
     """
-    将IPv6地址转换为IPv4地址（仅支持IPv4映射格式）
+    将IPv6地址转换为IPv4地址(仅支持IPv4映射格式)
     
     参数:
     ipv6_str: IPv6地址字符串
@@ -139,7 +139,7 @@ def ipv6_to_ipv4(ipv6_str):
         if ipv6_addr.ipv4_mapped:
             return str(ipv6_addr.ipv4_mapped)
         else:
-            return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式（如::ffff:192.168.1.1）"}
+            return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)"}
     except ValueError as e:
         return handle_ip_subnet_error(e, "IPv6转IPv4")
 
@@ -359,7 +359,7 @@ def merge_subnets(subnets):
             last_merged = merged[-1]
             
             # 检查是否可以合并
-            # 条件1：连续（broadcast + 1 == next network）
+            # 条件1：连续(broadcast + 1 == next network)
             # 条件2：可以合并成更小的前缀
             is_contiguous = last_merged.broadcast_address + 1 == subnet.network_address
             is_overlapping = last_merged.overlaps(subnet)
@@ -379,7 +379,7 @@ def merge_subnets(subnets):
                         and supernet.broadcast_address >= last_merged.broadcast_address
                         and supernet.network_address <= subnet.network_address
                         and supernet.broadcast_address >= subnet.broadcast_address):
-                        # 检查超网是否恰好等于两个子网的合并（即不包含其他地址）
+                        # 检查超网是否恰好等于两个子网的合并(即不包含其他地址)
                         expected_size = (
                             int(last_merged.broadcast_address) - int(last_merged.network_address) + 1
                             + int(subnet.broadcast_address) - int(subnet.network_address) + 1

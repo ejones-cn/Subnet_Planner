@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-子网计算器应用程序 - 主窗口
+子网规划师应用程序 - 主窗口
 """
 
 # 所有导入语句放在最顶部
@@ -388,7 +388,7 @@ class IPSubnetSplitterApp:
 
     def __init__(self, main_window):
         # 应用程序信息
-        self.app_name = "IP子网切分工具"
+        self.app_name = "子网规划师"
         self.app_version = get_version()
 
         # CIDR格式验证正则表达式
@@ -492,7 +492,7 @@ class IPSubnetSplitterApp:
         self.export_utils = ExportUtils()
 
         self.root = main_window
-        self.root.title(f"IP子网切分工具 v{self.app_version}")
+        self.root.title(f"子网规划师 v{self.app_version}")
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
         # 这里只设置窗口标题
 
@@ -6215,7 +6215,7 @@ class IPSubnetSplitterApp:
             "main_headers": ["项目", "值"],
             "remaining_tree": self.remaining_tree,
             "remaining_name": "剩余网段信息",
-            "pdf_title": "IP子网分割工具 - 计算结果",
+            "pdf_title": "子网规划师 - 计算结果",
             "main_table_cols": None,  # 使用默认列宽
             "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'chart_data', None),  # 添加网段分布图数据
@@ -6232,7 +6232,7 @@ class IPSubnetSplitterApp:
             "main_headers": None,  # 自动从表格获取
             "remaining_tree": self.planning_remaining_tree,
             "remaining_name": "剩余网段信息",
-            "pdf_title": "IP子网分割工具 - 子网规划结果",
+            "pdf_title": "子网规划师 - 子网规划结果",
             "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
             "remaining_table_cols": [40, 90, 80, 110, 80, 60],  # 剩余网段表格列宽
         }
@@ -6502,11 +6502,12 @@ if __name__ == "__main__":
     # 设置窗口大小和位置
     root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{window_x}+{window_y}")
 
-    # 设置窗口最小大小 - 最小高度设为当前满意高度，只能拉大不能缩小
+    # 设置窗口固定宽度，高度可调整
     root.minsize(800, 700)
+    root.maxsize(800, 10000)  # 设置最大宽度为800，最大高度设为一个很大的值
 
-    # 允许调整窗口宽度和高度
-    root.resizable(width=True, height=True)
+    # 只允许调整窗口高度，不允许调整宽度
+    root.resizable(width=False, height=True)
 
     # 设置窗口图标
     try:

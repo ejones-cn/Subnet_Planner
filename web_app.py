@@ -15,7 +15,7 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IP子网切分工具</title>
+    <title>子网规划师</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -275,7 +275,7 @@ HTML_TEMPLATE = '''
 </head>
 <body>
     <div class="container">
-        <h1>IP子网切分工具 v{{ version }}</h1>
+        <h1>子网规划师 v{{ version }}</h1>
         
         <!-- 功能选项卡 -->
         <div class="tabs">

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 版本号自动更新脚本
-用于自动递增IP子网切分工具的版本号
+用于自动递增子网规划师的版本号
 """
 
 import argparse
@@ -123,7 +123,7 @@ def update_readme_file(new_version):
 
     # 更新标题中的版本号
     content = re.sub(
-        r"# IP子网切分工具 v\d+\.\d+\.\d+", f"# IP子网切分工具 v{new_version}", content
+        r"# 子网规划师 v\d+\.\d+\.\d+", f"# 子网规划师 v{new_version}", content
     )
 
     with open(README_FILE, "w", encoding="utf-8") as f:
@@ -149,7 +149,7 @@ def update_windows_app_file(new_version):
 
     # 更新标题中的版本号
     content = re.sub(
-        r'"IP子网切分工具 v\d+\.\d+\.\d+"', f'"IP子网切分工具 v{new_version}"', content
+        r'"子网规划师 v\d+\.\d+\.\d+"', f'"子网规划师 v{new_version}"', content
     )
 
     # 更新app_version变量
@@ -177,7 +177,7 @@ def update_ip_subnet_calculator_file(new_version):
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(description="IP子网切分工具版本号自动更新脚本")
+    parser = argparse.ArgumentParser(description="子网规划师版本号自动更新脚本")
     parser.add_argument("--major", action="store_true", help="递增主版本号")
     parser.add_argument("--minor", action="store_true", help="递增次版本号")
     parser.add_argument("--patch", action="store_true", help="递增修订版本号")
