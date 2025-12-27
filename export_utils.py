@@ -72,9 +72,6 @@ TABLE_COMMON_STYLE = [
 ]
 
 HEADER_STYLE = [
-    ("BACKGROUND", (0, 0), (-1, 0), None),
-    ("TEXTCOLOR", (0, 0), (-1, 0), None),
-    ("FONTNAME", (0, 0), (-1, 0), None),
     ("FONTSIZE", (0, 0), (-1, 0), 11),
     ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
     ("TOPPADDING", (0, 0), (-1, 0), 8),
@@ -215,10 +212,11 @@ class ExportUtils:
         return valid
 
     def _get_table_style(self, colors, has_chinese_font):
+        header_font = "ChineseFont" if has_chinese_font else "Helvetica-Bold"
         style = [
             ("BACKGROUND", (0, 0), (-1, 0), colors["header_bg"]),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors["header_text"]),
-            ("FONTNAME", (0, 0), (-1, 0), "ChineseFont" if has_chinese_font else "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 0), header_font),
             ("BOX", (0, 0), (-1, -1), 1.5, colors["box"]),
         ]
         return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE)
