@@ -658,9 +658,9 @@ class IPSubnetSplitterApp:
 
         # 7. 信息栏样式配置 - 紧凑设计，调大字体
         # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
-        self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat")
-        self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 9), relief="flat")
-        self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 9), relief="flat")
+        self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
+        self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 10), relief="flat")
+        self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
 
         # 信息栏框架样式 - 使用极淡灰色边框
         self.style.configure("InfoBar.TFrame", borderwidth=1, relief="solid", bordercolor="#F5F5F5")
@@ -5817,8 +5817,8 @@ class IPSubnetSplitterApp:
         # 确保使用一致的宽度计算逻辑，无论是第一次还是第二次显示
         # 始终使用主窗口宽度作为参考，确保第一次和第二次显示时截断一致
         main_window_width = self.root.winfo_width()
-        # 使用主窗口宽度的85%作为信息栏宽度，放大截断位置
-        info_bar_width = int(main_window_width * 0.96)
+        # 使用主窗口宽度的88%作为信息栏宽度，放大截断位置
+        info_bar_width = int(main_window_width * 0.93)
         # 确保不小于原始的最小宽度
         info_bar_width = max(info_bar_width, self.MIN_INFO_BAR_WIDTH)
 
@@ -5833,16 +5833,16 @@ class IPSubnetSplitterApp:
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
         # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
         # 增加内边距减去值，确保能显示更多字符
-        max_pixel_width = info_bar_width - 20 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
+        max_pixel_width = info_bar_width - 0 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
 
         # 确保最大像素宽度为正数
         max_pixel_width = max(max_pixel_width, self.MIN_PIXEL_WIDTH)
 
         # 创建字体对象，用于测量文本宽度
         try:
-            font = tkfont.Font(family="微软雅黑", size=9)
+            font = tkfont.Font(family="微软雅黑", size=10)
         except tk.TclError:
-            font = tkfont.Font(family="Arial", size=9)
+            font = tkfont.Font(family="Arial", size=10)
 
         # 计算字符串的实际像素宽度
         def calculate_pixel_width(text):
