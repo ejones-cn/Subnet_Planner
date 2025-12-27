@@ -971,92 +971,85 @@ class IPSubnetSplitterApp:
         # self.update_planning_history_tree()
         # self.update_undo_redo_buttons_state()
 
+    def _move_records_between_trees(self, source_tree, target_tree, selected_items, move_from, move_to):
+        """通用方法：在两个树之间移动记录（支持多条记录，移动后保持选中）
+        
+        Args:
+            source_tree: 源树控件
+            target_tree: 目标树控件
+            selected_items: 选中的项目ID列表
+            move_from: 移动来源的描述（用于错误提示）
+            move_to: 移动目标的描述（用于错误提示）
+            
+        Returns:
+            list: 新插入的项目ID列表，用于后续选中操作
+        """
+        if not selected_items:
+            self.show_info("提示", f"请先选择要移动的{move_from}记录")
+            return []
+
+        # 先检查所有选中记录是否都可以移动
+        # 同时收集要移动的记录数据
+        items_to_move = []
+        for selected_item in selected_items:
+            values = source_tree.item(selected_item, "values")
+            name = values[1]
+            hosts = values[2]
+            items_to_move.append({"name": name, "hosts": hosts})
+
+            # 检查目标表中是否已存在相同名称的记录
+            for item in target_tree.get_children():
+                target_values = target_tree.item(item, "values")
+                if target_values[1] == name:
+                    self.show_error("错误", f"{move_to}中已存在名称为 '{name}' 的记录")
+                    return []
+
+        # 执行移动操作，并保存新插入记录的ID
+        new_target_items = []
+        
+        # 先从源树删除所有选中记录
+        for selected_item in selected_items:
+            source_tree.delete(selected_item)
+
+        # 然后插入到目标树，并保存新记录的ID
+        for data in items_to_move:
+            new_item_id = target_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
+            new_target_items.append(new_item_id)
+
+        # 更新序号和斑马条纹
+        self.update_requirements_tree_zebra_stripes()
+        self.update_pool_tree_zebra_stripes()
+
+        return new_target_items
+        
     def move_left(self):
         """向左移：从子网需求表向需求池移动记录（支持多条记录，移动后保持选中）"""
-        # 获取选中的子网需求记录
         selected_items = self.requirements_tree.selection()
-        if not selected_items:
-            self.show_info("提示", "请先选择要移动的子网需求记录")
-            return
-
-        # 先检查所有选中记录是否都可以移动
-        # 同时收集要移动的记录数据
-        items_to_move = []
-        for selected_item in selected_items:
-            values = self.requirements_tree.item(selected_item, "values")
-            name = values[1]
-            hosts = values[2]
-            items_to_move.append({"name": name, "hosts": hosts})
-
-            # 检查需求池中是否已存在相同名称的记录
-            for item in self.pool_tree.get_children():
-                pool_values = self.pool_tree.item(item, "values")
-                if pool_values[1] == name:
-                    self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
-                    return
-
-        # 执行移动操作，并保存新插入记录的ID
-        new_pool_items = []
-        for selected_item in selected_items:
-            # 从子网需求表删除记录
-            self.requirements_tree.delete(selected_item)
-
-        # 插入记录到需求池，并保存新记录的ID
-        for data in items_to_move:
-            new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
-            new_pool_items.append(new_item_id)
-
-        # 更新序号和斑马条纹
-        self.update_requirements_tree_zebra_stripes()
-        self.update_pool_tree_zebra_stripes()
-
-        # 移动完成后，在需求池中选中刚刚移动的记录
-        if new_pool_items:
-            self.pool_tree.selection_set(*new_pool_items)
-
+        new_items = self._move_records_between_trees(
+            source_tree=self.requirements_tree, 
+            target_tree=self.pool_tree, 
+            selected_items=selected_items, 
+            move_from="子网需求表", 
+            move_to="需求池"
+        )
+        
+        # 移动完成后，在目标树中选中刚刚移动的记录
+        if new_items:
+            self.pool_tree.selection_set(*new_items)
     def move_right(self):
         """向右移：从需求池向子网需求表移动记录（支持多条记录，移动后保持选中）"""
-        # 获取选中的需求池记录
         selected_items = self.pool_tree.selection()
-        if not selected_items:
-            self.show_info("提示", "请先选择要移动的需求池记录")
-            return
-
-        # 先检查所有选中记录是否都可以移动
-        # 同时收集要移动的记录数据
-        items_to_move = []
-        for selected_item in selected_items:
-            values = self.pool_tree.item(selected_item, "values")
-            name = values[1]
-            hosts = values[2]
-            items_to_move.append({"name": name, "hosts": hosts})
-
-            # 检查子网需求表中是否已存在相同名称的记录
-            for item in self.requirements_tree.get_children():
-                req_values = self.requirements_tree.item(item, "values")
-                if req_values[1] == name:
-                    self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
-                    return
-
-        # 执行移动操作，并保存新插入记录的ID
-        new_req_items = []
-        for selected_item in selected_items:
-            # 从需求池删除记录
-            self.pool_tree.delete(selected_item)
-
-        # 插入记录到子网需求表，并保存新记录的ID
-        for data in items_to_move:
-            new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
-            new_req_items.append(new_item_id)
-
-        # 更新序号和斑马条纹
-        self.update_requirements_tree_zebra_stripes()
-        self.update_pool_tree_zebra_stripes()
-
-        # 移动完成后，在子网需求表中选中刚刚移动的记录
-        if new_req_items:
-            self.requirements_tree.selection_set(*new_req_items)
-
+        new_items = self._move_records_between_trees(
+            source_tree=self.pool_tree, 
+            target_tree=self.requirements_tree, 
+            selected_items=selected_items, 
+            move_from="需求池", 
+            move_to="子网需求表"
+        )
+        
+        # 移动完成后，在目标树中选中刚刚移动的记录
+        if new_items:
+            self.requirements_tree.selection_set(*new_items)
     def move_records(self):
         """根据选中情况自动判断移动方向：
         - 仅选中子网需求表数据：移动到需求池
@@ -1069,73 +1062,31 @@ class IPSubnetSplitterApp:
         
         # 情况1：仅选中子网需求表数据，移动到需求池
         if selected_requirements and not selected_pool_items:
-            # 获取选中的子网需求记录
-            items_to_move = []
-            for selected_item in selected_requirements:
-                values = self.requirements_tree.item(selected_item, "values")
-                name = values[1]
-                hosts = values[2]
-                items_to_move.append({"name": name, "hosts": hosts})
-
-                # 检查需求池中是否已存在相同名称的记录
-                for item in self.pool_tree.get_children():
-                    pool_values = self.pool_tree.item(item, "values")
-                    if pool_values[1] == name:
-                        self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
-                        return
-
-            # 执行移动操作，并保存新插入记录的ID
-            new_pool_items = []
-            for selected_item in selected_requirements:
-                self.requirements_tree.delete(selected_item)
-
-            # 插入记录到需求池
-            for data in items_to_move:
-                new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
-                new_pool_items.append(new_item_id)
-
-            # 更新序号和斑马条纹
-            self.update_requirements_tree_zebra_stripes()
-            self.update_pool_tree_zebra_stripes()
-
-            # 移动完成后，在需求池中选中刚刚移动的记录
-            if new_pool_items:
-                self.pool_tree.selection_set(*new_pool_items)
+            new_items = self._move_records_between_trees(
+                source_tree=self.requirements_tree, 
+                target_tree=self.pool_tree, 
+                selected_items=selected_requirements, 
+                move_from="子网需求表", 
+                move_to="需求池"
+            )
+            
+            # 移动完成后，在目标树中选中刚刚移动的记录
+            if new_items:
+                self.pool_tree.selection_set(*new_items)
         
         # 情况2：仅选中需求池数据，移动到子网需求表
         elif not selected_requirements and selected_pool_items:
-            # 获取选中的需求池记录
-            items_to_move = []
-            for selected_item in selected_pool_items:
-                values = self.pool_tree.item(selected_item, "values")
-                name = values[1]
-                hosts = values[2]
-                items_to_move.append({"name": name, "hosts": hosts})
-
-                # 检查子网需求表中是否已存在相同名称的记录
-                for item in self.requirements_tree.get_children():
-                    req_values = self.requirements_tree.item(item, "values")
-                    if req_values[1] == name:
-                        self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
-                        return
-
-            # 执行移动操作
-            new_req_items = []
-            for selected_item in selected_pool_items:
-                self.pool_tree.delete(selected_item)
-
-            # 插入记录到子网需求表
-            for data in items_to_move:
-                new_item_id = self.requirements_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
-                new_req_items.append(new_item_id)
-
-            # 更新序号和斑马条纹
-            self.update_requirements_tree_zebra_stripes()
-            self.update_pool_tree_zebra_stripes()
-
-            # 移动完成后，在子网需求表中选中刚刚移动的记录
-            if new_req_items:
-                self.requirements_tree.selection_set(*new_req_items)
+            new_items = self._move_records_between_trees(
+                source_tree=self.pool_tree, 
+                target_tree=self.requirements_tree, 
+                selected_items=selected_pool_items, 
+                move_from="需求池", 
+                move_to="子网需求表"
+            )
+            
+            # 移动完成后，在目标树中选中刚刚移动的记录
+            if new_items:
+                self.requirements_tree.selection_set(*new_items)
         
         # 情况3：同时选中两个表数据，交换数据
         elif selected_requirements and selected_pool_items:
@@ -1213,7 +1164,6 @@ class IPSubnetSplitterApp:
         else:
             self.show_info("提示", "请选择要移动或交换的记录")
             return
-
     def swap_records(self):
         """交换两个表格中选中的记录（支持多条记录，完全交换所有选中记录）"""
         # 获取两个表格中的选中记录
