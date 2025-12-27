@@ -427,6 +427,9 @@ class IPSubnetSplitterApp:
         self.allocated_tree = None
         self.planning_remaining_frame = None
         self.planning_remaining_tree = None
+        
+        # 窗口锁定相关属性
+        self.width_locked = True  # 默认锁定窗口横向尺寸
 
         # 编辑相关属性
         self.edit_entry = None
@@ -5662,7 +5665,7 @@ class IPSubnetSplitterApp:
         error_btn.grid(row=0, column=1, padx=5, pady=5)
 
         # 第二行按钮
-        long_text = "测试长文本信息：这是一条非常长的测试信息，用于测试信息栏的文本截断功能。" * 3
+        long_text = "测试长文本信息：这是一条非常长的测试信息，用于测试信息栏的文本截断功能。" * 8
         long_text_btn = ttk.Button(
             button_frame,
             text="测试长文本信息",
@@ -5674,8 +5677,8 @@ class IPSubnetSplitterApp:
 
         # 中英文混排长文本测试按钮
         mixed_text = (
-            "中英文混排测试：This is a long text with mixed Chinese and English characters. 这是一条包含中英文混合的长文本，用于测试信息栏的截断功能。"
-            * 2
+            "中英文混排测试：This is a long text with mixed Chinese and English characters."
+            * 8
         )
         mixed_text_btn = ttk.Button(
             button_frame,
@@ -5763,9 +5766,26 @@ class IPSubnetSplitterApp:
         )
         theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
 
+        # 窗口横向锁定控制部分
+        lock_frame = ttk.LabelFrame(content_frame, text="窗口锁定", padding="10")
+        lock_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 10))
+
+        # 配置锁定框架的列
+        lock_frame.grid_columnconfigure(0, weight=1)
+
+        # 窗口横向锁定复选框
+        self.width_lock_var = tk.BooleanVar(value=self.width_locked)
+        width_lock_cb = ttk.Checkbutton(
+            lock_frame,
+            text="锁定窗口横向尺寸（禁止调整宽度）",
+            variable=self.width_lock_var,
+            command=self.toggle_width_lock
+        )
+        width_lock_cb.grid(row=0, column=0, sticky=tk.W, pady=5)
+
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 0))
+        close_frame.grid(row=5, column=0, sticky=tk.EW, pady=(15, 0))
         close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
 
         # 添加关闭按钮到右下角
@@ -5782,6 +5802,21 @@ class IPSubnetSplitterApp:
             finally:
                 # 确保无论如何都将test_dialog设置为None
                 self.test_dialog = None
+
+    def toggle_width_lock(self):
+        """切换窗口横向锁定状态"""
+        self.width_locked = self.width_lock_var.get()
+        
+        if self.width_locked:
+            self.root.resizable(width=False, height=True)
+            self.root.minsize(800, 700)
+            self.root.maxsize(800, 10000)
+        else:
+            self.root.resizable(width=True, height=True)
+            current_width = self.root.winfo_width()
+            current_height = self.root.winfo_height()
+            self.root.minsize(800, 700)
+            self.root.maxsize(10000, 10000)
 
     def show_result(self, text, error=False, keep_data=False):
         """显示结果
@@ -5818,7 +5853,7 @@ class IPSubnetSplitterApp:
         # 始终使用主窗口宽度作为参考，确保第一次和第二次显示时截断一致
         main_window_width = self.root.winfo_width()
         # 使用主窗口宽度的88%作为信息栏宽度，放大截断位置
-        info_bar_width = int(main_window_width * 0.93)
+        info_bar_width = int(main_window_width * 1)
         # 确保不小于原始的最小宽度
         info_bar_width = max(info_bar_width, self.MIN_INFO_BAR_WIDTH)
 
@@ -5833,7 +5868,7 @@ class IPSubnetSplitterApp:
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
         # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
         # 增加内边距减去值，确保能显示更多字符
-        max_pixel_width = info_bar_width - 0 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
+        max_pixel_width = info_bar_width - 60 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
 
         # 确保最大像素宽度为正数
         max_pixel_width = max(max_pixel_width, self.MIN_PIXEL_WIDTH)
