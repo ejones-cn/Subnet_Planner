@@ -2666,9 +2666,9 @@ class IPSubnetSplitterApp:
         # 先隐藏对话框，避免定位过程中的闪现
         dialog.withdraw()
 
-        # 计算居中位置，增加高度确保取消按钮能完整显示
+        # 计算居中位置，调整高度确保取消按钮能完整显示
         window_width = 350
-        window_height = 270
+        window_height = 280  # 适度增加高度以确保取消按钮显示完整
         self.center_window(dialog, window_width, window_height)
 
         # 显示对话框
@@ -2678,7 +2678,7 @@ class IPSubnetSplitterApp:
         dialog.focus_force()
 
         # 创建主内容框架
-        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame = ttk.Frame(dialog, padding="20 20 20 0")  # 减少底部padding，确保所有控件能完整显示
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 设置对话框为焦点
@@ -2720,8 +2720,8 @@ class IPSubnetSplitterApp:
         download_csv_btn.pack(pady=5)
 
         # 取消按钮 - 直接放在主框架中，使用pack布局
-        cancel_btn = ttk.Button(main_frame, text="取消", command=dialog.destroy, width=10)
-        cancel_btn.pack(pady=(20, 10), side=tk.RIGHT, padx=10)
+        cancel_btn = ttk.Button(main_frame, text="取消", command=dialog.destroy, width=12)  # 增加宽度以确保"取消"文字完整显示
+        cancel_btn.pack(pady=(20, 15), side=tk.RIGHT, padx=10)
 
     def _import_from_file(self, parent_dialog):
         """从文件导入数据
@@ -4056,9 +4056,8 @@ class IPSubnetSplitterApp:
             return
         self.info_bar_animating = True
 
-        # 获取 spacer 的实际宽度或主窗口宽度
+        # 获取主窗口宽度
         main_width = self.main_frame.winfo_width()
-        spacer_width = self.info_spacer.winfo_width()
         bar_x = 10
         # 使用主窗口宽度减去左右边距共50作为信息栏宽度
         bar_width = int(main_width * 1) - 50
@@ -5801,9 +5800,10 @@ class IPSubnetSplitterApp:
                     )
                     
                     # 重新配置信息栏标签样式，确保错误信息颜色正确
-                    self.style.configure("Success.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
-                    self.style.configure("Error.TLabel", foreground="#c62828", font=("微软雅黑", 10), relief="flat")
-                    self.style.configure("Info.TLabel", foreground="#424242", font=("微软雅黑", 10), relief="flat")
+                    base_info_label_style = {"font": ("微软雅黑", 10), "relief": "flat"}
+                    self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
+                    self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
+                    self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
                     
                     # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
                     info_bar_frame_style = {"borderwidth": 1, "relief": "solid", "bordercolor": "#F5F5F5"}
@@ -6003,9 +6003,6 @@ class IPSubnetSplitterApp:
 
         # 延迟一下再获取宽度，让布局稳定
         def show_with_width():
-            # 获取 spacer 的实际宽度
-            spacer_width = self.info_spacer.winfo_width()
-
             # 计算左边距和宽度
             bar_x = 10
             # 使用主窗口宽度的88%作为信息栏宽度，减去左右边距
