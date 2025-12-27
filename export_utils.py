@@ -314,6 +314,9 @@ class ExportUtils:
             f.write(f"\n\n{data_source['remaining_name']}\n")
             f.write("=" * 80 + "\n")
 
+            # 动态获取剩余数据的表头
+            remaining_headers = [data_source["remaining_tree"].heading(col, "text") or "" 
+                               for col in data_source["remaining_tree"]["columns"]]
             for header in remaining_headers:
                 f.write(f"{header:<15}")
             f.write("\n")
