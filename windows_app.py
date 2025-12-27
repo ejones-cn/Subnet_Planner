@@ -1896,6 +1896,9 @@ class IPSubnetSplitterApp:
 
         # 绑定双击事件以实现编辑功能
         self.pool_tree.bind("<Double-1>", self.on_pool_tree_double_click)
+        # 绑定左键单击事件以实现取消选择功能
+        self.pool_tree.bind("<Button-1>", self.on_treeview_click)
+
 
         # 添加滚动条，确保只作用于表格，位于表格右侧
         self.pool_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
@@ -1940,6 +1943,9 @@ class IPSubnetSplitterApp:
 
         # 绑定双击事件以实现编辑功能
         self.requirements_tree.bind("<Double-1>", self.on_requirements_tree_double_click)
+        # 绑定左键单击事件以实现取消选择功能
+        self.requirements_tree.bind("<Button-1>", self.on_treeview_click)
+
 
         # 放置表格
         self.requirements_tree.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
@@ -3194,6 +3200,10 @@ class IPSubnetSplitterApp:
             # 绑定回车键和Esc键
             dialog.bind('<Return>', lambda e: on_ok())
             dialog.bind('<Escape>', lambda e: on_ok())
+            
+            # 设置对话框为焦点，并将焦点聚焦到确定按钮上
+            dialog.focus_set()
+            ok_btn.focus_set()
 
         # 计算并设置对话框居中位置
         dialog.update_idletasks()
@@ -3286,6 +3296,10 @@ class IPSubnetSplitterApp:
         # 绑定回车键和Esc键
         dialog.bind('<Return>', lambda e: on_ok())
         dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 设置对话框为焦点，并将焦点聚焦到确定按钮上
+        dialog.focus_set()
+        ok_btn.focus_set()
 
         # 计算并设置对话框居中位置
         dialog.update_idletasks()
@@ -3486,6 +3500,68 @@ class IPSubnetSplitterApp:
         del self.current_edit_column_index
         if hasattr(self, 'current_edit_tree'):
             del self.current_edit_tree
+
+    def on_treeview_click(self, event):
+        """处理Treeview左键单击事件，实现取消选择功能"""
+        # 获取点击位置的信息
+        tree = event.widget
+        region = tree.identify_region(event.x, event.y)
+        if region != "cell" and region != "row":
+            return
+        
+        # 获取点击的行
+        item = tree.identify_row(event.y)
+        if not item:
+            return
+        
+        # 获取当前选中的所有项
+        selected_items = list(tree.selection())
+        
+        # 获取按键状态
+        is_ctrl = event.state & 0x4  # Ctrl键
+        is_shift = event.state & 0x1  # Shift键
+        
+        # Ctrl+点击：切换选择状态
+        if is_ctrl:
+            if item in selected_items:
+                # 已选中，取消选择
+                tree.selection_remove(item)
+            else:
+                # 未选中，添加到选择
+                tree.selection_add(item)
+        # Shift+点击：选择范围
+        elif is_shift:
+            if selected_items:
+                all_items = tree.get_children()
+                last_selected = selected_items[-1]
+                start_idx = all_items.index(last_selected)
+                end_idx = all_items.index(item)
+                
+                # 先取消所有选中项
+                tree.selection_remove(selected_items)
+                
+                # 选择范围
+                for idx in range(min(start_idx, end_idx), max(start_idx, end_idx) + 1):
+                    tree.selection_add(all_items[idx])
+            else:
+                # 没有选中项，直接选择当前项
+                tree.selection_set(item)
+        # 普通点击
+        else:
+            if item in selected_items:
+                # 点击已选中项
+                if len(selected_items) == 1:
+                    # 唯一选中项，取消选择
+                    tree.selection_remove(item)
+                else:
+                    # 多个选中项，只选择当前项
+                    tree.selection_set(item)
+            else:
+                # 点击未选中项，只选择当前项
+                tree.selection_set(item)
+        
+        # 阻止事件继续传递，避免默认行为冲突
+        return "break"
 
     def save_edit(self):
         """保存编辑的数据"""
