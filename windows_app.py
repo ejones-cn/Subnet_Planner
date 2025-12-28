@@ -6762,34 +6762,75 @@ if __name__ == "__main__":
     root.resizable(width=False, height=True)
 
     # 设置窗口图标
-    try:
-        # 尝试加载图标文件
-        # 在开发环境中，图标文件位于当前目录
-        # 在打包后的程序中，使用PyInstaller的资源路径
+    def set_window_icon(root_window, icon_ico_path, icon_png_path):
+        try:
+            import ctypes
+            from ctypes import wintypes
+            
+            WM_SETICON = 0x0080
+            ICON_BIG = 1
+            ICON_SMALL = 0
+            LR_LOADFROMFILE = 0x00000010
+            
+            LoadImageW = ctypes.windll.user32.LoadImageW
+            LoadImageW.restype = wintypes.HANDLE
+            LoadImageW.argtypes = [
+                wintypes.HINSTANCE,
+                wintypes.LPCWSTR,
+                wintypes.UINT,
+                wintypes.INT,
+                wintypes.INT,
+                wintypes.UINT
+            ]
+            
+            SendMessageW = ctypes.windll.user32.SendMessageW
+            SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+            SendMessageW.restype = wintypes.LRESULT
+            
+            hwnd = int(root_window.winfo_id())
+            
+            icon_sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
+            
+            for width, height in icon_sizes:
+                hicon = LoadImageW(None, icon_ico_path, 1, width, height, LR_LOADFROMFILE)
+                if hicon:
+                    SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
+                    break
+            
+            for width, height in [(32, 32), (16, 16)]:
+                hicon = LoadImageW(None, icon_ico_path, 1, width, height, LR_LOADFROMFILE)
+                if hicon:
+                    SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
+                    break
+                    
+        except Exception:
+            pass
 
-        # 获取图标文件路径
+    try:
         icon_path = None
-        if hasattr(sys, "_MEIPASS"):
-            # 打包后的路径
-            icon_path = os.path.join(sys._MEIPASS, "icon.ico")  # pylint: disable=protected-access
+        if hasattr(sys, 'frozen') and sys.frozen:
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                icon_path = os.path.join(meipass, "icon.ico")
+            else:
+                import nuitka
+                icon_path = os.path.join(nuitka.__path__[0], "icon.ico") if nuitka.__path__ else "icon.ico"
         else:
-            # 开发环境路径
             icon_path = "icon.ico"
 
-        # 确保图标文件存在
         if os.path.exists(icon_path):
-            # Windows系统上设置图标的最佳实践
-            # 使用iconbitmap设置窗口标题栏图标
-            root.iconbitmap(default=icon_path)
-
-            # 额外尝试：使用PhotoImage和iconphoto作为备选
             try:
-                # 注意：PhotoImage可能无法直接处理.ico文件，需要转换
-                # 这里先尝试直接加载，如果失败则忽略
+                root.iconbitmap(default=icon_path)
+            except tk.TclError:
+                pass
+
+            try:
                 photo_icon = tk.PhotoImage(file=icon_path)
                 root.iconphoto(True, photo_icon)
             except tk.TclError:
-                pass  # 如果PhotoImage方法失败，继续执行
+                pass
+            
+            set_window_icon(root, icon_path, None)
     except (tk.TclError, OSError) as e:
         print(f"设置窗口图标失败: {e}")
 
