@@ -462,8 +462,8 @@ class ExportUtils:
         elements.append(Paragraph(f"导出时间: {export_time}", normal_style))
         elements.append(Spacer(1, 15))
 
-        # 对于子网规划，在已分配子网信息前添加父网段信息
-        if data_source["main_name"] == "已分配子网信息":
+        # 在切分段信息/已分配子网信息前添加父网段信息
+        if data_source["main_name"] in ["切分段信息", "已分配子网信息"]:
             # 显示父网段信息
             elements.append(Paragraph("父网段信息", heading2_style))
             
@@ -492,18 +492,41 @@ class ExportUtils:
                 elements.append(parent_table)
                 elements.append(Spacer(1, 20))
         
-        # 显示已分配子网信息
+        # 显示切分段信息或已分配子网信息
         elements.append(Paragraph(data_source["main_name"], heading2_style))
 
-        if self._is_k2v_headers(main_headers):
-            main_table_data = [["项目", "值"]]
+        # 特殊处理：子网切分PDF的切分段信息表格
+        if data_source["main_name"] == "切分段信息":
+            # 转置表格并移除指定列
+            # 定义要移除的列名
+            columns_to_remove = ["父网段", "分割线", "前缀长度", "CIDR", "----------", "网络地址"]
+            
+            # 键值对格式处理
+            filtered_data = {}
+            for values in main_data:
+                key = str(values[0]) if values[0] is not None else ""
+                value = str(values[1]) if values[1] is not None else ""
+                # 只保留非空键和不需要移除的键
+                if key and key not in columns_to_remove:
+                    filtered_data[key] = value
+            
+            # 转置：将键作为表头，值作为一行
+            if filtered_data:
+                # 创建表头行
+                headers = list(filtered_data.keys())
+                main_table_data = [[Paragraph(h, table_text_style) for h in headers]]
+                # 创建数据行
+                values = [filtered_data[h] for h in headers]
+                main_table_data.append([Paragraph(str(v), table_text_style) for v in values])
+            else:
+                main_table_data = []
+        elif self._is_k2v_headers(main_headers):
+            main_table_data = [[Paragraph("项目", table_text_style), Paragraph("值", table_text_style)]]
             for values in main_data:
                 main_table_data.append(
                     [
                         Paragraph(str(values[0]) if values[0] is not None else "", table_text_style),
-                        
                         Paragraph(str(values[1]) if values[1] is not None else "", table_text_style),
-                        
                     ]
                 )
         else:
@@ -735,19 +758,18 @@ class ExportUtils:
         
         # 计算总高度
         total_networks = len(split_networks) + len(remaining_networks)
-        networks_height = total_networks * segment_height
         
         # 精确计算所需总高度
-        required_height = (title_height + 
-                          parent_network_height + 
-                          separator_height + 
-                          demand_title_height + 
-                          len(split_networks) * segment_height + 
-                          separator_height + 
-                          remaining_title_height + 
-                          len(remaining_networks) * segment_height + 
-                          legend_height + 
-                          50)  # 减小额外的安全间距到50
+        required_height = (title_height
+                          + parent_network_height
+                          + separator_height
+                          + demand_title_height
+                          + len(split_networks) * segment_height
+                          + separator_height
+                          + remaining_title_height
+                          + len(remaining_networks) * segment_height
+                          + legend_height
+                          + 50)  # 减小额外的安全间距到50
 
         # 创建高分辨率图像
         high_res_width = 2480
@@ -872,9 +894,9 @@ class ExportUtils:
         log_value = max(log_min, math.log10(parent_range))
         bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
         parent_color = "#636e72"
-        draw.rectangle([chart_x, y, chart_x +
-            bar_width, y +
-            bar_height], fill=parent_color, outline=None, width=0)
+        draw.rectangle([chart_x, y, chart_x
+            + bar_width, y
+            + bar_height], fill=parent_color, outline=None, width=0)
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
         segment_text = f"父网段: {parent_cidr}"
@@ -907,8 +929,8 @@ class ExportUtils:
         address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
         address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-        draw_text_with_stroke(draw, (chart_x +
-            30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (chart_x
+            + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
         draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
         y += bar_height + padding
@@ -947,9 +969,9 @@ class ExportUtils:
                 name = network.get("name", "")
                 segment_text = f"网段 {i + 1}: {name}"
             
-            draw.rectangle([chart_x, y, chart_x +
-                bar_width, y +
-                bar_height], fill=split_color, outline=None, width=0)
+            draw.rectangle([chart_x, y, chart_x
+                + bar_width, y
+                + bar_height], fill=split_color, outline=None, width=0)
 
             usable_addresses = network_range - 2 if network_range > 2 else network_range
             address_text = f"可用地址数: {usable_addresses:,}"
@@ -959,8 +981,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-            draw_text_with_stroke(draw, (chart_x +
-                30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+            draw_text_with_stroke(draw, (chart_x
+                + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
             draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
             y += bar_height + padding
@@ -985,9 +1007,9 @@ class ExportUtils:
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             color_index = i % len(subnet_colors)
             color = subnet_colors[color_index]
-            draw.rectangle([chart_x, y, chart_x +
-                bar_width, y +
-                bar_height], fill=color, outline=None, width=0)
+            draw.rectangle([chart_x, y, chart_x
+                + bar_width, y
+                + bar_height], fill=color, outline=None, width=0)
 
             name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
@@ -1004,8 +1026,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
 
-            draw_text_with_stroke(draw, (chart_x +
-                30, segment_text_y), segment_text, text_font, "#ffffff")
+            draw_text_with_stroke(draw, (chart_x
+                + 30, segment_text_y), segment_text, text_font, "#ffffff")
             draw_text_with_stroke(draw, (address_x, address_text_y), address_text, text_font, "#ffffff")
 
             y += bar_height + padding
@@ -1041,11 +1063,10 @@ class ExportUtils:
         parent_label_y = get_centered_text_y(legend_container_y, legend_container_height, parent_label_bbox)
 
         draw.rectangle([parent_x, parent_block_y, parent_x + parent_block_size, parent_block_y + parent_block_size],
-        
                       fill=parent_color, outline=None, width=0)
-        draw_text_with_stroke(draw, (parent_x +
-            parent_block_size +
-            25, parent_label_y), parent_label, parent_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (parent_x
+            + parent_block_size
+            + 25, parent_label_y), parent_label, parent_text_font, "#ffffff")
 
         # 切分/需求网段图例 - 动态计算位置，增加间距
         # 先计算父网段图例的总宽度

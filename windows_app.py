@@ -1876,7 +1876,7 @@ class IPSubnetSplitterApp:
             validate='all',
             validatecommand=vcmd,
         )
-        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 0), fill=tk.X, expand=True)
+        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
         self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
 
@@ -4214,7 +4214,7 @@ class IPSubnetSplitterApp:
         """显示动画完成后的回调"""
         self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
         self.info_bar_animating = False
-        # 设置3秒后自动隐藏
+        # 设置5秒后自动隐藏
         self.info_auto_hide_id = self.root.after(5000, self.hide_info_bar)
 
     def _on_hide_animation_complete(self, bar_x, bar_width):
@@ -6369,11 +6369,11 @@ class IPSubnetSplitterApp:
             if success:
                 self.show_result(success_msg.format(file_path=file_path), keep_data=True)
             else:
-                self.show_result(message, error=True, keep_data=True)
+                self.show_result(message, error=True)
 
         except (IOError, ValueError, TypeError, PermissionError) as e:
             error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
-            self.show_result(error_msg, error=True, keep_data=True)
+            self.show_result(error_msg, error=True)
 
     def export_result(self):
         """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
@@ -6384,7 +6384,7 @@ class IPSubnetSplitterApp:
             "main_headers": ["项目", "值"],
             "remaining_tree": self.remaining_tree,
             "remaining_name": "剩余网段信息",
-            "pdf_title": "子网规划师 - 计算结果",
+            "pdf_title": "子网规划师 - 子网切分结果",
             "main_table_cols": None,  # 使用默认列宽
             "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'chart_data', None),  # 添加网段分布图数据
