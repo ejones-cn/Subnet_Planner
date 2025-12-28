@@ -719,7 +719,7 @@ class ExportUtils:
         # 基本元素高度
         title_height = 280  # 标题部分高度
         parent_network_height = 150  # 父网段部分高度
-        legend_height = 300  # 图例部分高度
+        legend_height = 150  # 图例部分高度（减小，因为图例实际不需要那么高）
         
         # 网段列表高度
         segment_height = 134  # 每个网段行的高度（100高度 + 34间距）
@@ -747,7 +747,7 @@ class ExportUtils:
                           remaining_title_height + 
                           len(remaining_networks) * segment_height + 
                           legend_height + 
-                          200)  # 额外的安全间距
+                          50)  # 减小额外的安全间距到50
 
         # 创建高分辨率图像
         high_res_width = 2480
@@ -913,9 +913,12 @@ class ExportUtils:
 
         y += bar_height + padding
 
-        # 在父网段和需求/切分网段之间添加分割线
-        draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
-        y += 60
+        # 在父网段和需求/切分网段之间添加分割线（仅子网规划显示）
+        if chart_type == "plan":
+            draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
+            y += 60  # 增大间距，让需求网段与上部分割线的距离和剩余网段保持一致
+        else:
+            y += 0  # 子网切分保持较小间距
         
         # 绘制需求网段标题
         if chart_type == "plan":
