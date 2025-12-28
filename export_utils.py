@@ -285,6 +285,7 @@ class ExportUtils:
         else:
             export_data = {
                 f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
+                
                 "remaining_subnets": remaining_data,
             }
 
@@ -315,7 +316,7 @@ class ExportUtils:
             f.write("=" * 80 + "\n")
 
             # 动态获取剩余数据的表头
-            remaining_headers = [data_source["remaining_tree"].heading(col, "text") or "" 
+            remaining_headers = [data_source["remaining_tree"].heading(col, "text") or ""
                                for col in data_source["remaining_tree"]["columns"]]
             for header in remaining_headers:
                 f.write(f"{header:<15}")
@@ -339,7 +340,7 @@ class ExportUtils:
 
             writer.writerow([])
 
-            remaining_headers = [remaining_tree.heading(col, "text") or "" 
+            remaining_headers = [remaining_tree.heading(col, "text") or ""
                                for col in remaining_tree["columns"]]
             writer.writerow(remaining_headers)
             for item in remaining_tree.get_children():
@@ -469,7 +470,9 @@ class ExportUtils:
                 main_table_data.append(
                     [
                         Paragraph(str(values[0]) if values[0] is not None else "", table_text_style),
+                        
                         Paragraph(str(values[1]) if values[1] is not None else "", table_text_style),
+                        
                     ]
                 )
         else:
@@ -549,13 +552,13 @@ class ExportUtils:
                 traceback.print_exc()
 
         doc.build(elements)
-    
+
     def _load_font(self, font_size=36):
         """加载系统中文字体
-        
+
         Args:
             font_size: 字体大小
-            
+
         Returns:
             tuple: (font, bold_font, font_loaded)
         """
@@ -593,34 +596,34 @@ class ExportUtils:
             font = ImageFont.load_default()
             bold_font = ImageFont.load_default()
         return font, bold_font, font_loaded
-    
+
     def _calculate_chart_dimensions(self, networks):
         """计算图表所需的尺寸
-        
+
         Args:
             networks: 网段列表
-            
+
         Returns:
             tuple: (segment_height, required_height)
         """
         split_networks = [net for net in networks if net.get("type") == "split"]
         remaining_networks = [net for net in networks if net.get("type") != "split"]
         total_networks = len(split_networks) + len(remaining_networks)
-        
+
         segment_height = 100 + 34
         # 动态计算基础高度和所需总高度
         base_height = 280 + 100 + 100 + 150 + 300
         required_height = base_height + total_networks * segment_height
         return segment_height, required_height
-    
+
     def _draw_title(self, draw, high_res_width, title="网段分布图"):
         """绘制图表标题
-        
+
         Args:
             draw: ImageDraw对象
             high_res_width: 图像宽度
             title: 标题文字
-            
+
         Returns:
             tuple: (title_font, title_x, title_y)
         """
@@ -636,12 +639,12 @@ class ExportUtils:
                 title_font = ImageFont.load_default()
         except (IOError, OSError, ValueError, TypeError):
             title_font = ImageFont.load_default()
-        
+
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
         title_y = 100
         return title_font, title_x, title_y
-    
+
     def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, _portrait_height):
         """添加网段分布图到PDF元素列表
 
@@ -726,11 +729,11 @@ class ExportUtils:
         margin_top = 280
         chart_width = high_res_width - margin_left - margin_right
         chart_x = margin_left
-        
+
         # 定义绘制带描边文字的辅助函数
         def draw_text_with_stroke(draw_obj, position, text, font, fill, stroke_color="#666666", stroke_width=4):
             """绘制带描边的文字
-            
+
             Args:
                 draw_obj: ImageDraw对象
                 position: (x, y) 坐标
@@ -791,7 +794,9 @@ class ExportUtils:
         log_value = max(log_min, math.log10(parent_range))
         bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
         parent_color = "#636e72"
-        draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=parent_color, outline=None, width=0)
+        draw.rectangle([chart_x, y, chart_x +
+            bar_width, y +
+            bar_height], fill=parent_color, outline=None, width=0)
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
         segment_text = f"父网段: {parent_cidr}"
@@ -824,7 +829,8 @@ class ExportUtils:
         address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
         address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-        draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (chart_x +
+            30, segment_text_y), segment_text, bold_text_font, "#ffffff")
         draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
         y += bar_height + padding
@@ -835,7 +841,9 @@ class ExportUtils:
             log_value = max(log_min, math.log10(network_range))
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             split_color = "#4a7eb4"
-            draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=split_color, outline=None, width=0)
+            draw.rectangle([chart_x, y, chart_x +
+                bar_width, y +
+                bar_height], fill=split_color, outline=None, width=0)
 
             name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
@@ -847,7 +855,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
 
-            draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+            draw_text_with_stroke(draw, (chart_x +
+                30, segment_text_y), segment_text, bold_text_font, "#ffffff")
             draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
             y += bar_height + padding
@@ -882,7 +891,9 @@ class ExportUtils:
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             color_index = i % len(subnet_colors)
             color = subnet_colors[color_index]
-            draw.rectangle([chart_x, y, chart_x + bar_width, y + bar_height], fill=color, outline=None, width=0)
+            draw.rectangle([chart_x, y, chart_x +
+                bar_width, y +
+                bar_height], fill=color, outline=None, width=0)
 
             name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
@@ -894,7 +905,8 @@ class ExportUtils:
             address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
 
-            draw_text_with_stroke(draw, (chart_x + 30, segment_text_y), segment_text, text_font, "#ffffff")
+            draw_text_with_stroke(draw, (chart_x +
+                30, segment_text_y), segment_text, text_font, "#ffffff")
             draw_text_with_stroke(draw, (address_x, address_text_y), address_text, text_font, "#ffffff")
 
             y += bar_height + padding
@@ -930,8 +942,11 @@ class ExportUtils:
         parent_label_y = get_centered_text_y(legend_container_y, legend_container_height, parent_label_bbox)
 
         draw.rectangle([parent_x, parent_block_y, parent_x + parent_block_size, parent_block_y + parent_block_size],
+        
                       fill=parent_color, outline=None, width=0)
-        draw_text_with_stroke(draw, (parent_x + parent_block_size + 25, parent_label_y), parent_label, parent_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (parent_x +
+            parent_block_size +
+            25, parent_label_y), parent_label, parent_text_font, "#ffffff")
 
         # 切分网段图例
         split_x = parent_x + 300
@@ -945,8 +960,11 @@ class ExportUtils:
         split_label_y = get_centered_text_y(legend_container_y, legend_container_height, split_label_bbox)
 
         draw.rectangle([split_x, split_block_y, split_x + split_block_size, split_block_y + split_block_size],
+        
                       fill=split_color, outline=None, width=0)
-        draw_text_with_stroke(draw, (split_x + split_block_size + 25, split_label_y), split_label, split_text_font, "#ffffff")
+        draw_text_with_stroke(draw, (split_x +
+            split_block_size +
+            25, split_label_y), split_label, split_text_font, "#ffffff")
 
         # 剩余网段图例
         remaining_x = split_x + 320
@@ -964,12 +982,14 @@ class ExportUtils:
             draw.rectangle(
                 [remaining_x + j * (remaining_block_size + remaining_block_gap), remaining_block_y,
                  remaining_x + j * (remaining_block_size + remaining_block_gap) + remaining_block_size,
+                 
                  remaining_block_y + remaining_block_size],
                 fill=color, outline=None, width=0
             )
 
-        draw_text_with_stroke(draw, 
+        draw_text_with_stroke(draw,
             (remaining_x + len(legend_colors) * (remaining_block_size + remaining_block_gap) + 40, remaining_label_y),
+            
             remaining_label, text_font, "#ffffff"
         )
 

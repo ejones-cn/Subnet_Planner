@@ -359,9 +359,9 @@ class ColoredNotebook(ttk.Frame):
 
 
 class IPSubnetSplitterApp:
-    """IP子网分割工具主应用程序类
+    """子网规划师主应用程序类
 
-    这个类实现了一个IP子网分割工具的GUI应用程序，
+    这个类实现了一个子网规划的GUI应用程序，
     支持子网分割、子网规划、IP信息查询等功能。
     """
     def validate_cidr(self, text, entry=None, style_based=False):
@@ -6135,9 +6135,10 @@ class IPSubnetSplitterApp:
         font,
         anchor=tk.W,
         fill="#ffffff",
-        _stroke_color="#000000",  # 已废弃，保留兼容性
+        stroke_color="#666666",
+        stroke_width=1,
     ):
-        """绘制带背景的文字
+        """绘制带描边的文字
 
         Args:
             text: 要绘制的文字
@@ -6146,23 +6147,20 @@ class IPSubnetSplitterApp:
             font: 字体设置
             anchor: 文字锚点
             fill: 文字颜色
-            _stroke_color: 描边颜色（已废弃，保留兼容性）
+            stroke_color: 描边颜色（灰色）
+            stroke_width: 描边宽度
         """
-        # 获取文字尺寸用于绘制背景矩形
-        temp_text = self.chart_canvas.create_text(0, 0, text=text, font=font, anchor=anchor)
-        bbox = self.chart_canvas.bbox(temp_text)
-        self.chart_canvas.delete(temp_text)
-
-        if bbox:
-            # 绘制深色背景矩形作为文字底板
-            padding = 4
-            self.chart_canvas.create_rectangle(
-                bbox[0] - padding, bbox[1] - padding,
-                bbox[2] + padding, bbox[3] + padding,
-                fill="#2d2d2d",
-                outline="",
-                width=0
-            )
+        # 绘制描边（使用多个偏移位置模拟描边效果）
+        if stroke_width > 0:
+            directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+            for dx, dy in directions:
+                self.chart_canvas.create_text(
+                    x + dx * stroke_width, y + dy * stroke_width,
+                    text=text,
+                    font=font,
+                    anchor=anchor,
+                    fill=stroke_color
+                )
 
         # 绘制主文字
         self.chart_canvas.create_text(
@@ -6877,7 +6875,7 @@ class IPSubnetSplitterApp:
 
         # 添加版权信息
         copyright_label = ttk.Label(
-            inner_frame, text="© 2025 IP 子网分割工具", font=("微软雅黑", 8), style="About.TLabel"
+            inner_frame, text="© 2025 子网规划师", font=("微软雅黑", 8), style="About.TLabel"
         )
         copyright_label.pack(pady=(2, 10))
 
