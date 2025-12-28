@@ -7,7 +7,8 @@ __pycache__/
 
 # 虚拟环境
 venv/
-.env/
+.venv/
+.venv313/
 env/
 ENV/
 
@@ -29,6 +30,11 @@ logs/
 # 构建输出
 build/
 *.egg-info/
+dist/
+dist_nuitka/
+*.exe
+windows_app.dist/
+windows_app.build/
 
 # 测试覆盖率
 .coverage
@@ -47,3 +53,9 @@ htmlcov/
 # 配置文件（如果包含敏感信息）
 *.env
 config.py
+
+# Python 安装程序
+python313.exe
+
+# Nuitka 崩溃报告
+nuitka-crash-report.xml
