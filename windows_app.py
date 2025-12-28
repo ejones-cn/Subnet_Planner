@@ -7,7 +7,6 @@
 
 # 所有导入语句放在最顶部
 import tkinter as tk
-import math
 import datetime
 import re
 from tkinter import ttk, filedialog
@@ -795,17 +794,17 @@ class IPSubnetSplitterApp:
         self._temp_label.pack_forget()
 
         # 信息栏相关常量
-        self.INFO_BAR_LEFT_OFFSET = 235
-        self.INFO_BAR_RIGHT_OFFSET = 136
-        self.INFO_BAR_PADDING = 3
-        self.MIN_INFO_BAR_WIDTH = 300
-        self.CLOSE_BTN_WIDTH = 30
-        self.MIN_PIXEL_WIDTH = 50
-        self.INFO_BAR_PLACE_LEFT = 238
-        self.INFO_BAR_PLACE_RIGHT = 136
-        self.INFO_BAR_PLACE_Y = 21.5
-        self.INFO_BAR_PLACE_HEIGHT = 30
-        self.MIN_INFO_BAR_PLACE_WIDTH = 300
+        self.info_bar_left_offset = 235
+        self.info_bar_right_offset = 136
+        self.info_bar_padding = 3
+        self.min_info_bar_width = 300
+        self.close_btn_width = 30
+        self.min_pixel_width = 50
+        self.info_bar_place_left = 238
+        self.info_bar_place_right = 136
+        self.info_bar_place_y = 21.5
+        self.info_bar_place_height = 30
+        self.min_info_bar_place_width = 300
 
         """验证CIDR格式是否有效
 
@@ -6304,9 +6303,6 @@ class IPSubnetSplitterApp:
 
     def on_window_resize(self, _):
         """窗口大小变化时的处理函数，实现表格和图表自适应"""
-        # 移除剩余网段表的动态宽度调整，避免性能问题
-        # 表格列已设置stretch=True，Tkinter会自动处理宽度调整
-        pass
 
     def _prepare_export_data(self, data_source):
         """准备导出数据
@@ -6593,7 +6589,7 @@ class IPSubnetSplitterApp:
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
     
-    def on_window_configure(self, event):
+    def on_window_configure(self, _event):
         """窗口大小变化时动态调整右上角按钮位置"""
         # 窗口大小变化时重新获取窗口背景色，确保按钮背景色与窗口一致
         self.bg_color = self.root.cget("background")
