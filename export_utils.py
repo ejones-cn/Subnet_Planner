@@ -176,39 +176,30 @@ class ExportUtils:
         return len(headers) == 2 and headers[0] == "项目" and headers[1] == "值"
 
     def _get_col_widths(self, table_data, table_width, col_widths, num_cols, is_k2v=False):
-        if col_widths is None or len(col_widths) != num_cols:
-            if is_k2v:
-                col_widths = [table_width * 0.3, table_width * 0.7]
-            else:
-                col_widths = [table_width / num_cols] * num_cols
-        else:
-            processed = []
-            for width in col_widths:
-                try:
-                    numeric = float(width) if width is not None else table_width / num_cols
-                    if numeric <= 10:
-                        numeric = table_width / num_cols
-                    processed.append(numeric)
-                except (ValueError, TypeError):
-                    processed.append(table_width / num_cols)
-            col_widths = processed if len(processed) == num_cols else [table_width / num_cols] * num_cols
-
+        """获取表格列宽，确保自适应页面宽度"""
         try:
+            # 始终使用自适应宽度计算
             auto_col_widths = self._calculate_auto_col_widths(table_data, table_width)
             col_widths = auto_col_widths
         except (ValueError, TypeError, AttributeError):
             traceback.print_exc()
+            # 回退到平均分配宽度
             col_widths = [table_width / num_cols] * num_cols
 
+        # 确保列宽有效
         valid = []
         for width in col_widths:
             if width is None or not isinstance(width, (int, float)) or width <= 0:
-                try:
-                    valid.append(float(width) if width else 100)
-                except ValueError:
-                    valid.append(100)
+                valid.append(100)
             else:
                 valid.append(width)
+        
+        # 确保总宽度接近表格可用宽度
+        total = sum(valid)
+        if total > 0:
+            scale_factor = table_width / total
+            valid = [w * scale_factor for w in valid]
+        
         return valid
 
     def _get_table_style(self, table_colors, has_chinese_font):
@@ -392,6 +383,29 @@ class ExportUtils:
         )
 
         landscape_width, landscape_height = landscape(A4)
+        portrait_width, portrait_height = A4
+        
+        # 生成导出时间，用于页眉显示
+        export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
+        
+        # 创建页眉回调函数
+        def on_page(canvas, doc):
+            """页面回调函数，用于绘制页眉"""
+            canvas.saveState()
+            # 获取当前页面尺寸
+            current_width, current_height = canvas._pagesize
+            # 设置字体
+            font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
+            canvas.setFont(font_name, 10)
+            canvas.setFillColor(colors.HexColor("#666666"))
+            # 在页眉右侧绘制导出时间
+            canvas.drawRightString(
+                current_width - margins[1],  # x坐标：页面宽度 - 右边距
+                current_height - margins[2] + 10,  # y坐标：页面顶部 - 上边距 + 偏移量
+                f"导出时间: {export_time}"
+            )
+            canvas.restoreState()
+        
         landscape_frame = Frame(
             margins[0],
             margins[3],
@@ -399,9 +413,8 @@ class ExportUtils:
             landscape_height - margins[2] - margins[3],
             id='landscape_frame',
         )
-        landscape_template = PageTemplate(id='landscape', frames=[landscape_frame])
+        landscape_template = PageTemplate(id='landscape', frames=[landscape_frame], onPage=on_page)
 
-        portrait_width, portrait_height = A4
         portrait_frame = Frame(
             margins[0],
             margins[3],
@@ -409,7 +422,7 @@ class ExportUtils:
             portrait_height - margins[2] - margins[3],
             id='portrait_frame',
         )
-        portrait_template = PageTemplate(id='portrait', frames=[portrait_frame], pagesize=A4)
+        portrait_template = PageTemplate(id='portrait', frames=[portrait_frame], pagesize=A4, onPage=on_page)
 
         doc.addPageTemplates([landscape_template, portrait_template])
 
@@ -456,10 +469,6 @@ class ExportUtils:
         )
 
         elements.append(Paragraph(data_source["pdf_title"], title_style))
-        elements.append(Spacer(1, 10))
-
-        export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
-        elements.append(Paragraph(f"导出时间: {export_time}", normal_style))
         elements.append(Spacer(1, 15))
 
         # 在切分段信息/已分配子网信息前添加父网段信息
@@ -471,23 +480,71 @@ class ExportUtils:
             chart_data = data_source.get("chart_data")
             if chart_data and "parent" in chart_data:
                 parent_info = chart_data["parent"]
-                parent_table_data = [["项目", "值"]]
-                parent_table_data.append(
-                    [
-                        Paragraph("父网段CIDR", table_text_style),
-                        Paragraph(parent_info.get("name", ""), table_text_style)
-                    ]
-                )
-                parent_table_data.append(
-                    [
-                        Paragraph("可用地址数", table_text_style),
-                        Paragraph(f"{parent_info.get('range', 0):,}", table_text_style)
-                    ]
-                )
+                
+                # 获取完整的父网段信息
+                import sys
+                import os
+                sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+                from ip_subnet_calculator import get_subnet_info
+                
+                parent_cidr = parent_info.get("name", "")
+                full_parent_info = get_subnet_info(parent_cidr)
+                
+                # 转置表格：将信息水平排列
+                parent_table_data = []
+                
+                # 第一行：标题行
+                parent_table_data.append([
+                    Paragraph("父网段CIDR", table_text_style),
+                    Paragraph("网络地址", table_text_style),
+                    Paragraph("子网掩码", table_text_style),
+                    Paragraph("广播地址", table_text_style),
+                    Paragraph("前缀长度", table_text_style),
+                    Paragraph("可用地址数", table_text_style),
+                    Paragraph("主机地址范围", table_text_style)
+                ])
+                
+                # 第二行：数据行
+                parent_table_data.append([
+                    Paragraph(full_parent_info.get("cidr", parent_cidr), table_text_style),
+                    Paragraph(full_parent_info.get("network", ""), table_text_style),
+                    Paragraph(full_parent_info.get("netmask", ""), table_text_style),
+                    Paragraph(full_parent_info.get("broadcast", ""), table_text_style),
+                    Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
+                    Paragraph(f"{full_parent_info.get('usable_addresses', 0):,}", table_text_style),
+                    Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
+                ])
                 
                 # 创建父网段信息表格
                 table_width = page_width - margins[0] - margins[1]
-                parent_table = Table(parent_table_data, colWidths=[table_width * 0.3, table_width * 0.7])
+                
+                # 使用自适应列宽
+                num_cols = len(parent_table_data[0])
+                # 获取自适应列宽
+                col_widths = self._get_col_widths(parent_table_data, table_width, None, num_cols, is_k2v=False)
+                
+                # 确保所有列宽都是有效的数字
+                valid_col_widths = []
+                for width in col_widths:
+                    if width is None or not isinstance(width, (int, float)) or width <= 0:
+                        valid_col_widths.append(table_width / num_cols)
+                    else:
+                        valid_col_widths.append(width)
+                
+                # 确保表格数据有效
+                valid_table_data = []
+                for row in parent_table_data:
+                    valid_row = []
+                    for cell in row:
+                        if cell is None:
+                            valid_row.append(Paragraph("", table_text_style))
+                        else:
+                            valid_row.append(cell)
+                    valid_table_data.append(valid_row)
+                
+                # 创建表格时直接传递列宽
+                parent_table = Table(valid_table_data, colWidths=valid_col_widths, repeatRows=1)
+                # 应用样式
                 parent_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
                 elements.append(parent_table)
                 elements.append(Spacer(1, 20))
@@ -554,7 +611,7 @@ class ExportUtils:
 
             valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols, self._is_k2v_headers(main_headers))
 
-            main_table = Table(main_table_data, colWidths=valid_col_widths)
+            main_table = Table(main_table_data, colWidths=valid_col_widths, repeatRows=1)
             main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
             elements.append(main_table)
         else:
@@ -589,7 +646,7 @@ class ExportUtils:
 
             valid_col_widths = self._get_col_widths(remaining_table_data, table_width, col_widths, table_cols)
 
-            remaining_table = Table(remaining_table_data, colWidths=valid_col_widths)
+            remaining_table = Table(remaining_table_data, colWidths=valid_col_widths, repeatRows=1)
             remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_chinese_font))
             elements.append(remaining_table)
         else:
