@@ -708,6 +708,55 @@ class ExportUtils:
             bold_font = ImageFont.load_default()
         return font, bold_font, font_loaded
 
+    def _load_pdf_font(self, font_size=36):
+        """加载PDF导出用中文字体（简化版本，兼容PIL）
+
+        Args:
+            font_size: 字体大小
+
+        Returns:
+            tuple: (font, bold_font)
+        """
+        try:
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
+            font_candidates = [
+                ('msyh.ttc', font_size, '微软雅黑'),
+                ('simhei.ttf', font_size, '黑体'),
+                ('simsun.ttc', font_size - 2, '宋体'),
+            ]
+
+            for font_file, size, font_name in font_candidates:
+                font_path = os.path.join(system_font_dir, font_file)
+                if os.path.exists(font_path):
+                    try:
+                        font = ImageFont.truetype(font_path, size)
+                        bold_font = ImageFont.truetype(font_path, size + 4)
+                        print(f"成功加载PDF字体{font_name}: {font_path}")
+                        return font, bold_font
+                    except (FileNotFoundError, IOError, OSError, ValueError, TypeError):
+                        continue
+
+            font = ImageFont.load_default()
+            bold_font = ImageFont.load_default()
+            print("使用默认字体")
+        except (IOError, OSError, ValueError, TypeError):
+            font = ImageFont.load_default()
+            bold_font = ImageFont.load_default()
+        return font, bold_font
+
+    def _get_font_for_pdf(self, base_font, bold_font, font_size=50):
+        """根据可用字体返回合适的字体
+
+        Args:
+            base_font: 基础字体
+            bold_font: 粗体
+            font_size: 字体大小
+
+        Returns:
+            tuple: (font, bold_font, font_size)
+        """
+        return base_font, bold_font, font_size
+
     def _calculate_chart_dimensions(self, networks):
         """计算图表所需的尺寸
 

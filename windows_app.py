@@ -732,7 +732,7 @@ class IPSubnetSplitterApp:
 
         # 创建信息栏框架 - 放在 spacer 内，使用 place 布局
         self.info_bar_frame = ttk.Frame(self.info_spacer, style="InfoBar.TFrame")
-        self.info_bar_frame.place(x=10, y=30, relwidth=0, height=30)
+        self.info_bar_frame.place(x=10, y=30, width=30, height=30)
 
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
@@ -775,6 +775,7 @@ class IPSubnetSplitterApp:
         self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1)
 
         self.info_auto_hide_id = None
+        self.info_auto_hide_scheduled_time = None  # 记录定时器设置的时间
         self.info_bar_animating = False
 
         # 初始化时获取并保存参考宽度
@@ -4159,21 +4160,24 @@ class IPSubnetSplitterApp:
         Args:
             animation_type: 动画类型，'show' 或 'hide'
         """
-        if self.info_auto_hide_id and animation_type == 'hide':
+        # 如果已经在动画中，则跳过
+        if self.info_bar_animating:
+            return
+
+        # 取消之前的自动隐藏定时器
+        if self.info_auto_hide_id:
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
 
-        if animation_type == 'hide' and self.info_bar_frame.winfo_manager() == "":
+        # 如果是隐藏动画且信息栏未映射，则跳过
+        if animation_type == 'hide' and not self.info_bar_frame.winfo_ismapped():
             return
 
-        if self.info_bar_animating:
-            return
         self.info_bar_animating = True
 
         # 获取主窗口宽度
         main_width = self.main_frame.winfo_width()
         bar_x = 10
-        # 使用主窗口宽度减去左右边距共50作为信息栏宽度
         bar_width = int(main_width * 1) - 50
 
         # 确保宽度在合理范围内
@@ -4225,20 +4229,31 @@ class IPSubnetSplitterApp:
 
     def _on_show_animation_complete(self, bar_x, bar_width):
         """显示动画完成后的回调"""
+        import time
         self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
         self.info_bar_animating = False
         # 设置5秒后自动隐藏
-        self.info_auto_hide_id = self.root.after(5000, self.hide_info_bar)
+        self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
+        self.info_auto_hide_scheduled_time = time.time()
 
     def _on_hide_animation_complete(self, bar_x, bar_width):
         """隐藏动画完成后的回调"""
         self.info_bar_frame.place_forget()
-        self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
         self.info_spacer.pack_forget()
         self.info_bar_animating = False
+        # 使用固定宽度而不是relwidth=0，确保框架有正确的大小
+        self.info_bar_frame.place(x=10, y=30, width=30, height=30)
 
-    def hide_info_bar(self):
+    def hide_info_bar(self, from_timer=False):
         """隐藏信息栏"""
+        import time
+        
+        # 如果是从定时器调用的，检查时间戳
+        if from_timer and self.info_auto_hide_scheduled_time:
+            current_time = time.time()
+            if (current_time - self.info_auto_hide_scheduled_time) < 4.5:
+                return
+        
         self.animate_info_bar('hide')
 
     def setup_advanced_tools_page(self):
@@ -6006,6 +6021,11 @@ class IPSubnetSplitterApp:
             error: 是否为错误信息
             keep_data: 是否保留数据
         """
+        # 立即取消所有可能的自动隐藏定时器
+        if self.info_auto_hide_id:
+            self.root.after_cancel(self.info_auto_hide_id)
+            self.info_auto_hide_id = None
+        
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
             self.clear_result()
@@ -6038,9 +6058,11 @@ class IPSubnetSplitterApp:
         info_bar_width = max(info_bar_width, self.MIN_INFO_BAR_WIDTH)
 
         # 确保info_bar_frame已经添加到父容器中
-        if self.info_bar_frame.winfo_manager() == "":
+        # 使用place布局时winfo_manager()返回"place"，所以用not判断
+        if not self.info_bar_frame.winfo_manager():
             # 先临时显示，以便获取宽度
-            self.info_bar_frame.pack(side="bottom", fill="x", pady=(0, 0), padx=10)
+            self.info_spacer.pack(side="bottom", fill="x")
+            self.info_bar_frame.place(x=10, y=30, width=max(self.info_bar_ref_width, 400), height=30)
 
         # 更新窗口，确保能获取到准确的宽度
         self.root.update_idletasks()
@@ -6127,7 +6149,11 @@ class IPSubnetSplitterApp:
             return
 
         # 显示 spacer，固定高度30px
-        self.info_spacer.pack(side="bottom", fill="x")
+        self.info_spacer.pack(side="bottom", fill="x", before=self.top_level_notebook)
+        self.info_spacer.configure(height=30)
+        
+        # 强制更新布局
+        self.root.update_idletasks()
 
         # 延迟一下再获取宽度，让布局稳定
         def show_with_width():
@@ -6141,8 +6167,11 @@ class IPSubnetSplitterApp:
             bar_width = max(bar_width, 100)
             bar_width = min(bar_width, main_width - 20)
 
-            # 初始位置在 spacer 底部下方
-            self.info_bar_frame.place(x=bar_x, y=30, width=bar_width, height=30)
+            # 先强制更新布局，确保spacer已正确pack
+            self.root.update_idletasks()
+
+            # 确保info_bar_frame有正确的place布局
+            self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
             self.info_bar_frame.lift()
 
             # 使用通用动画函数执行显示动画

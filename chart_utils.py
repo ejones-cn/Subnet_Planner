@@ -7,6 +7,19 @@
 import tkinter as tk
 import math
 
+SUBNET_COLORS = (
+    "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",
+    "#5b8fd9", "#3c70d8", "#e68838", "#a04132",
+    "#6a9da8", "#87c569", "#6d8de8", "#c16fa0",
+    "#a99bc6", "#a44d69", "#b9d0f8", "#5d4ea5",
+    "#f5ad8c", "#5b8fd9", "#db6679", "#a6c589",
+)
+
+LEGEND_COLORS = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
+
+PARENT_COLOR = "#636e72"
+SPLIT_COLOR = "#4a7eb4"
+
 
 def draw_text_with_stroke(canvas, text, x, y, font, anchor=tk.W, fill="#ffffff",
                           stroke_color="#666666", stroke_width=1):
@@ -89,30 +102,6 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         x = margin_left
         y = margin_top
 
-        # 为网段分配高区分度的柔和配色方案
-        subnet_colors = (
-            "#5e9c6a",
-            "#db6679",
-            "#f0ab55",
-            "#8b6cb8",
-            "#5b8fd9",
-            "#3c70d8",
-            "#e68838",
-            "#a04132",
-            "#6a9da8",
-            "#87c569",
-            "#6d8de8",
-            "#c16fa0",
-            "#a99bc6",
-            "#a44d69",
-            "#b9d0f8",
-            "#5d4ea5",
-            "#f5ad8c",
-            "#5b8fd9",
-            "#db6679",
-            "#a6c589",
-        )
-
         required_height = (
             y
             + (bar_height + padding)
@@ -137,7 +126,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
         bar_width = min(bar_width, chart_width)
 
-        color = "#636e72"
+        color = PARENT_COLOR
         canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
@@ -181,8 +170,8 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
                 bar_width = min(bar_width, chart_width)
 
                 # 为需求网段分配彩色
-                color_index = i % len(subnet_colors)
-                color = subnet_colors[color_index]
+                color_index = i % len(SUBNET_COLORS)
+                color = SUBNET_COLORS[color_index]
                 canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
                 name = network.get("name", "")
@@ -212,7 +201,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
                 bar_width = min(bar_width, chart_width)
 
                 # 切分网段：使用蓝色
-                color = "#4a7eb4"
+                color = SPLIT_COLOR
                 canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
                 name = network.get("name", "")
@@ -257,8 +246,8 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             bar_width = min(bar_width, chart_width)
 
-            color_index = i % len(subnet_colors)
-            color = subnet_colors[color_index]
+            color_index = i % len(SUBNET_COLORS)
+            color = SUBNET_COLORS[color_index]
 
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
@@ -284,7 +273,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
 
         legend_items_y = legend_y + 25
 
-        canvas.create_rectangle(x, legend_items_y, x + 20, legend_items_y + 12, fill="#636e72")
+        canvas.create_rectangle(x, legend_items_y, x + 20, legend_items_y + 12, fill=PARENT_COLOR)
         canvas.create_text(
             x + 30,
             legend_items_y + 6,
@@ -297,8 +286,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         if chart_type == "plan":
             # 子网规划：需求网段（多色）
             # 使用多个彩色方块表示多色
-            demand_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
-            for j, color in enumerate(demand_colors):
+            for j, color in enumerate(LEGEND_COLORS):
                 canvas.create_rectangle(
                     x + 100 + j * 20,
                     legend_items_y,
@@ -316,9 +304,8 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
             )
             
             # 剩余网段图例排在需求网段后面，使用多色表达
-            remaining_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
             remaining_start_x = x + 300
-            for j, color in enumerate(remaining_colors):
+            for j, color in enumerate(LEGEND_COLORS):
                 canvas.create_rectangle(
                     remaining_start_x + j * 20,
                     legend_items_y,
@@ -336,7 +323,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
             )
         else:
             # 子网切分：切分网段（蓝色）
-            canvas.create_rectangle(x + 100, legend_items_y, x + 120, legend_items_y + 12, fill="#4a7eb4")
+            canvas.create_rectangle(x + 100, legend_items_y, x + 120, legend_items_y + 12, fill=SPLIT_COLOR)
             canvas.create_text(
                 x + 130,
                 legend_items_y + 6,
@@ -347,8 +334,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
             )
 
             # 剩余网段图例
-            remaining_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
-            for j, color in enumerate(remaining_colors):
+            for j, color in enumerate(LEGEND_COLORS):
                 canvas.create_rectangle(
                     x + 230 + j * 25,
                     legend_items_y,
