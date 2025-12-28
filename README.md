@@ -1,4 +1,4 @@
-# 子网规划师 v1.4.5
+# 子网规划师 v2.0.0
 
 **子网规划师** - 让网络管理变得简单高效！
 
@@ -15,7 +15,8 @@
 - **清晰的结果展示**：直观展示切分网段和剩余网段的详细信息
 - **多种界面支持**：提供Web界面和Windows GUI界面，满足不同使用场景
 - **图表可视化**：提供网段分布的图表可视化
-- **结果导出功能**：Windows GUI界面支持将计算结果导出为文本文件（仅Windows版本）
+- **结果导出功能**：支持将计算结果导出为文本文件和PDF文件
+- **需求池管理**：支持记录管理、撤销/重做功能
 
 ## 🚀 快速开始
 
@@ -25,39 +26,7 @@
 pip install -r requirements.txt
 ```
 
-## 🔍 代码自动审查
-
-项目集成了多种Python代码审查工具，帮助保持代码质量和风格一致性：
-
-### 使用方法
-
-```bash
-.code_review.bat
-```
-
-### 包含的工具
-
-1. **Pylint** - 代码质量检查，检测潜在问题和错误
-2. **Flake8** - 代码风格检查，确保符合PEP 8标准
-3. **isort** - 自动排序导入语句，保持一致性
-4. **Black** - 自动格式化代码，统一代码风格
-5. **compileall** - 编译检查，确保代码语法正确
-
-### 配置文件
-
-- `.pylintrc` - Pylint配置文件
-- `.flake8` - Flake8配置文件
-- `pyproject.toml` - Black和isort配置文件
-
-### 审查报告
-
-运行代码审查脚本后，将依次显示各工具的检查结果。对于发现的问题，部分工具（如isort和Black）提供自动修复功能。
-
-
-> 注意：项目已配置国内PyPI镜像源（阿里云），安装依赖时会自动使用国内下载源，提高下载速度。
-> 如果需要使用其他国内镜像源，可以修改项目根目录下的`.pip/pip.conf`文件。
-
-### 使用方法
+### 运行应用
 
 #### Web界面
 
@@ -93,6 +62,39 @@ python windows_app.py
 
 直接运行 `dist/子网规划师.exe`
 
+## 🔍 代码自动审查
+
+项目集成了多种Python代码审查工具，帮助保持代码质量和风格一致性：
+
+### 使用方法
+
+```bash
+.code_review.bat
+```
+
+### 包含的工具
+
+1. **Pylint** - 代码质量检查，检测潜在问题和错误
+2. **Flake8** - 代码风格检查，确保符合PEP 8标准
+3. **isort** - 自动排序导入语句，保持一致性
+4. **Black** - 自动格式化代码，统一代码风格
+5. **Mypy** - 静态类型检查，确保类型正确性
+6. **compileall** - 编译检查，确保代码语法正确
+
+### 配置文件
+
+- `.pylintrc` - Pylint配置文件
+- `.flake8` - Flake8配置文件
+- `.mypy.ini` - Mypy配置文件
+- `pyproject.toml` - Black和isort配置文件
+
+### 审查报告
+
+运行代码审查脚本后，将依次显示各工具的检查结果。对于发现的问题，部分工具（如isort和Black）提供自动修复功能。
+
+> 注意：项目已配置国内PyPI镜像源（阿里云），安装依赖时会自动使用国内下载源，提高下载速度。
+> 如果需要使用其他国内镜像源，可以修改项目根目录下的`.pip/pip.conf`文件。
+
 ## 🛠️ 工具原理
 
 本工具基于IPv4地址的子网划分原理，利用Python的`ipaddress`模块实现了以下核心功能：
@@ -109,26 +111,43 @@ python windows_app.py
 
 ```
 Netsub tools/
-├── windows_app.py       # Windows GUI界面主程序
-├── web_app.py           # Web界面主程序
+├── windows_app.py           # Windows GUI界面主程序
+├── web_app.py               # Web界面主程序
 ├── ip_subnet_calculator.py  # IP子网计算核心模块
-├── version.py           # 版本号管理模块
-├── requirements.txt     # 项目依赖
-├── README.md            # 项目说明文档
-├── run_app.bat          # Windows GUI界面快速启动脚本
-├── run_web_app.bat      # Web界面快速启动脚本
-├── refresh_icon_cache.bat  # 刷新图标缓存脚本
-├── bump_version.py      # 自动版本号更新脚本
-├── verify_versions.py   # 版本号一致性验证工具
-├── simple_pack.py       # 打包脚本
-├── create_self_signed_cert.bat  # 创建自签名证书脚本
-├── update_web_app_version.py  # 更新Web应用版本脚本
-├── dist/                # 打包后的可执行文件目录
-│   ├── 子网规划师.exe  # Windows可执行文件
-│   └── icon.ico         # 应用程序图标
-├── icon.ico             # 应用程序图标
-├── icon.svg             # 应用程序图标SVG源文件
-└── IMPLEMENTATION_SUMMARY.md  # 实现摘要文档
+├── chart_utils.py           # 图表可视化工具模块
+├── export_utils.py          # 结果导出工具模块
+├── version.py               # Windows版版本号管理模块
+├── web_version.py           # Web版版本号管理模块
+├── requirements.txt         # 项目依赖
+├── README.md                # 项目说明文档
+├── run_app.bat              # Windows GUI界面快速启动脚本
+├── run_web_app.bat          # Web界面快速启动脚本
+├── refresh_icon_cache.bat   # 刷新图标缓存脚本
+├── bump_version.py          # 自动版本号更新脚本
+├── verify_versions.py       # 版本号一致性验证工具
+├── simple_pack.py           # 打包脚本
+├── update_web_app_version.py # 更新Web应用版本脚本
+├── install_deps.bat         # 安装依赖脚本
+├── create_self_signed_cert.bat # 创建自签名证书脚本
+├── 子网规划师.spec          # PyInstaller打包配置文件
+├── dist/                    # 打包后的可执行文件目录
+│   ├── 子网规划师.exe      # Windows可执行文件
+│   └── icon.ico             # 应用程序图标
+├── icon.ico                 # 应用程序图标
+├── icon.svg                 # 应用程序图标SVG源文件
+├── icon_16.png              # 16x16图标
+├── icon_32.png              # 32x32图标
+├── icon_48.png              # 48x48图标
+├── icon_64.png              # 64x64图标
+├── icon_128.png             # 128x128图标
+├── icon_256.png             # 256x256图标
+├── IMPLEMENTATION_SUMMARY.md # 实现摘要文档
+├── OPTIMIZATION_REPORT.md    # 优化报告文档
+├── ENHANCEMENT_PLAN.md       # 增强计划文档
+├── CODE_FLOWCHART.md         # 代码流程图文档
+├── 打包脚本功能更新说明.md   # 打包脚本更新说明
+├── 数字签名使用说明.md       # 数字签名说明
+└── 解决方案说明.md           # 解决方案说明文档
 ```
 
 ## 🖼️ 界面预览
@@ -142,8 +161,10 @@ Netsub tools/
 ### Windows GUI界面
 
 - **现代化界面**：使用Tkinter构建的友好图形界面
-- **多标签页**：分别展示输入、结果和帮助信息
-- **导出功能**：支持将结果导出为文本文件
+- **多标签页**：分别展示输入、结果、需求池和帮助信息
+- **图表可视化**：网段分布图表展示
+- **导出功能**：支持将结果导出为文本文件和PDF文件
+- **需求池**：支持记录管理、撤销/重做功能
 
 ## 🔧 技术特点
 
@@ -152,6 +173,7 @@ Netsub tools/
 - **高性能**：快速处理大量IP地址计算
 - **易于扩展**：模块化设计，便于添加新功能
 - **开源免费**：基于MIT许可证开源
+- **类型安全**：使用Mypy进行静态类型检查
 
 ## 📊 示例输出
 
@@ -255,8 +277,20 @@ Netsub tools/
 6. 工具目前主要支持IPv4地址，不支持IPv6地址
 7. 在使用批量处理功能时，确保输入文件格式正确（每行一个网段）
 8. 结果导出功能仅在Windows GUI版本中可用
+9. PDF导出功能需要安装reportlab库
 
 ## 📝 更新日志
+
+### v2.0.0 (2025-12-29)
+
+- 功能增强：添加图表可视化功能（chart_utils.py）
+- 功能增强：添加结果导出功能（export_utils.py），支持文本和PDF导出
+- 功能增强：添加需求池管理功能，支持记录管理
+- 功能增强：添加撤销/重做功能
+- 功能增强：添加Mypy静态类型检查支持
+- 架构优化：模块化重构，将图表和导出功能分离为独立模块
+- 代码质量：优化代码结构和类型注解
+- 版本管理：分离Web版和Windows版版本号管理
 
 ### v1.4.5 (2025-12-22)
 
@@ -358,7 +392,7 @@ Netsub tools/
 
 如果您有任何问题或建议，请通过以下方式联系我：
 
-- 邮箱：[ejones.cn@hotmail.com](mailto:ejones.cn@hotmail.com)  
+- 邮箱：[ejones.cn@hotmail.com](mailto:ejones.cn@hotmail.com)
 - GitCode：https://gitcode.com/ejones-cn/Netsub-tools
 - Gitee：https://gitee.com/ejones-cn/netsub-tools
 
