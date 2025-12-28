@@ -153,11 +153,14 @@ class ColoredNotebook(ttk.Frame):
         self.tabs = []
         self.active_tab = None
 
-    def on_configure(self, _):
+    def on_configure(self, event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         # 确保content_area能完全填充笔记本控件的空间
         if hasattr(self, 'content_area'):
-            # 更新content_area的大小
+            # 直接设置content_area的大小为笔记本控件的大小
+            self.content_area.configure(width=event.width, height=event.height - self.tab_bar_container.winfo_height())
+
+            # 更新content_area的布局，确保它能完全填充笔记本控件的空间
             self.content_area.pack_configure(fill='both', expand=True)
 
             # 触发内容区域的重绘
@@ -167,6 +170,8 @@ class ColoredNotebook(ttk.Frame):
             if hasattr(self, 'active_tab') and self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
                 selected_tab = self.tabs[self.active_tab]
                 selected_tab["content"].pack_configure(fill='both', expand=True)
+                # 直接设置选中标签内容的大小
+                selected_tab["content"].configure(width=self.content_area.winfo_width(), height=self.content_area.winfo_height())
 
     def _on_tab_mouse_down(self, button, color):
         """当鼠标按下标签页时，更新内容区域背景色为按下状态颜色"""
@@ -734,6 +739,9 @@ class IPSubnetSplitterApp:
 
         # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
+        
+        # 绑定窗口大小变化事件，动态调整右上角按钮位置
+        self.root.bind('<Configure>', self.on_window_configure)
 
         # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
@@ -6537,6 +6545,20 @@ class IPSubnetSplitterApp:
                 self.pin_label.config(fg="#333333", bg="#e0e0e0")  # 深灰色文字，浅灰色背景
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
+    
+    def on_window_configure(self, event):
+        """窗口大小变化时动态调整右上角按钮位置"""
+        # 窗口大小变化时重新获取窗口背景色，确保按钮背景色与窗口一致
+        self.bg_color = self.root.cget("background")
+        
+        # 更新按钮背景色
+        if self.about_label:
+            self.about_label.config(bg=self.bg_color)
+        if self.pin_label and not self.is_pinned:
+            self.pin_label.config(bg=self.bg_color)
+        
+        # 这里不需要调整按钮位置，因为按钮使用了相对定位（relx=1.0）
+        # 窗口大小变化时，按钮会自动保持在右上角位置
 
     def toggle_pin_window(self):
         """切换窗口置顶状态"""
