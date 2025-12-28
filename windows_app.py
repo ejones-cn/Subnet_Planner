@@ -1427,25 +1427,36 @@ class IPSubnetSplitterApp:
         # 获取剩余网段框架的宽度
         frame_width = self.remaining_frame.winfo_width()
 
-        # 计算每列的宽度
-        total_columns = 7
-        if frame_width > 0:
-            # 为每列分配适当的宽度（减去滚动条和边距）
-            column_width = (frame_width - 30) // total_columns  # 30为滚动条和边距留出空间
+        # 设置index列宽度（保持固定宽度）
+        self.remaining_tree.column("index", width=40)
 
-            # 设置index列宽度（保持固定宽度）
-            self.remaining_tree.column("index", width=40)
-
-            # 设置其他列的宽度
-            for col in ["cidr", "network", "netmask", "wildcard", "broadcast"]:
-                self.remaining_tree.column(col, width=column_width)
-
-            # 调整最后一列的宽度以填充剩余空间
-            last_col_width = (frame_width - 30) - (column_width * (total_columns - 2) + 40)
-            if last_col_width > 0:
-                self.remaining_tree.column("usable", width=last_col_width)
-            else:
-                self.remaining_tree.column("usable", width=110)
+        # 获取表格的所有行
+        items = self.remaining_tree.get_children()
+        
+        if not items:
+            # 表格为空（初始状态），均分宽度
+            if frame_width > 0:
+                # 剩余6列均分宽度
+                total_columns = 6  # 除去序号列的其他列数
+                available_width = frame_width - 30 - 40  # 总宽度减去边距和序号列宽度
+                column_width = max(100, available_width // total_columns)  # 确保每列至少100px
+                
+                # 设置其他所有列的宽度
+                for col in ["cidr", "network", "netmask", "wildcard", "broadcast", "usable"]:
+                    self.remaining_tree.column(col, width=column_width)
+        else:
+            # 表格有数据，自适应内容宽度
+            for col in ["cidr", "network", "netmask", "wildcard", "broadcast", "usable"]:
+                # 先让列自适应内容
+                self.remaining_tree.column(col, width="0")
+                # 更新界面以获取准确宽度
+                self.remaining_tree.update_idletasks()
+                
+                # 获取自适应后的宽度
+                auto_width = self.remaining_tree.column(col, "width")
+                
+                # 确保最小宽度100px
+                self.remaining_tree.column(col, width=max(100, auto_width))
 
     def on_tab_change(self, tab_index):
         """标签页切换时的处理函数"""

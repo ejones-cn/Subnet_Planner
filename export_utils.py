@@ -401,7 +401,7 @@ class ExportUtils:
             # 在页眉右侧绘制导出时间
             canvas.drawRightString(
                 current_width - margins[1],  # x坐标：页面宽度 - 右边距
-                current_height - margins[2] + 10,  # y坐标：页面顶部 - 上边距 + 偏移量
+                current_height - 40,  # y坐标：页面顶部 - 20像素，留有适当边距
                 f"导出时间: {export_time}"
             )
             canvas.restoreState()
