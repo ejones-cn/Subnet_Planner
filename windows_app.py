@@ -1331,7 +1331,7 @@ class IPSubnetSplitterApp:
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,
-            width=22,
+            width=25,
             font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
@@ -1348,7 +1348,7 @@ class IPSubnetSplitterApp:
         self.split_entry = ttk.Combobox(
             input_frame,
             values=self.split_networks,
-            width=22,
+            width=25,
             font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
@@ -1460,14 +1460,8 @@ class IPSubnetSplitterApp:
 
     def on_tab_change(self, tab_index):
         """标签页切换时的处理函数"""
-        # 如果切换到剩余网段表标签页（索引为1），触发表格自适应
-        if tab_index == 1:
-            # 确保界面更新后再调整宽度
-            self.remaining_tree.update_idletasks()
-            # 调用完整的表格宽度调整方法
-            self.adjust_remaining_tree_width()
         # 如果切换到网段分布图标签页（索引为2），触发图表自适应
-        elif tab_index == 2:
+        if tab_index == 2:
             # 确保图表Canvas已初始化再绘制
             if hasattr(self, 'chart_canvas'):
                 self.draw_distribution_chart()
@@ -1585,19 +1579,12 @@ class IPSubnetSplitterApp:
         self.chart_frame.grid_columnconfigure(0, weight=1)
         self.chart_frame.grid_columnconfigure(1, weight=0)
 
-        # 创建滚动容器，使用grid布局
-        scroll_frame = ttk.Frame(self.chart_frame)
-        scroll_frame.grid(row=0, column=0, sticky=tk.NSEW)
-        scroll_frame.grid_rowconfigure(0, weight=1)
-        scroll_frame.grid_columnconfigure(0, weight=1)
-        scroll_frame.grid_columnconfigure(1, weight=0)
-
         # 添加滚动条
-        self.chart_scrollbar = ttk.Scrollbar(scroll_frame, orient=tk.VERTICAL)
+        self.chart_scrollbar = ttk.Scrollbar(self.chart_frame, orient=tk.VERTICAL)
 
         # 创建Canvas用于绘制柱状图，设置背景色为深灰色以匹配图表背景
         # 禁止水平滚动，只允许垂直滚动
-        self.chart_canvas = tk.Canvas(scroll_frame, bg="#333333")
+        self.chart_canvas = tk.Canvas(self.chart_frame, bg="#333333", highlightthickness=0)
         self.chart_canvas.grid(row=0, column=0, sticky=tk.NSEW, pady=0)
 
         # 配置滚动条
@@ -1762,19 +1749,12 @@ class IPSubnetSplitterApp:
         self.chart_frame.grid_columnconfigure(0, weight=1)
         self.chart_frame.grid_columnconfigure(1, weight=0)
 
-        # 创建滚动容器，使用grid布局
-        scroll_frame = ttk.Frame(self.chart_frame)
-        scroll_frame.grid(row=0, column=0, sticky=tk.NSEW)
-        scroll_frame.grid_rowconfigure(0, weight=1)
-        scroll_frame.grid_columnconfigure(0, weight=1)
-        scroll_frame.grid_columnconfigure(1, weight=0)
-
         # 添加滚动条
-        self.chart_scrollbar = ttk.Scrollbar(scroll_frame, orient=tk.VERTICAL)
+        self.chart_scrollbar = ttk.Scrollbar(self.chart_frame, orient=tk.VERTICAL)
 
         # 创建Canvas用于绘制柱状图，设置背景色为深灰色以匹配图表背景
         # 禁止水平滚动，只允许垂直滚动
-        self.chart_canvas = tk.Canvas(scroll_frame, bg="#333333")
+        self.chart_canvas = tk.Canvas(self.chart_frame, bg="#333333", highlightthickness=0)
         self.chart_canvas.grid(row=0, column=0, sticky=tk.NSEW, pady=0)
 
         # 配置滚动条
@@ -2299,8 +2279,20 @@ class IPSubnetSplitterApp:
             command=self.planning_chart_canvas.yview
         )
         
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def planning_chart_scrollbar_callback(*args):
+            # 更新滚动条位置
+            self.planning_chart_v_scrollbar.set(*args)
+            # 检查是否需要显示滚动条
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                # 内容不可滚动，隐藏滚动条
+                self.planning_chart_v_scrollbar.grid_remove()
+            else:
+                # 内容可滚动，显示滚动条
+                self.planning_chart_v_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+
         # 配置Canvas使用滚动条
-        self.planning_chart_canvas.configure(yscrollcommand=self.planning_chart_v_scrollbar.set)
+        self.planning_chart_canvas.configure(yscrollcommand=planning_chart_scrollbar_callback)
         
         # 使用grid布局
         self.planning_chart_frame.grid_rowconfigure(0, weight=1)
@@ -2308,6 +2300,9 @@ class IPSubnetSplitterApp:
         
         self.planning_chart_canvas.grid(row=0, column=0, sticky="nsew")
         self.planning_chart_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # 初始检查是否需要显示滚动条
+        planning_chart_scrollbar_callback(0.0, 1.0)
         
         # 添加鼠标滚轮事件支持
         self.planning_chart_canvas.bind("<MouseWheel>", self.on_planning_chart_mousewheel)
@@ -4062,8 +4057,7 @@ class IPSubnetSplitterApp:
             else:
                 self.remaining_tree.insert("", tk.END, values=(1, "无", "无", "无", "无", "无"))
 
-            # 让表格自适应窗口宽度
-            self.adjust_remaining_tree_width()
+            # 不再手动调整表格宽度，依靠Tkinter的stretch=True自动处理
 
             # 优化滚动条状态更新，减少不必要的计算
             if hasattr(self, 'remaining_scroll_v'):
@@ -4286,7 +4280,7 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text="IPv6地址:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text="IPv6地址").pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=48, font=("微软雅黑", 10))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
@@ -4311,7 +4305,7 @@ class IPSubnetSplitterApp:
         validate_ipv6(self.ipv6_info_entry.get())
 
         # CIDR下拉列表（IPv6支持1-128）
-        ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text="CIDR").pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_cidr_var = tk.StringVar()
         self.ipv6_cidr_combobox = ttk.Combobox(
             input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly", font=("微软雅黑", 10)
@@ -4404,7 +4398,7 @@ class IPSubnetSplitterApp:
         start_frame = ttk.Frame(range_frame)
         start_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(start_frame, text="起始:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(start_frame, text="起始").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_start_entry = ttk.Combobox(
             start_frame, values=self.range_start_history, width=13, font=("微软雅黑", 10)
         )
@@ -4436,7 +4430,7 @@ class IPSubnetSplitterApp:
         end_frame = ttk.Frame(range_frame)
         end_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Label(end_frame, text="结束:").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(end_frame, text="结束").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=("微软雅黑", 10))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.30.254")
@@ -4654,7 +4648,7 @@ class IPSubnetSplitterApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text="IPv4地址:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text="IPv4地址").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=("微软雅黑", 10))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
@@ -4718,7 +4712,7 @@ class IPSubnetSplitterApp:
         self.cidr_subnet_mask_map = {v: k for k, v in self.subnet_mask_cidr_map.items()}
 
         # 子网掩码下拉列表
-        ttk.Label(input_frame, text="子网掩码:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text="子网掩码").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_mask_var = tk.StringVar()
         self.ip_mask_combobox = ttk.Combobox(
             input_frame, textvariable=self.ip_mask_var, width=15, state="readonly", font=("微软雅黑", 10)
@@ -4730,7 +4724,7 @@ class IPSubnetSplitterApp:
         self.ip_mask_combobox.bind("<<ComboboxSelected>>", self.on_subnet_mask_change)
 
         # CIDR下拉列表
-        ttk.Label(input_frame, text="CIDR:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text="CIDR").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_cidr_var = tk.StringVar()
         self.ip_cidr_combobox = ttk.Combobox(
             input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly", font=("微软雅黑", 10)
@@ -4867,7 +4861,7 @@ class IPSubnetSplitterApp:
             for i, col in enumerate(columns):
                 self.merge_result_tree.heading(col, text=col)
                 if i == 0:  # CIDR列
-                    self.merge_result_tree.column(col, minwidth=110, stretch=True)
+                    self.merge_result_tree.column(col, minwidth=120, stretch=True)
                 elif i == 1:  # 网络地址列
                     self.merge_result_tree.column(col, minwidth=100, stretch=True)
                 elif i == 2:  # 子网掩码列
@@ -4875,7 +4869,7 @@ class IPSubnetSplitterApp:
                 elif i == 3:  # 广播地址列
                     self.merge_result_tree.column(col, minwidth=100, stretch=True)
                 elif i == 4:  # 主机数列
-                    self.merge_result_tree.column(col, minwidth=60, stretch=True)
+                    self.merge_result_tree.column(col, minwidth=40, stretch=True)
 
             # 重新绑定滚动条，保持自动隐藏功能
             if hasattr(self, 'merge_result_scrollbar'):
@@ -5971,11 +5965,11 @@ class IPSubnetSplitterApp:
 
         if self.width_locked:
             self.root.resizable(width=False, height=True)
-            self.root.minsize(800, 700)
-            self.root.maxsize(800, 10000)
+            self.root.minsize(850, 750)
+            self.root.maxsize(1100, 10000)
         else:
             self.root.resizable(width=True, height=True)
-            self.root.minsize(800, 700)
+            self.root.minsize(850, 750)
             self.root.maxsize(10000, 10000)
 
     def show_result(self, text, error=False, keep_data=False):
@@ -6255,13 +6249,9 @@ class IPSubnetSplitterApp:
 
     def on_window_resize(self, _):
         """窗口大小变化时的处理函数，实现表格和图表自适应"""
-        # 确保表格能够自适应窗口宽度
-        self.remaining_tree.update_idletasks()
-        self.adjust_remaining_tree_width()
-
-        # 窗口大小变化时不需要重新配置斑马条纹，样式已在初始化时设置
-        # 图表将在 on_chart_resize 中单独处理，避免重复绘制
-        # 重新绘制所有Treeview的表格线 - 使用ttk样式方案不需要手动绘制
+        # 移除剩余网段表的动态宽度调整，避免性能问题
+        # 表格列已设置stretch=True，Tkinter会自动处理宽度调整
+        pass
 
     def _prepare_export_data(self, data_source):
         """准备导出数据
@@ -6676,8 +6666,8 @@ if __name__ == "__main__":
     root = tk.Tk()
 
     # 设置窗口初始大小 - 调整高度以确保子网需求和规划结果两个表格都显示5行
-    WINDOW_WIDTH = 800
-    WINDOW_HEIGHT = 700  # 调整窗口高度，确保两个表格都能显示5行
+    WINDOW_WIDTH = 850
+    WINDOW_HEIGHT = 750  # 调整窗口高度，确保两个表格都能显示5行
 
     # 获取屏幕尺寸
     screen_width = root.winfo_screenwidth()
@@ -6691,8 +6681,8 @@ if __name__ == "__main__":
     root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{window_x}+{window_y}")
 
     # 设置窗口固定宽度，高度可调整
-    root.minsize(800, 700)
-    root.maxsize(800, 10000)  # 设置最大宽度为800，最大高度设为一个很大的值
+    root.minsize(850, 750)
+    root.maxsize(1100, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
 
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)

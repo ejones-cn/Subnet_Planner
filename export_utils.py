@@ -979,7 +979,7 @@ class ExportUtils:
             text_y = box_y + box_height // 2 - 38
             return text_y
 
-        address_x = 900
+        address_x = 1300
 
         segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
         segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
@@ -1024,7 +1024,8 @@ class ExportUtils:
                 color_index = i % len(subnet_colors)
                 split_color = subnet_colors[color_index]
                 name = network.get("name", "")
-                segment_text = f"网段 {i + 1}: {name}"
+                cidr = network.get("cidr", "")
+                segment_text = f"网段 {i + 1}: {name}    {cidr}"
             
             draw.rectangle([chart_x, y, chart_x
                 + bar_width, y
