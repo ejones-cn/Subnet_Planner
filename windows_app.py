@@ -15,6 +15,31 @@ import sys
 import os
 import traceback
 import csv
+import ipaddress
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font, Alignment
+
+# 导入自定义模块
+from ip_subnet_calculator import (
+    split_subnet,
+    ip_to_int,
+    get_subnet_info,
+    suggest_subnet_planning,
+    merge_subnets,
+    get_ip_info,
+    range_to_cidr,
+    check_subnet_overlap,
+    handle_ip_subnet_error,
+)
+
+# 导出工具模块
+from export_utils import ExportUtils
+
+# 图表工具模块
+from chart_utils import draw_text_with_stroke, draw_distribution_chart
+
+# 版本管理模块
+from version import get_version
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
@@ -62,37 +87,6 @@ if sys.platform == 'win32':
         print(f"⚠️ 设置DPI感知失败: {e}")
         # 定义默认缩放因子
         SCALE_FACTOR = 1.0
-
-
-
-# 外部库导入
-import ipaddress
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
-from openpyxl import load_workbook
-
-
-# 导入自定义模块
-from ip_subnet_calculator import (
-    split_subnet,
-    ip_to_int,
-    get_subnet_info,
-    suggest_subnet_planning,
-    merge_subnets,
-    get_ip_info,
-    range_to_cidr,
-    check_subnet_overlap,
-    handle_ip_subnet_error,
-)
-
-# 导出工具模块
-from export_utils import ExportUtils
-
-# 图表工具模块
-from chart_utils import draw_text_with_stroke, draw_distribution_chart
-
-# 版本管理模块
-from version import get_version
 
 
 # 自定义的ColoredNotebook类，支持每个标签不同颜色

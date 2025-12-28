@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Web应用程序，提供子网规划和计算功能。"""
 
-import ipaddress
 import json
 import re
 from flask import Flask, request, render_template_string
