@@ -4215,7 +4215,7 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
         self.info_bar_animating = False
         # 设置3秒后自动隐藏
-        self.info_auto_hide_id = self.root.after(3000, self.hide_info_bar)
+        self.info_auto_hide_id = self.root.after(5000, self.hide_info_bar)
 
     def _on_hide_animation_complete(self, bar_x, bar_width):
         """隐藏动画完成后的回调"""
@@ -6336,12 +6336,12 @@ class IPSubnetSplitterApp:
         try:
             # 先显示文件选择对话框，不准备数据
             file_path = filedialog.asksaveasfilename(
-                defaultextension=".csv",
+                defaultextension=".pdf",
                 filetypes=[
+                    ("PDF文件", "*.pdf"),
                     ("CSV文件", "*.csv"),
                     ("JSON文件", "*.json"),
                     ("文本文件", "*.txt"),
-                    ("PDF文件", "*.pdf"),
                     ("Excel文件", "*.xlsx"),
                     ("所有文件", "*.*"),
                 ],
@@ -6369,11 +6369,11 @@ class IPSubnetSplitterApp:
             if success:
                 self.show_result(success_msg.format(file_path=file_path), keep_data=True)
             else:
-                self.show_result(message, error=True)
+                self.show_result(message, error=True, keep_data=True)
 
         except (IOError, ValueError, TypeError, PermissionError) as e:
             error_msg = f"{failure_msg.format(error=str(e))}\n堆栈跟踪：{traceback.format_exc()}"
-            self.show_result(error_msg, error=True)
+            self.show_result(error_msg, error=True, keep_data=True)
 
     def export_result(self):
         """导出子网切分结果为多种格式（CSV、JSON、TXT、PDF、Excel）"""
@@ -6404,6 +6404,7 @@ class IPSubnetSplitterApp:
             "pdf_title": "子网规划师 - 子网规划结果",
             "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
             "remaining_table_cols": [40, 90, 80, 110, 80, 60],  # 剩余网段表格列宽
+            "chart_data": getattr(self, 'planning_chart_data', None),  # 添加网段分布图数据
         }
 
         self._export_data(data_source, "保存子网规划结果", "规划结果已成功导出到: {file_path}", "导出失败: {error}")

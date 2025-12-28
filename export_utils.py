@@ -462,6 +462,37 @@ class ExportUtils:
         elements.append(Paragraph(f"导出时间: {export_time}", normal_style))
         elements.append(Spacer(1, 15))
 
+        # 对于子网规划，在已分配子网信息前添加父网段信息
+        if data_source["main_name"] == "已分配子网信息":
+            # 显示父网段信息
+            elements.append(Paragraph("父网段信息", heading2_style))
+            
+            # 从chart_data获取父网段信息
+            chart_data = data_source.get("chart_data")
+            if chart_data and "parent" in chart_data:
+                parent_info = chart_data["parent"]
+                parent_table_data = [["项目", "值"]]
+                parent_table_data.append(
+                    [
+                        Paragraph("父网段CIDR", table_text_style),
+                        Paragraph(parent_info.get("name", ""), table_text_style)
+                    ]
+                )
+                parent_table_data.append(
+                    [
+                        Paragraph("可用地址数", table_text_style),
+                        Paragraph(f"{parent_info.get('range', 0):,}", table_text_style)
+                    ]
+                )
+                
+                # 创建父网段信息表格
+                table_width = page_width - margins[0] - margins[1]
+                parent_table = Table(parent_table_data, colWidths=[table_width * 0.3, table_width * 0.7])
+                parent_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
+                elements.append(parent_table)
+                elements.append(Spacer(1, 20))
+        
+        # 显示已分配子网信息
         elements.append(Paragraph(data_source["main_name"], heading2_style))
 
         if self._is_k2v_headers(main_headers):
@@ -541,12 +572,12 @@ class ExportUtils:
         else:
             elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
 
-        # 添加网段分布图（仅对子网切分功能，放在剩余网段表之后）
+        # 添加网段分布图（对子网切分和子网规划功能，放在剩余网段表之后）
         chart_data = data_source.get("chart_data")
-        if chart_data and data_source["main_name"] == "切分段信息":
+        if chart_data and data_source["main_name"] in ["切分段信息", "已分配子网信息"]:
             try:
                 print("开始添加网段分布图到PDF...")
-                self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height)
+                self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height, data_source["main_name"])
             except (IOError, ValueError, TypeError, AttributeError) as e:
                 print(f"添加网段分布图失败: {e}")
                 traceback.print_exc()
@@ -645,7 +676,7 @@ class ExportUtils:
         title_y = 100
         return title_font, title_x, title_y
 
-    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, _portrait_height):
+    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, _portrait_height, main_name):
         """添加网段分布图到PDF元素列表
 
         Args:
@@ -654,6 +685,7 @@ class ExportUtils:
             margins: 页面边距
             portrait_width: 纵向页面宽度
             portrait_height: 纵向页面高度
+            main_name: 主数据名称，用于区分子网切分和子网规划
         """
         if not chart_data or 'networks' not in chart_data or len(chart_data['networks']) == 0:
             print("没有有效的网段分布图数据，跳过")
@@ -671,14 +703,51 @@ class ExportUtils:
         parent_range = parent_info.get("range", 1)
         networks = chart_data.get("networks", [])
 
-        # 动态计算图表所需的总高度
-        base_height = 280 + 100 + 100 + 150 + 300
-        split_networks = [net for net in networks if net.get("type") == "split"]
-        remaining_networks = [net for net in networks if net.get("type") != "split"]
+        # 根据main_name区分处理不同类型的图表
+        if main_name == "切分段信息":
+            # 子网切分 - 使用split和非split类型
+            split_networks = [net for net in networks if net.get("type") == "split"]
+            remaining_networks = [net for net in networks if net.get("type") != "split"]
+            chart_type = "split"
+        else:
+            # 子网规划 - 使用split作为需求网段类型，remaining作为剩余网段类型
+            split_networks = [net for net in networks if net.get("type") == "split"]
+            remaining_networks = [net for net in networks if net.get("type") != "split"]
+            chart_type = "plan"
+        
+        # 精确计算图表所需的总高度
+        # 基本元素高度
+        title_height = 280  # 标题部分高度
+        parent_network_height = 150  # 父网段部分高度
+        legend_height = 300  # 图例部分高度
+        
+        # 网段列表高度
+        segment_height = 134  # 每个网段行的高度（100高度 + 34间距）
+        
+        # 需求网段/切分段标题高度
+        demand_title_height = 180 if chart_type == "plan" else 0  # 需求网段标题高度
+        
+        # 分隔线高度
+        separator_height = 100  # 分隔线和间距高度
+        
+        # 剩余网段标题高度
+        remaining_title_height = 180  # 剩余网段标题高度
+        
+        # 计算总高度
         total_networks = len(split_networks) + len(remaining_networks)
-
-        segment_height = 100 + 34
-        required_height = base_height + total_networks * segment_height
+        networks_height = total_networks * segment_height
+        
+        # 精确计算所需总高度
+        required_height = (title_height + 
+                          parent_network_height + 
+                          separator_height + 
+                          demand_title_height + 
+                          len(split_networks) * segment_height + 
+                          separator_height + 
+                          remaining_title_height + 
+                          len(remaining_networks) * segment_height + 
+                          legend_height + 
+                          200)  # 额外的安全间距
 
         # 创建高分辨率图像
         high_res_width = 2480
@@ -768,6 +837,15 @@ class ExportUtils:
         min_bar_width = 120
         padding = 34
         bar_height = 100
+        
+        # 为所有网段分配颜色
+        subnet_colors = [
+            "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",
+            "#5b8fd9", "#3c70d8", "#e68838", "#a04132",
+            "#6a9da8", "#87c569", "#6d8de8", "#c16fa0",
+            "#a99bc6", "#a44d69", "#b9d0f8", "#5d4ea5",
+            "#f5ad8c", "#5b8fd9", "#db6679", "#a6c589",
+        ]
 
         # 绘制标题
         title = "网段分布图"
@@ -835,19 +913,42 @@ class ExportUtils:
 
         y += bar_height + padding
 
-        # 绘制切分网段
+        # 在父网段和需求/切分网段之间添加分割线
+        draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
+        y += 60
+        
+        # 绘制需求网段标题
+        if chart_type == "plan":
+            demand_count = len(split_networks)
+            title_text = f"需求网段 ({demand_count} 个):"
+            title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
+            title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
+            draw_text_with_stroke(draw, (chart_x, title_text_y), title_text, bold_text_font, "#ffffff")
+            y += 100
+        
+        # 绘制切分/需求网段
         for i, network in enumerate(split_networks):
             network_range = network.get("range", 1)
             log_value = max(log_min, math.log10(network_range))
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
-            split_color = "#4a7eb4"
+            
+            if chart_type == "split":
+                # 子网切分
+                split_color = "#4a7eb4"
+                name = network.get("name", "")
+                segment_text = f"切分网段: {name}"
+            else:
+                # 子网规划 - 使用多彩样式
+                color_index = i % len(subnet_colors)
+                split_color = subnet_colors[color_index]
+                name = network.get("name", "")
+                segment_text = f"网段 {i + 1}: {name}"
+            
             draw.rectangle([chart_x, y, chart_x +
                 bar_width, y +
                 bar_height], fill=split_color, outline=None, width=0)
 
-            name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
-            segment_text = f"切分网段: {name}"
             address_text = f"可用地址数: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
@@ -861,12 +962,12 @@ class ExportUtils:
 
             y += bar_height + padding
 
-            if i == len(split_networks) - 1:
-                draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
+        # 在需求/切分网段和剩余网段之间添加分割线
+        draw.line([chart_x, y + 20, chart_x + chart_width, y + 20], fill="#cccccc", width=4)
 
         # 绘制剩余网段标题
         y += 80
-        remaining_count = len([net for net in networks if net.get("type") != "split"])
+        remaining_count = len(remaining_networks)
         title_text = f"剩余网段 ({remaining_count} 个):"
 
         title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
@@ -874,17 +975,7 @@ class ExportUtils:
         draw_text_with_stroke(draw, (chart_x, title_text_y), title_text, bold_text_font, "#ffffff")
         y += 100
 
-        # 为剩余网段分配颜色
-        subnet_colors = [
-            "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",
-            "#5b8fd9", "#3c70d8", "#e68838", "#a04132",
-            "#6a9da8", "#87c569", "#6d8de8", "#c16fa0",
-            "#a99bc6", "#a44d69", "#b9d0f8", "#5d4ea5",
-            "#f5ad8c", "#5b8fd9", "#db6679", "#a6c589",
-        ]
-
         # 绘制剩余网段
-        remaining_networks = [net for net in networks if net.get("type") != "split"]
         for i, network in enumerate(remaining_networks):
             network_range = network.get("range", 1)
             log_value = max(log_min, math.log10(network_range))
@@ -897,7 +988,12 @@ class ExportUtils:
 
             name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
-            segment_text = f"网段 {i + 1}: {name}"
+            
+            if chart_type == "split":
+                segment_text = f"网段 {i + 1}: {name}"
+            else:
+                segment_text = f"网段 {i + 1}: {name}"
+                
             address_text = f"可用地址数: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
@@ -948,30 +1044,62 @@ class ExportUtils:
             parent_block_size +
             25, parent_label_y), parent_label, parent_text_font, "#ffffff")
 
-        # 切分网段图例
-        split_x = parent_x + 300
-        split_color = "#4a7eb4"
-        split_label = "切分网段"
-        split_block_size = 40
+        # 切分/需求网段图例 - 动态计算位置，增加间距
+        # 先计算父网段图例的总宽度
+        parent_label_width = parent_label_bbox[2] - parent_label_bbox[0]
+        split_x = parent_x + parent_block_size + 25 + parent_label_width + 80  # 增加间距到80
         split_text_font = text_font
-        split_label_bbox = draw.textbbox((0, 0), split_label, font=split_text_font)
-
-        split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
-        split_label_y = get_centered_text_y(legend_container_y, legend_container_height, split_label_bbox)
-
-        draw.rectangle([split_x, split_block_y, split_x + split_block_size, split_block_y + split_block_size],
         
-                      fill=split_color, outline=None, width=0)
-        draw_text_with_stroke(draw, (split_x +
-            split_block_size +
-            25, split_label_y), split_label, split_text_font, "#ffffff")
+        if chart_type == "split":
+            # 子网切分 - 单一颜色
+            split_color = "#4a7eb4"
+            split_label = "切分网段"
+            split_block_size = 40
+            
+            split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
+            split_label_bbox = draw.textbbox((0, 0), split_label, font=split_text_font)
+            split_label_y = get_centered_text_y(legend_container_y, legend_container_height, split_label_bbox)
+            
+            draw.rectangle([split_x, split_block_y, split_x + split_block_size, split_block_y + split_block_size],
+                          fill=split_color, outline=None, width=0)
+            draw_text_with_stroke(draw, (split_x + split_block_size + 15, split_label_y), split_label, split_text_font, "#ffffff")
+        else:
+            # 子网规划 - 多彩样式
+            split_label = "需求网段(多色)"
+            legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
+            split_block_size = 30
+            split_block_gap = 15  # 减小颜色块之间的间距
+            
+            split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
+            split_label_bbox = draw.textbbox((0, 0), split_label, font=split_text_font)
+            split_label_y = get_centered_text_y(legend_container_y, legend_container_height, split_label_bbox)
+            
+            # 绘制多彩图例块
+            for j, color in enumerate(legend_colors):
+                draw.rectangle(
+                    [split_x + j * (split_block_size + split_block_gap), split_block_y,
+                     split_x + j * (split_block_size + split_block_gap) + split_block_size,
+                     split_block_y + split_block_size],
+                    fill=color, outline=None, width=0
+                )
+            
+            draw_text_with_stroke(draw,
+                (split_x + len(legend_colors) * (split_block_size + split_block_gap) + 15, split_label_y),
+                split_label, text_font, "#ffffff"
+            )
 
-        # 剩余网段图例
-        remaining_x = split_x + 320
+        # 剩余网段图例 - 动态计算位置，增加间距
+        # 计算切分/需求网段图例的总宽度
+        if chart_type == "split":
+            split_label_width = draw.textbbox((0, 0), "切分网段", font=split_text_font)[2] - draw.textbbox((0, 0), "切分网段", font=split_text_font)[0]
+            remaining_x = split_x + split_block_size + 15 + split_label_width + 80  # 增加间距到80
+        else:
+            split_label_width = draw.textbbox((0, 0), "需求网段(多色)", font=split_text_font)[2] - draw.textbbox((0, 0), "需求网段(多色)", font=split_text_font)[0]
+            remaining_x = split_x + len(legend_colors) * (split_block_size + split_block_gap) + 15 + split_label_width + 80  # 增加间距到80
         remaining_label = "剩余网段(多色)"
         legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
         remaining_block_size = 30
-        remaining_block_gap = 25
+        remaining_block_gap = 15  # 减小颜色块之间的间距
         remaining_text_font = text_font
         remaining_label_bbox = draw.textbbox((0, 0), remaining_label, font=remaining_text_font)
 
@@ -982,14 +1110,12 @@ class ExportUtils:
             draw.rectangle(
                 [remaining_x + j * (remaining_block_size + remaining_block_gap), remaining_block_y,
                  remaining_x + j * (remaining_block_size + remaining_block_gap) + remaining_block_size,
-                 
                  remaining_block_y + remaining_block_size],
                 fill=color, outline=None, width=0
             )
 
         draw_text_with_stroke(draw,
-            (remaining_x + len(legend_colors) * (remaining_block_size + remaining_block_gap) + 40, remaining_label_y),
-            
+            (remaining_x + len(legend_colors) * (remaining_block_size + remaining_block_gap) + 15, remaining_label_y),
             remaining_label, text_font, "#ffffff"
         )
 
@@ -1006,14 +1132,17 @@ class ExportUtils:
         image_ratio = high_res_width / actual_image_height
 
         available_width = portrait_width - margins[0] - margins[1] - 20
-        available_height = 680
-
-        final_pdf_height = available_height
-        final_pdf_width = final_pdf_height * image_ratio
-
-        if final_pdf_width > available_width:
-            final_pdf_width = available_width
-            final_pdf_height = final_pdf_width / image_ratio
+        
+        # 不固定高度，而是根据图像比例和可用宽度计算合适的高度
+        # 先根据可用宽度计算理论高度
+        final_pdf_width = available_width
+        final_pdf_height = final_pdf_width / image_ratio
+        
+        # 确保高度不会超过页面的可用高度
+        max_available_height = _portrait_height - margins[2] - margins[3] - 20
+        if final_pdf_height > max_available_height:
+            final_pdf_height = max_available_height
+            final_pdf_width = final_pdf_height * image_ratio
 
         # 添加图像到PDF
         elements.append(RLImage(img_byte_arr, width=final_pdf_width, height=final_pdf_height))
