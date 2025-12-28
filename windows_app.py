@@ -732,7 +732,7 @@ class IPSubnetSplitterApp:
 
         # 创建信息栏框架 - 放在 spacer 内，使用 place 布局
         self.info_bar_frame = ttk.Frame(self.info_spacer, style="InfoBar.TFrame")
-        self.info_bar_frame.place(x=10, y=30, width=30, height=30)
+        self.info_bar_frame.place(x=10, y=0, width=30, height=30)
 
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
@@ -4242,7 +4242,7 @@ class IPSubnetSplitterApp:
         self.info_spacer.pack_forget()
         self.info_bar_animating = False
         # 使用固定宽度而不是relwidth=0，确保框架有正确的大小
-        self.info_bar_frame.place(x=10, y=30, width=30, height=30)
+        self.info_bar_frame.place(x=10, y=0, width=30, height=30)
 
     def hide_info_bar(self, from_timer=False):
         """隐藏信息栏"""
@@ -6062,7 +6062,7 @@ class IPSubnetSplitterApp:
         if not self.info_bar_frame.winfo_manager():
             # 先临时显示，以便获取宽度
             self.info_spacer.pack(side="bottom", fill="x")
-            self.info_bar_frame.place(x=10, y=30, width=max(self.info_bar_ref_width, 400), height=30)
+            self.info_bar_frame.place(x=10, y=0, width=max(self.info_bar_ref_width, 400), height=30)
 
         # 更新窗口，确保能获取到准确的宽度
         self.root.update_idletasks()
