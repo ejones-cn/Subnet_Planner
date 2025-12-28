@@ -32,13 +32,13 @@ def create_pack_config(pack_type="onefile"):
 
     # 基础命令
     cmd = [
-        sys.executable,
+        "C:\\Users\\ejone\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
         "-m",
         "PyInstaller",
         f"--{pack_type}",  # 打包模式
         "--windowed",  # 窗口模式，无控制台
         "--icon=icon.ico",  # 指定图标
-        "--name=子网规划师",  # 程序名称
+        "--name=SubnetPlanner",  # 程序名称（英文版）
         "--distpath=dist",  # 输出目录
         "--workpath=build",  # 工作目录
         "--clean",  # 清理临时文件
