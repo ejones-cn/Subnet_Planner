@@ -16,6 +16,53 @@ import os
 import traceback
 import csv
 
+# 全局变量定义
+SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
+
+# 高DPI支持 - 确保应用在高分辨率屏幕上显示清晰
+# Windows高DPI感知设置
+if sys.platform == 'win32':
+    try:
+        # 设置Windows DPI感知
+        import ctypes
+        
+        # 定义DPI感知模式常量
+        PROCESS_DPI_UNAWARE = 0
+        PROCESS_SYSTEM_DPI_AWARE = 1
+        PROCESS_PER_MONITOR_DPI_AWARE = 2
+        PROCESS_PER_MONITOR_DPI_AWARE_V2 = 3
+        
+        # 尝试使用最新的DPI感知模式（Windows 10 1607+）
+        try:
+            # 设置进程为每个监视器DPI感知V2模式，支持多显示器不同DPI
+            ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE_V2)
+            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE_V2"
+        except AttributeError:
+            # 如果不支持V2，尝试使用V1
+            ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
+            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE"
+        except Exception:
+            # 回退到系统DPI感知
+            ctypes.windll.user32.SetProcessDPIAware()
+            DPI_MODE = "SetProcessDPIAware"
+        
+        # 获取当前DPI和缩放因子
+        hdc = ctypes.windll.user32.GetDC(None)
+        LOGPIXELSX = 88  # 水平DPI
+        LOGPIXELSY = 90  # 垂直DPI
+        dpi_x = ctypes.windll.gdi32.GetDeviceCaps(hdc, LOGPIXELSX)
+        dpi_y = ctypes.windll.gdi32.GetDeviceCaps(hdc, LOGPIXELSY)
+        ctypes.windll.user32.ReleaseDC(None, hdc)
+        
+        # 计算缩放因子
+        SCALE_FACTOR = dpi_x / 96.0
+        print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
+        
+    except Exception as e:
+        print(f"⚠️ 设置DPI感知失败: {e}")
+        # 定义默认缩放因子
+        SCALE_FACTOR = 1.0
+
 # 外部库导入
 import ipaddress
 from openpyxl import Workbook
@@ -6739,9 +6786,22 @@ if __name__ == "__main__":
     # 创建主窗口
     root = tk.Tk()
 
-    # 设置窗口初始大小 - 调整高度以确保子网需求和规划结果两个表格都显示5行
-    WINDOW_WIDTH = 850
-    WINDOW_HEIGHT = 750  # 调整窗口高度，确保两个表格都能显示5行
+    # 获取DPI缩放因子（如果未定义则默认为1.0）
+    # 全局变量已在文件开头定义，无需再次声明
+    try:
+        pass  # SCALE_FACTOR已在文件开头定义
+    except NameError:
+        SCALE_FACTOR = 1.0
+    
+    # 设置窗口初始大小 - 根据DPI缩放因子调整
+    BASE_WIDTH = 850
+    BASE_HEIGHT = 750
+    
+    # 根据DPI缩放窗口大小
+    WINDOW_WIDTH = int(BASE_WIDTH)
+    WINDOW_HEIGHT = int(BASE_HEIGHT * SCALE_FACTOR)
+    
+    print(f"📏 窗口尺寸: {WINDOW_WIDTH}x{WINDOW_HEIGHT} (缩放因子: {SCALE_FACTOR:.2f})")
 
     # 获取屏幕尺寸
     screen_width = root.winfo_screenwidth()
@@ -6755,7 +6815,7 @@ if __name__ == "__main__":
     root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{window_x}+{window_y}")
 
     # 设置窗口固定宽度，高度可调整
-    root.minsize(850, 750)
+    root.minsize(BASE_WIDTH, int(BASE_HEIGHT * SCALE_FACTOR))
     root.maxsize(1100, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
 
     # 只允许调整窗口高度，不允许调整宽度
@@ -6808,29 +6868,41 @@ if __name__ == "__main__":
 
     try:
         icon_path = None
+        icon_png_path = None
         if hasattr(sys, 'frozen') and sys.frozen:
             meipass = getattr(sys, '_MEIPASS', None)
             if meipass:
                 icon_path = os.path.join(meipass, "icon.ico")
+                icon_png_path = os.path.join(meipass, "icon.png")
             else:
                 import nuitka
                 icon_path = os.path.join(nuitka.__path__[0], "icon.ico") if nuitka.__path__ else "icon.ico"
+                icon_png_path = os.path.join(nuitka.__path__[0], "icon.png") if nuitka.__path__ else "icon.png"
         else:
             icon_path = "icon.ico"
+            icon_png_path = "icon.png"
 
         if os.path.exists(icon_path):
-            try:
-                root.iconbitmap(default=icon_path)
-            except tk.TclError:
-                pass
-
-            try:
-                photo_icon = tk.PhotoImage(file=icon_path)
-                root.iconphoto(True, photo_icon)
-            except tk.TclError:
-                pass
+            # 只使用Windows API方式设置图标，确保高质量显示
+            set_window_icon(root, icon_path, icon_png_path)
             
-            set_window_icon(root, icon_path, None)
+            # 对于Tkinter，我们应该使用高质量的PNG图标而不是ICO
+            if os.path.exists(icon_png_path):
+                try:
+                    # 使用PhotoImage设置PNG图标，支持高质量显示
+                    from PIL import Image, ImageTk
+                    img = Image.open(icon_png_path)
+                    photo_icon = ImageTk.PhotoImage(img)
+                    root.iconphoto(True, photo_icon)
+                    print(f"✅ 使用高质量PNG图标: {icon_png_path}")
+                except Exception as e:
+                    print(f"⚠️ 设置PNG图标失败: {e}")
+                    # 如果PNG设置失败，尝试使用ICO作为备选
+                    try:
+                        root.iconbitmap(default=icon_path)
+                        print(f"⚠️ 备选: 使用ICO图标: {icon_path}")
+                    except tk.TclError:
+                        pass
     except (tk.TclError, OSError) as e:
         print(f"设置窗口图标失败: {e}")
 
