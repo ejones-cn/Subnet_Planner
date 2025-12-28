@@ -413,6 +413,15 @@ class IPSubnetSplitterApp:
         # 高级工具历史记录列表
         self.ipv4_history = ["192.168.1.1"]  # IPv4地址查询历史
         self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]  # IPv6地址查询历史
+
+        # 图表相关属性（预声明，避免Attribute-defined-outside-init警告）
+        self.planning_chart_frame = None
+        self.planning_chart_canvas = None
+        self.planning_chart_v_scrollbar = None
+        self.planning_chart_data = None
+
+        # 窗口背景色（预声明，动态更新）
+        self.bg_color = None
         self.range_start_history = ["192.168.0.1"]  # IP范围起始地址历史
         self.range_end_history = ["192.168.30.254"]  # IP范围结束地址历史
 
@@ -6054,7 +6063,7 @@ class IPSubnetSplitterApp:
         # 使用主窗口宽度的88%作为信息栏宽度，放大截断位置
         info_bar_width = int(main_window_width * 1)
         # 确保不小于原始的最小宽度
-        info_bar_width = max(info_bar_width, self.MIN_INFO_BAR_WIDTH)
+        info_bar_width = max(info_bar_width, self.min_info_bar_width)
 
         # 确保info_bar_frame已经添加到父容器中
         # 使用place布局时winfo_manager()返回"place"，所以用not判断
@@ -6069,10 +6078,10 @@ class IPSubnetSplitterApp:
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
         # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
         # 增加内边距减去值，确保能显示更多字符
-        max_pixel_width = info_bar_width - 60 - self.CLOSE_BTN_WIDTH  # 减去更小的内边距和关闭按钮宽度
+        max_pixel_width = info_bar_width - 60 - self.close_btn_width  # 减去更小的内边距和关闭按钮宽度
 
         # 确保最大像素宽度为正数
-        max_pixel_width = max(max_pixel_width, self.MIN_PIXEL_WIDTH)
+        max_pixel_width = max(max_pixel_width, self.min_pixel_width)
 
         # 创建字体对象，用于测量文本宽度
         try:
