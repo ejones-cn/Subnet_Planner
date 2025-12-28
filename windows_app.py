@@ -4806,15 +4806,27 @@ class IPSubnetSplitterApp:
         content_container = ttk.Frame(self.overlap_frame, padding="10")
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
 
-        # 创建输入区域
-        input_frame = ttk.LabelFrame(content_container, text="子网列表", padding=(10, 10, 0, 10))
-        input_frame.pack(fill=tk.X, pady=(0, 10))
+        # 创建左右两列框架
+        left_frame = ttk.Frame(content_container)
+        right_frame = ttk.Frame(content_container)
+
+        # 使用grid布局，固定左侧宽度，右侧自适应
+        content_container.grid_columnconfigure(0, minsize=191, weight=0)  # 固定左侧宽度，参考子网合并页面
+        content_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
+        content_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
+
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+
+        # 左侧：子网列表
+        input_frame = ttk.LabelFrame(left_frame, text="子网列表", padding=(10, 10, 0, 10))
+        input_frame.pack(fill=tk.BOTH, expand=True)
 
         # 子网输入文本框和滚动条
         text_frame = ttk.Frame(input_frame)
-        text_frame.pack(fill=tk.BOTH, expand=False)
+        text_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.overlap_text = tk.Text(text_frame, height=10, width=60, font=("微软雅黑", 10))
+        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=("微软雅黑", 10))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23")
 
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
@@ -4823,12 +4835,12 @@ class IPSubnetSplitterApp:
         # 使用通用方法创建带自动隐藏滚动条的Text组件
         self.create_scrollable_text(text_frame, self.overlap_text, overlap_text_scrollbar)
 
-        # 直接创建检测重叠按钮 - 靠右放置
+        # 检测重叠按钮 - 靠左放置
         self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
-        self.overlap_btn.pack(side=tk.RIGHT, pady=(5, 0), padx=(0, 10))
+        self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10))
 
-        # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text="检测结果", padding=(10, 10, 0, 10))
+        # 右侧：检测结果
+        result_frame = ttk.LabelFrame(right_frame, text="检测结果", padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
@@ -4837,8 +4849,8 @@ class IPSubnetSplitterApp:
         self.overlap_result_tree.heading("status", text="状态")
         self.overlap_result_tree.heading("message", text="描述")
 
-        self.overlap_result_tree.column("status", width=50)
-        self.overlap_result_tree.column("message", width=450)
+        self.overlap_result_tree.column("status", width=60, minwidth=60, stretch=True)
+        self.overlap_result_tree.column("message", width=400, minwidth=400, stretch=True)
 
         # 添加垂直滚动条
         overlap_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
@@ -4926,6 +4938,9 @@ class IPSubnetSplitterApp:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
+
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.merge_result_tree)
 
             # 操作成功完成，添加到历史记录
             self.update_range_start_history()
@@ -5656,6 +5671,9 @@ class IPSubnetSplitterApp:
                     tag = "odd" if row_index % 2 == 0 else "even"
                     self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
                     row_index += 1
+            
+            # 数据添加完成后，自动调整列宽以适应内容
+            self.auto_resize_columns(self.overlap_result_tree)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
             self.show_info("错误", f"执行子网重叠检测失败: {str(e)}")
