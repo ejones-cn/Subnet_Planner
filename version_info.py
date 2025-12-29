@@ -5,6 +5,16 @@ Windows 版本资源文件
 用于 PyInstaller 打包
 """
 
+from pyinstaller.utils.win32.versioninfo import (  # type: ignore[import]
+    VSVersionInfo,
+    FixedFileInfo,
+    StringFileInfo,
+    StringTable,
+    StringStruct,
+    VarFileInfo,
+    VarStruct,
+)
+
 VSVersionInfo(
     ffi=FixedFileInfo(
         filevers=(2, 0, 0, 0),

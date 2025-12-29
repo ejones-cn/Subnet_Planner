@@ -11,6 +11,9 @@ import shutil
 import sys
 import argparse
 
+# 导入版本管理模块
+from version import get_version
+
 
 # 清理旧的打包文件
 def clean_old_builds():
@@ -29,16 +32,19 @@ def create_pack_config(pack_type="onefile"):
         pack_type: 打包类型，'onefile'或'onedir'
     """
     print(f"创建{pack_type}版本打包配置...")
+    
+    # 获取版本号
+    version = get_version()
 
     # 基础命令
     cmd = [
-        "C:\\Users\\ejone\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        r"C:\Users\ejone\AppData\Local\Programs\Python\Python314\python.exe",
         "-m",
         "PyInstaller",
         f"--{pack_type}",  # 打包模式
         "--windowed",  # 窗口模式，无控制台
         "--icon=icon.ico",  # 指定图标
-        "--name=SubnetPlanner",  # 程序名称（英文版）
+        f"--name=SubnetPlannerV{version}",  # 程序名称（英文版）包含版本号，使用V代替-
         "--distpath=dist",  # 输出目录
         "--workpath=build",  # 工作目录
         "--clean",  # 清理临时文件
@@ -47,9 +53,7 @@ def create_pack_config(pack_type="onefile"):
         "--hidden-import=reportlab",  # 确保reportlab被正确导入
         "--hidden-import=charset_normalizer",  # reportlab的依赖项
         "--hidden-import=openpyxl",  # Excel导出功能依赖
-        "--hidden-import=urllib",  # 确保urllib被正确导入
-        "--hidden-import=urllib3",  # 确保urllib3被正确导入
-        "--add-data=icon.ico;.",  # 包含图标文件到打包后的程序中
+        "--hidden-import=urllib"  # 确保urllib被正确导入
     ]
 
     # 针对单文件版本的优化参数，减少360误报
@@ -94,27 +98,19 @@ def run_pack(cmd):
 
 
 # 测试打包结果
+
 def test_pack_result(sign_info=None):
     print("检查打包结果...")
 
-    # 查找EXE文件
+    # 查找EXE文件 - 匹配包含版本号的文件名（使用V代替-）
     import glob
 
-    exe_files = glob.glob(os.path.join("dist", "**", "子网规划师.exe"), recursive=True)
+    exe_files = glob.glob(os.path.join("dist", "**", "SubnetPlannerV*.exe"), recursive=True)
 
     if exe_files:
         exe_path = exe_files[0]
         print(f"EXE文件已生成: {exe_path}")
         print(f"文件大小: {os.path.getsize(exe_path) / (1024 * 1024):.2f} MB")
-
-        # 手动复制图标文件到EXE所在目录
-        icon_path = os.path.abspath("icon.ico")
-        if os.path.exists(icon_path):
-            import shutil
-
-            target_icon_path = os.path.join(os.path.dirname(exe_path), "icon.ico")
-            shutil.copy2(icon_path, target_icon_path)
-            print(f"图标文件已复制到: {target_icon_path}")
 
         # 如果提供了签名信息，对EXE文件进行签名
         if sign_info:
