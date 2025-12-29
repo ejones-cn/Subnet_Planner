@@ -1337,8 +1337,8 @@ class IPSubnetSplitterApp:
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
         # 设置 split_frame 的 grid 布局，实现两列等宽
-        self.split_frame.grid_columnconfigure(0, weight=1)
-        self.split_frame.grid_columnconfigure(1, weight=1)
+        self.split_frame.grid_columnconfigure(0, weight=1, uniform="equal")
+        self.split_frame.grid_columnconfigure(1, weight=1, uniform="equal")
         self.split_frame.grid_rowconfigure(0, weight=0)
         self.split_frame.grid_rowconfigure(1, weight=1)
 
@@ -1407,23 +1407,34 @@ class IPSubnetSplitterApp:
 
         # 配置 history_frame 的 grid 布局
         history_frame.grid_rowconfigure(0, weight=1)
-        history_frame.grid_rowconfigure(1, weight=0)
+        history_frame.grid_rowconfigure(1, weight=1)
         history_frame.grid_columnconfigure(0, weight=1)  # 表格列
         history_frame.grid_columnconfigure(1, weight=0)  # 滚动条列
         history_frame.grid_columnconfigure(2, weight=0)  # 按钮列
 
-        # 创建历史记录列表
+        # 创建历史记录列表 - 撑满整个框架
         self.history_listbox = tk.Listbox(
-            history_frame, height=3, font=("微软雅黑", 10), highlightthickness=0,
-            selectbackground="#0078D7", selectforeground="white", takefocus=False
+            history_frame, height=3, font=("微软雅黑", 10),
+            highlightthickness=1, highlightbackground="#999999",
+            bd=0, selectbackground="#0078D7", selectforeground="white", takefocus=False
         )
         self.history_listbox.configure(activestyle="none")
-        self.history_listbox.grid(row=0, column=0, sticky="nsew", pady=4)
+        self.history_listbox.grid(row=0, column=0, sticky="nsew", rowspan=2)
 
         # 添加垂直滚动条
         history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_listbox.yview)
         self.history_listbox.configure(yscrollcommand=history_scroll.set)
-        history_scroll.grid(row=0, column=1, sticky=tk.NS)
+
+        # 创建自定义滚动条回调函数，实现滚动条按需显示
+        def history_scrollbar_callback(*args):
+            history_scroll.set(*args)
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                history_scroll.grid_remove()
+            else:
+                history_scroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS, pady=(4, 0))
+
+        self.history_listbox.configure(yscrollcommand=history_scrollbar_callback)
+        history_scrollbar_callback(0.0, 1.0)
 
         # 绑定右键菜单
         self.bind_listbox_right_click(self.history_listbox)
