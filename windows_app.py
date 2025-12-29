@@ -199,21 +199,13 @@ class ColoredNotebook(ttk.Frame):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         # 确保content_area能完全填充笔记本控件的空间
         if hasattr(self, 'content_area'):
-            # 直接设置content_area的大小为笔记本控件的大小
-            self.content_area.configure(width=event.width, height=event.height - self.tab_bar_container.winfo_height())
-
             # 更新content_area的布局，确保它能完全填充笔记本控件的空间
             self.content_area.pack_configure(fill='both', expand=True)
-
-            # 触发内容区域的重绘
-            self.content_area.update_idletasks()
 
             # 如果有选中的标签，确保其内容框架也能正确调整大小
             if hasattr(self, 'active_tab') and self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
                 selected_tab = self.tabs[self.active_tab]
                 selected_tab["content"].pack_configure(fill='both', expand=True)
-                # 直接设置选中标签内容的大小
-                selected_tab["content"].configure(width=self.content_area.winfo_width(), height=self.content_area.winfo_height())
 
     def _on_tab_mouse_down(self, button, color):
         """当鼠标按下标签页时，更新内容区域背景色为按下状态颜色"""
@@ -793,7 +785,8 @@ class IPSubnetSplitterApp:
         self.create_about_link()
         
         # 绑定窗口大小变化事件，动态调整右上角按钮位置
-        self.root.bind('<Configure>', self.on_window_configure)
+        # 避免重复绑定，使用add='+'参数保留之前的绑定
+        self.root.bind('<Configure>', self.on_window_configure, add='+')
 
         # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
@@ -1357,21 +1350,23 @@ class IPSubnetSplitterApp:
         """创建子网切分功能的输入区域"""
         # 创建一个主框架，用于放置输入参数面板和历史记录面板
         input_history_frame = ttk.Frame(self.split_frame)
-        input_history_frame.pack(fill=tk.X, expand=False, pady=(0, 8), anchor=tk.W)  # 撑满宽度，上下排列，靠左对齐
+        input_history_frame.pack(fill=tk.X, expand=False, pady=(0, 8))  # 只水平填充，不垂直扩展
+        
+        # 设置grid布局，让两个面板平分宽度
+        input_history_frame.grid_columnconfigure(0, weight=1, minsize=100)  # 左列可伸缩，权重1
+        input_history_frame.grid_columnconfigure(1, weight=1, minsize=100)  # 右列可伸缩，权重1
+        input_history_frame.grid_rowconfigure(0, weight=1)     # 行可伸缩
 
         # 创建输入参数面板
         input_frame = ttk.LabelFrame(
-            input_history_frame, text="输入参数", padding=(10, 10, 10, 10)
+            input_history_frame, text="输入参数", padding=(10, 5, 10, 5)
         )  # 单独控制各边内边距：左10, 上5, 右5, 下5
-        input_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))  # 靠左放置，垂直填充
+        input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 0))  # 网格布局，填满单元格
 
         # 配置grid行列，减小间距
-        input_frame.grid_columnconfigure(0, minsize=50, weight=0)  # 标签列固定最小宽度
-        input_frame.grid_columnconfigure(1, weight=0)  # 文本框列固定宽度，不拉伸
-        input_frame.grid_columnconfigure(2, weight=0, minsize=5)  # 文本框和按钮之间的间隔列，减小到5px
-        input_frame.grid_columnconfigure(3, weight=0)  # 按钮列固定宽度
-        input_frame.grid_columnconfigure(4, weight=0)  # 按钮列固定宽度
-        input_frame.grid_columnconfigure(5, weight=1)  # 右侧填充列，确保整个区域靠左对齐
+        input_frame.grid_columnconfigure(0, minsize=30, weight=0)  # 标签列固定最小宽度
+        input_frame.grid_columnconfigure(1, minsize=0, weight=1)  # 文本框列可拉伸，填充剩余空间
+        input_frame.grid_columnconfigure(2, weight=0)  # 按钮列固定宽度
 
         # 配置行权重和最小高度，4行布局
         input_frame.grid_rowconfigure(0, weight=0, minsize=0)  # 第0行权重0，最小高度0像素
@@ -1381,7 +1376,7 @@ class IPSubnetSplitterApp:
 
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text="父网段", anchor="w", font=("微软雅黑", 10)).grid(
-            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(0, 5)
+            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
         self.split_parent_networks = ["10.0.0.0/8"]  # 子网切分的父网段历史记录
@@ -1392,29 +1387,27 @@ class IPSubnetSplitterApp:
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,
-            width=25,
             font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
         )
-        self.parent_entry.grid(row=1, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
+        self.parent_entry.grid(row=1, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
         self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text="切分段", anchor="w", font=("微软雅黑", 10)).grid(
-            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(0, 5)
+            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
             values=self.split_networks,
-            width=25,
             font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
         )
-        self.split_entry.grid(row=2, column=1, padx=0, pady=8, sticky=tk.W + tk.N + tk.S)
+        self.split_entry.grid(row=2, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
         self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
 
@@ -1423,19 +1416,19 @@ class IPSubnetSplitterApp:
         self.execute_btn = ttk.Button(input_frame, text="执行切分", command=self.execute_split, width=10)
         # 使用grid布局，通过rowspan=4实现跨四行效果，形成方形按钮
         # 将sticky改为NSEW，确保按钮在单元格内居中对齐
-        self.execute_btn.grid(row=0, column=3, rowspan=4, padx=(2, 0), pady=0, sticky=tk.NSEW)
+        self.execute_btn.grid(row=0, column=2, rowspan=4, padx=(0, 0), pady=0, sticky=tk.NSEW)
 
         # 创建历史记录面板，与输入参数面板同级
-        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 5, 10, 5))
-        history_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # 靠右放置，填充剩余空间
+        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 0, 10, 5))
+        history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))  # 网格布局，填满单元格
 
-        # 创建历史记录表格
+        # 创建历史记录表格，设置合适的高度，与输入参数面板匹配
         self.history_tree = ttk.Treeview(history_frame, columns=('record'), show='', height=4)
         # 添加右键复制功能
         self.bind_treeview_right_click(self.history_tree)
 
         # 设置列宽
-        self.history_tree.column('record', width=180, stretch=True)
+        self.history_tree.column('record', width=200, stretch=True)
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.history_tree)
@@ -1443,7 +1436,7 @@ class IPSubnetSplitterApp:
         # 移除内部框架，直接使用grid布局管理组件
 
         # 配置grid布局，增加一列用于按钮
-        history_frame.grid_rowconfigure(0, weight=0)  # 表格行固定高度，正好显示4行
+        history_frame.grid_rowconfigure(0, weight=1)  # 表格行可伸缩
         history_frame.grid_columnconfigure(0, weight=1)  # 表格列可扩展
         history_frame.grid_columnconfigure(1, weight=0)  # 滚动条列不可扩展
         history_frame.grid_columnconfigure(2, weight=0)  # 按钮列不可扩展
@@ -1466,7 +1459,7 @@ class IPSubnetSplitterApp:
         self.history_tree.configure(yscrollcommand=scrollbar_callback)
 
         # 使用grid布局精确控制位置
-        self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=5, padx=(0, 2))  # 表格在第0行第0列，占据主要空间
+        self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=6, padx=(0, 0))  # 表格在第0行第0列，占据主要空间
         # 初始隐藏滚动条，只有当内容超过可视区域时才显示
         history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)
         scrollbar_callback(0.0, 1.0)
@@ -1478,7 +1471,7 @@ class IPSubnetSplitterApp:
         self.reexecute_btn = ttk.Button(
             history_frame, text="重新切分", command=self.reexecute_split, width=10, style="TButton"
         )
-        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NSEW, pady=5, padx=(5, 0))
+        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NSEW, pady=4.5, padx=(10, 0))
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段表表格的宽度，使其自适应窗口大小"""
@@ -1710,7 +1703,8 @@ class IPSubnetSplitterApp:
         remaining_scrollbar_callback(0.0, 1.0)
 
         # 绑定窗口大小变化事件，实现表格自适应
-        self.root.bind("<Configure>", self.on_window_resize)
+        # 避免重复绑定，使用add='+'参数保留之前的绑定
+        self.root.bind("<Configure>", self.on_window_resize, add='+')
 
         # 初始提示
         self.clear_result()
@@ -1887,7 +1881,8 @@ class IPSubnetSplitterApp:
     def _setup_initial_state(self):
         """设置初始状态"""
         # 绑定窗口大小变化事件，实现表格自适应
-        self.root.bind("<Configure>", self.on_window_resize)
+        # 避免重复绑定，使用add='+'参数保留之前的绑定
+        self.root.bind("<Configure>", self.on_window_resize, add='+')
 
         # 初始提示
         self.clear_result()
