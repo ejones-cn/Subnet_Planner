@@ -569,7 +569,8 @@ class IPSubnetSplitterApp:
         self.style.theme_use("vista")
 
         # 统一设置基本控件的字体样式
-        base_font_style = {"font": ("微软雅黑", 10)}
+        # 使用固定字体大小，确保界面布局稳定
+        base_font_style = {"font": ("微软雅黑", 11)}
         self.style.configure("TLabel", **base_font_style)
         self.style.configure("TEntry", **base_font_style)
         # 按钮除了基本字体外还有额外的样式配置
@@ -6781,8 +6782,6 @@ class IPSubnetSplitterApp:
 if __name__ == "__main__":
     # 创建主窗口
     root = tk.Tk()
-
-    
 
     # 获取DPI缩放因子（如果未定义则默认为1.0）
     # 全局变量已在文件开头定义，无需再次声明

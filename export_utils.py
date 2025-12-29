@@ -193,13 +193,13 @@ class ExportUtils:
                 valid.append(100)
             else:
                 valid.append(width)
-        
+
         # 确保总宽度接近表格可用宽度
         total = sum(valid)
         if total > 0:
             scale_factor = table_width / total
             valid = [w * scale_factor for w in valid]
-        
+
         return valid
 
     def _get_table_style(self, table_colors, has_chinese_font):
