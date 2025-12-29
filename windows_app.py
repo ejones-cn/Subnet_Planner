@@ -6873,7 +6873,7 @@ if __name__ == "__main__":
                 icon_png_path = os.path.join(meipass, "icon.png")
             else:
                 try:
-                    import nuitka as _nuitka_module
+                    import nuitka as _nuitka_module  # type: ignore[import]
                     nuitka_path = getattr(_nuitka_module, '__path__', None)
                     if nuitka_path and len(nuitka_path) > 0:
                         icon_path = os.path.join(nuitka_path[0], "icon.ico")
@@ -6881,7 +6881,7 @@ if __name__ == "__main__":
                     else:
                         icon_path = "icon.ico"
                         icon_png_path = "icon.png"
-                except ImportError:
+                except (ImportError, AttributeError):
                     icon_path = "icon.ico"
                     icon_png_path = "icon.png"
         else:
@@ -6898,7 +6898,7 @@ if __name__ == "__main__":
                     # 使用PhotoImage设置PNG图标，支持高质量显示
                     from PIL import Image, ImageTk
                     img = Image.open(icon_png_path)
-                    photo_icon: tk.PhotoImage = ImageTk.PhotoImage(img)
+                    photo_icon = ImageTk.PhotoImage(img)
                     root.iconphoto(True, photo_icon)  # type: ignore[arg-type]
                     print(f"✅ 使用高质量PNG图标: {icon_png_path}")
                 except Exception as e:
