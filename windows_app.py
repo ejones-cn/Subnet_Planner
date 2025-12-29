@@ -1344,12 +1344,12 @@ class IPSubnetSplitterApp:
 
         # 左侧：输入参数面板
         input_frame = ttk.LabelFrame(
-            self.split_frame, text="输入参数", padding=(10, 5, 10, 10)
+            self.split_frame, text="输入参数", padding=(10, 10, 10, 10)
         )
         input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
         # 右侧：历史记录面板
-        history_frame = ttk.LabelFrame(self.split_frame, text="历史记录", padding=(10, 5, 10, 10))
+        history_frame = ttk.LabelFrame(self.split_frame, text="历史记录", padding=(10, 10, 10, 10))
         history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 配置 input_frame 的 grid 行列
