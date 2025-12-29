@@ -30,7 +30,7 @@ logs/
 # 构建输出
 build/
 *.egg-info/
-#dist/
+# dist/
 dist_nuitka/
 *.exe
 windows_app.dist/
