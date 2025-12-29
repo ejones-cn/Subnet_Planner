@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['f:/trae_projects/Netsub tools/windows_app.py'],
+    ['windows_app.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=[('icon.ico', '.'), ('icon.png', '.')],
+    hiddenimports=['tkinter', 'reportlab', 'charset_normalizer', 'openpyxl', 'urllib', 'urllib3'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -26,15 +26,14 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
-    disable_windowed_traceback=False,
+    disable_windowed_traceback=True,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='f:\\trae_projects\\Netsub tools\\version_info.py',
-    icon=['f:\\trae_projects\\Netsub tools\\icon.ico'],
+    icon=['icon.ico'],
 )

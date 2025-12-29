@@ -23,10 +23,10 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.units import cm
-from reportlab.lib import colors
-from reportlab.platypus import (
+from reportlab.lib.pagesizes import A4, landscape  # type: ignore
+from reportlab.lib.units import cm  # type: ignore
+from reportlab.lib import colors  # type: ignore
+from reportlab.platypus import (  # type: ignore
     BaseDocTemplate,
     PageTemplate,
     Frame,
@@ -38,12 +38,12 @@ from reportlab.platypus import (
     PageBreak,
     NextPageTemplate,
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
+from reportlab.pdfbase import pdfmetrics  # type: ignore
+from reportlab.pdfbase.ttfonts import TTFont  # type: ignore
+from reportlab.lib.enums import TA_CENTER, TA_LEFT  # type: ignore
+from openpyxl import Workbook  # type: ignore
+from openpyxl.styles import Font, Alignment  # type: ignore
 
 MAIN_TABLE_COLORS = {
     "header_bg": "#3498db",

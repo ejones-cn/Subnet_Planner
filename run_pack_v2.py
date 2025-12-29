@@ -58,7 +58,7 @@ if result.returncode == 0:
     exe_path = r"f:\trae_projects\Netsub tools\dist\SubnetPlanner.exe"
     if os.path.exists(exe_path):
         size_mb = os.path.getsize(exe_path) / (1024 * 1024)
-        print(f"\n✅ 打包成功!")
+        print("\n✅ 打包成功!")
         print(f"文件: {exe_path}")
         print(f"大小: {size_mb:.2f} MB")
     else:

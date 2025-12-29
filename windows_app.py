@@ -16,8 +16,8 @@ import os
 import traceback
 import csv
 import ipaddress
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, Alignment
+from openpyxl import Workbook, load_workbook  # type: ignore
+from openpyxl.styles import Font, Alignment  # type: ignore
 
 # 导入自定义模块
 from ip_subnet_calculator import (
@@ -6872,9 +6872,18 @@ if __name__ == "__main__":
                 icon_path = os.path.join(meipass, "icon.ico")
                 icon_png_path = os.path.join(meipass, "icon.png")
             else:
-                import nuitka
-                icon_path = os.path.join(nuitka.__path__[0], "icon.ico") if nuitka.__path__ else "icon.ico"
-                icon_png_path = os.path.join(nuitka.__path__[0], "icon.png") if nuitka.__path__ else "icon.png"
+                try:
+                    import nuitka as _nuitka_module
+                    nuitka_path = getattr(_nuitka_module, '__path__', None)
+                    if nuitka_path and len(nuitka_path) > 0:
+                        icon_path = os.path.join(nuitka_path[0], "icon.ico")
+                        icon_png_path = os.path.join(nuitka_path[0], "icon.png")
+                    else:
+                        icon_path = "icon.ico"
+                        icon_png_path = "icon.png"
+                except ImportError:
+                    icon_path = "icon.ico"
+                    icon_png_path = "icon.png"
         else:
             icon_path = "icon.ico"
             icon_png_path = "icon.png"
@@ -6889,8 +6898,8 @@ if __name__ == "__main__":
                     # 使用PhotoImage设置PNG图标，支持高质量显示
                     from PIL import Image, ImageTk
                     img = Image.open(icon_png_path)
-                    photo_icon = ImageTk.PhotoImage(img)
-                    root.iconphoto(True, photo_icon)
+                    photo_icon: tk.PhotoImage = ImageTk.PhotoImage(img)
+                    root.iconphoto(True, photo_icon)  # type: ignore[arg-type]
                     print(f"✅ 使用高质量PNG图标: {icon_png_path}")
                 except Exception as e:
                     print(f"⚠️ 设置PNG图标失败: {e}")
