@@ -1431,7 +1431,7 @@ class IPSubnetSplitterApp:
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
                 history_scroll.grid_remove()
             else:
-                history_scroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS, pady=(4, 0))
+                history_scroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
 
         self.history_listbox.configure(yscrollcommand=history_scrollbar_callback)
         history_scrollbar_callback(0.0, 1.0)
