@@ -1415,7 +1415,7 @@ class IPSubnetSplitterApp:
         # 创建历史记录列表 - 撑满整个框架
         self.history_listbox = tk.Listbox(
             history_frame, height=3, font=("微软雅黑", 10),
-            highlightthickness=1, highlightbackground="#999999",
+            highlightthickness=1, highlightbackground="#999999", highlightcolor="#999999",
             bd=0, selectbackground="#0078D7", selectforeground="white", takefocus=False
         )
         self.history_listbox.configure(activestyle="none")
