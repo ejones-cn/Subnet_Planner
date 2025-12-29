@@ -861,56 +861,44 @@ class IPSubnetSplitterApp:
             bool: 如果CIDR格式有效则返回True，否则返回False
         """
 
-    def update_history_tree(self):
+    def update_history_listbox(self):
         """更新历史记录列表"""
         try:
             # 清空现有历史记录
-            self.clear_tree_items(self.history_tree)
+            self.history_listbox.delete(0, tk.END)
 
             # 重新插入所有历史记录
             for index, history_record in enumerate(self.history_records, 1):
-                # 设置斑马条纹标签
-                tags = ("even",) if index % 2 == 0 else ("odd",)
                 # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
                 formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
-                self.history_tree.insert("", tk.END, values=(formatted_record,), tags=tags)
+                self.history_listbox.insert(tk.END, formatted_record)
+
+            # 应用斑马条纹效果
+            for index in range(self.history_listbox.size()):
+                bg_color = "#d8d8d8" if (index + 1) % 2 == 0 else "#ffffff"
+                self.history_listbox.itemconfigure(index, bg=bg_color)
         except (tk.TclError, AttributeError) as e:
             # 错误处理，确保GUI更新失败不会导致程序崩溃
             print(f"更新历史记录列表失败: {str(e)}")
 
     def reexecute_split(self):
         """从历史记录重新执行切分操作"""
-        # 获取选中的历史记录
-        selected_items = self.history_tree.selection()
-        if not selected_items:
+        # 获取选中的历史记录索引
+        selected_indices = self.history_listbox.curselection()
+        if not selected_indices:
             self.show_info("提示", "请选择一条历史记录")
             return
 
-        # 获取选中项的值
-        selected_item = selected_items[0]
-        item_values = self.history_tree.item(selected_item, "values")
+        # 获取选中项的索引
+        selected_index = selected_indices[0]
 
-        if not item_values:
+        # 获取对应索引的历史记录
+        if selected_index >= len(self.history_records):
             return
 
-        # 解析格式化的记录字符串："1. 10.0.0.8/5 | 10.21.60.0/23"
-        record_str = item_values[0]
-        # 移除序号部分，保留后面的网段信息
-        # 使用更灵活的分割方式，处理不同数量的空格
-        # 匹配序号后的网段信息，例如："1.  10.0.0.8/5 | 10.21.60.0/23" -> "10.0.0.8/5 | 10.21.60.0/23"
-        match = re.match(r'^\d+\.\s+(.*)$', record_str)
-        if not match:
-            return
-        network_part = match.group(1)
-
-        # 分割父网段和切分段，处理不同数量的空格
-        parts = re.split(r'\s*\|\s*', network_part)
-        if len(parts) < 2:
-            return
-
-        # 提取父网段和切分段
-        parent = parts[0]
-        split = parts[1]
+        history_record = self.history_records[selected_index]
+        parent = history_record['parent']
+        split = history_record['split']
 
         # 填充到输入框
         self.parent_entry.delete(0, tk.END)
@@ -1348,31 +1336,30 @@ class IPSubnetSplitterApp:
 
     def create_split_input_section(self):
         """创建子网切分功能的输入区域"""
-        # 创建一个主框架，用于放置输入参数面板和历史记录面板
-        input_history_frame = ttk.Frame(self.split_frame)
-        input_history_frame.pack(fill=tk.X, expand=False, pady=(0, 8))  # 只水平填充，不垂直扩展
-        
-        # 设置grid布局，让两个面板平分宽度
-        input_history_frame.grid_columnconfigure(0, weight=1, minsize=100)  # 左列可伸缩，权重1
-        input_history_frame.grid_columnconfigure(1, weight=1, minsize=100)  # 右列可伸缩，权重1
-        input_history_frame.grid_rowconfigure(0, weight=1)     # 行可伸缩
+        # 设置 split_frame 的 grid 布局，实现两列等宽
+        self.split_frame.grid_columnconfigure(0, weight=1)
+        self.split_frame.grid_columnconfigure(1, weight=1)
+        self.split_frame.grid_rowconfigure(0, weight=0)
+        self.split_frame.grid_rowconfigure(1, weight=1)
 
-        # 创建输入参数面板
+        # 左侧：输入参数面板
         input_frame = ttk.LabelFrame(
-            input_history_frame, text="输入参数", padding=(10, 5, 10, 5)
-        )  # 单独控制各边内边距：左10, 上5, 右5, 下5
-        input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 0))  # 网格布局，填满单元格
+            self.split_frame, text="输入参数", padding=(10, 5, 10, 10)
+        )
+        input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        # 配置grid行列，减小间距
-        input_frame.grid_columnconfigure(0, minsize=30, weight=0)  # 标签列固定最小宽度
-        input_frame.grid_columnconfigure(1, minsize=0, weight=1)  # 文本框列可拉伸，填充剩余空间
-        input_frame.grid_columnconfigure(2, weight=0)  # 按钮列固定宽度
+        # 右侧：历史记录面板
+        history_frame = ttk.LabelFrame(self.split_frame, text="历史记录", padding=(10, 5, 10, 10))
+        history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
-        # 配置行权重和最小高度，4行布局
-        input_frame.grid_rowconfigure(0, weight=0, minsize=0)  # 第0行权重0，最小高度0像素
-        input_frame.grid_rowconfigure(1, weight=0)  # 第1行权重0，不拉伸
-        input_frame.grid_rowconfigure(2, weight=0)  # 第2行权重0，不拉伸
-        input_frame.grid_rowconfigure(3, weight=0, minsize=0)  # 第3行权重0，最小高度0像素
+        # 配置 input_frame 的 grid 行列
+        input_frame.grid_columnconfigure(0, minsize=30, weight=0)
+        input_frame.grid_columnconfigure(1, minsize=0, weight=1)
+        input_frame.grid_columnconfigure(2, weight=0)
+        input_frame.grid_rowconfigure(0, weight=0, minsize=0)
+        input_frame.grid_rowconfigure(1, weight=0)
+        input_frame.grid_rowconfigure(2, weight=0)
+        input_frame.grid_rowconfigure(3, weight=0, minsize=0)
 
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text="父网段", anchor="w", font=("微软雅黑", 10)).grid(
@@ -1418,60 +1405,34 @@ class IPSubnetSplitterApp:
         # 将sticky改为NSEW，确保按钮在单元格内居中对齐
         self.execute_btn.grid(row=0, column=2, rowspan=4, padx=(0, 0), pady=0, sticky=tk.NSEW)
 
-        # 创建历史记录面板，与输入参数面板同级
-        history_frame = ttk.LabelFrame(input_history_frame, text="历史记录", padding=(10, 0, 10, 5))
-        history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))  # 网格布局，填满单元格
+        # 配置 history_frame 的 grid 布局
+        history_frame.grid_rowconfigure(0, weight=1)
+        history_frame.grid_rowconfigure(1, weight=0)
+        history_frame.grid_columnconfigure(0, weight=1)  # 表格列
+        history_frame.grid_columnconfigure(1, weight=0)  # 滚动条列
+        history_frame.grid_columnconfigure(2, weight=0)  # 按钮列
 
-        # 创建历史记录表格，设置合适的高度，与输入参数面板匹配
-        self.history_tree = ttk.Treeview(history_frame, columns=('record'), show='', height=4)
-        # 添加右键复制功能
-        self.bind_treeview_right_click(self.history_tree)
-
-        # 设置列宽
-        self.history_tree.column('record', width=200, stretch=True)
-
-        # 配置斑马条纹样式
-        self.configure_treeview_styles(self.history_tree)
-
-        # 移除内部框架，直接使用grid布局管理组件
-
-        # 配置grid布局，增加一列用于按钮
-        history_frame.grid_rowconfigure(0, weight=1)  # 表格行可伸缩
-        history_frame.grid_columnconfigure(0, weight=1)  # 表格列可扩展
-        history_frame.grid_columnconfigure(1, weight=0)  # 滚动条列不可扩展
-        history_frame.grid_columnconfigure(2, weight=0)  # 按钮列不可扩展
+        # 创建历史记录列表
+        self.history_listbox = tk.Listbox(
+            history_frame, height=3, font=("微软雅黑", 10), highlightthickness=0,
+            selectbackground="#0078D7", selectforeground="white", takefocus=False
+        )
+        self.history_listbox.configure(activestyle="none")
+        self.history_listbox.grid(row=0, column=0, sticky="nsew", pady=4)
 
         # 添加垂直滚动条
-        history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
+        history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=self.history_listbox.yview)
+        self.history_listbox.configure(yscrollcommand=history_scroll.set)
+        history_scroll.grid(row=0, column=1, sticky=tk.NS)
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
-        def scrollbar_callback(*args):
-            # 更新滚动条位置
-            history_scroll.set(*args)
-            # 检查是否需要显示滚动条
-            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
-                history_scroll.grid_remove()
-            else:
-                # 内容可滚动，显示滚动条
-                history_scroll.grid()
+        # 绑定右键菜单
+        self.bind_listbox_right_click(self.history_listbox)
 
-        self.history_tree.configure(yscrollcommand=scrollbar_callback)
-
-        # 使用grid布局精确控制位置
-        self.history_tree.grid(row=0, column=0, sticky=tk.NSEW, pady=6, padx=(0, 0))  # 表格在第0行第0列，占据主要空间
-        # 初始隐藏滚动条，只有当内容超过可视区域时才显示
-        history_scroll.grid(row=0, column=1, sticky=tk.NS, pady=5)
-        scrollbar_callback(0.0, 1.0)
-
-        # 配置更紧凑的按钮样式，减小内部文字间距
-        self.style.configure("CompactText.TButton", font=("微软雅黑", 10), padding=(2, 0, 2, 0))  # 减小垂直内边距
-
-        # 创建重新切分按钮，宽度与历史记录表一致
+        # 创建重新切分按钮 - 与执行切分按钮样式一致
         self.reexecute_btn = ttk.Button(
-            history_frame, text="重新切分", command=self.reexecute_split, width=10, style="TButton"
+            history_frame, text="重新切分", command=self.reexecute_split, width=10
         )
-        self.reexecute_btn.grid(row=0, column=2, sticky=tk.NSEW, pady=4.5, padx=(10, 0))
+        self.reexecute_btn.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(5, 0))
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段表表格的宽度，使其自适应窗口大小"""
@@ -1558,8 +1519,11 @@ class IPSubnetSplitterApp:
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
         result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
-        # 调整底部外边距，将结果区域与窗体下边距缩小
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 0))
+        result_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=(0, 0), pady=(0, 0))
+
+        # 配置 result_frame 的 grid 布局
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
 
         # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         self.export_btn = ttk.Button(result_frame, text="导出结果", command=self.export_result, width=10)
@@ -1568,7 +1532,7 @@ class IPSubnetSplitterApp:
 
         # 创建一个自定义的笔记本控件来显示不同的结果页面
         self.notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_tab_change)
-        self.notebook.pack(fill=tk.BOTH, expand=True)
+        self.notebook.grid(row=0, column=0, sticky="nsew")
 
         # 将导出结果按钮提升到最上层，避免被遮挡
         self.export_btn.lift()
@@ -1714,103 +1678,7 @@ class IPSubnetSplitterApp:
         # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
         self.root.after(100, self.initial_table_setup)
 
-    def _create_result_main_frame(self):
-        """创建结果显示区域的主框架"""
-        result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
-        # 调整底部外边距，将结果区域与窗体下边距缩小
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=(0, 0), pady=(0, 0))
-        return result_frame
-
-    def _create_export_button(self, parent_frame):
-        """添加导出结果按钮"""
-        # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
-        self.export_btn = ttk.Button(parent_frame, text="导出结果", command=self.export_result, width=10)
-        # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
-        self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
-
-        # 将导出结果按钮提升到最上层，避免被遮挡
-        self.export_btn.lift()
-
-    def _create_result_notebook(self, parent_frame):
-        """创建笔记本控件来显示不同的结果页面"""
-        # 创建一个自定义的笔记本控件来显示不同的结果页面
-        self.notebook = ColoredNotebook(parent_frame, style=self.style, tab_change_callback=self.on_tab_change)
-        self.notebook.pack(fill=tk.BOTH, expand=True)
-
-    def _create_split_info_page(self):
-        """创建切分段信息页面"""
-        # 切分段信息页面
-        self.split_info_frame = ttk.Frame(self.notebook.content_area, padding="5", style=self.notebook.light_blue_style)
-
-        # 创建切分段信息表格
-        self.split_tree = ttk.Treeview(self.split_info_frame, columns=("item", "value"), show="headings", height=5)
-        # 添加右键复制功能
-        self.bind_treeview_right_click(self.split_tree)
-        self.split_tree.heading("item", text="项目")
-        self.split_tree.heading("value", text="值")
-        # 设置合适的列宽
-        self.split_tree.column("item", width=100, minwidth=100, stretch=False)
-        self.split_tree.column("value", width=250)
-        self.split_tree.pack(fill=tk.BOTH, expand=True, pady=0)
-
-        # 配置斑马条纹样式和信息标签样式
-        self.configure_treeview_styles(self.split_tree, include_special_tags=True)
-
-    def _create_remaining_subnets_page(self):
-        """创建剩余网段表页面"""
-        # 剩余网段表页面
-        self.remaining_frame = ttk.Frame(self.notebook.content_area, padding="5", style=self.notebook.light_green_style)
-
-        # 创建剩余网段信息表格
-        self.remaining_tree = ttk.Treeview(
-            self.remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
-            show="headings",
-            height=5,
-        )
-        # 添加右键复制功能
-        self.bind_treeview_right_click(self.remaining_tree)
-        self.remaining_tree.heading("index", text="序号")
-        self.remaining_tree.heading("cidr", text="CIDR")
-        self.remaining_tree.heading("network", text="网络地址")
-        self.remaining_tree.heading("netmask", text="子网掩码")
-        self.remaining_tree.heading("wildcard", text="通配符掩码")
-        self.remaining_tree.heading("broadcast", text="广播地址")
-        self.remaining_tree.heading("usable", text="可用地址数")
-
-        # 设置列宽，使用minwidth替代width，让列可以自适应
-        self.remaining_tree.column("index", minwidth=40, width=40, stretch=False, anchor="e")
-        self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
-
-        # 调整列宽，确保所有列都能完整显示并自适应窗口宽度
-        self.remaining_tree.column("broadcast", minwidth=100, width=130, stretch=True)
-        self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
-
-        # 配置斑马条纹样式
-        self.configure_treeview_styles(self.remaining_tree)
-
-    def _create_network_chart_page(self):
-        """创建网段分布图页面"""
-        # 网段分布图页面
-        self.chart_frame = ttk.Frame(
-            self.notebook.content_area, padding="5", style=self.notebook.light_purple_style
-        )
-
-        # 配置chart_frame的grid布局
-        self.chart_frame.grid_rowconfigure(0, weight=1)
-        self.chart_frame.grid_columnconfigure(0, weight=1)
-        self.chart_frame.grid_columnconfigure(1, weight=0)
-
-        # 添加滚动条
-        self.chart_scrollbar = ttk.Scrollbar(self.chart_frame, orient=tk.VERTICAL)
-
-        # 创建Canvas用于绘制柱状图，设置背景色为深灰色以匹配图表背景
-        # 禁止水平滚动，只允许垂直滚动
-        self.chart_canvas = tk.Canvas(self.chart_frame, bg="#333333", highlightthickness=0)
-        self.chart_canvas.grid(row=0, column=0, sticky=tk.NSEW, pady=0)
+    def initial_table_setup(self):
 
         # 配置滚动条
         self.chart_scrollbar.config(command=self.chart_canvas.yview)
@@ -3294,6 +3162,27 @@ class IPSubnetSplitterApp:
         # 绑定右键菜单事件
         tree.bind("<Button-3>", lambda event, t=tree: self.copy_cell_data(event, t))
 
+    def bind_listbox_right_click(self, listbox):
+        """为Listbox绑定右键复制功能"""
+        listbox.bind("<Button-3>", lambda event, lb=listbox: self.copy_listbox_data(event, lb))
+
+    def copy_listbox_data(self, event, listbox):
+        """复制Listbox选中项到剪贴板"""
+        # 禁用事件，防止列表框捕获事件
+        listbox.selection_clear(0, tk.END)
+        # 获取鼠标点击位置的索引
+        index = listbox.nearest(event.y)
+        if index >= 0 and index < listbox.size():
+            # 选中该项
+            listbox.selection_set(index)
+            # 获取数据
+            cell_data = listbox.get(index)
+            # 复制到剪贴板
+            self.root.clipboard_clear()
+            self.root.clipboard_append(cell_data)
+            # 可选：显示复制成功的提示
+            self.show_result("已复制到剪贴板", keep_data=True)
+
     def show_custom_dialog(self, title, message, dialog_type="info"):
         """显示自定义的居中对话框，支持info、error、warning类型"""
         result = None
@@ -4171,7 +4060,7 @@ class IPSubnetSplitterApp:
                         self.history_records.pop(0)
 
                     # 更新历史记录列表
-                    self.update_history_tree()
+                    self.update_history_listbox()
 
         except ValueError as e:
             error_msg = str(e)
@@ -6808,10 +6697,10 @@ if __name__ == "__main__":
 
     # 设置窗口固定宽度，高度可调整
     root.minsize(BASE_WIDTH, BASE_HEIGHT)
-    root.maxsize(1100, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
+    root.maxsize(10000, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
 
     # 只允许调整窗口高度，不允许调整宽度
-    root.resizable(width=False, height=True)
+    root.resizable(width= True, height=True)
 
     # 设置窗口图标
     def set_window_icon(root_window, icon_ico_path, icon_png_path):
