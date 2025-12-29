@@ -6713,7 +6713,7 @@ if __name__ == "__main__":
     root.maxsize(10000, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
 
     # 只允许调整窗口高度，不允许调整宽度
-    root.resizable(width= True, height=True)
+    root.resizable(width= False, height=True)
 
     # 设置窗口图标
     def set_window_icon(root_window, icon_ico_path, icon_png_path):
