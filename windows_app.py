@@ -776,7 +776,8 @@ class IPSubnetSplitterApp:
 
         # 创建信息栏框架 - 放在 spacer 内，使用 place 布局
         self.info_bar_frame = ttk.Frame(self.info_spacer, style="InfoBar.TFrame")
-        self.info_bar_frame.place(x=10, y=0, width=30, height=30)
+        # 初始时不显示，等待需要时才显示
+        self.info_bar_frame.place_forget()
 
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
@@ -4136,8 +4137,8 @@ class IPSubnetSplitterApp:
             'show': {
                 'current_y': 30,
                 'target_y': 0,
-                'step': 4,
-                'delay': 10,
+                'step': 1,
+                'delay': 15,
                 'condition': lambda y, t: y <= t,
                 'update_y': lambda y, s: y - s,
                 'on_complete': lambda: self._on_show_animation_complete(bar_x, bar_width)
@@ -4145,7 +4146,7 @@ class IPSubnetSplitterApp:
             'hide': {
                 'current_y': 0,
                 'target_y': 30,
-                'step': 3,
+                'step': 2,
                 'delay': 10,
                 'condition': lambda y, t: y >= t,
                 'update_y': lambda y, s: y + s,
@@ -4169,6 +4170,9 @@ class IPSubnetSplitterApp:
                 current_y = target_y
                 on_complete()
             else:
+                # 确保 spacer 在显示动画时可见
+                if animation_type == 'show' and not self.info_spacer.winfo_ismapped():
+                    self.info_spacer.pack(side="bottom", fill="x")
                 self.info_bar_frame.place(x=bar_x, y=current_y, width=bar_width, height=30)
                 self.root.after(delay, animate)
 
@@ -4188,8 +4192,6 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.place_forget()
         self.info_spacer.pack_forget()
         self.info_bar_animating = False
-        # 使用固定宽度而不是relwidth=0，确保框架有正确的大小
-        self.info_bar_frame.place(x=10, y=0, width=30, height=30)
 
     def hide_info_bar(self, from_timer=False):
         """隐藏信息栏"""
@@ -6007,9 +6009,9 @@ class IPSubnetSplitterApp:
         # 确保info_bar_frame已经添加到父容器中
         # 使用place布局时winfo_manager()返回"place"，所以用not判断
         if not self.info_bar_frame.winfo_manager():
-            # 先临时显示，以便获取宽度
+            # 先临时显示在隐藏位置，避免闪现
             self.info_spacer.pack(side="bottom", fill="x")
-            self.info_bar_frame.place(x=10, y=0, width=max(self.info_bar_ref_width, 400), height=30)
+            self.info_bar_frame.place(x=10, y=30, width=max(self.info_bar_ref_width, 400), height=30)
 
         # 更新窗口，确保能获取到准确的宽度
         self.root.update_idletasks()
@@ -6117,8 +6119,8 @@ class IPSubnetSplitterApp:
             # 先强制更新布局，确保spacer已正确pack
             self.root.update_idletasks()
 
-            # 确保info_bar_frame有正确的place布局
-            self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
+            # 先将 info_bar_frame 放在隐藏位置（y=30），避免闪现
+            self.info_bar_frame.place(x=bar_x, y=30, width=bar_width, height=30)
             self.info_bar_frame.lift()
 
             # 使用通用动画函数执行显示动画
