@@ -38,7 +38,7 @@ def create_pack_config(pack_type="onefile"):
 
     # 基础命令
     cmd = [
-        r"C:\Users\ejone\AppData\Local\Programs\Python\Python314\python.exe",
+        sys.executable,
         "-m",
         "PyInstaller",
         f"--{pack_type}",  # 打包模式
