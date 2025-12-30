@@ -175,10 +175,28 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
 
 
 def ip_to_int(ip_str):
+    """
+    将IP地址字符串转换为整数
+
+    参数:
+    ip_str: IP地址字符串
+
+    返回:
+    对应的整数表示
+    """
     return int(ipaddress.IPv4Address(ip_str))
 
 
 def int_to_ip(ip_int):
+    """
+    将整数转换为IP地址字符串
+
+    参数:
+    ip_int: IP地址的整数表示
+
+    返回:
+    对应的IP地址字符串
+    """
     return str(ipaddress.IPv4Address(ip_int))
 
 

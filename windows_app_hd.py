@@ -667,17 +667,23 @@ class IPSubnetSplitterApp:
         # 使用grid布局，通过rowspan=4实现跨四行效果，形成方形按钮
         self.execute_btn.grid(row=0, column=2, rowspan=4, padx=(0, 0), pady=0, sticky=tk.NSEW)
 
-        # 结果显示区域
-        result_frame = ttk.LabelFrame(parent, text="切分结果", padding=self.base_padding)
-        result_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 0))
-
-        # 配置 result_frame 的 grid 布局
-        result_frame.grid_rowconfigure(0, weight=1)
-        result_frame.grid_columnconfigure(0, weight=1)
-
-        # 创建结果表格
+        # 结果显示区域 - 使用标签页组件
+        # 创建标签页组件
+        self.notebook = ttk.Notebook(parent)
+        self.notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 0))
+        
+        # 配置parent的grid布局
+        parent.grid_rowconfigure(1, weight=1)
+        parent.grid_columnconfigure(0, weight=1)
+        parent.grid_columnconfigure(1, weight=1)
+        
+        # 切分段信息标签页
+        split_info_frame = ttk.Frame(self.notebook, padding=self.base_padding)
+        self.notebook.add(split_info_frame, text="切分段信息")
+        
+        # 创建切分段信息表格
         columns = ("item", "value")
-        self.split_tree = ttk.Treeview(result_frame, columns=columns, show="headings", font=self.base_font)
+        self.split_tree = ttk.Treeview(split_info_frame, columns=columns, show="headings", font=self.base_font)
 
         # 设置列标题和宽度
         self.split_tree.heading("item", text="项目")
@@ -686,12 +692,146 @@ class IPSubnetSplitterApp:
         self.split_tree.column("value", width=get_scaled_value(400), anchor=tk.W)
 
         # 添加滚动条
-        split_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL, command=self.split_tree.yview)
+        split_scrollbar = ttk.Scrollbar(split_info_frame, orient=tk.VERTICAL, command=self.split_tree.yview)
         self.split_tree.configure(yscrollcommand=split_scrollbar.set)
 
         # 布局表格和滚动条
-        self.split_tree.grid(row=0, column=0, sticky="nsew")
-        split_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.split_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+        split_scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
+        
+        # 剩余网段标签页
+        remaining_frame = ttk.Frame(self.notebook, padding=self.base_padding)
+        self.notebook.add(remaining_frame, text="剩余网段")
+        
+        # 创建剩余网段信息表格
+        self.remaining_tree = ttk.Treeview(
+            remaining_frame,
+            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            show="headings",
+            height=5,
+        )
+        
+        # 设置列标题
+        self.remaining_tree.heading("index", text="序号")
+        self.remaining_tree.heading("cidr", text="CIDR")
+        self.remaining_tree.heading("network", text="网络地址")
+        self.remaining_tree.heading("netmask", text="子网掩码")
+        self.remaining_tree.heading("wildcard", text="通配符掩码")
+        self.remaining_tree.heading("broadcast", text="广播地址")
+        self.remaining_tree.heading("usable", text="可用地址数")
+
+        # 设置列宽
+        self.remaining_tree.column("index", width=get_scaled_value(40), minwidth=get_scaled_value(40), stretch=False, anchor="e")
+        self.remaining_tree.column("cidr", width=get_scaled_value(120), minwidth=get_scaled_value(100), stretch=True)
+        self.remaining_tree.column("network", width=get_scaled_value(120), minwidth=get_scaled_value(100), stretch=True)
+        self.remaining_tree.column("netmask", width=get_scaled_value(120), minwidth=get_scaled_value(100), stretch=True)
+        self.remaining_tree.column("wildcard", width=get_scaled_value(120), minwidth=get_scaled_value(100), stretch=True)
+        self.remaining_tree.column("broadcast", width=get_scaled_value(120), minwidth=get_scaled_value(100), stretch=True)
+        self.remaining_tree.column("usable", width=get_scaled_value(100), minwidth=get_scaled_value(100), stretch=True)
+        
+        # 添加滚动条
+        remaining_scrollbar = ttk.Scrollbar(remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview)
+        self.remaining_tree.configure(yscrollcommand=remaining_scrollbar.set)
+        
+        # 布局表格和滚动条
+        self.remaining_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+        remaining_scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
+        
+        # 历史记录面板
+        history_list_frame = ttk.Frame(history_frame)
+        history_list_frame.grid(row=0, column=0, sticky="nsew", pady=self.small_padding)
+        
+        # 配置history_frame的grid
+        history_frame.grid_rowconfigure(0, weight=1)
+        history_frame.grid_columnconfigure(0, weight=1)
+        
+        # 历史记录列表框
+        self.history_listbox = tk.Listbox(history_list_frame, font=self.base_font, selectmode=tk.SINGLE)
+        self.history_listbox.grid(row=0, column=0, sticky="nsew")
+        
+        # 绑定双击事件
+        self.history_listbox.bind("<Double-Button-1>", self.on_history_select)
+        
+        # 历史记录滚动条
+        history_scrollbar = ttk.Scrollbar(history_list_frame, orient=tk.VERTICAL, command=self.history_listbox.yview)
+        self.history_listbox.configure(yscrollcommand=history_scrollbar.set)
+        history_scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # 重新切分按钮
+        self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split, width=get_scaled_value(10))
+        self.reexecute_btn.grid(row=1, column=0, pady=self.small_padding)
+        
+        # 初始化历史记录列表
+        self.history_records = []  # 历史记录列表
+        self.update_history_listbox()  # 更新历史记录列表
+
+    def update_history_listbox(self):
+        """更新历史记录列表"""
+        try:
+            # 清空现有历史记录
+            self.history_listbox.delete(0, tk.END)
+
+            # 重新插入所有历史记录
+            for index, history_record in enumerate(self.history_records, 1):
+                # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
+                formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
+                self.history_listbox.insert(tk.END, formatted_record)
+
+            # 应用斑马条纹效果
+            for index in range(self.history_listbox.size()):
+                bg_color = "#d8d8d8" if (index + 1) % 2 == 0 else "#ffffff"
+                self.history_listbox.itemconfigure(index, bg=bg_color)
+        except (tk.TclError, AttributeError) as e:
+            # 错误处理，确保GUI更新失败不会导致程序崩溃
+            print(f"更新历史记录列表失败: {str(e)}")
+
+    def on_history_select(self, event):
+        """历史记录选择事件处理"""
+        # 获取选中的项
+        selected_indices = self.history_listbox.curselection()
+        if selected_indices:
+            # 获取选中项的索引
+            selected_index = selected_indices[0]
+            
+            # 获取对应索引的历史记录
+            if selected_index < len(self.history_records):
+                history_record = self.history_records[selected_index]
+                parent = history_record['parent']
+                split = history_record['split']
+                
+                # 填充到输入框
+                self.parent_entry.delete(0, tk.END)
+                self.parent_entry.insert(0, parent)
+                self.split_entry.delete(0, tk.END)
+                self.split_entry.insert(0, split)
+
+    def reexecute_split(self):
+        """从历史记录重新执行切分操作"""
+        # 获取选中的历史记录索引
+        selected_indices = self.history_listbox.curselection()
+        if not selected_indices:
+            self.show_info("提示", "请选择一条历史记录")
+            return
+
+        # 获取选中项的索引
+        selected_index = selected_indices[0]
+
+        # 获取对应索引的历史记录
+        if selected_index >= len(self.history_records):
+            return
+
+        history_record = self.history_records[selected_index]
+        parent = history_record['parent']
+        split = history_record['split']
+
+        # 填充到输入框
+        self.parent_entry.delete(0, tk.END)
+        self.parent_entry.insert(0, parent)
+        self.split_entry.delete(0, tk.END)
+        self.split_entry.insert(0, split)
+
+        # 执行切分，设置from_history=True，不记入历史
+        self.start_split(from_history=True)
 
     def setup_advanced_tab(self, parent):
         """设置高级工具标签页"""
@@ -699,23 +839,105 @@ class IPSubnetSplitterApp:
         title_label = ttk.Label(parent, text="高级网络工具", font=self.title_font)
         title_label.pack(pady=(0, self.large_padding))
 
-        # IPv4查询区域
-        ipv4_frame = ttk.LabelFrame(parent, text="IPv4地址查询", padding=self.base_padding)
-        ipv4_frame.pack(fill=tk.X, pady=(0, self.base_padding))
+        # 创建笔记本控件
+        self.advanced_notebook = ttk.Notebook(parent)
+        self.advanced_notebook.pack(fill=tk.BOTH, expand=True, pady=(0, self.base_padding))
 
-        ipv4_input_frame = ttk.Frame(ipv4_frame)
-        ipv4_input_frame.pack(fill=tk.X, pady=self.small_padding)
-
-        ttk.Label(ipv4_input_frame, text="IP地址:", font=self.base_font).pack(side=tk.LEFT)
-        self.ipv4_entry = ttk.Entry(ipv4_input_frame, font=self.base_font, width=get_scaled_value(20))
+        # IPv4查询标签页
+        ipv4_frame = ttk.Frame(self.advanced_notebook)
+        self.advanced_notebook.add(ipv4_frame, text="IPv4查询")
+        
+        # 创建输入区域
+        ipv4_input_frame = ttk.LabelFrame(ipv4_frame, text="IPv4地址信息查询", padding=self.base_padding)
+        ipv4_input_frame.pack(fill=tk.X, pady=(0, self.base_padding))
+        
+        ttk.Label(ipv4_input_frame, text="IPv4地址", font=self.base_font).pack(side=tk.LEFT)
+        self.ipv4_entry = ttk.Entry(ipv4_input_frame, font=self.base_font, width=get_scaled_value(25))
         self.ipv4_entry.pack(side=tk.LEFT, padx=(self.small_padding, 0))
-
-        query_button = ttk.Button(ipv4_input_frame, text="查询", command=self.query_ipv4)
-        query_button.pack(side=tk.LEFT, padx=(self.small_padding, 0))
-
+        self.ipv4_entry.insert(0, "192.168.1.1")
+        
+        # 子网掩码下拉列表
+        ttk.Label(ipv4_input_frame, text="子网掩码", font=self.base_font).pack(side=tk.LEFT, padx=(self.base_padding, 0))
+        self.ip_mask_var = tk.StringVar()
+        self.ip_mask_combobox = ttk.Combobox(
+            ipv4_input_frame, textvariable=self.ip_mask_var, width=get_scaled_value(15), state="readonly", font=self.base_font
+        )
+        # 常用子网掩码
+        mask_values = ["255.255.255.0", "255.255.0.0", "255.0.0.0", "255.255.255.255"]
+        self.ip_mask_combobox['values'] = mask_values
+        self.ip_mask_combobox.current(0)  # 默认选择255.255.255.0
+        self.ip_mask_combobox.pack(side=tk.LEFT, padx=(self.small_padding, 0))
+        
+        # 查询按钮
+        query_button = ttk.Button(ipv4_input_frame, text="查询信息", command=self.query_ipv4)
+        query_button.pack(side=tk.RIGHT)
+        
         # IPv4结果显示
-        self.ipv4_result = tk.Text(ipv4_frame, height=get_scaled_value(8), font=self.base_font, wrap=tk.WORD)
-        self.ipv4_result.pack(fill=tk.X, pady=self.small_padding)
+        ipv4_result_frame = ttk.LabelFrame(ipv4_frame, text="查询结果", padding=self.base_padding)
+        ipv4_result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建结果表格
+        columns = ("item", "value")
+        self.ipv4_tree = ttk.Treeview(ipv4_result_frame, columns=columns, show="headings", font=self.base_font)
+        self.ipv4_tree.heading("item", text="项目")
+        self.ipv4_tree.heading("value", text="值")
+        self.ipv4_tree.column("item", width=get_scaled_value(120), anchor=tk.W)
+        self.ipv4_tree.column("value", width=get_scaled_value(400), anchor=tk.W)
+        
+        # 添加滚动条
+        ipv4_scrollbar = ttk.Scrollbar(ipv4_result_frame, orient=tk.VERTICAL, command=self.ipv4_tree.yview)
+        self.ipv4_tree.configure(yscrollcommand=ipv4_scrollbar.set)
+        
+        # 布局表格和滚动条
+        self.ipv4_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+        ipv4_scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
+        
+        # IPv6查询标签页
+        ipv6_frame = ttk.Frame(self.advanced_notebook)
+        self.advanced_notebook.add(ipv6_frame, text="IPv6查询")
+        
+        # 创建输入区域
+        ipv6_input_frame = ttk.LabelFrame(ipv6_frame, text="IPv6地址信息查询", padding=self.base_padding)
+        ipv6_input_frame.pack(fill=tk.X, pady=(0, self.base_padding))
+        
+        ttk.Label(ipv6_input_frame, text="IPv6地址", font=self.base_font).pack(side=tk.LEFT)
+        self.ipv6_entry = ttk.Entry(ipv6_input_frame, font=self.base_font, width=get_scaled_value(30))
+        self.ipv6_entry.pack(side=tk.LEFT, padx=(self.small_padding, 0))
+        self.ipv6_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        
+        # CIDR下拉列表（IPv6支持1-128）
+        ttk.Label(ipv6_input_frame, text="CIDR", font=self.base_font).pack(side=tk.LEFT, padx=(self.base_padding, 0))
+        self.ipv6_cidr_var = tk.StringVar()
+        self.ipv6_cidr_combobox = ttk.Combobox(
+            ipv6_input_frame, textvariable=self.ipv6_cidr_var, width=get_scaled_value(5), state="readonly", font=self.base_font
+        )
+        self.ipv6_cidr_combobox['values'] = list(range(1, 129))
+        self.ipv6_cidr_combobox.current(63)  # 默认选择64
+        self.ipv6_cidr_combobox.pack(side=tk.LEFT, padx=(self.small_padding, 0))
+        
+        # 查询按钮
+        ipv6_query_button = ttk.Button(ipv6_input_frame, text="查询信息", command=self.query_ipv6)
+        ipv6_query_button.pack(side=tk.RIGHT)
+        
+        # IPv6结果显示
+        ipv6_result_frame = ttk.LabelFrame(ipv6_frame, text="查询结果", padding=self.base_padding)
+        ipv6_result_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建结果表格
+        columns = ("item", "value")
+        self.ipv6_tree = ttk.Treeview(ipv6_result_frame, columns=columns, show="headings", font=self.base_font)
+        self.ipv6_tree.heading("item", text="项目")
+        self.ipv6_tree.heading("value", text="值")
+        self.ipv6_tree.column("item", width=get_scaled_value(120), anchor=tk.W)
+        self.ipv6_tree.column("value", width=get_scaled_value(400), anchor=tk.W)
+        
+        # 添加滚动条
+        ipv6_scrollbar = ttk.Scrollbar(ipv6_result_frame, orient=tk.VERTICAL, command=self.ipv6_tree.yview)
+        self.ipv6_tree.configure(yscrollcommand=ipv6_scrollbar.set)
+        
+        # 布局表格和滚动条
+        self.ipv6_tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+        ipv6_scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
 
     def setup_app_icon(self):
         """设置应用程序图标"""
@@ -745,20 +967,182 @@ class IPSubnetSplitterApp:
         except ValueError:
             tk.messagebox.showerror("错误", "子网数量必须是数字")
 
-    def start_split(self):
-        """开始子网切分"""
-        parent = self.parent_entry.get().strip()
-        mask = self.split_entry.get().strip()
+    def start_split(self, from_history=False):
+        """执行切分操作
         
-        if not parent or not mask:
-            tk.messagebox.showwarning("警告", "请输入父网络和子网掩码")
+        Args:
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+        """
+        parent = self.parent_entry.get().strip()
+        split = self.split_entry.get().strip()
+        
+        # 验证输入
+        if not parent or not split:
+            # 清空表格并显示错误信息
+            self.clear_result()
+            self.clear_tree_items(self.split_tree)
+            self.split_tree.insert("", tk.END, values=("错误", "父网段和切分网段都不能为空！"), tags=("error",))
             return
-            
+
+        # 验证CIDR格式
+        if not self.validate_cidr(parent):
+            self.clear_result()
+            self.clear_tree_items(self.split_tree)
+            self.split_tree.insert(
+                "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
+            )
+            self.show_error("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
+            return
+        if not self.validate_cidr(split):
+            self.clear_result()
+            self.clear_tree_items(self.split_tree)
+            self.split_tree.insert(
+                "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
+            )
+            self.show_error("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
+            return
+
         try:
-            # TODO: 实现实际的切分逻辑
-            print(f"切分网络 {parent}/{mask}")
-        except Exception as e:
-            tk.messagebox.showerror("错误", f"切分失败: {e}")
+            # 调用切分函数
+            result = split_subnet(parent, split)
+
+            # 清空现有结果
+            self.clear_tree_items(self.split_tree)
+            if hasattr(self, 'remaining_tree'):
+                self.clear_tree_items(self.remaining_tree)
+
+            if "error" in result:
+                # 显示错误信息
+                self.split_tree.insert("", tk.END, values=("错误", result["error"]), tags=("error",))
+                return
+
+            # 添加切分段信息，同时设置斑马条纹标签
+            row_index = 0
+            self.split_tree.insert("", tk.END, values=("父网段", result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("切分网段", result["split_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            
+            # 添加切分后的网段信息
+            split_info = result["split_info"]
+            self.split_tree.insert("", tk.END, values=("网络地址", split_info["network"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("子网掩码", split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("通配符掩码", split_info["wildcard"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("广播地址", split_info["broadcast"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("起始地址", split_info["host_range_start"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("结束地址", split_info["host_range_end"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("总地址数", split_info["num_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("可用地址数", split_info["usable_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("前缀长度", split_info["prefixlen"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            row_index += 1
+            self.split_tree.insert("", tk.END, values=("CIDR", split_info["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
+
+            # 显示剩余网段表表格
+            if result["remaining_subnets_info"] and hasattr(self, 'remaining_tree'):
+                for i, network in enumerate(result["remaining_subnets_info"], 1):
+                    # 设置斑马条纹标签
+                    tags = ("even",) if i % 2 == 0 else ("odd",)
+                    self.remaining_tree.insert(
+                        "",
+                        tk.END,
+                        values=(
+                            i,
+                            network["cidr"],
+                            network["network"],
+                            network["netmask"],
+                            network.get("wildcard", ""),
+                            network["broadcast"],
+                            network["usable_addresses"],
+                        ),
+                        tags=tags,
+                    )
+            elif hasattr(self, 'remaining_tree'):
+                self.remaining_tree.insert("", tk.END, values=(1, "无", "无", "无", "无", "无"))
+
+            # 如果不是从历史记录重新执行，则将操作记录到历史列表
+            if not from_history:
+                # 检查当前父网段是否在列表中，如果不在则添加
+                if parent and parent not in self.split_parent_networks:
+                    self.split_parent_networks.append(parent)
+                    # 限制历史记录大小，最多保留100条
+                    if len(self.split_parent_networks) > 100:
+                        self.split_parent_networks.pop(0)
+                    self.parent_entry.config(values=self.split_parent_networks)
+
+                # 检查当前切分段是否在列表中，如果不在则添加
+                if split and split not in self.split_networks:
+                    self.split_networks.append(split)
+                    # 限制历史记录大小，最多保留100条
+                    if len(self.split_networks) > 100:
+                        self.split_networks.pop(0)
+                    self.split_entry.config(values=self.split_networks)
+
+                # 记录操作到历史记录列表
+                split_record = {
+                    'parent': parent,
+                    'split': split,
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+
+                # 检查是否已存在相同的记录
+                if not any(record['parent'] == parent and record['split'] == split for record in self.history_records):
+                    self.history_records.append(split_record)
+                    # 限制历史记录数量，最多保留50条
+                    if len(self.history_records) > 50:
+                        self.history_records.pop(0)
+                    
+                    # 更新历史记录列表显示
+                    self.update_history_listbox()
+
+        except ValueError as e:
+            error_msg = str(e)
+            if "not permitted" in error_msg and "Octet" in error_msg:
+                match = re.search(r"Octet\D*(\d+)", error_msg)
+                if match:
+                    octet = match.group(1)
+                    message = f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
+                else:
+                    message = error_msg
+            else:
+                message = error_msg
+            self.clear_result()
+            self.split_tree.insert("", tk.END, values=("错误", message), tags=("error",))
+        except (tk.TclError, AttributeError, TypeError) as e:
+            self.clear_result()
+            self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
+
+    def clear_tree_items(self, tree):
+        """清空表格中的所有项
+
+        Args:
+            tree: 要清空的Treeview对象
+        """
+        # 批量删除所有子项，减少UI更新次数
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
+
+    def clear_result(self):
+        """清空结果表格"""
+        # 清空切分段信息表格
+        if hasattr(self, 'split_tree'):
+            self.clear_tree_items(self.split_tree)
+            # 添加提示行
+            self.split_tree.insert("", tk.END, values=("提示", "点击'执行切分'按钮开始操作..."), tags=('odd',))
+            
+        # 清空剩余网段表表格
+        if hasattr(self, 'remaining_tree'):
+            self.clear_tree_items(self.remaining_tree)
 
     def query_ipv4(self):
         """查询IPv4信息"""
