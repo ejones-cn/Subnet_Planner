@@ -30,9 +30,9 @@ logs/
 # 构建输出
 build/
 *.egg-info/
-# dist/
+# dist/  # 临时取消注释以拉取dist目录
 dist_nuitka/
-*.exe
+# *.exe
 windows_app.dist/
 windows_app.build/
 
