@@ -283,45 +283,179 @@ class ExportUtils:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(export_data, f, ensure_ascii=False, indent=2)
 
-    def _export_to_txt(self, file_path, data_source, main_data, main_headers):
+    def _export_to_txt(self, file_path, data_source, main_data, main_headers, remaining_data=None, remaining_headers=None):
         """导出数据为TXT格式（UTF-8编码）"""
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(f"{data_source['main_name']}\n")
             f.write("=" * 80 + "\n")
 
             if self._is_k2v_headers(main_headers):
+                # 计算项目名+冒号的最大宽度
+                max_key_colon_width = 0
                 for values in main_data:
-                    f.write(f"{values[0]:<20}: {values[1]}\n")
+                    if len(values) > 0:
+                        key_colon_width = len(f"{str(values[0])}:")
+                        if key_colon_width > max_key_colon_width:
+                            max_key_colon_width = key_colon_width
+                
+                # 计算需要的Tab数量，确保所有值对齐在同一列（每个Tab对应8个字符宽度）
+                tab_width = 8
+                # 计算最大宽度需要的Tab数
+                max_tabs = (max_key_colon_width + tab_width - 1) // tab_width
+                
+                # 特殊字段处理：需要少一个Tab的字段列表
+                reduced_tab_fields = ["通配符掩码", "可用地址数"]
+                
+                for values in main_data:
+                    key = str(values[0])
+                    value = str(values[1])
+                    key_colon = f"{key}:"
+                    # 计算当前项目名+冒号需要的Tab数
+                    current_tabs = (len(key_colon) + tab_width - 1) // tab_width
+                    # 需要的额外Tab数 = 最大Tab数 - 当前Tab数 + 1（+1确保有足够的间距）
+                    extra_tabs = max_tabs - current_tabs + 1
+                    
+                    # 特殊处理：通配符掩码和可用地址数少一个Tab
+                    if key in reduced_tab_fields:
+                        extra_tabs = max(1, extra_tabs - 1)  # 确保至少有一个Tab
+                    
+                    f.write(f"{key_colon}{'\t' * extra_tabs}{value}\n")
             else:
-                for header in main_headers:
-                    f.write(f"{header:<15}")
-                f.write("\n")
-                f.write("-" * 80 + "\n")
-
+                # 计算每个列的最大宽度，使用自适应宽度
+                max_widths = []
+                # 先处理表头
+                for i, header in enumerate(main_headers):
+                    max_widths.append(len(str(header)) + 2)  # 表头宽度+2边距
+                
+                # 再处理数据行
                 for values in main_data:
-                    for value in values:
-                        f.write(f"{str(value):<15}")
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            current_width = len(str(value)) + 2  # 数据宽度+2边距
+                            if current_width > max_widths[i]:
+                                max_widths[i] = current_width
+                
+                # 确保最小宽度为12
+                max_widths = [max(w, 12) for w in max_widths]
+                
+                # 写入表头
+                for i, header in enumerate(main_headers):
+                    f.write(f"{header:<{max_widths[i]}}")
+                f.write("\n")
+                
+                # 写入分隔线
+                total_width = sum(max_widths)
+                f.write("-" * total_width + "\n")
+                
+                # 写入数据行
+                for values in main_data:
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            f.write(f"{str(value):<{max_widths[i]}}")
                     f.write("\n")
 
             f.write(f"\n\n{data_source['remaining_name']}\n")
             f.write("=" * 80 + "\n")
 
-            # 动态获取剩余数据的表头
-            remaining_headers = [data_source["remaining_tree"].heading(col, "text") or ""
-                               for col in data_source["remaining_tree"]["columns"]]
-            for header in remaining_headers:
-                f.write(f"{header:<15}")
-            f.write("\n")
-            f.write("-" * 80 + "\n")
-
-            for item in data_source["remaining_tree"].get_children():
-                values = data_source["remaining_tree"].item(item, "values")
-                for value in values:
-                    f.write(f"{str(value):<15}")
+            if remaining_headers and remaining_data:
+                # 使用传入的剩余数据表头和数据
+                # 收集所有剩余数据行
+                all_remaining_rows = []
+                for item in remaining_data:
+                    if isinstance(item, dict):
+                        # 如果是字典，按照剩余表头的顺序提取值
+                        values = [item.get(header, '') for header in remaining_headers]
+                    else:
+                        # 如果已经是列表，直接使用
+                        values = item
+                    all_remaining_rows.append(values)
+                
+                # 计算每个列的最大宽度，使用自适应宽度
+                max_widths = []
+                # 先处理表头
+                for i, header in enumerate(remaining_headers):
+                    max_widths.append(len(str(header)) + 2)  # 表头宽度+2边距
+                
+                # 再处理数据行
+                for values in all_remaining_rows:
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            current_width = len(str(value)) + 2  # 数据宽度+2边距
+                            if current_width > max_widths[i]:
+                                max_widths[i] = current_width
+                
+                # 确保最小宽度为12
+                max_widths = [max(w, 12) for w in max_widths]
+                
+                # 写入表头
+                for i, header in enumerate(remaining_headers):
+                    f.write(f"{header:<{max_widths[i]}}")
                 f.write("\n")
+                
+                # 写入分隔线
+                total_width = sum(max_widths)
+                f.write("-" * total_width + "\n")
+                
+                # 写入数据行
+                for values in all_remaining_rows:
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            f.write(f"{str(value):<{max_widths[i]}}")
+                    f.write("\n")
+            else:
+                # 动态获取剩余数据的表头（备用方案）
+                remaining_headers = [data_source["remaining_tree"].heading(col, "text") or ""
+                                   for col in data_source["remaining_tree"]["columns"]]
+                
+                # 收集所有剩余数据行
+                all_remaining_rows = []
+                for item in data_source["remaining_tree"].get_children():
+                    values = data_source["remaining_tree"].item(item, "values")
+                    all_remaining_rows.append(values)
+                
+                # 计算每个列的最大宽度，使用自适应宽度
+                max_widths = []
+                # 先处理表头
+                for i, header in enumerate(remaining_headers):
+                    max_widths.append(len(str(header)) + 2)  # 表头宽度+2边距
+                
+                # 再处理数据行
+                for values in all_remaining_rows:
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            current_width = len(str(value)) + 2  # 数据宽度+2边距
+                            if current_width > max_widths[i]:
+                                max_widths[i] = current_width
+                
+                # 确保最小宽度为12
+                max_widths = [max(w, 12) for w in max_widths]
+                
+                # 写入表头
+                for i, header in enumerate(remaining_headers):
+                    f.write(f"{header:<{max_widths[i]}}")
+                f.write("\n")
+                
+                # 写入分隔线
+                total_width = sum(max_widths)
+                f.write("-" * total_width + "\n")
+                
+                # 写入数据行
+                for values in all_remaining_rows:
+                    for i, value in enumerate(values):
+                        if i < len(max_widths):
+                            f.write(f"{str(value):<{max_widths[i]}}")
+                    f.write("\n")
 
-    def _export_to_csv(self, file_path, main_data, main_headers, remaining_tree):
-        """导出数据为CSV格式（UTF-8-BOM编码，Excel友好）"""
+    def _export_to_csv(self, file_path, main_data, main_headers, remaining_tree, remaining_headers=None):
+        """导出数据为CSV格式（UTF-8-BOM编码，Excel友好）
+        
+        Args:
+            file_path: 文件路径
+            main_data: 主数据
+            main_headers: 主数据表头
+            remaining_tree: 剩余数据的Treeview对象或MockTree对象
+            remaining_headers: 剩余数据表头，如果为None则从tree中获取
+        """
         with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
 
@@ -331,9 +465,14 @@ class ExportUtils:
 
             writer.writerow([])
 
-            remaining_headers = [remaining_tree.heading(col, "text") or ""
-                               for col in remaining_tree["columns"]]
-            writer.writerow(remaining_headers)
+            # 使用传递进来的headers，或者从tree中获取
+            if remaining_headers:
+                writer.writerow(remaining_headers)
+            else:
+                remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
+                writer.writerow(remaining_headers)
+            
+            # 写入剩余数据
             for item in remaining_tree.get_children():
                 values = remaining_tree.item(item, "values")
                 writer.writerow(values)
@@ -1252,11 +1391,114 @@ class ExportUtils:
             if file_ext == ".json":
                 self._export_to_json(file_path, data_source, main_data, main_headers, remaining_data)
             elif file_ext == ".txt":
-                self._export_to_txt(file_path, data_source, main_data, main_headers)
+                self._export_to_txt(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
             elif file_ext == ".csv":
-                self._export_to_csv(file_path, main_data, main_headers, data_source["remaining_tree"])
+                # 对于CSV导出，需要创建一个模拟的tree对象
+                class MockTree:
+                    """模拟Treeview对象，用于CSV导出"""
+                    def __init__(self, headers, data):
+                        self.headers = headers
+                        self.data = data
+                        self.columns = list(range(len(headers)))
+                    
+                    def heading(self, col, option):
+                        """获取列标题
+                        
+                        Args:
+                            col: 列索引或列名
+                            option: 选项名，通常是"text"
+                        
+                        Returns:
+                            列标题字符串
+                        """
+                        if isinstance(col, str) and col.isdigit():
+                            col = int(col)
+                        return self.headers[col] if isinstance(col, int) and 0 <= col < len(self.headers) else ""
+                    
+                    def get_children(self):
+                        """获取所有子项的ID列表"""
+                        return range(len(self.data))
+                    
+                    def item(self, item, option=None):
+                        """获取项目的属性
+                        
+                        Args:
+                            item: 项目ID
+                            option: 选项名，如果为None则返回所有选项的字典
+                        
+                        Returns:
+                            如果option为None则返回字典，否则返回对应选项的值
+                        """
+                        values = self.data[item] if item < len(self.data) else []
+                        if option is None:
+                            return {"values": values}
+                        elif option == "values":
+                            return values
+                        else:
+                            return None
+                    
+                    def __getitem__(self, key):
+                        """支持字典访问方式"""
+                        if key == "columns":
+                            return self.columns
+                        raise KeyError(key)
+                
+                # 将字典列表转换为列表列表，以便 MockTree 正确处理
+                remaining_data_list = []
+                for item in remaining_data:
+                    if isinstance(item, dict):
+                        # 按照剩余表头的顺序提取值
+                        row = [item.get(header, '') for header in remaining_headers]
+                        remaining_data_list.append(row)
+                    else:
+                        # 如果已经是列表，直接添加
+                        remaining_data_list.append(item)
+                
+                mock_tree = MockTree(remaining_headers, remaining_data_list)
+                self._export_to_csv(file_path, main_data, main_headers, mock_tree, remaining_headers)
             elif file_ext == ".xlsx":
-                self._export_to_excel(file_path, main_data, main_headers, data_source["remaining_tree"], remaining_headers)
+                # 对于Excel导出，需要创建一个模拟的tree对象
+                class MockTree:
+                    """模拟Treeview对象，用于Excel导出"""
+                    def __init__(self, headers, data):
+                        self.headers = headers
+                        self.data = data
+                        self.columns = list(range(len(headers)))
+                    
+                    def heading(self, col, option):
+                        return self.headers[col]
+                    
+                    def get_children(self):
+                        return range(len(self.data))
+                    
+                    def item(self, item, option=None):
+                        values = self.data[item] if item < len(self.data) else []
+                        if option is None:
+                            return {"values": values}
+                        elif option == "values":
+                            return values
+                        else:
+                            return None
+                    
+                    def __getitem__(self, key):
+                        """支持字典访问方式"""
+                        if key == "columns":
+                            return self.columns
+                        raise KeyError(key)
+                
+                # 将字典列表转换为列表列表，以便 MockTree 正确处理
+                remaining_data_list = []
+                for item in remaining_data:
+                    if isinstance(item, dict):
+                        # 按照剩余表头的顺序提取值
+                        row = [item.get(header, '') for header in remaining_headers]
+                        remaining_data_list.append(row)
+                    else:
+                        # 如果已经是列表，直接添加
+                        remaining_data_list.append(item)
+                
+                mock_tree = MockTree(remaining_headers, remaining_data_list)
+                self._export_to_excel(file_path, main_data, main_headers, mock_tree, remaining_headers)
             elif file_ext == ".pdf":
                 self._export_to_pdf(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
             else:

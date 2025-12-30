@@ -284,6 +284,9 @@ class IPSubnetSplitterApp:
         self.chart_image = None
         self.distribution_image = None
 
+        # 导出工具实例
+        self.export_utils = ExportUtils()
+
         # 主窗口引用
         self.root = main_window
 
@@ -677,6 +680,14 @@ class IPSubnetSplitterApp:
         parent.grid_columnconfigure(0, weight=1)
         parent.grid_columnconfigure(1, weight=1)
         
+        # 图表显示区域
+        self.chart_frame = ttk.LabelFrame(parent, text="网段分布图表", padding=self.base_padding)
+        self.chart_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", pady=(get_scaled_value(5), 0))
+        
+        # 创建图表画布
+        self.chart_canvas = tk.Canvas(self.chart_frame, width=get_scaled_value(800), height=get_scaled_value(300), bg="#f0f0f0")
+        self.chart_canvas.pack(fill=tk.BOTH, expand=True)
+        
         # 切分段信息标签页
         split_info_frame = ttk.Frame(self.notebook, padding=self.base_padding)
         self.notebook.add(split_info_frame, text="切分段信息")
@@ -760,6 +771,10 @@ class IPSubnetSplitterApp:
         # 重新切分按钮
         self.reexecute_btn = ttk.Button(history_frame, text="重新切分", command=self.reexecute_split, width=get_scaled_value(10))
         self.reexecute_btn.grid(row=1, column=0, pady=self.small_padding)
+        
+        # 导出结果按钮
+        self.export_btn = ttk.Button(history_frame, text="导出结果", command=self.export_split_result, width=get_scaled_value(10))
+        self.export_btn.grid(row=2, column=0, pady=self.small_padding)
         
         # 初始化历史记录列表
         self.history_records = []  # 历史记录列表
@@ -957,15 +972,42 @@ class IPSubnetSplitterApp:
         count_text = self.subnet_count_entry.get().strip()
         
         if not cidr or not count_text:
-            tk.messagebox.showwarning("警告", "请输入网络地址和子网数量")
+            self.show_warning("警告", "请输入网络地址和子网数量")
             return
             
         try:
             count = int(count_text)
-            # TODO: 实现实际的规划逻辑
-            print(f"规划网络 {cidr} 为 {count} 个子网")
-        except ValueError:
-            tk.messagebox.showerror("错误", "子网数量必须是数字")
+            
+            # 清空现有结果
+            self.clear_tree_items(self.planning_tree)
+            
+            # 调用子网规划函数
+            result = suggest_subnet_planning(cidr, count)
+            
+            if isinstance(result, dict) and "error" in result:
+                self.show_error("错误", result["error"])
+                return
+            
+            # 显示规划结果
+            if isinstance(result, list):
+                for i, subnet in enumerate(result, 1):
+                    network = subnet.get("network", "")
+                    netmask = subnet.get("netmask", "")
+                    usable = subnet.get("usable_addresses", 0)
+                    range_start = subnet.get("host_range_start", "")
+                    range_end = subnet.get("host_range_end", "")
+                    
+                    if range_start and range_end:
+                        range_str = f"{range_start} - {range_end}"
+                    else:
+                        range_str = ""
+                    
+                    self.planning_tree.insert("", tk.END, values=(network, netmask, usable, range_str))
+            
+        except ValueError as e:
+            self.show_error("错误", f"无效的输入: {e}")
+        except Exception as e:
+            self.show_error("错误", f"规划失败: {e}")
 
     def start_split(self, from_history=False):
         """执行切分操作
@@ -1010,6 +1052,9 @@ class IPSubnetSplitterApp:
             self.clear_tree_items(self.split_tree)
             if hasattr(self, 'remaining_tree'):
                 self.clear_tree_items(self.remaining_tree)
+            # 清空图表
+            if hasattr(self, 'chart_canvas'):
+                self.chart_canvas.delete("all")
 
             if "error" in result:
                 # 显示错误信息
@@ -1068,6 +1113,20 @@ class IPSubnetSplitterApp:
                     )
             elif hasattr(self, 'remaining_tree'):
                 self.remaining_tree.insert("", tk.END, values=(1, "无", "无", "无", "无", "无"))
+            
+            # 绘制网段分布图表
+            if hasattr(self, 'chart_canvas'):
+                # 准备图表数据
+                chart_data = {
+                    "parent": result["parent_info"],
+                    "networks": [
+                        {**result["split_info"], "type": "split"}
+                    ] + result["remaining_subnets_info"],
+                    "type": "split"
+                }
+                
+                # 调用图表绘制函数
+                draw_distribution_chart(self.chart_canvas, chart_data, self.chart_frame, chart_type="split")
 
             # 如果不是从历史记录重新执行，则将操作记录到历史列表
             if not from_history:
@@ -1117,9 +1176,15 @@ class IPSubnetSplitterApp:
                 message = error_msg
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", message), tags=("error",))
+            # 清空图表
+            if hasattr(self, 'chart_canvas'):
+                self.chart_canvas.delete("all")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=("错误", f"发生未知错误: {str(e)}"), tags=("error",))
+            # 清空图表
+            if hasattr(self, 'chart_canvas'):
+                self.chart_canvas.delete("all")
 
     def clear_tree_items(self, tree):
         """清空表格中的所有项
@@ -1131,6 +1196,65 @@ class IPSubnetSplitterApp:
         children = tree.get_children()
         if children:
             tree.delete(*children)
+
+    def export_split_result(self):
+        """导出子网切分结果"""
+        try:
+            # 检查是否有切分结果
+            if not self.split_tree.get_children() or len(self.split_tree.get_children()) <= 1:
+                self.show_warning("提示", "没有可导出的切分结果")
+                return
+            
+            # 准备导出数据
+            main_data = []
+            for item in self.split_tree.get_children():
+                values = self.split_tree.item(item, "values")
+                if values and values[0] not in ["提示", "错误", "-"]:
+                    main_data.append(values)
+            
+            remaining_data = []
+            remaining_headers = []
+            if hasattr(self, 'remaining_tree') and self.remaining_tree.get_children():
+                remaining_headers = [self.remaining_tree.heading(col, "text") for col in self.remaining_tree["columns"]]
+                for item in self.remaining_tree.get_children():
+                    values = self.remaining_tree.item(item, "values")
+                    remaining_data.append(values)
+            
+            # 准备数据源
+            data_source = {
+                "main_name": "切分段信息",
+                "remaining_name": "剩余网段",
+                "main_headers": ["项目", "值"],
+                "remaining_headers": remaining_headers,
+                "pdf_title": "子网切分结果报告"
+            }
+            
+            # 显示文件选择对话框
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".pdf",
+                filetypes=[
+                    ("PDF文档", "*.pdf"),
+                    ("Excel文档", "*.xlsx"),
+                    ("CSV文件", "*.csv"),
+                    ("JSON文件", "*.json"),
+                    ("文本文件", "*.txt")
+                ],
+                title="保存子网切分结果"
+            )
+            
+            if file_path:
+                # 调用导出工具
+                success, message = self.export_utils.export_to_file(
+                    file_path, data_source, main_data, data_source["main_headers"], remaining_data, remaining_headers
+                )
+                
+                if success:
+                    self.show_info("成功", f"结果已成功导出到: {file_path}")
+                else:
+                    self.show_error("失败", f"导出失败: {message}")
+        except Exception as e:
+            self.show_error("错误", f"导出失败: {str(e)}")
+            traceback.print_exc()
 
     def clear_result(self):
         """清空结果表格"""
@@ -1149,16 +1273,66 @@ class IPSubnetSplitterApp:
         ip = self.ipv4_entry.get().strip()
         
         if not ip:
-            tk.messagebox.showwarning("警告", "请输入IP地址")
+            self.show_warning("警告", "请输入IP地址")
             return
             
         try:
-            # TODO: 实现实际的IP查询逻辑
-            info = f"IP地址: {ip}\n网络类型: 私有网络\n子网掩码: 255.255.255.0"
-            self.ipv4_result.delete(1.0, tk.END)
-            self.ipv4_result.insert(1.0, info)
+            # 使用ipaddress模块获取IP信息
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # 清空现有结果
+            self.clear_tree_items(self.ipv4_tree)
+            
+            # 获取IP信息
+            ip_info = get_ip_info(ip)
+            
+            # 插入结果到表格
+            if ip_info:
+                for key, value in ip_info.items():
+                    self.ipv4_tree.insert("", tk.END, values=(key, value))
+            else:
+                self.ipv4_tree.insert("", tk.END, values=("错误", "无法获取IP信息"))
+        except ValueError as e:
+            self.show_error("错误", f"无效的IP地址: {e}")
         except Exception as e:
-            tk.messagebox.showerror("错误", f"查询失败: {e}")
+            self.show_error("错误", f"查询失败: {e}")
+
+    def query_ipv6(self):
+        """查询IPv6信息"""
+        ip = self.ipv6_entry.get().strip()
+        cidr_text = self.ipv6_cidr_combobox.get()
+        
+        if not ip:
+            self.show_warning("警告", "请输入IPv6地址")
+            return
+            
+        try:
+            # 清空现有结果
+            self.clear_tree_items(self.ipv6_tree)
+            
+            # 验证IPv6地址
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # 构建CIDR
+            cidr = int(cidr_text)
+            network = ipaddress.ip_network(f"{ip}/{cidr}", strict=False)
+            
+            # 插入结果到表格
+            self.ipv6_tree.insert("", tk.END, values=("IP地址", ip))
+            self.ipv6_tree.insert("", tk.END, values=("CIDR", f"/{cidr}"))
+            self.ipv6_tree.insert("", tk.END, values=("网络地址", network.network_address))
+            self.ipv6_tree.insert("", tk.END, values=("广播地址", network.broadcast_address))
+            self.ipv6_tree.insert("", tk.END, values=("前缀长度", cidr))
+            self.ipv6_tree.insert("", tk.END, values=("总地址数", network.num_addresses))
+            self.ipv6_tree.insert("", tk.END, values=("网络类型", "IPv6"))
+            self.ipv6_tree.insert("", tk.END, values=("可全局路由", network.is_global))
+            self.ipv6_tree.insert("", tk.END, values=("是链路本地", network.is_link_local))
+            self.ipv6_tree.insert("", tk.END, values=("是环回地址", network.is_loopback))
+            
+        except ValueError as e:
+            self.show_error("错误", f"无效的IPv6地址或CIDR: {e}")
+        except Exception as e:
+            self.show_error("错误", f"查询失败: {e}")
 
     def validate_cidr(self, text, entry=None, style_based=False):
         """通用CIDR验证函数"""
@@ -1172,6 +1346,45 @@ class IPSubnetSplitterApp:
                 entry.config(foreground='black' if is_valid else 'red')
 
         return "1" if entry else is_valid
+
+    def show_info(self, title, message):
+        """显示信息对话框"""
+        tk.messagebox.showinfo(title, message)
+
+    def show_warning(self, title, message):
+        """显示警告对话框"""
+        tk.messagebox.showwarning(title, message)
+
+    def show_error(self, title, message):
+        """显示错误对话框"""
+        tk.messagebox.showerror(title, message)
+
+    def confirm(self, title, message):
+        """显示确认对话框"""
+        return tk.messagebox.askyesno(title, message)
+
+    def clear_result(self):
+        """清空结果表格"""
+        # 清空切分段信息表格
+        if hasattr(self, 'split_tree'):
+            self.clear_tree_items(self.split_tree)
+            # 添加提示行
+            self.split_tree.insert("", tk.END, values=("提示", "点击'执行切分'按钮开始操作..."), tags=('odd',))
+            
+        # 清空剩余网段表表格
+        if hasattr(self, 'remaining_tree'):
+            self.clear_tree_items(self.remaining_tree)
+
+    def clear_tree_items(self, tree):
+        """清空表格中的所有项
+
+        Args:
+            tree: 要清空的Treeview对象
+        """
+        # 批量删除所有子项，减少UI更新次数
+        children = tree.get_children()
+        if children:
+            tree.delete(*children)
 
     def create_notebook(self, parent):
         """创建主标签页容器"""
