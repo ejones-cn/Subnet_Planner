@@ -886,7 +886,7 @@ class IPSubnetSplitterApp:
 
             # 重新插入所有历史记录
             for index, history_record in enumerate(self.history_records, 1):
-                # 格式化为: 1.  10.0.0.8/5 | 10.21.60.0/23
+                # 格式化为: 1.  10.0.0.8/5 | 10.21.50.0/23
                 formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
                 self.history_listbox.insert(tk.END, formatted_record)
 
@@ -1384,7 +1384,7 @@ class IPSubnetSplitterApp:
         )
         # 初始化子网切分的历史记录列表
         self.split_parent_networks = ["10.0.0.0/8"]  # 子网切分的父网段历史记录
-        self.split_networks = ["10.21.60.0/23"]  # 子网切分的切分段历史记录
+        self.split_networks = ["10.21.50.0/23"]  # 子网切分的切分段历史记录
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
@@ -1412,7 +1412,7 @@ class IPSubnetSplitterApp:
             validatecommand=vcmd,
         )
         self.split_entry.grid(row=2, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
-        self.split_entry.insert(0, "10.21.60.0/23")  # 默认值
+        self.split_entry.insert(0, "10.21.50.0/23")  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
 
         # 按钮区域
@@ -3960,7 +3960,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            self.show_error("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.60.0/23）")
+            self.show_error("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23）")
             return
 
         try:
