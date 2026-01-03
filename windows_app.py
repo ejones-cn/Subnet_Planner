@@ -304,8 +304,9 @@ class ColoredNotebook(ttk.Frame):
         
         # 创建标签按钮 - 移除边框和间距，使标签栏更好地融入背景
         # 设置初始样式参数
-        from i18n import get_language
-        current_language = get_language()
+        from style_manager import get_style_manager
+        style_manager = get_style_manager()
+        tab_width = style_manager.get_tab_width() if style_manager else 10
         
         button_params = {
             "text": label,
@@ -315,7 +316,7 @@ class ColoredNotebook(ttk.Frame):
             "padx": 12,
             "pady": 5,
             "font": (font_family, font_size, "normal"),
-            "width": 8 if current_language == "zh" else 14,  # 根据语言设置不同宽度，中文12，英文10
+            "width": tab_width,  # 从样式管理器获取标签宽度
         }
 
         # 根据是否为顶级标签页设置不同的文字颜色和鼠标按下状态颜色

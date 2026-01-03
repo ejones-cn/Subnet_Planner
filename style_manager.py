@@ -47,6 +47,21 @@ class StyleManager:
             # 英文版：Arial，10号字体
             return ("Arial", 10)
     
+    def get_tab_width(self):
+        """获取当前语言的标签宽度设置
+        
+        Returns:
+            int: 标签宽度
+        """
+        current_language = get_language()
+        
+        if current_language == "zh":
+            # 中文版：标签宽度12
+            return 10
+        else:
+            # 英文版：标签宽度10
+            return 14
+    
     def update_all_styles(self):
         """更新所有样式，根据当前语言重新设置"""
         if not self.style:
