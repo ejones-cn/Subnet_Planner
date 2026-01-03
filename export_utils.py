@@ -107,7 +107,7 @@ class ExportUtils:
                     ("stkaiti.ttf", "STKaiti"),
                 ]
 
-                for font_file, _ in font_candidates:
+                for font_file, _unused in font_candidates:
                     potential_path = os.path.join(font_dir, font_file)
                     if os.path.exists(potential_path):
                         font_path = potential_path
@@ -176,7 +176,7 @@ class ExportUtils:
     def _is_k2v_headers(self, headers):
         return len(headers) == 2 and headers[0] == "项目" and headers[1] == "值"
 
-    def _get_col_widths(self, table_data, table_width, col_widths, num_cols, is_k2v=False):
+    def _get_col_widths(self, table_data, table_width, col_widths, num_cols):
         """获取表格列宽，确保自适应页面宽度"""
         try:
             # 始终使用自适应宽度计算
@@ -529,7 +529,7 @@ class ExportUtils:
         export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
         
         # 创建页眉回调函数
-        def on_page(canvas, doc):
+        def on_page(canvas, _):
             """页面回调函数，用于绘制页眉"""
             canvas.saveState()
             # 获取当前页面尺寸
@@ -658,7 +658,7 @@ class ExportUtils:
                 # 使用自适应列宽
                 num_cols = len(parent_table_data[0])
                 # 获取自适应列宽
-                col_widths = self._get_col_widths(parent_table_data, table_width, None, num_cols, is_k2v=False)
+                col_widths = self._get_col_widths(parent_table_data, table_width, None, num_cols)
                 
                 # 确保所有列宽都是有效的数字
                 valid_col_widths = []
@@ -746,7 +746,7 @@ class ExportUtils:
                 except (ValueError, TypeError):
                     col_widths = None
 
-            valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols, self._is_k2v_headers(main_headers))
+            valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols)
 
             main_table = Table(main_table_data, colWidths=valid_col_widths, repeatRows=1)
             main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
@@ -795,7 +795,7 @@ class ExportUtils:
         if chart_data:
             try:
                 print("开始添加网段分布图到PDF...")
-                self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height, data_source["main_name"])
+                self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height)
             except (IOError, ValueError, TypeError, AttributeError) as e:
                 print(f"添加网段分布图失败: {e}")
                 traceback.print_exc()
@@ -884,7 +884,7 @@ class ExportUtils:
         """
         title_font_size = 76
         # 正确获取字体对象
-        normal_font, bold_font, font_loaded = self._load_system_font(title_font_size, verbose=False)
+        _, bold_font, _ = self._load_system_font(title_font_size, verbose=False)
         title_font = bold_font
 
         # 使用国际化标题，如果没有提供则使用默认翻译
@@ -896,7 +896,7 @@ class ExportUtils:
         title_y = 100
         return title_font, title_x, title_y
 
-    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, portrait_height, main_name):
+    def _add_chart_to_pdf(self, elements, chart_data, margins, portrait_width, portrait_height):
         """添加网段分布图到PDF元素列表
 
         Args:
@@ -907,6 +907,9 @@ class ExportUtils:
             portrait_height: 纵向页面高度
             main_name: 主数据名称，用于区分子网切分和子网规划
         """
+        # 导入翻译函数，避免与局部变量冲突
+        from i18n import _ as translate
+        
         if not chart_data or 'networks' not in chart_data or len(chart_data['networks']) == 0:
             print("没有有效的网段分布图数据，跳过")
             return
@@ -919,7 +922,7 @@ class ExportUtils:
 
         # 准备图表数据
         parent_info = chart_data.get("parent", {})
-        parent_cidr = parent_info.get("name", _("parent_network"))
+        parent_cidr = parent_info.get("name", translate("parent_network"))
         parent_range = parent_info.get("range", 1)
         networks = chart_data.get("networks", [])
 
@@ -948,9 +951,6 @@ class ExportUtils:
         # 剩余网段标题高度
         remaining_title_height = 180  # 剩余网段标题高度
         
-        # 计算总高度
-        total_networks = len(split_networks) + len(remaining_networks)
-        
         # 精确计算所需总高度
         required_height = (title_height
                           + parent_network_height
@@ -971,7 +971,7 @@ class ExportUtils:
         draw = ImageDraw.Draw(pil_image)
 
         # 加载中文字体
-        font, bold_font, font_loaded = self._load_system_font(font_size=36, verbose=True)
+        font, bold_font, _ = self._load_system_font(font_size=36, verbose=True)
 
         # 设置图表参数
         margin_left = 180
@@ -1064,7 +1064,7 @@ class ExportUtils:
             text_font = font
             bold_text_font = bold_font
 
-        def get_centered_y(box_y, box_height, _, __):
+        def get_centered_y(box_y, box_height, _, _font):
             text_y = box_y + box_height // 2 - 38
             return text_y
 
@@ -1402,7 +1402,7 @@ class ExportUtils:
                         self.data = data
                         self.columns = list(range(len(headers)))
                     
-                    def heading(self, col, option):
+                    def heading(self, col, _):
                         """获取列标题
                         
                         Args:
@@ -1466,7 +1466,7 @@ class ExportUtils:
                         self.data = data
                         self.columns = list(range(len(headers)))
                     
-                    def heading(self, col, option):
+                    def heading(self, col, _):
                         return self.headers[col]
                     
                     def get_children(self):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """通用图表工具模块
 
-提供网段分布图等图表的绘制功能，支持子网切分和子网规划等功能。
+提供网段分布图等图表的绘制功能，支持子网切分和子网规划等功能
 """
 
 from i18n import _
@@ -30,7 +30,7 @@ def draw_text_with_stroke(canvas, text, x, y, style):
         text: 要绘制的文本
         x: x坐标
         y: y坐标
-        style: 样式字典，包含 font、anchor、fill 等参数
+        style: 样式字典，包�?font、anchor、fill 等参�?
     """
     # 绘制描边
     for dx in [-1, 1]:
@@ -42,7 +42,7 @@ def draw_text_with_stroke(canvas, text, x, y, style):
                 anchor=style.get("anchor", tk.CENTER),
                 fill="#000000"
             )
-    # 绘制主文本
+    # 绘制主文�?
     canvas.create_text(
         x, y,
         text=text,
@@ -57,7 +57,7 @@ def _init_canvas(canvas, parent_frame):
     
     Args:
         canvas: tk.Canvas 对象
-        parent_frame: 父框架
+        parent_frame: 父框�?
     
     Returns:
         tuple: (width, canvas_height, margin_left, margin_right, margin_top, chart_width)
@@ -80,19 +80,19 @@ def _init_canvas(canvas, parent_frame):
 
 
 def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding):
-    """绘制父网段
+    """绘制父网�?
     
     Args:
         canvas: tk.Canvas 对象
-        parent_info: 父网段信息
+        parent_info: 父网段信�?
         x: x坐标
         y: y坐标
         chart_width: 图表宽度
-        log_min: 最小对数
-        log_max: 最大对数
+        log_min: 最小对�?
+        log_max: 最大对�?
         min_bar_width: 最小柱状图宽度
-        bar_height: 柱状图高度
-        padding: 内边距
+        bar_height: 柱状图高�?
+        padding: 内边�?
     
     Returns:
         int: 新的y坐标
@@ -117,7 +117,7 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
         "fill": "#ffffff"
     })
 
-    # 父网段：可用地址数
+    # 父网段：可用地址�?
     address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
     # 计算合适的x坐标，将文本向左偏移50像素
     text_x = min(x + 400, x + chart_width - 200)  # 向左偏移50像素
@@ -140,21 +140,21 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
         x: x坐标
         y: y坐标
         chart_width: 图表宽度
-        log_min: 最小对数
-        log_max: 最大对数
+        log_min: 最小对�?
+        log_max: 最大对�?
         min_bar_width: 最小柱状图宽度
-        bar_height: 柱状图高度
-        padding: 内边距
+        bar_height: 柱状图高�?
+        padding: 内边�?
     
     Returns:
         int: 新的y坐标
     """
     if chart_type == "plan":
-        # 子网规划：需求网段
+        # 子网规划：需求网�?
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
         y += 20
         
-        # 添加需求网段标题
+        # 添加需求网段标�?
         demand_count = len(split_networks)
         canvas.create_text(
             x,
@@ -172,7 +172,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             bar_width = min(bar_width, chart_width)
 
-            # 为需求网段分配彩色
+            # 为需求网段分配彩�?
             color_index = i % len(SUBNET_COLORS)
             color = SUBNET_COLORS[color_index]
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
@@ -191,7 +191,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
                 "fill": "#ffffff"
             })
 
-            # 需求网段：可用地址数
+            # 需求网段：可用地址�?
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
             # 计算合适的x坐标，将文本向右移动更多
             text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
@@ -203,21 +203,21 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
 
             y += bar_height + padding
     else:
-        # 子网切分：切分网段
+        # 子网切分：切分网�?
         for i, network in enumerate(split_networks):
             network_range = network.get("range", 1)
             log_value = max(log_min, math.log10(network_range))
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             bar_width = min(bar_width, chart_width)
 
-            # 切分网段：使用蓝色
+            # 切分网段：使用蓝�?
             color = SPLIT_COLOR
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
 
-            # 切分网段：不需要序号
+            # 切分网段：不需要序�?
             segment_text = f"{_("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
@@ -228,7 +228,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
                 "fill": "#ffffff"
             })
 
-            # 切分网段：可用地址数
+            # 切分网段：可用地址�?
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
             # 计算合适的x坐标，将文本向右移动更多
             text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
@@ -255,15 +255,15 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
     
     Args:
         canvas: tk.Canvas 对象
-        networks: 所有网段列表
+        networks: 所有网段列�?
         x: x坐标
         y: y坐标
         chart_width: 图表宽度
-        log_min: 最小对数
-        log_max: 最大对数
+        log_min: 最小对�?
+        log_max: 最大对�?
         min_bar_width: 最小柱状图宽度
-        bar_height: 柱状图高度
-        padding: 内边距
+        bar_height: 柱状图高�?
+        padding: 内边�?
     
     Returns:
         int: 新的y坐标
@@ -305,7 +305,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
             "fill": "#ffffff"
         })
 
-        # 剩余网段：可用地址数
+        # 剩余网段：可用地址�?
         address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
         # 计算合适的x坐标，将文本向右移动更多
         text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
@@ -347,7 +347,7 @@ def _draw_legend(canvas, chart_type, x, y):
     )
 
     if chart_type == "plan":
-        # 子网规划：需求网段（多色）
+        # 子网规划：需求网段（多色�?
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
                 x + 100 + j * 20,
@@ -384,7 +384,7 @@ def _draw_legend(canvas, chart_type, x, y):
             fill="#ffffff",
         )
     else:
-        # 子网切分：切分网段（蓝色）
+        # 子网切分：切分网段（蓝色�?
         canvas.create_rectangle(x + 100, legend_items_y, x + 120, legend_items_y + 12, fill=SPLIT_COLOR)
         canvas.create_text(
             x + 130,
@@ -416,13 +416,13 @@ def _draw_legend(canvas, chart_type, x, y):
 
 
 def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="split"):
-    """绘制网段分布柱状图
+    """绘制网段分布柱状�?
 
     Args:
         canvas: tk.Canvas 对象
         chart_data: 图表数据，格式为 {"parent": {...}, "networks": [...], "type": "split"}
-        parent_frame: 父框架（用于获取宽度），可选
-        chart_type: 图表类型，"split"表示子网切分，"plan"表示子网规划
+        parent_frame: 父框架（用于获取宽度），可�?
+        chart_type: 图表类型�?split"表示子网切分�?plan"表示子网规划
     """
     if not chart_data:
         return
@@ -431,7 +431,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         canvas.delete("all")
         
         # 初始化画布和计算尺寸
-        width, canvas_height, margin_left, margin_right, margin_top, chart_width = _init_canvas(canvas, parent_frame)
+        width, canvas_height, margin_left, _, margin_top, chart_width = _init_canvas(canvas, parent_frame)
         
         # 获取数据
         parent_info = chart_data.get("parent", {})
@@ -472,7 +472,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         canvas.config(scrollregion=(0, 0, actual_width, background_height))
         canvas.config(xscrollcommand=None)
         
-        # 绘制父网段
+        # 绘制父网�?
         y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
         
         # 绘制网络网段
