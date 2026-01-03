@@ -6088,16 +6088,23 @@ class IPSubnetSplitterApp:
 
         # 创建语言选择下拉菜单
         self.language_var = tk.StringVar()
-        self.language_var.set("中文" if get_language() == "zh" else "English")  # 设置当前语言
+        # 设置当前语言
+        current_lang = get_language()
+        if current_lang == "zh":
+            self.language_var.set("中文")
+        elif current_lang == "en":
+            self.language_var.set("English")
+        else:  # ja
+            self.language_var.set("日本語")
         
         # 使用ttk.Combobox创建语言选择控件
         self.language_combobox = ttk.Combobox(
             self.root,
             textvariable=self.language_var,
-            values=["中文", "English"],
+            values=["中文", "English", "日本語"],
             state="readonly",
             font=('微软雅黑', 10, 'bold'),
-            width=6
+            width=8
         )
         
         # 放置语言选择控件
@@ -6187,7 +6194,12 @@ class IPSubnetSplitterApp:
     def on_language_change(self, event):
         """语言选择变化时的处理函数"""
         selected_language = self.language_var.get()
-        lang_code = "zh" if selected_language == "中文" else "en"
+        if selected_language == "中文":
+            lang_code = "zh"
+        elif selected_language == "English":
+            lang_code = "en"
+        else:  # 日本語
+            lang_code = "ja"
         
         # 设置当前语言
         set_language(lang_code)
