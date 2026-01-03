@@ -4,6 +4,7 @@
 提供网段分布图等图表的绘制功能，支持子网切分和子网规划等功能。
 """
 
+from i18n import _
 import tkinter as tk
 import math
 
@@ -21,61 +22,33 @@ PARENT_COLOR = "#636e72"
 SPLIT_COLOR = "#4a7eb4"
 
 
-def draw_text_with_stroke(canvas, text, x, y, config=None):
-    """绘制带描边的文字
-
+def draw_text_with_stroke(canvas, text, x, y, style):
+    """绘制带描边效果的文本
+    
     Args:
         canvas: tk.Canvas 对象
-        text: 要绘制的文字
-        x: 起始x坐标
-        y: 起始y坐标
-        config: 配置字典，包含以下可选参数：
-            - font: 字体设置
-            - anchor: 文字锚点，默认tk.W
-            - fill: 文字颜色，默认"#ffffff"
-            - stroke_color: 描边颜色，默认"#666666"
-            - stroke_width: 描边宽度，默认1
+        text: 要绘制的文本
+        x: x坐标
+        y: y坐标
+        style: 样式字典，包含 font、anchor、fill 等参数
     """
-    # 设置默认配置
-    default_config = {
-        "font": ("微软雅黑", 12),
-        "anchor": tk.W,
-        "fill": "#ffffff",
-        "stroke_color": "#666666",
-        "stroke_width": 1
-    }
-    
-    # 更新配置
-    if config is None:
-        config = default_config
-    else:
-        default_config.update(config)
-        config = default_config
-    
-    # 提取配置参数
-    font = config["font"]
-    anchor = config["anchor"]
-    fill = config["fill"]
-    stroke_color = config["stroke_color"]
-    stroke_width = config["stroke_width"]
-    
-    if stroke_width > 0:
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        for dx, dy in directions:
+    # 绘制描边
+    for dx in [-1, 1]:
+        for dy in [-1, 1]:
             canvas.create_text(
-                x + dx * stroke_width, y + dy * stroke_width,
+                x + dx, y + dy,
                 text=text,
-                font=font,
-                anchor=anchor,
-                fill=stroke_color
+                font=style.get("font", ("微软雅黑", 12)),
+                anchor=style.get("anchor", tk.CENTER),
+                fill="#000000"
             )
-
+    # 绘制主文本
     canvas.create_text(
         x, y,
         text=text,
-        font=font,
-        anchor=anchor,
-        fill=fill
+        font=style.get("font", ("微软雅黑", 12)),
+        anchor=style.get("anchor", tk.CENTER),
+        fill=style.get("fill", "#ffffff")
     )
 
 
@@ -99,7 +72,7 @@ def _init_canvas(canvas, parent_frame):
         canvas_height = 400
 
     margin_left = 50
-    margin_right = 80
+    margin_right = 40  # 减小右侧边距，从80改为40
     margin_top = 50
     chart_width = width - margin_left - margin_right
     
@@ -134,7 +107,7 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
 
     usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
     parent_cidr = parent_info.get("name", "")
-    segment_text = f"父网段: {parent_cidr}"
+    segment_text = f"{_("parent_network")}: {parent_cidr}"
     text_x = x + 15
     text_y = y + bar_height / 2
     font = ("微软雅黑", 11, "bold")
@@ -144,8 +117,10 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
         "fill": "#ffffff"
     })
 
-    address_text = f"可用地址数: {usable_addresses:,}"
-    text_x = x + 250
+    # 父网段：可用地址数
+    address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+    # 计算合适的x坐标，将文本向左偏移50像素
+    text_x = min(x + 400, x + chart_width - 200)  # 向左偏移50像素
     draw_text_with_stroke(canvas, address_text, text_x, text_y, {
         "font": font,
         "anchor": tk.W,
@@ -184,7 +159,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
         canvas.create_text(
             x,
             y,
-            text=f"需求网段 ({demand_count} 个):",
+            text=f"{_("allocated_subnets")} ({demand_count} {_("pieces")}):",
             font=("微软雅黑", 11),
             anchor=tk.W,
             fill="#ffffff",
@@ -203,11 +178,10 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
-            cidr = network.get("cidr", "")
             usable_addresses = network_range - 2 if network_range > 2 else network_range
 
             # 需求网段：添加序号和CIDR
-            segment_text = f"网段 {i + 1}: {name}  {cidr}"
+            segment_text = f"{_("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = ("微软雅黑", 9, "bold")
@@ -217,8 +191,10 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
                 "fill": "#ffffff"
             })
 
-            address_text = f"可用地址数: {usable_addresses:,}"
-            text_x = x + 250
+            # 需求网段：可用地址数
+            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            # 计算合适的x坐标，将文本向右移动更多
+            text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
             draw_text_with_stroke(canvas, address_text, text_x, text_y, {
                 "font": font,
                 "anchor": tk.W,
@@ -242,7 +218,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             usable_addresses = network_range - 2 if network_range > 2 else network_range
 
             # 切分网段：不需要序号
-            segment_text = f"切分网段: {name}"
+            segment_text = f"{_("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = ("微软雅黑", 11, "bold")
@@ -252,8 +228,10 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
                 "fill": "#ffffff"
             })
 
-            address_text = f"可用地址数: {usable_addresses:,}"
-            text_x = x + 250
+            # 切分网段：可用地址数
+            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            # 计算合适的x坐标，将文本向右移动更多
+            text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
             draw_text_with_stroke(canvas, address_text, text_x, text_y, {
                 "font": font,
                 "anchor": tk.W,
@@ -295,7 +273,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
     remaining_count = len([n for n in networks if n.get("type") != "split"])
     canvas.create_text(
         x, y,
-        text=f"剩余网段 ({remaining_count} 个):",
+        text=f"{_("remaining_subnets")} ({remaining_count} {_("pieces")}):",
         font=title_font,
         anchor=tk.W,
         fill="#ffffff",
@@ -317,7 +295,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
         name = network.get("name", "")
         usable_addresses = network_range - 2 if network_range > 2 else network_range
 
-        segment_text = f"网段 {i + 1}: {name}"
+        segment_text = f"{_("segment")} {i + 1}: {name}"
         text_x = x + 15
         text_y = y + bar_height / 2
         font = ("微软雅黑", 9, "bold")
@@ -327,8 +305,10 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
             "fill": "#ffffff"
         })
 
-        address_text = f"可用地址数: {usable_addresses:,}"
-        text_x = x + 250
+        # 剩余网段：可用地址数
+        address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+        # 计算合适的x坐标，将文本向右移动更多
+        text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
         draw_text_with_stroke(canvas, address_text, text_x, text_y, {
             "font": font,
             "anchor": tk.W,
@@ -352,7 +332,7 @@ def _draw_legend(canvas, chart_type, x, y):
         y: y坐标
     """
     legend_y = y + 15
-    canvas.create_text(x, legend_y, text="图例:", font=("微软雅黑", 11), anchor=tk.W, fill="#ffffff")
+    canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=("微软雅黑", 11), anchor=tk.W, fill="#ffffff")
 
     legend_items_y = legend_y + 25
 
@@ -360,7 +340,7 @@ def _draw_legend(canvas, chart_type, x, y):
     canvas.create_text(
         x + 30,
         legend_items_y + 6,
-        text="父网段",
+        text=f"{_("parent_network")}",
         font=("微软雅黑", 9),
         anchor=tk.W,
         fill="#ffffff",
@@ -379,7 +359,7 @@ def _draw_legend(canvas, chart_type, x, y):
         canvas.create_text(
             x + 200,
             legend_items_y + 6,
-            text="需求网段(多色)",
+            text=f"{_("allocated_subnets")}",
             font=("微软雅黑", 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -391,14 +371,14 @@ def _draw_legend(canvas, chart_type, x, y):
             canvas.create_rectangle(
                 remaining_start_x + j * 20,
                 legend_items_y,
-                remaining_start_x + j * 20 + 20,
+                remaining_start_x + 20 + j * 20,
                 legend_items_y + 12,
                 fill=color,
             )
         canvas.create_text(
             remaining_start_x + 100,
             legend_items_y + 6,
-            text="剩余网段(多色)",
+            text=f"{_("remaining_subnets")}",
             font=("微软雅黑", 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -409,26 +389,26 @@ def _draw_legend(canvas, chart_type, x, y):
         canvas.create_text(
             x + 130,
             legend_items_y + 6,
-            text="切分网段",
+            text=f"{_("split_segment")}",
             font=("微软雅黑", 9),
             anchor=tk.W,
             fill="#ffffff",
         )
-
+        
         # 剩余网段图例
+        remaining_start_x = x + 200
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
-                x + 230 + j * 25,
+                remaining_start_x + j * 20,
                 legend_items_y,
-                x + 250 + j * 25,
+                remaining_start_x + 20 + j * 20,
                 legend_items_y + 12,
                 fill=color,
             )
-
         canvas.create_text(
-            x + 340,
+            remaining_start_x + 100,
             legend_items_y + 6,
-            text="剩余网段(多色)",
+            text=f"{_("remaining_subnets")}",
             font=("微软雅黑", 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -459,7 +439,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         networks = chart_data.get("networks", [])
         
         if not networks:
-            canvas.create_text(width / 2, canvas_height / 2, text="无网段数据", font=("微软雅黑", 12))
+            canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=("微软雅黑", 12))
             return
         
         # 计算对数参数
@@ -513,5 +493,5 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         height = canvas.winfo_height() or 400
         title_font = ("微软雅黑", 12, "bold")
         canvas.create_text(
-            width / 2, height / 2, text=f"图表绘制失败: {str(e)}", font=title_font, fill="red"
+            width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red"
         )

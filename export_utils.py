@@ -23,6 +23,7 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
+from i18n import _
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
@@ -790,7 +791,8 @@ class ExportUtils:
 
         # 添加网段分布图（对子网切分和子网规划功能，放在剩余网段表之后）
         chart_data = data_source.get("chart_data")
-        if chart_data and data_source["main_name"] in ["切分段信息", "已分配子网信息"]:
+        # 检查chart_data是否存在，而不依赖于硬编码的中文文本
+        if chart_data:
             try:
                 print("开始添加网段分布图到PDF...")
                 self._add_chart_to_pdf(elements, chart_data, margins, portrait_width, portrait_height, data_source["main_name"])
@@ -869,20 +871,25 @@ class ExportUtils:
         required_height = base_height + total_networks * segment_height
         return segment_height, required_height
 
-    def _draw_title(self, draw, high_res_width, title="网段分布图"):
+    def _draw_title(self, draw, high_res_width, title=None):
         """绘制图表标题
 
         Args:
             draw: ImageDraw对象
             high_res_width: 图像宽度
-            title: 标题文字
+            title: 标题文字，默认使用国际化的"distribution_chart"
 
         Returns:
             tuple: (title_font, title_x, title_y)
         """
         title_font_size = 76
-        _, _, font = self._load_system_font(title_font_size, verbose=False)
-        title_font = font
+        # 正确获取字体对象
+        normal_font, bold_font, font_loaded = self._load_system_font(title_font_size, verbose=False)
+        title_font = bold_font
+
+        # 使用国际化标题，如果没有提供则使用默认翻译
+        if not title:
+            title = _("distribution_chart")
 
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
@@ -912,21 +919,16 @@ class ExportUtils:
 
         # 准备图表数据
         parent_info = chart_data.get("parent", {})
-        parent_cidr = parent_info.get("name", "Parent Network")
+        parent_cidr = parent_info.get("name", _("parent_network"))
         parent_range = parent_info.get("range", 1)
         networks = chart_data.get("networks", [])
 
-        # 根据main_name区分处理不同类型的图表
-        if main_name == "切分段信息":
-            # 子网切分 - 使用split和非split类型
-            split_networks = [net for net in networks if net.get("type") == "split"]
-            remaining_networks = [net for net in networks if net.get("type") != "split"]
-            chart_type = "split"
-        else:
-            # 子网规划 - 使用split作为需求网段类型，remaining作为剩余网段类型
-            split_networks = [net for net in networks if net.get("type") == "split"]
-            remaining_networks = [net for net in networks if net.get("type") != "split"]
-            chart_type = "plan"
+        # 直接从chart_data中获取chart_type，如果没有则根据数据结构自动判断
+        chart_type = chart_data.get("type", "split")
+        
+        # 计算切分段和剩余网段
+        split_networks = [net for net in networks if net.get("type") == "split"]
+        remaining_networks = [net for net in networks if net.get("type") != "split"]
         
         # 精确计算图表所需的总高度
         # 基本元素高度
@@ -973,10 +975,12 @@ class ExportUtils:
 
         # 设置图表参数
         margin_left = 180
-        margin_right = 100
+        margin_right = 150
         margin_top = 280
         chart_width = high_res_width - margin_left - margin_right
         chart_x = margin_left
+        chart_right = chart_x + chart_width  # 计算图表右边缘位置
+        ADDRESS_OFFSET = 50  # 地址文本距离图表右边缘的偏移量（左缩进）
 
         # 定义绘制带描边文字的辅助函数
         def draw_text_with_stroke(draw_obj, position, text, font, fill, stroke_color="#666666", stroke_width=4):
@@ -1027,23 +1031,8 @@ class ExportUtils:
         ]
 
         # 绘制标题
-        title = "网段分布图"
-        title_font_size = 76
-        title_font = None
-        try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
-            title_font_path = os.path.join(system_font_dir, 'msyh.ttc')
-            if os.path.exists(title_font_path):
-                title_font = ImageFont.truetype(title_font_path, title_font_size)
-            else:
-                title_font = bold_font
-        except (IOError, OSError, ValueError, TypeError):
-            title_font = bold_font
-
-        title_bbox = draw.textbbox((0, 0), title, font=title_font)
-        title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
-        title_y = 100
-        draw_text_with_stroke(draw, (title_x, title_y), title, title_font, "#ffffff")
+        title_font, title_x, title_y = self._draw_title(draw, high_res_width)
+        draw_text_with_stroke(draw, (title_x, title_y), _("distribution_chart"), title_font, "#ffffff")
 
         y = margin_top
 
@@ -1056,8 +1045,8 @@ class ExportUtils:
             + bar_height], fill=parent_color, outline=None, width=0)
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
-        segment_text = f"父网段: {parent_cidr}"
-        address_text = f"可用地址数: {usable_addresses:,}"
+        segment_text = f"{_('parent_network')}: {parent_cidr}"
+        address_text = f"{_('usable_addresses')}: {usable_addresses:,}"
 
         text_font_size = 50
         text_font = None
@@ -1079,12 +1068,14 @@ class ExportUtils:
             text_y = box_y + box_height // 2 - 38
             return text_y
 
-        address_x = 1300
-
         segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
         segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
         address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
         address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
+        
+        # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
+        address_width = address_bbox[2] - address_bbox[0]
+        address_x = chart_right - ADDRESS_OFFSET - address_width
 
         draw_text_with_stroke(draw, (chart_x
             + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
@@ -1102,7 +1093,7 @@ class ExportUtils:
         # 绘制需求网段标题
         if chart_type == "plan":
             demand_count = len(split_networks)
-            title_text = f"需求网段 ({demand_count} 个):"
+            title_text = f"{_('allocated_subnets')} ({demand_count} {_('pieces')}):"
             title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
             title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
             draw_text_with_stroke(draw, (chart_x, title_text_y), title_text, bold_text_font, "#ffffff")
@@ -1118,26 +1109,30 @@ class ExportUtils:
                 # 子网切分
                 split_color = "#4a7eb4"
                 name = network.get("name", "")
-                segment_text = f"切分网段: {name}"
+                segment_text = f"{_('split_segment')}: {name}"
             else:
                 # 子网规划 - 使用多彩样式
                 color_index = i % len(subnet_colors)
                 split_color = subnet_colors[color_index]
                 name = network.get("name", "")
                 cidr = network.get("cidr", "")
-                segment_text = f"网段 {i + 1}: {name}    {cidr}"
+                segment_text = f"{_('segment')} {i + 1}: {name}    {cidr}"
             
             draw.rectangle([chart_x, y, chart_x
                 + bar_width, y
                 + bar_height], fill=split_color, outline=None, width=0)
 
             usable_addresses = network_range - 2 if network_range > 2 else network_range
-            address_text = f"可用地址数: {usable_addresses:,}"
+            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
             segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
             address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
+            
+            # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
+            address_width = address_bbox[2] - address_bbox[0]
+            address_x = chart_right - ADDRESS_OFFSET - address_width
 
             draw_text_with_stroke(draw, (chart_x
                 + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
@@ -1151,7 +1146,7 @@ class ExportUtils:
         # 绘制剩余网段标题
         y += 80
         remaining_count = len(remaining_networks)
-        title_text = f"剩余网段 ({remaining_count} 个):"
+        title_text = f"{_('remaining_subnets')} ({remaining_count} {_('pieces')}):"
 
         title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
         title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
@@ -1173,16 +1168,20 @@ class ExportUtils:
             usable_addresses = network_range - 2 if network_range > 2 else network_range
             
             if chart_type == "split":
-                segment_text = f"网段 {i + 1}: {name}"
+                segment_text = f"{_('segment')} {i + 1}: {name}"
             else:
-                segment_text = f"网段 {i + 1}: {name}"
+                segment_text = f"{_('segment')} {i + 1}: {name}"
                 
-            address_text = f"可用地址数: {usable_addresses:,}"
+            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
             segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)
             address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
             address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
+            
+            # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
+            address_width = address_bbox[2] - address_bbox[0]
+            address_x = chart_right - ADDRESS_OFFSET - address_width
 
             draw_text_with_stroke(draw, (chart_x
                 + 30, segment_text_y), segment_text, text_font, "#ffffff")
@@ -1192,7 +1191,7 @@ class ExportUtils:
 
         # 绘制图例
         y += 80
-        legend_title = "图例说明"
+        legend_title = f"{_('legend')}:"
         legend_title_bbox = draw.textbbox((0, 0), legend_title, font=bold_text_font)
         legend_title_y = y + (bar_height - (legend_title_bbox[3] - legend_title_bbox[1])) // 2
         draw_text_with_stroke(draw, (chart_x, legend_title_y), legend_title, bold_text_font, "#ffffff")
@@ -1212,7 +1211,7 @@ class ExportUtils:
         # 父网段图例
         parent_x = chart_x
         parent_color = "#636e72"
-        parent_label = "父网段"
+        parent_label = _("parent_network")
         parent_block_size = 40
         parent_text_font = text_font
         parent_label_bbox = draw.textbbox((0, 0), parent_label, font=parent_text_font)
@@ -1235,7 +1234,7 @@ class ExportUtils:
         if chart_type == "split":
             # 子网切分 - 单一颜色
             split_color = "#4a7eb4"
-            split_label = "切分网段"
+            split_label = _("split_segment")
             split_block_size = 40
             
             split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
@@ -1247,7 +1246,7 @@ class ExportUtils:
             draw_text_with_stroke(draw, (split_x + split_block_size + 15, split_label_y), split_label, split_text_font, "#ffffff")
         else:
             # 子网规划 - 多彩样式
-            split_label = "需求网段(多色)"
+            split_label = f"{_('allocated_subnets')}"
             legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
             split_block_size = 30
             split_block_gap = 15  # 减小颜色块之间的间距
@@ -1273,12 +1272,14 @@ class ExportUtils:
         # 剩余网段图例 - 动态计算位置，增加间距
         # 计算切分/需求网段图例的总宽度
         if chart_type == "split":
-            split_label_width = draw.textbbox((0, 0), "切分网段", font=split_text_font)[2] - draw.textbbox((0, 0), "切分网段", font=split_text_font)[0]
+            split_label_text = _("split_segment")
+            split_label_width = draw.textbbox((0, 0), split_label_text, font=split_text_font)[2] - draw.textbbox((0, 0), split_label_text, font=split_text_font)[0]
             remaining_x = split_x + split_block_size + 15 + split_label_width + 80  # 增加间距到80
         else:
-            split_label_width = draw.textbbox((0, 0), "需求网段(多色)", font=split_text_font)[2] - draw.textbbox((0, 0), "需求网段(多色)", font=split_text_font)[0]
+            split_label_text = f"{_('allocated_subnets')}"
+            split_label_width = draw.textbbox((0, 0), split_label_text, font=split_text_font)[2] - draw.textbbox((0, 0), split_label_text, font=split_text_font)[0]
             remaining_x = split_x + len(legend_colors) * (split_block_size + split_block_gap) + 15 + split_label_width + 80  # 增加间距到80
-        remaining_label = "剩余网段(多色)"
+        remaining_label = f"{_('remaining_subnets')}"
         legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
         remaining_block_size = 30
         remaining_block_gap = 15  # 减小颜色块之间的间距
@@ -1505,6 +1506,17 @@ class ExportUtils:
                 return False, f"不支持的文件格式: {file_ext}"
 
             return True, f"成功导出到: {file_path}"
-        except (IOError, OSError, ValueError, TypeError) as e:
+        except PermissionError as e:
+            return False, f"导出失败: 没有写入权限，请检查文件是否被占用或目录权限是否正确: {e}"
+        except FileNotFoundError as e:
+            return False, f"导出失败: 文件路径不存在: {e}"
+        except (IOError, OSError) as e:
+            return False, f"导出失败: IO错误: {e}"
+        except ValueError as e:
+            return False, f"导出失败: 数据格式错误: {e}"
+        except TypeError as e:
+            return False, f"导出失败: 类型错误: {e}"
+        except Exception as e:
+            print(f"导出过程中发生意外错误: {e}")
             traceback.print_exc()
-            return False, f"导出失败: {str(e)}"
+            return False, f"导出失败: 意外错误: {type(e).__name__}: {e}"

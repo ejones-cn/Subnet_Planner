@@ -22,19 +22,18 @@ import ipaddress
 
 # 导入本地模块
 from version import get_version
+from i18n import _
 
 # 模块版本号
 __version__ = get_version()
 
 
-def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
+def handle_ip_subnet_error(error):
     """
     通用IP子网错误处理函数
 
     参数:
     error: 捕获的ValueError异常
-    error_type: 错误类型前缀(如"子网计算","子网规划")
-    language: 错误信息语言, "zh"表示中文, "en"表示英文
 
     返回:
     包含错误信息的字典
@@ -148,10 +147,7 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
     # 检查错误模式
     for match_func, en_template, zh_template in error_patterns:
         if match_func(error_msg):
-            if language == "en":
-                error_info = en_template(error_msg)
-            else:
-                error_info = zh_template(error_msg)
+            error_info = en_template(error_msg)  # 暂时使用英文模板，后面会替换为翻译函数
             break
 
     # 检查octet长度错误(特殊处理)
@@ -159,17 +155,11 @@ def handle_ip_subnet_error(error, error_type="子网操作", language="zh"):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
             invalid_octet = octet_match.group(1)
-            if language == "en":
-                error_info = f"Invalid octet '{invalid_octet}' in IP, max 3 chars (0-255) allowed"
-            else:
-                error_info = f"IP地址中八位组 '{invalid_octet}' 无效, 最多允许3个字符(0-255)"
+            error_info = f"{_('invalid_octet_in_ip')} '{invalid_octet}' {_('max_3_chars_0_255_allowed')}"
 
     # 使用默认错误信息
     if not error_info:
-        if language == "en":
-            error_info = f"{error_type} error: {error_msg}"
-        else:
-            error_info = f"{error_type}错误: {error_msg}"
+        error_info = f"{error_type} {_('error')}: {error_msg}"
 
     return {"error": error_info}
 
@@ -216,7 +206,7 @@ def ipv4_to_ipv6(ipv4_str):
         # 返回IPv4映射的IPv6地址
         return f"::ffff:{ipv4_str}"
     except ValueError as e:
-        return handle_ip_subnet_error(e, "IPv4转IPv6")
+        return handle_ip_subnet_error(e)
 
 
 def ipv6_to_ipv4(ipv6_str):
@@ -234,9 +224,9 @@ def ipv6_to_ipv4(ipv6_str):
         # 检查是否为IPv4映射地址
         if ipv6_addr.ipv4_mapped:
             return str(ipv6_addr.ipv4_mapped)
-        return {"error": f"{ipv6_str} 不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)"}
+        return {"error": f"{ipv6_str} {_('is_not_ipv4_mapped_ipv6_address')}"}
     except ValueError as e:
-        return handle_ip_subnet_error(e, "IPv6转IPv4")
+        return handle_ip_subnet_error(e)
 
 
 def get_subnet_info(network_str):
@@ -270,7 +260,7 @@ def get_subnet_info(network_str):
             "host_range_end": host_range_end
         }
     except ValueError as e:
-        return handle_ip_subnet_error(e, "子网计算")
+        return handle_ip_subnet_error(e)
 
 
 def split_subnet(parent_cidr, split_cidr):
@@ -283,7 +273,7 @@ def split_subnet(parent_cidr, split_cidr):
 
         # 检查split_net是否是parent_net的子网
         if not split_net.subnet_of(parent_net):
-            return {"error": f"{split_cidr} 不是 {parent_cidr} 的子网"}
+            return {"error": f"{split_cidr} {_('is_not_a_subnet_of')} {parent_cidr}"}
 
         # 如果父网段和切分网段相同，直接返回空列表
         if parent_net == split_net:
@@ -313,7 +303,7 @@ def split_subnet(parent_cidr, split_cidr):
         }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "子网规划")
+        return handle_ip_subnet_error(e)
 
 
 def _allocate_subnet(available_subnets, required):
@@ -336,7 +326,7 @@ def _allocate_subnet(available_subnets, required):
                 subnets_gen = available.subnets(new_prefix=new_prefix)
                 new_subnet = next(subnets_gen, None)
                 if not new_subnet:
-                    return False, None, None, f"无法为 {required['name']} 创建前缀长度为 {new_prefix} 的子网"
+                    return False, None, None, f"{_('cannot_create_subnet_for')} {required['name']} {_('with_prefix_length')} {new_prefix}"
 
                 # 计算剩余子网
                 remaining = list(available.address_exclude(new_subnet))
@@ -347,9 +337,9 @@ def _allocate_subnet(available_subnets, required):
 
                 return True, new_subnet, updated_available, None
             except ValueError as e:
-                return False, None, None, f"创建子网失败: {str(e)}"
+                return False, None, None, f"{_('failed_to_create_subnet')}: {str(e)}"
 
-    return False, None, None, f"无法为 {required['name']} 分配足够大的子网空间"
+    return False, None, None, f"{_('cannot_allocate_sufficiently_large_subnet_for')} {required['name']}"
 
 
 def suggest_subnet_planning(parent_cidr, required_subnets):
@@ -419,7 +409,7 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
         }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "子网规划")
+        return handle_ip_subnet_error(e)
 
 
 def merge_subnets(subnets):
@@ -435,7 +425,7 @@ def merge_subnets(subnets):
     try:
         # 验证输入是否为空
         if not subnets or len(subnets) == 0:
-            return {"error": "子网列表不能为空"}
+            return {"error": f"{_('subnet_list_cannot_be_empty')}"}
 
         # 验证输入并转换为IPv4Network对象
         ipv4_subnets = []
@@ -443,7 +433,7 @@ def merge_subnets(subnets):
             try:
                 ipv4_subnets.append(ipaddress.IPv4Network(subnet, strict=False))
             except ValueError as e:
-                return handle_ip_subnet_error(e, "子网合并")
+                return handle_ip_subnet_error(e)
 
         # 按网络地址排序
         ipv4_subnets.sort()
@@ -545,7 +535,7 @@ def merge_subnets(subnets):
         }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "子网合并")
+        return handle_ip_subnet_error(e)
 
 
 def get_ip_info(ip_str):
@@ -716,7 +706,7 @@ def get_ip_info(ip_str):
             }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "IP信息获取")
+        return handle_ip_subnet_error(e)
 
 
 def range_to_cidr(start_ip, end_ip):
@@ -737,7 +727,7 @@ def range_to_cidr(start_ip, end_ip):
 
         # 确保起始IP小于等于结束IP
         if start > end:
-            return {"error": "起始IP地址必须小于或等于结束IP地址"}
+            return {"error": f"{_('start_ip_must_be_less_than_or_equal_to_end_ip')}"}
 
         # 智能扩展范围，尝试找到包含当前范围的最小子网
         # 将起始IP向左扩展到网络地址，结束IP向右扩展到广播地址
@@ -775,7 +765,7 @@ def range_to_cidr(start_ip, end_ip):
         }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "IP地址范围计算")
+        return handle_ip_subnet_error(e)
 
 
 def check_subnet_overlap(subnets):
@@ -795,10 +785,10 @@ def check_subnet_overlap(subnets):
             try:
                 ipv4_subnets.append(ipaddress.IPv4Network(subnet, strict=False))
             except ValueError as e:
-                return handle_ip_subnet_error(e, "子网重叠检查")
+                return handle_ip_subnet_error(e)
 
         if len(ipv4_subnets) < 2:
-            return {"error": "至少需要两个子网来检查重叠"}
+            return {"error": f"{_('at_least_two_subnets_needed_to_check_overlap')}"}
 
         overlaps = []
 
@@ -812,7 +802,7 @@ def check_subnet_overlap(subnets):
                     overlaps.append({
                         "subnet1": str(subnet1),
                         "subnet2": str(subnet2),
-                        "type": "包含" if subnet1.subnet_of(subnet2) or subnet2.subnet_of(subnet1) else "部分重叠"
+                        "type": "contains" if subnet1.subnet_of(subnet2) or subnet2.subnet_of(subnet1) else "partial overlap"
                     })
 
         return {
@@ -823,7 +813,7 @@ def check_subnet_overlap(subnets):
         }
 
     except ValueError as e:
-        return handle_ip_subnet_error(e, "子网重叠检查")
+        return handle_ip_subnet_error(e)
 
 
 # 测试示例
