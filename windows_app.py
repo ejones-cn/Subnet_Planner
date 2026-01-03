@@ -47,6 +47,9 @@ from version import get_version
 # 导入Base64编码的图标
 from icon_base64 import APP_ICON_BASE64
 
+# 国际化模块
+from i18n import _, set_language, get_language, get_supported_languages
+
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
 
@@ -448,7 +451,7 @@ class IPSubnetSplitterApp:
 
     def __init__(self, main_window):
         # 应用程序信息
-        self.app_name = "子网规划师"
+        self.app_name = _("app_name")
         self.app_version = get_version()
 
         # CIDR格式验证正则表达式
@@ -566,7 +569,7 @@ class IPSubnetSplitterApp:
         self.export_utils = ExportUtils()
 
         self.root = main_window
-        self.root.title(f"子网规划师 v{self.app_version}")
+        self.root.title(f"{_("app_name")} v{self.app_version}")
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
         # 这里只设置窗口标题
 
@@ -1083,7 +1086,7 @@ class IPSubnetSplitterApp:
             for item in target_tree.get_children():
                 target_values = target_tree.item(item, "values")
                 if target_values[1] == name:
-                    self.show_error("错误", f"{move_to}中已存在名称为 '{name}' 的记录")
+                    self.show_error(_("error"), f"{move_to}{_("record_already_exists", name=name)}")
                     return []
 
         # 执行移动操作，并保存新插入记录的ID
@@ -1198,7 +1201,7 @@ class IPSubnetSplitterApp:
 
             for name in req_names_to_swap:
                 if name in all_pool_names:
-                    self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                    self.show_error(_("error"), f"{_("requirements_pool")}{_("record_already_exists", name=name)}")
                     return
 
             # 检查子网需求表
@@ -1210,7 +1213,7 @@ class IPSubnetSplitterApp:
 
             for name in pool_names_to_swap:
                 if name in all_req_names:
-                    self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                    self.show_error(_("error"), f"{_("subnet_requirements")}{_("record_already_exists", name=name)}")
                     return
 
             # 执行交换操作
@@ -1287,7 +1290,7 @@ class IPSubnetSplitterApp:
 
         for name in req_names_to_swap:
             if name in all_pool_names:
-                self.show_error("错误", f"需求池中已存在名称为 '{name}' 的记录")
+                self.show_error(_("error"), f"{_("requirements_pool")}{_("record_already_exists", name=name)}")
                 return
 
         # 检查子网需求表：要交换到子网需求表的pool_names是否与子网需求表中已有的名称冲突（排除当前选中的req_items）
@@ -1299,7 +1302,7 @@ class IPSubnetSplitterApp:
 
         for name in pool_names_to_swap:
             if name in all_req_names:
-                self.show_error("错误", f"子网需求表中已存在名称为 '{name}' 的记录")
+                self.show_error(_("error"), f"{_("subnet_requirements")}{_("record_already_exists", name=name)}")
                 return
 
         # 第二阶段：执行完全交换操作
@@ -1366,7 +1369,7 @@ class IPSubnetSplitterApp:
         input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
         # 右侧：历史记录面板
-        history_frame = ttk.LabelFrame(self.split_frame, text="历史记录", padding=(10, 10, 10, 10))
+        history_frame = ttk.LabelFrame(self.split_frame, text=_("history"), padding=(10, 10, 10, 10))
         history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 配置 input_frame 的 grid 行列
@@ -1379,7 +1382,7 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(3, weight=0, minsize=0)
 
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
-        ttk.Label(input_frame, text="父网段", anchor="w", font=("微软雅黑", 10)).grid(
+        ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(("微软雅黑", 10))).grid(
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
@@ -1400,7 +1403,7 @@ class IPSubnetSplitterApp:
         self.parent_entry.config(state="normal")  # 允许手动输入
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
-        ttk.Label(input_frame, text="切分段", anchor="w", font=("微软雅黑", 10)).grid(
+        ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(("微软雅黑", 10))).grid(
             row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
@@ -1417,7 +1420,7 @@ class IPSubnetSplitterApp:
 
         # 按钮区域
         # 执行按钮 - 跨四行的方形样式，使用grid布局
-        self.execute_btn = ttk.Button(input_frame, text="执行切分", command=self.execute_split, width=10)
+        self.execute_btn = ttk.Button(input_frame, text=_("execute_split"), command=self.execute_split, width=10)
         # 使用grid布局，通过rowspan=4实现跨四行效果，形成方形按钮
         # 将sticky改为NSEW，确保按钮在单元格内居中对齐
         self.execute_btn.grid(row=0, column=2, rowspan=4, padx=(0, 0), pady=0, sticky=tk.NSEW)
@@ -1546,7 +1549,7 @@ class IPSubnetSplitterApp:
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
-        result_frame = ttk.LabelFrame(self.split_frame, text="切分结果", padding="10")
+        result_frame = ttk.LabelFrame(self.split_frame, text=_("split_result"), padding="10")
         result_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=(0, 0), pady=(0, 0))
 
         # 配置 result_frame 的 grid 布局
@@ -1554,7 +1557,7 @@ class IPSubnetSplitterApp:
         result_frame.grid_columnconfigure(0, weight=1)
 
         # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
-        self.export_btn = ttk.Button(result_frame, text="导出结果", command=self.export_result, width=10)
+        self.export_btn = ttk.Button(result_frame, text=_("export_result"), command=self.export_result, width=10)
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
 
@@ -1800,7 +1803,7 @@ class IPSubnetSplitterApp:
         self.planning_frame.grid_rowconfigure(2, weight=1)  # 规划结果行，可伸缩
 
         # 父网段设置区域
-        parent_frame = ttk.LabelFrame(self.planning_frame, text="父网段设置", padding=(5, 10, 10, 10))
+        parent_frame = ttk.LabelFrame(self.planning_frame, text=_("parent_network_settings"), padding=(5, 10, 10, 10))
         parent_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 0))  # 左上角
         # 设置父网段设置面板的固定宽度
         parent_frame.configure(width=250)
@@ -1824,13 +1827,13 @@ class IPSubnetSplitterApp:
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
 
         # 需求池区域
-        history_frame = ttk.LabelFrame(self.planning_frame, text="需求池", padding=(10, 10, 0, 10))
+        history_frame = ttk.LabelFrame(self.planning_frame, text=_("requirements_pool"), padding=(10, 10, 0, 10))
         history_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(0, 10))  # 左下角
         # 设置需求池面板的固定宽度
         history_frame.configure(width=250)
 
         # 子网需求区域
-        requirements_frame = ttk.LabelFrame(self.planning_frame, text="子网需求", padding=(10, 10, 0, 10))
+        requirements_frame = ttk.LabelFrame(self.planning_frame, text=_("subnet_requirements"), padding=(10, 10, 0, 10))
         requirements_frame.grid(
             row=0, column=1, rowspan=2, sticky="nsew", padx=(5, 0), pady=(0, 10)
         )  # 右侧跨两行
@@ -1948,24 +1951,24 @@ class IPSubnetSplitterApp:
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
-        add_btn = ttk.Button(button_frame, text="添加", command=self.add_subnet_requirement, width=7)
+        add_btn = ttk.Button(button_frame, text=_("add"), command=self.add_subnet_requirement, width=7)
         add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
         # 删除按钮
-        delete_btn = ttk.Button(button_frame, text="删除", command=self.delete_subnet_requirement, width=7)
+        delete_btn = ttk.Button(button_frame, text=_("delete"), command=self.delete_subnet_requirement, width=7)
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
         # 撤销按钮
-        self.undo_delete_btn = ttk.Button(button_frame, text="撤销", command=self.undo_delete, width=7)
+        self.undo_delete_btn = ttk.Button(button_frame, text=_("undo"), command=self.undo_delete, width=7)
         self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
 
         # 移动/交换按钮（根据选中情况自动判断操作）
         # 交换记录按钮 - 使用交换图标
-        self.swap_btn = ttk.Button(button_frame, text="↔", command=self.move_records, width=7)
+        self.swap_btn = ttk.Button(button_frame, text=_("move_records"), command=self.move_records, width=7)
         self.swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
 
         # 导入按钮
-        import_btn = ttk.Button(button_frame, text="导入", command=self.import_requirements, width=7)
+        import_btn = ttk.Button(button_frame, text=_("import"), command=self.import_requirements, width=7)
         import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
 
         # 规划子网按钮已移动到规划结果区域，此处不再显示
@@ -2007,7 +2010,7 @@ class IPSubnetSplitterApp:
         # 按钮已移动到删除按钮下方
 
         # 规划结果区域 - 使用grid布局，跨两列显示
-        result_frame = ttk.LabelFrame(self.planning_frame, text="规划结果", padding="10")
+        result_frame = ttk.LabelFrame(self.planning_frame, text=_("planning_result"), padding="10")
         result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 0))
 
         # 创建笔记本控件显示规划结果
@@ -2467,7 +2470,7 @@ class IPSubnetSplitterApp:
         main_frame.columnconfigure(3, weight=1)
 
         # 子网名称 - 标签在中间列左侧，输入框在中间列右侧
-        ttk.Label(main_frame, text="子网名称:").grid(row=0, column=1, sticky=tk.E, pady=15, padx=(10, 10))
+        ttk.Label(main_frame, text=_("subnet_name") + ":").grid(row=0, column=1, sticky=tk.E, pady=15, padx=(10, 10))
         name_var = tk.StringVar()
         name_entry = ttk.Entry(main_frame, textvariable=name_var, width=20)
         name_entry.grid(row=0, column=2, sticky=tk.W, pady=15, padx=(0, 10))
@@ -2482,7 +2485,7 @@ class IPSubnetSplitterApp:
         name_entry.config(validate="all", validatecommand=(temp_window.register(validate_name), "%P"))
 
         # 主机数量 - 标签在中间列左侧，输入框在中间列右侧
-        ttk.Label(main_frame, text="主机数量:").grid(row=1, column=1, sticky=tk.E, pady=15, padx=(10, 10))
+        ttk.Label(main_frame, text=_("host_count") + ":").grid(row=1, column=1, sticky=tk.E, pady=15, padx=(10, 10))
         hosts_var = tk.StringVar()
         hosts_entry = ttk.Entry(main_frame, textvariable=hosts_var, width=20)
         hosts_entry.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
@@ -2521,13 +2524,13 @@ class IPSubnetSplitterApp:
             hosts = hosts_var.get().strip()
 
             if not name:
-                self.show_error("错误", "请输入子网名称")
+                self.show_error(_("error"), _("please_enter_subnet_name"))
                 # 重新将焦点设置到子网名称输入框
                 name_entry.focus_set()
                 return
 
             if not hosts.isdigit() or int(hosts) <= 0:
-                self.show_error("错误", "请输入有效的主机数量")
+                self.show_error(_("error"), _("please_enter_valid_host_count"))
                 # 重新将焦点设置到主机数量输入框
                 hosts_entry.focus_set()
                 return
@@ -2538,7 +2541,7 @@ class IPSubnetSplitterApp:
                 values = self.requirements_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
-                    self.show_error("错误", f"已经存在名称为 '{name}' 的子网，请使用其他名称")
+                    self.show_error(_("error"), _("subnet_already_exists", name=name))
                     # 重新将焦点设置到子网名称输入框
                     name_entry.focus_set()
                     return
@@ -2581,7 +2584,7 @@ class IPSubnetSplitterApp:
         save_requirement_btn = ttk.Button(
             button_frame, text="保存需求", command=lambda: save_requirement("requirements"), width=10
         )
-        save_to_pool_btn = ttk.Button(button_frame, text="暂存到池", command=lambda: save_requirement("pool"), width=10)
+        save_to_pool_btn = ttk.Button(button_frame, text=_("save_to_pool"), command=lambda: save_requirement("pool"), width=10)
 
         # 使用pack布局让按钮在按钮框架中居中显示
         save_requirement_btn.pack(side=tk.LEFT, padx=(0, 10))
@@ -2713,7 +2716,7 @@ class IPSubnetSplitterApp:
         button_frame.pack(fill=tk.X, pady=0)
 
         # 导入文件按钮
-        import_file_btn = ttk.Button(button_frame, text="从文件导入",
+        import_file_btn = ttk.Button(button_frame, text=_("import_from_file"),
                                     command=lambda: self._import_from_file(dialog),
                                     width=18)
         import_file_btn.pack(pady=15)
@@ -2740,7 +2743,7 @@ class IPSubnetSplitterApp:
         download_csv_btn.pack(pady=5)
 
         # 取消按钮 - 直接放在主框架中，使用pack布局
-        cancel_btn = ttk.Button(main_frame, text="取消", command=dialog.destroy, width=12)  # 增加宽度以确保"取消"文字完整显示
+        cancel_btn = ttk.Button(main_frame, text=_("cancel"), command=dialog.destroy, width=12)  # 增加宽度以确保"取消"文字完整显示
         cancel_btn.pack(pady=(20, 15), side=tk.RIGHT, padx=10)
 
     def _import_from_file(self, parent_dialog):
@@ -2753,7 +2756,7 @@ class IPSubnetSplitterApp:
 
         # 选择文件
         file_path = filedialog.askopenfilename(
-            title="选择要导入的文件",
+            title=_("select_file_to_import"),
             filetypes=[
                 ("Excel文件", "*.xlsx"),
                 ("CSV文件", "*.csv"),
@@ -2768,7 +2771,7 @@ class IPSubnetSplitterApp:
         try:
             data_list = self._parse_import_file(file_path)
         except (ValueError, IOError, UnicodeDecodeError, TypeError) as e:
-            self.show_error("错误", f"文件解析失败: {str(e)}")
+            self.show_error(_("error"), f"{_("msg_file_parse_failed")}: {str(e)}")
             return
 
         if not data_list:
@@ -3018,19 +3021,19 @@ class IPSubnetSplitterApp:
         button_frame.pack(fill=tk.X, pady=(15, 0))
 
         # 导入到需求池表按钮
-        import_pool_btn = ttk.Button(button_frame, text="导入需求池",
+        import_pool_btn = ttk.Button(button_frame, text=_("import_requirements_pool"),
                                      command=lambda: self._import_valid_data(valid_data, "pool", dialog),
                                      width=12)
         import_pool_btn.pack(side=tk.LEFT, padx=5)
 
         # 导入到子网需求表按钮
-        import_req_btn = ttk.Button(button_frame, text="导入子网需求",
+        import_req_btn = ttk.Button(button_frame, text=_("import_subnet_requirements"),
                                     command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
                                     width=12)
         import_req_btn.pack(side=tk.LEFT, padx=5)
 
         # 取消按钮 - 靠右显示，与其他按钮并排
-        cancel_btn = ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10)
+        cancel_btn = ttk.Button(button_frame, text=_("cancel"), command=dialog.destroy, width=10)
         cancel_btn.pack(side=tk.RIGHT, padx=5)
 
     def _import_valid_data(self, valid_data, target_table, dialog=None):
@@ -3097,7 +3100,7 @@ class IPSubnetSplitterApp:
             filetypes = [("CSV文件", "*.csv")]
 
         file_path = filedialog.asksaveasfilename(
-            title="保存模板",
+            title=_("save_template"),
             defaultextension=default_ext,
             filetypes=filetypes,
             initialfile=f"子网需求导入模板{default_ext}",
@@ -3151,7 +3154,7 @@ class IPSubnetSplitterApp:
             self.show_info("成功", f"模板已保存到: {file_path}")
 
         except (IOError, ValueError, TypeError) as e:
-            self.show_error("错误", f"模板生成失败: {str(e)}")
+            self.show_error(_("error"), f"{_("msg_template_generation_failed")}: {str(e)}")
 
     def copy_cell_data(self, event, tree):
         """复制表格中单元格数据的通用功能"""
@@ -3259,7 +3262,7 @@ class IPSubnetSplitterApp:
         # 根据对话框类型设置按钮
         if dialog_type in ["info", "error", "warning"]:
             # 只有确定按钮，使用默认样式
-            ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
+            ok_btn = ttk.Button(btn_frame, text=_("ok"), command=on_ok)
             ok_btn.pack(side=tk.RIGHT)
 
             # 绑定回车键和Esc键
@@ -3364,7 +3367,7 @@ class IPSubnetSplitterApp:
             result = False
             dialog.destroy()
 
-        cancel_btn = ttk.Button(btn_frame, text="取消", command=on_cancel)
+        cancel_btn = ttk.Button(btn_frame, text=_("cancel"), command=on_cancel)
         cancel_btn.pack(side=tk.RIGHT, padx=(5, 0))
 
         # 确定按钮，使用默认样式
@@ -3373,7 +3376,7 @@ class IPSubnetSplitterApp:
             result = True
             dialog.destroy()
 
-        ok_btn = ttk.Button(btn_frame, text="确定", command=on_ok)
+        ok_btn = ttk.Button(btn_frame, text=_("ok"), command=on_ok)
         ok_btn.pack(side=tk.RIGHT)
 
         # 按钮创建后立即设置焦点
@@ -3666,7 +3669,7 @@ class IPSubnetSplitterApp:
 
             # 验证数据
             if not new_value:
-                self.show_error("错误", "输入不能为空")
+                self.show_error(_("error"), _("input_cannot_be_empty"))
                 # 重新将焦点设置到编辑框
                 self.edit_entry.focus_set()
                 return
@@ -3716,7 +3719,7 @@ class IPSubnetSplitterApp:
                     values = self.requirements_tree.item(item, "values")
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
-                        self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                        self.show_error(_("error"), _("subnet_already_exists", name=new_value))
                         # 重新将焦点设置到编辑框
                         self.edit_entry.focus_set()
                         return
@@ -3728,19 +3731,19 @@ class IPSubnetSplitterApp:
                     values = self.pool_tree.item(item, "values")
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
-                        self.show_error("错误", f"已经存在名称为 '{new_value}' 的子网，请使用其他名称")
+                        self.show_error(_("error"), _("subnet_already_exists", name=new_value))
                         return
 
             if self.current_edit_column == "hosts":
                 try:
                     hosts = int(new_value)
                     if hosts <= 0:
-                        self.show_error("错误", "主机数量必须大于0")
+                        self.show_error(_("error"), _("host_count_must_be_greater_than_0"))
                         # 重新将焦点设置到编辑框
                         self.edit_entry.focus_set()
                         return
                 except ValueError:
-                    self.show_error("错误", "主机数量必须是整数")
+                    self.show_error(_("error"), _("host_count_must_be_integer"))
                     # 重新将焦点设置到编辑框
                     self.edit_entry.focus_set()
                     return
@@ -3780,11 +3783,11 @@ class IPSubnetSplitterApp:
         # 获取父网段
         parent = self.planning_parent_entry.get().strip()
         if not parent:
-            self.show_error("错误", "请输入父网段")
+            self.show_error(_("error"), _("please_enter_parent_network"))
             return
 
         if not self.validate_cidr(parent):
-            self.show_error("错误", "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）")
+            self.show_error(_("error"), _("invalid_parent_network_format"))
             return
 
         # 获取子网需求
@@ -3794,7 +3797,7 @@ class IPSubnetSplitterApp:
             subnet_requirements.append((values[1], int(values[2])))
 
         if not subnet_requirements:
-            self.show_error("错误", "请添加至少一个子网需求")
+            self.show_error(_("error"), _("please_add_at_least_one_requirement"))
             return
 
         try:
@@ -3807,7 +3810,7 @@ class IPSubnetSplitterApp:
 
             # 检查是否有错误
             if 'error' in plan_result:
-                self.show_error("错误", f"子网规划失败: {plan_result['error']}")
+                self.show_error(_("error"), f"{_("subnet_planning_failed")}: {plan_result['error']}")
                 return
 
             # 清空结果表格
@@ -3887,9 +3890,9 @@ class IPSubnetSplitterApp:
                     message = f"子网规划失败: {error_msg}"
             else:
                 message = f"子网规划失败: {error_msg}"
-            self.show_error("错误", message)
+            self.show_error(_("error"), message)
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_error("错误", f"子网规划失败: 发生未知错误 - {str(e)}")
+            self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
 
     def generate_planning_chart_data(self, plan_result):
         """生成规划图表数据并绘制"""
@@ -3952,7 +3955,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "父网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            self.show_error("输入错误", "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）")
+            self.show_error(_("input_error"), _("invalid_parent_network_cidr"))
             return
         if not self.validate_cidr(split):
             self.clear_result()
@@ -3960,7 +3963,7 @@ class IPSubnetSplitterApp:
             self.split_tree.insert(
                 "", tk.END, values=("错误", "切分网段格式无效，请输入有效的CIDR格式！"), tags=("error",)
             )
-            self.show_error("输入错误", "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23）")
+            self.show_error(_("input_error"), _("invalid_split_segment_cidr"))
             return
 
         try:
@@ -4264,11 +4267,11 @@ class IPSubnetSplitterApp:
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         # 创建输入区域
-        input_frame = ttk.LabelFrame(content_container, text="IPv6地址信息查询", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text=_("ipv6_address_info"), padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text="IPv6地址").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_("ipv6_address")).pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=48, font=("微软雅黑", 10))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
@@ -4293,7 +4296,7 @@ class IPSubnetSplitterApp:
         validate_ipv6(self.ipv6_info_entry.get())
 
         # CIDR下拉列表（IPv6支持1-128）
-        ttk.Label(input_frame, text="CIDR").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_("cidr")).pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_cidr_var = tk.StringVar()
         self.ipv6_cidr_combobox = ttk.Combobox(
             input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly", font=("微软雅黑", 10)
@@ -4302,11 +4305,11 @@ class IPSubnetSplitterApp:
         self.ipv6_cidr_combobox.current(63)  # 默认选择64
         self.ipv6_cidr_combobox.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.ipv6_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv6_info)
+        self.ipv6_info_btn = ttk.Button(input_frame, text=_("query_info"), command=self.execute_ipv6_info)
         self.ipv6_info_btn.pack(side=tk.RIGHT)
 
         # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text="查询结果", padding=(10, 10, 0, 10))
+        result_frame = ttk.LabelFrame(content_container, text=_("query_result"), padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建Treeview和垂直滚动条
@@ -4350,7 +4353,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板行（固定高度）
 
         # 左侧上方：子网合并列表 - 使用grid布局
-        subnet_frame = ttk.LabelFrame(left_frame, text="子网合并列表", padding=(10, 10, 0, 10))
+        subnet_frame = ttk.LabelFrame(left_frame, text=_("merge_subnets"), padding=(10, 10, 0, 10))
         subnet_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
         # 配置左侧面板的grid布局
@@ -4375,18 +4378,18 @@ class IPSubnetSplitterApp:
         self.create_scrollable_text(subnet_frame, self.subnet_merge_text, subnet_merge_scrollbar)
 
         # 子网合并按钮 - 固定在右下角
-        self.merge_btn = ttk.Button(subnet_frame, text="合并子网", command=self.execute_merge_subnets)
+        self.merge_btn = ttk.Button(subnet_frame, text=_("merge_subnet"), command=self.execute_merge_subnets)
         self.merge_btn.grid(row=1, column=0, columnspan=1, sticky="w", pady=(5, 0), padx=(0, 10))
 
         # 左侧下方：IP地址范围 - 使用grid布局
-        range_frame = ttk.LabelFrame(left_frame, text="IP地址范围", padding="10")
+        range_frame = ttk.LabelFrame(left_frame, text=_("ip_address_range"), padding="10")
         range_frame.grid(row=1, column=0, sticky="ew", pady=(5, 0))  # 仅水平填充，固定高度
 
         # 起始IP - 使用Combobox，支持下拉选择和记忆功能
         start_frame = ttk.Frame(range_frame)
         start_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(start_frame, text="起始").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(start_frame, text=_("start")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_start_entry = ttk.Combobox(
             start_frame, values=self.range_start_history, width=13, font=("微软雅黑", 10)
         )
@@ -4418,7 +4421,7 @@ class IPSubnetSplitterApp:
         end_frame = ttk.Frame(range_frame)
         end_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Label(end_frame, text="结束").pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(end_frame, text=_("end")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=("微软雅黑", 10))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.30.254")
@@ -4433,11 +4436,11 @@ class IPSubnetSplitterApp:
         validate_end_ip(self.range_end_entry.get())
 
         # 范围转CIDR按钮 - 靠左放置
-        self.range_to_cidr_btn = ttk.Button(range_frame, text="转换为CIDR", command=self.execute_range_to_cidr)
+        self.range_to_cidr_btn = ttk.Button(range_frame, text=_("convert_to_cidr"), command=self.execute_range_to_cidr)
         self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
 
         # 右侧：CIDR结果
-        self.merge_result_frame = ttk.LabelFrame(right_frame, text="CIDR结果", padding=(10, 10, 0, 10))
+        self.merge_result_frame = ttk.LabelFrame(right_frame, text=_("cidr_result"), padding=(10, 10, 0, 10))
         self.merge_result_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建正常的结果树（非转置）
@@ -4632,11 +4635,11 @@ class IPSubnetSplitterApp:
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         # 创建输入区域
-        input_frame = ttk.LabelFrame(content_container, text="IPv4地址信息查询", padding="10")
+        input_frame = ttk.LabelFrame(content_container, text=_("ipv4_address_info"), padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text="IPv4地址").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_("ipv4_address")).pack(side=tk.LEFT, padx=(0, 5))
         self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=("微软雅黑", 10))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
@@ -4700,7 +4703,7 @@ class IPSubnetSplitterApp:
         self.cidr_subnet_mask_map = {v: k for k, v in self.subnet_mask_cidr_map.items()}
 
         # 子网掩码下拉列表
-        ttk.Label(input_frame, text="子网掩码").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_("subnet_mask")).pack(side=tk.LEFT, padx=(0, 5))
         self.ip_mask_var = tk.StringVar()
         self.ip_mask_combobox = ttk.Combobox(
             input_frame, textvariable=self.ip_mask_var, width=15, state="readonly", font=("微软雅黑", 10)
@@ -4723,7 +4726,7 @@ class IPSubnetSplitterApp:
         # 绑定CIDR选择事件
         self.ip_cidr_combobox.bind("<<ComboboxSelected>>", self.on_cidr_change)
 
-        self.ip_info_btn = ttk.Button(input_frame, text="查询信息", command=self.execute_ipv4_info)
+        self.ip_info_btn = ttk.Button(input_frame, text=_("query_info"), command=self.execute_ipv4_info)
         self.ip_info_btn.pack(side=tk.RIGHT)
 
         # 创建结果区域
@@ -4799,7 +4802,7 @@ class IPSubnetSplitterApp:
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 左侧：子网列表
-        input_frame = ttk.LabelFrame(left_frame, text="子网列表", padding=(10, 10, 0, 10))
+        input_frame = ttk.LabelFrame(left_frame, text=_("merge_subnets"), padding=(10, 10, 0, 10))
         input_frame.pack(fill=tk.BOTH, expand=True)
 
         # 子网输入文本框和滚动条
@@ -4816,11 +4819,11 @@ class IPSubnetSplitterApp:
         self.create_scrollable_text(text_frame, self.overlap_text, overlap_text_scrollbar)
 
         # 检测重叠按钮 - 靠左放置
-        self.overlap_btn = ttk.Button(input_frame, text="检测重叠", command=self.execute_check_overlap)
+        self.overlap_btn = ttk.Button(input_frame, text=_("check_overlap"), command=self.execute_check_overlap)
         self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10))
 
         # 右侧：检测结果
-        result_frame = ttk.LabelFrame(right_frame, text="检测结果", padding=(10, 10, 0, 10))
+        result_frame = ttk.LabelFrame(right_frame, text=_("detection_result"), padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
@@ -5852,7 +5855,7 @@ class IPSubnetSplitterApp:
         clear_result_btn.grid(row=2, column=1, padx=5, pady=5)
 
         # 主题切换部分
-        theme_frame = ttk.LabelFrame(content_frame, text="主题切换", padding="10")
+        theme_frame = ttk.LabelFrame(content_frame, text=_("theme_switch"), padding="10")
         theme_frame.grid(row=3, column=0, sticky=tk.EW, pady=(15, 10))
 
         # 配置主题切换框架的列
@@ -5861,7 +5864,7 @@ class IPSubnetSplitterApp:
         theme_frame.grid_columnconfigure(2, weight=0)  # 按钮列
 
         # 主题选择标签
-        theme_label = ttk.Label(theme_frame, text="选择主题：")
+        theme_label = ttk.Label(theme_frame, text=_("select_theme") + ":")
         theme_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 10), pady=5)
 
         # 获取系统可用的内置主题列表
@@ -5929,7 +5932,7 @@ class IPSubnetSplitterApp:
         theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
 
         # 窗口横向锁定控制部分
-        lock_frame = ttk.LabelFrame(content_frame, text="窗口锁定", padding="10")
+        lock_frame = ttk.LabelFrame(content_frame, text=_("window_lock"), padding="10")
         lock_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 10))
 
         # 配置锁定框架的列
@@ -6477,6 +6480,28 @@ class IPSubnetSplitterApp:
         # 初始化窗口置顶状态
         self.is_pinned = False
 
+        # 创建语言选择下拉菜单
+        self.language_var = tk.StringVar()
+        self.language_var.set("中文" if get_language() == "zh" else "English")  # 设置当前语言
+        
+        # 使用ttk.Combobox创建语言选择控件
+        self.language_combobox = ttk.Combobox(
+            self.root,
+            textvariable=self.language_var,
+            values=["中文", "English"],
+            state="readonly",
+            font=('微软雅黑', 10, 'bold'),
+            width=6
+        )
+        
+        # 放置语言选择控件
+        self.language_combobox.place(
+            relx=1.0, rely=0.0, anchor=tk.NE, x=-160, y=22
+        )
+        
+        # 绑定语言切换事件
+        self.language_combobox.bind("<<ComboboxSelected>>", self.on_language_change)
+
         # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与信息框一致
         self.about_label = tk.Label(
             self.root,
@@ -6555,20 +6580,202 @@ class IPSubnetSplitterApp:
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
     
+    def on_language_change(self, event):
+        """语言选择变化时的处理函数"""
+        selected_language = self.language_var.get()
+        lang_code = "zh" if selected_language == "中文" else "en"
+        
+        # 设置当前语言
+        set_language(lang_code)
+        
+        # 更新应用程序名称
+        self.app_name = _("app_name")
+        self.root.title(f"{self.app_name} v{self.app_version}")
+        
+        # 重新创建所有UI元素，实现语言更新
+        self.destroy_all_widgets()
+        self.recreate_ui()
+    
+    def destroy_all_widgets(self):
+        """销毁所有子组件"""
+        # 关闭功能调试面板，如果它是打开的
+        if hasattr(self, 'test_dialog') and self.test_dialog is not None:
+            self.test_dialog.destroy()
+            self.test_dialog = None
+        
+        # 销毁主框架，如果存在的话
+        if hasattr(self, 'main_frame'):
+            self.main_frame.destroy()
+        
+        # 销毁右上角的控件
+        if hasattr(self, 'about_label'):
+            self.about_label.destroy()
+        if hasattr(self, 'pin_label'):
+            self.pin_label.destroy()
+        if hasattr(self, 'language_combobox'):
+            self.language_combobox.destroy()
+        
+        # 销毁信息栏相关控件
+        if hasattr(self, 'info_spacer'):
+            self.info_spacer.destroy()
+        if hasattr(self, 'info_bar_frame'):
+            self.info_bar_frame.destroy()
+        if hasattr(self, 'info_close_btn'):
+            self.info_close_btn.destroy()
+        if hasattr(self, 'info_label'):
+            self.info_label.destroy()
+    
+    def recreate_ui(self):
+        """重新创建UI元素"""
+        # 重新初始化所有必要的组件属性
+        self.initialize_component_properties()
+        
+        # 重新创建主框架
+        self.main_frame = ttk.Frame(self.root, padding="15")
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 重新创建信息栏 spacer
+        self.info_spacer = ttk.Frame(self.main_frame, style="Placeholder.TFrame")
+        self.info_spacer.pack(side="bottom", fill="x")
+        self.info_spacer.pack_forget()
+        self.info_spacer.configure(height=30)
+        
+        # 重新创建信息栏框架
+        self.info_bar_frame = ttk.Frame(self.info_spacer, style="InfoBar.TFrame")
+        self.info_bar_frame.place_forget()
+        
+        # 重新创建顶级标签页控件
+        self.create_top_level_notebook()
+        
+        # 重新创建右上角的关于链接按钮和钉住按钮
+        self.create_about_link()
+        
+        # 确保信息栏框架的grid布局配置正确
+        self.info_bar_frame.grid_rowconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(0, weight=1)
+        self.info_bar_frame.grid_columnconfigure(1, weight=0)
+        
+        # 重新创建信息栏关闭按钮
+        self.info_close_btn = ttk.Button(
+            self.info_bar_frame,
+            text="✕",
+            command=self.hide_info_bar,
+            style="InfoBarCloseButton.TButton",
+            cursor="hand2",
+        )
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1)
+        
+        # 重新创建信息标签
+        self.info_label = ttk.Label(
+            self.info_bar_frame, text="", padding=(2, 0, 0, 0), anchor="w"
+        )
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
+        self.info_label.lift(self.info_close_btn)
+        
+        # 重新初始化图表数据
+        self.chart_data = None
+        
+        # 重新初始化历史记录
+        self.history_records = []
+        
+        # 初始化时获取并保存参考宽度
+        self.root.update_idletasks()
+        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
+    
+    def initialize_component_properties(self):
+        """重新初始化所有必要的组件属性"""
+        # 网段规划相关属性
+        self.planning_parent_networks = []
+        self.planning_parent_entry = None
+        self.pool_tree = None
+        self.pool_scrollbar = None
+        self.requirements_tree = None
+        self.requirements_scrollbar = None
+        
+        # 功能调试面板相关属性
+        self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
+        self.undo_delete_btn = None
+        self.swap_btn = None
+        self.planning_notebook = None
+        self.execute_planning_btn = None
+        self.allocated_frame = None
+        self.allocated_tree = None
+        self.planning_remaining_frame = None
+        self.planning_remaining_tree = None
+        
+        # 编辑相关属性
+        self.edit_entry = None
+        self.current_edit_item = None
+        self.current_edit_column = None
+        self.current_edit_column_index = None
+        self.current_edit_tree = None
+        
+        # 高级工具相关属性
+        self.advanced_notebook = None
+        self.ipv4_info_frame = None
+        self.ipv6_info_frame = None
+        self.merge_frame = None
+        self.overlap_frame = None
+        self.ipv6_info_entry = None
+        self.ipv6_cidr_var = None
+        self.ipv6_cidr_combobox = None
+        self.ipv6_info_btn = None
+        self.ipv6_info_tree = None
+        self.subnet_merge_text = None
+        self.merge_btn = None
+        self.range_start_entry = None
+        self.range_end_entry = None
+        self.range_to_cidr_btn = None
+        self.merge_result_frame = None
+        self.merge_result_tree = None
+        self.merge_result_scrollbar = None
+        self.ip_info_entry = None
+        self.subnet_mask_cidr_map = None
+        self.cidr_subnet_mask_map = None
+        self.ip_mask_var = None
+        self.ip_mask_combobox = None
+        self.ip_cidr_var = None
+        self.ip_cidr_combobox = None
+        self.ip_info_btn = None
+        self.ip_info_tree = None
+        self.overlap_text = None
+        self.overlap_btn = None
+        self.overlap_result_tree = None
+        
+        # 切分子网相关属性
+        self.split_parent_networks = []
+        self.split_networks = []
+        self.parent_entry = None
+        self.split_entry = None
+        self.execute_btn = None
+        self.reexecute_btn = None
+        self.history_tree = None
+        self.export_btn = None
+        self.notebook = None
+        self.split_info_frame = None
+        self.split_tree = None
+        self.remaining_frame = None
+        self.remaining_tree = None
+        self.chart_frame = None
+        self.chart_scrollbar = None
+        self.chart_canvas = None
+        self.remaining_scroll_v = None
+    
     def on_window_configure(self, _event):
         """窗口大小变化时动态调整右上角按钮位置"""
         # 窗口大小变化时重新获取窗口背景色，确保按钮背景色与窗口一致
         self.bg_color = self.root.cget("background")
         
-        # 更新按钮背景色
-        if self.about_label:
+        # 更新按钮背景色，先检查控件是否存在
+        if hasattr(self, 'about_label') and self.about_label.winfo_exists():
             self.about_label.config(bg=self.bg_color)
-        if self.pin_label and not self.is_pinned:
-            self.pin_label.config(bg=self.bg_color)
+        if hasattr(self, 'pin_label') and self.pin_label.winfo_exists():
+            if not self.is_pinned:
+                self.pin_label.config(bg=self.bg_color)
         
         # 这里不需要调整按钮位置，因为按钮使用了相对定位（relx=1.0）
         # 窗口大小变化时，按钮会自动保持在右上角位置
-
+    
     def toggle_pin_window(self):
         """切换窗口置顶状态"""
         # 切换置顶状态
@@ -6654,7 +6861,7 @@ class IPSubnetSplitterApp:
 
         # 添加版本号
         version_label = ttk.Label(
-            title_frame, text=f"版本 {self.app_version}", font=("微软雅黑", 10), style="About.TLabel"
+            title_frame, text=f"{_("version")} {self.app_version}", font=("微软雅黑", 10), style="About.TLabel"
         )
         version_label.pack(pady=(1, 0))
 
@@ -6663,7 +6870,7 @@ class IPSubnetSplitterApp:
         info_frame.pack(pady=(0, 8))
 
         # 添加作者信息
-        author_label = ttk.Label(info_frame, text="作者：Ejones", font=("微软雅黑", 10), style="About.TLabel")
+        author_label = ttk.Label(info_frame, text=f"{_("author")}：Ejones", font=("微软雅黑", 10), style="About.TLabel")
         author_label.pack(pady=(0, 1))
 
         # 添加联系方式
@@ -6674,7 +6881,7 @@ class IPSubnetSplitterApp:
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
         # 添加确定按钮，使用默认样式
-        ok_button = ttk.Button(inner_frame, text="确定", command=about_window.destroy, width=12)
+        ok_button = ttk.Button(inner_frame, text=_("ok"), command=about_window.destroy, width=12)
         ok_button.pack(pady=(0, 2))
 
         # 将焦点聚焦到确定按钮上，使用更可靠的方式
