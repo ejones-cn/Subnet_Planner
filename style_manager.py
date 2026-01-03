@@ -45,7 +45,7 @@ class StyleManager:
             return ("微软雅黑", 10)
         else:
             # 英文版：Arial，10号字体
-            return ("Arial", 9)
+            return ("Arial", 10)
     
     def update_all_styles(self):
         """更新所有样式，根据当前语言重新设置"""
