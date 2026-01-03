@@ -23,7 +23,7 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from i18n import _
+from i18n import _ as translate
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
@@ -889,7 +889,7 @@ class ExportUtils:
 
         # 使用国际化标题，如果没有提供则使用默认翻译
         if not title:
-            title = _("distribution_chart")
+            title = translate("distribution_chart")
 
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_x = (high_res_width - (title_bbox[2] - title_bbox[0])) // 2
@@ -1032,7 +1032,7 @@ class ExportUtils:
 
         # 绘制标题
         title_font, title_x, title_y = self._draw_title(draw, high_res_width)
-        draw_text_with_stroke(draw, (title_x, title_y), _("distribution_chart"), title_font, "#ffffff")
+        draw_text_with_stroke(draw, (title_x, title_y), translate("distribution_chart"), title_font, "#ffffff")
 
         y = margin_top
 
@@ -1045,8 +1045,8 @@ class ExportUtils:
             + bar_height], fill=parent_color, outline=None, width=0)
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
-        segment_text = f"{_('parent_network')}: {parent_cidr}"
-        address_text = f"{_('usable_addresses')}: {usable_addresses:,}"
+        segment_text = f"{translate('parent_network')}: {parent_cidr}"
+        address_text = f"{translate('usable_addresses')}: {usable_addresses:,}"
 
         text_font_size = 50
         text_font = None
@@ -1093,7 +1093,7 @@ class ExportUtils:
         # 绘制需求网段标题
         if chart_type == "plan":
             demand_count = len(split_networks)
-            title_text = f"{_('allocated_subnets')} ({demand_count} {_('pieces')}):"
+            title_text = f"{translate('allocated_subnets')} ({demand_count} {translate('pieces')}):"
             title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
             title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
             draw_text_with_stroke(draw, (chart_x, title_text_y), title_text, bold_text_font, "#ffffff")
@@ -1109,21 +1109,21 @@ class ExportUtils:
                 # 子网切分
                 split_color = "#4a7eb4"
                 name = network.get("name", "")
-                segment_text = f"{_('split_segment')}: {name}"
+                segment_text = f"{translate('split_segment')}: {name}"
             else:
                 # 子网规划 - 使用多彩样式
                 color_index = i % len(subnet_colors)
                 split_color = subnet_colors[color_index]
                 name = network.get("name", "")
                 cidr = network.get("cidr", "")
-                segment_text = f"{_('segment')} {i + 1}: {name}    {cidr}"
+                segment_text = f"{translate('segment')} {i + 1}: {name}    {cidr}"
             
             draw.rectangle([chart_x, y, chart_x
                 + bar_width, y
                 + bar_height], fill=split_color, outline=None, width=0)
 
             usable_addresses = network_range - 2 if network_range > 2 else network_range
-            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
             segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
@@ -1146,7 +1146,7 @@ class ExportUtils:
         # 绘制剩余网段标题
         y += 80
         remaining_count = len(remaining_networks)
-        title_text = f"{_('remaining_subnets')} ({remaining_count} {_('pieces')}):"
+        title_text = f"{translate('remaining_subnets')} ({remaining_count} {translate('pieces')}):"
 
         title_bbox = draw.textbbox((0, 0), title_text, font=bold_text_font)
         title_text_y = get_centered_y(y, bar_height, title_bbox, bold_text_font)
@@ -1168,11 +1168,11 @@ class ExportUtils:
             usable_addresses = network_range - 2 if network_range > 2 else network_range
             
             if chart_type == "split":
-                segment_text = f"{_('segment')} {i + 1}: {name}"
+                segment_text = f"{translate('segment')} {i + 1}: {name}"
             else:
-                segment_text = f"{_('segment')} {i + 1}: {name}"
+                segment_text = f"{translate('segment')} {i + 1}: {name}"
                 
-            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
             segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)
@@ -1191,7 +1191,7 @@ class ExportUtils:
 
         # 绘制图例
         y += 80
-        legend_title = f"{_('legend')}:"
+        legend_title = f"{translate('legend')}:"
         legend_title_bbox = draw.textbbox((0, 0), legend_title, font=bold_text_font)
         legend_title_y = y + (bar_height - (legend_title_bbox[3] - legend_title_bbox[1])) // 2
         draw_text_with_stroke(draw, (chart_x, legend_title_y), legend_title, bold_text_font, "#ffffff")
@@ -1211,7 +1211,7 @@ class ExportUtils:
         # 父网段图例
         parent_x = chart_x
         parent_color = "#636e72"
-        parent_label = _("parent_network")
+        parent_label = translate("parent_network")
         parent_block_size = 40
         parent_text_font = text_font
         parent_label_bbox = draw.textbbox((0, 0), parent_label, font=parent_text_font)
@@ -1234,7 +1234,7 @@ class ExportUtils:
         if chart_type == "split":
             # 子网切分 - 单一颜色
             split_color = "#4a7eb4"
-            split_label = _("split_segment")
+            split_label = translate("split_segment")
             split_block_size = 40
             
             split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
@@ -1246,7 +1246,7 @@ class ExportUtils:
             draw_text_with_stroke(draw, (split_x + split_block_size + 15, split_label_y), split_label, split_text_font, "#ffffff")
         else:
             # 子网规划 - 多彩样式
-            split_label = f"{_('allocated_subnets')}"
+            split_label = f"{translate('allocated_subnets')}"
             legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
             split_block_size = 30
             split_block_gap = 15  # 减小颜色块之间的间距
@@ -1272,14 +1272,14 @@ class ExportUtils:
         # 剩余网段图例 - 动态计算位置，增加间距
         # 计算切分/需求网段图例的总宽度
         if chart_type == "split":
-            split_label_text = _("split_segment")
+            split_label_text = translate("split_segment")
             split_label_width = draw.textbbox((0, 0), split_label_text, font=split_text_font)[2] - draw.textbbox((0, 0), split_label_text, font=split_text_font)[0]
             remaining_x = split_x + split_block_size + 15 + split_label_width + 80  # 增加间距到80
         else:
-            split_label_text = f"{_('allocated_subnets')}"
+            split_label_text = f"{translate('allocated_subnets')}"
             split_label_width = draw.textbbox((0, 0), split_label_text, font=split_text_font)[2] - draw.textbbox((0, 0), split_label_text, font=split_text_font)[0]
             remaining_x = split_x + len(legend_colors) * (split_block_size + split_block_gap) + 15 + split_label_width + 80  # 增加间距到80
-        remaining_label = f"{_('remaining_subnets')}"
+        remaining_label = f"{translate('remaining_subnets')}"
         legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
         remaining_block_size = 30
         remaining_block_gap = 15  # 减小颜色块之间的间距
@@ -1397,7 +1397,7 @@ class ExportUtils:
                 # 对于CSV导出，需要创建一个模拟的tree对象
                 class MockTree:
                     """模拟Treeview对象，用于CSV导出"""
-                    def __init__(self, headers, data):
+                    def __init_translate(self, headers, data):
                         self.headers = headers
                         self.data = data
                         self.columns = list(range(len(headers)))
@@ -1438,7 +1438,7 @@ class ExportUtils:
                         else:
                             return None
                     
-                    def __getitem__(self, key):
+                    def __getitem_translate(self, key):
                         """支持字典访问方式"""
                         if key == "columns":
                             return self.columns
@@ -1461,7 +1461,7 @@ class ExportUtils:
                 # 对于Excel导出，需要创建一个模拟的tree对象
                 class MockTree:
                     """模拟Treeview对象，用于Excel导出"""
-                    def __init__(self, headers, data):
+                    def __init_translate(self, headers, data):
                         self.headers = headers
                         self.data = data
                         self.columns = list(range(len(headers)))
@@ -1481,7 +1481,7 @@ class ExportUtils:
                         else:
                             return None
                     
-                    def __getitem__(self, key):
+                    def __getitem_translate(self, key):
                         """支持字典访问方式"""
                         if key == "columns":
                             return self.columns
