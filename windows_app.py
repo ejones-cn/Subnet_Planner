@@ -216,7 +216,6 @@ class ColoredNotebook(ttk.Frame):
 
     def on_configure(self, event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
-        # 确保content_area能完全填充笔记本控件的空间
         if hasattr(self, 'content_area'):
             # 更新content_area的布局，确保它能完全填充笔记本控件的空间
             self.content_area.pack_configure(fill='both', expand=True)
@@ -242,7 +241,6 @@ class ColoredNotebook(ttk.Frame):
         if hasattr(self, "active_tab") and button.tab_index == self.active_tab:
             # 根据标签颜色设置内容区域背景色为激活状态颜色（使用更亮的颜色）
             active_color = self.mouse_up_colors.get(color, "#ce93d8")
-            # 获取对应的样式名称
             style_name = self.color_styles.get(color, self.light_blue_style)
             self.style.configure(style_name, background=active_color)
 
@@ -300,6 +298,10 @@ class ColoredNotebook(ttk.Frame):
         """添加一个新标签"""
         tab = {"label": label, "content": content_frame, "color": color, "button": None}
 
+        # 从样式管理器获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
         # 创建标签按钮 - 移除边框和间距，使标签栏更好地融入背景
         # 设置初始样式参数
         button_params = {
@@ -309,7 +311,7 @@ class ColoredNotebook(ttk.Frame):
             "borderwidth": 0,
             "padx": 12,
             "pady": 5,
-            "font": ("微软雅黑", 10, "normal"),
+            "font": (font_family, font_size, "normal"),
             "width": 10,  # 设置固定宽度，确保所有标签宽度一致
         }
 
@@ -357,6 +359,9 @@ class ColoredNotebook(ttk.Frame):
         """选中一个标签"""
         if tab_index < 0 or tab_index >= len(self.tabs):
             return
+        
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
 
         # 隐藏所有内容
         for tab in self.tabs:
@@ -368,7 +373,7 @@ class ColoredNotebook(ttk.Frame):
                 tab["button"].config(
                     relief="flat",
                     bg="#808080",  # 灰色背景
-                    font=("微软雅黑", 10, "normal"),
+                    font=(font_family, font_size, "normal"),
                     foreground="white",  # 白色文字
                 )
             else:
@@ -376,7 +381,7 @@ class ColoredNotebook(ttk.Frame):
                 tab["button"].config(
                     relief="flat",
                     bg=tab["color"],
-                    font=("微软雅黑", 10, "normal"),
+                    font=(font_family, font_size, "normal"),
                     foreground="#333333",  # 默认深灰色文字
                 )
 
@@ -393,7 +398,7 @@ class ColoredNotebook(ttk.Frame):
             selected_tab["button"].config(
                 relief="flat",
                 bg="#ff9800",  # 橙色背景
-                font=("微软雅黑", 10, "bold"),  # 加粗字体
+                font=(font_family, font_size, "bold"),  # 加粗字体
                 foreground="#000000",  # 黑色文字
             )
         else:
@@ -401,13 +406,12 @@ class ColoredNotebook(ttk.Frame):
             selected_color = self.mouse_up_colors.get(selected_tab["color"], "#ce93d8")
 
             selected_tab["button"].config(
-                relief="flat", bg=selected_color, font=("微软雅黑", 10, "bold"), foreground="#000000"
+                relief="flat", bg=selected_color, font=(font_family, font_size, "bold"), foreground="#000000"
             )
 
         # 更新对应内容框架样式的背景色，使其与选中标签的颜色保持一致
         # 只有内部标签页需要更新样式，顶级标签页不需要
         if not self.is_top_level:
-            # 获取对应的样式名称
             style_name = self.color_styles.get(selected_tab["color"], self.light_blue_style)
             self.style.configure(style_name, background=selected_color)
 
@@ -579,27 +583,13 @@ class IPSubnetSplitterApp:
         # 使用默认主题
         self.style.theme_use("vista")
 
-        # 统一设置基本控件的字体样式
-        # 使用固定字体大小，确保界面布局稳定
-        base_font_style = {"font": ("微软雅黑", 11)}
-        self.style.configure("TLabel", **base_font_style)
-        self.style.configure("TEntry", **base_font_style)
-        # 按钮除了基本字体外还有额外的样式配置
-        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1)
+        # 导入样式管理器并初始化
+        from style_manager import init_style_manager, update_styles
+        self.style_manager = init_style_manager(self.root)
+        # 更新所有样式
+        update_styles()
 
-        # 设置滚动条宽度一致 - 针对Windows平台的特殊处理
-        # 恢复默认滚动条布局，包含完整的箭头元素
-        # 当滚动条未激活时，通过回调函数隐藏整个滚动条
-        scrollbar_style = {"width": 5}
-        for scrollbar_type in ["TScrollbar", "Vertical.TScrollbar", "Horizontal.TScrollbar"]:
-            self.style.configure(scrollbar_type, **scrollbar_style)
-
-        # 为按钮添加焦点样式映射，进一步控制焦点效果
-        self.style.map(
-            "TButton",
-            focuscolor=[("focus", "#888888"), ("!focus", "#888888")],
-            focuswidth=[("focus", 1), ("!focus", 1)],
-        )
+        # 样式设置已由样式管理器统一处理，不再需要手动设置
 
         # 恢复窗口原始背景色，使用系统默认颜色以保持界面协调
         # 不设置自定义的window_bg，让系统使用默认的背景色方案
@@ -607,170 +597,9 @@ class IPSubnetSplitterApp:
         # 保持ttk组件的默认背景色，让系统主题来处理颜色协调问题
         # 只保留之前设置的字体样式，不修改背景色
 
-        # 优化的标签样式设置
-        try:
-            # 设置Notebook的基本样式，使用默认边框样式
-            self.style.configure("TNotebook", background="#ffffff")
-
-            # 使用默认边框样式，移除深灰色边框
-            self.style.configure("TLabelframe")
-            # 增大LabelFrame标题的字体大小
-            self.style.configure("TLabelframe.Label", borderwidth=0, relief="flat", font=("微软雅黑", 12))
-
-            # 移除对所有标签的基础样式配置，避免干扰特定标签样式
-            # 直接为每个标签样式配置完整的样式属性
-
-            # 为三个标签页分别创建不同颜色的标签样式 - 现代化配色方案
-            # 蓝色标签样式 - 切分段信息
-            self.style.configure(
-                "Blue.TNotebook.Tab",
-                background="#e3f2fd",  # 浅蓝色背景
-                foreground="#1976d2",  # 深蓝色文字
-                padding=(15, 6),  # 增加内边距
-                relief="flat",  # 边框样式
-                font=("微软雅黑", 10),
-            )  # 统一字体
-
-            # 蓝色标签选中状态
-            self.style.map(
-                "Blue.TNotebook.Tab",
-                background=[
-                    ("selected", "#2196f3"),  # 选中时使用更鲜艳的蓝色
-                    ("!selected", "#e3f2fd"),
-                ],  # 非选中时的背景色
-                foreground=[("selected", "white"), ("!selected", "#1976d2")],  # 选中时白色文字
-                font=[
-                    ("selected", ("微软雅黑", 10, "bold")),
-                    ("!selected", ("微软雅黑", 10, "normal")),
-                ],  # 选中时加粗，非选中时正常
-            )  # 非选中时的文字颜色
-
-            # 绿色标签样式 - 剩余网段表
-            self.style.configure(
-                "Green.TNotebook.Tab",
-                background="#e8f5e9",  # 浅绿色背景
-                foreground="#388e3c",  # 深绿色文字
-                padding=(15, 6),  # 增加内边距
-                relief="flat",  # 边框样式
-                font=("微软雅黑", 10),
-            )  # 统一字体
-
-            # 绿色标签选中状态
-            self.style.map(
-                "Green.TNotebook.Tab",
-                background=[
-                    ("selected", "#4caf50"),  # 选中时使用更鲜艳的绿色
-                    ("!selected", "#e8f5e9"),
-                ],  # 非选中时的背景色
-                foreground=[("selected", "white"), ("!selected", "#388e3c")],  # 选中时白色文字
-                font=[
-                    ("selected", ("微软雅黑", 10, "bold")),
-                    ("!selected", ("微软雅黑", 10, "normal")),
-                ],  # 选中时加粗，非选中时正常
-            )  # 非选中时的文字颜色
-
-            # 紫色标签样式 - 网段分布图
-            self.style.configure(
-                "Purple.TNotebook.Tab",
-                background="#f3e5f5",  # 浅紫色背景
-                foreground="#7b1fa2",  # 深紫色文字
-                padding=(15, 6),  # 增加内边距
-                relief="flat",  # 边框样式
-                font=("微软雅黑", 10),
-            )  # 统一字体
-
-            # 紫色标签选中状态
-            self.style.map(
-                "Purple.TNotebook.Tab",
-                background=[
-                    ("selected", "#9c27b0"),  # 选中时使用更鲜艳的紫色
-                    ("!selected", "#f3e5f5"),
-                ],  # 非选中时的背景色
-                foreground=[("selected", "white"), ("!selected", "#7b1fa2")],  # 选中时白色文字
-                font=[
-                    ("selected", ("微软雅黑", 10, "bold")),
-                    ("!selected", ("微软雅黑", 10, "normal")),
-                ],  # 选中时加粗，非选中时正常
-            )  # 非选中时的文字颜色
-
-            print("标签样式设置完成")
-
-        except (tk.TclError, AttributeError):
-            pass
-        # 为Treeview添加表格线样式配置 - Windows系统专用解决方案
-        # 在Windows上强制显示表格线的最终解决方案
-
-        # 使用最基本、最兼容的样式设置
-        # 在Windows系统上，简单的样式设置反而更可靠
-
-        # 1. 基础Treeview样式设置 - 修复Windows表格线显示问题
-        # 在Windows上，Treeview的表格线需要通过特定的样式配置来实现
-        self.style.configure(
-            "TTreeview",
-            background="#e0e0e0",  # 设置背景色为浅灰色，与单元格背景色形成对比
-            fieldbackground="#ffffff",  # 单元格背景设为白色
-            foreground="black",  # 文本颜色
-            rowheight=25,  # 调整行高，让表格线更明显
-            padding=(5, 2),  # 调整内边距，让表格线更明显
-            borderwidth=0,  # 去掉表格外框
-            relief="flat",  # 去掉边框样式
-        )
-
-        # 2. 表头样式设置 - 确保表头与表格线协调
-        self.style.configure(
-            "TTreeview.Heading",
-            background="#1976d2",
-            foreground="white",
-            font=("微软雅黑", 10, "bold"),
-            padding=(10, 5),  # 增大表头内边距
-            relief="ridge",  # 表头使用凸起样式，与表格线形成对比
-        )
-
-        # 3. 去掉Treeview外框
-        self.style.configure("TTreeview", borderwidth=0, relief="flat")
-
-        # 4. 启用斑马条纹，通过背景色对比来增强表格线效果
-        # 斑马条纹样式已经在configure_treeview_styles方法中配置
-
-        # 2. 表头样式设置，移除深灰色边框，使用默认颜色
-        self.style.configure(
-            "TTreeview.Heading",
-            background="#1976d2",
-            foreground="white",
-            font=("微软雅黑", 10, "bold"),
-            padding=(5, 3),
-            relief="flat",  # 去掉表头边框样式
-            borderwidth=0,  # 去掉表头边框宽度
-        )
-
-        # 3. 选中状态设置
-        # 修改Treeview的选中背景色为#4A6984
-        self.style.map("TTreeview", background=[("selected", "#4A6984")], foreground=[("selected", "white")])
-
-        # 添加Combobox样式设置，只修改选中颜色
-        self.style.map(
-            "TCombobox",
-            selectbackground=[("focus", "#4A6984"), ("!focus", "#4A6984")],
-            selectforeground=[("focus", "white"), ("!focus", "white")],
-        )
-
-        # 7. 信息栏样式配置 - 紧凑设计，调大字体
-        # 统一使用#DCDAD5背景色，仅保留文字颜色区分，增大字体大小
-        # 统一设置信息栏标签的基本样式，只修改不同的前景色
-        base_info_label_style = {"font": ("微软雅黑", 10), "relief": "flat"}
-        self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
-        self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
-        self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
-
-        # 信息栏框架样式 - 使用极淡灰色边框
-        # 所有信息栏框架使用相同的基础样式，使用循环批量配置
-        info_bar_frame_style = {"borderwidth": 1, "relief": "solid", "bordercolor": "#F5F5F5"}
-        for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
-            self.style.configure(frame_style, **info_bar_frame_style)
-
-        # 8. 斑马条纹样式配置
-        # 在Treeview中通过标签(tags)实现斑马条纹效果
-        # 注意：ttk.Style不直接支持斑马条纹，需要在插入行时使用tags
+        # 所有样式设置已移至style_manager.py中统一管理
+        # 此处不再保留任何硬编码样式，确保样式管理器能完全控制所有样式
+        # 样式设置会在update_styles()调用时自动应用
 
         # 初始化历史记录相关属性
         self.history_states = []
@@ -945,15 +774,12 @@ class IPSubnetSplitterApp:
     #             base_record = f"{index}. {history_record['action_type']}"
     #         else:
     #             base_record = f"{index}. {history_record['action_type']}: {history_record['req_str']}"
-    #
     #         # 为当前步骤添加明显标记
     #         if index - 1 == self.current_history_index:
     #             formatted_record = f"→ {base_record}"
     #             tags = ("even" if index % 2 == 0 else "odd", "current")
-    #         else:
     #             formatted_record = f"  {base_record}"
     #             tags = ("even" if index % 2 == 0 else "odd",)
-    #
     #         # 插入历史记录
     #         self.planning_history_tree.insert(
     #             "",
@@ -973,32 +799,25 @@ class IPSubnetSplitterApp:
     #     selected_items = self.planning_history_tree.selection()
     #     if not selected_items:
     #         return
-    #
     #     # 获取选中项的索引
     #     selected_item = selected_items[0]
     #     # 获取选中项在树中的索引
     #     item_index = self.planning_history_tree.index(selected_item)
-    #
     #     # 获取对应的历史记录
     #     if 0 <= item_index < len(self.planning_history_records):
     #         history_record = self.planning_history_records[item_index]
-    #
     #         # 更新父网段输入框
     #         self.planning_parent_entry.delete(0, tk.END)
     #         self.planning_parent_entry.insert(0, history_record['parent'])
-    #
     #         # 清空现有子网需求
     #         for item in self.requirements_tree.get_children():
     #             self.requirements_tree.delete(item)
-    #
     #         # 添加历史记录中的子网需求
     #         for i, (name, hosts) in enumerate(history_record['requirements']):
     #             tags = ("even",) if i % 2 == 0 else ("odd",)
     #             self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=tags)
-    #
     #         # 更新序号和斑马条纹
     #         self.update_requirements_tree_zebra_stripes()
-    #
     #         # 执行子网规划，设置from_history=True，不记入历史
     #         self.execute_subnet_planning(from_history=True)
 
@@ -1133,7 +952,6 @@ class IPSubnetSplitterApp:
             move_to="子网需求表"
         )
 
-        # 移动完成后，在目标树中选中刚刚移动的记录
         if new_items:
             self.requirements_tree.selection_set(*new_items)
 
@@ -1157,7 +975,6 @@ class IPSubnetSplitterApp:
                 move_to="需求池"
             )
 
-            # 移动完成后，在目标树中选中刚刚移动的记录
             if new_items:
                 self.pool_tree.selection_set(*new_items)
 
@@ -1171,7 +988,6 @@ class IPSubnetSplitterApp:
                 move_to="子网需求表"
             )
 
-            # 移动完成后，在目标树中选中刚刚移动的记录
             if new_items:
                 self.requirements_tree.selection_set(*new_items)
 
@@ -1254,7 +1070,6 @@ class IPSubnetSplitterApp:
 
     def swap_records(self):
         """交换两个表格中选中的记录（支持多条记录，完全交换所有选中记录）"""
-        # 获取两个表格中的选中记录
         selected_requirements = self.requirements_tree.selection()
         selected_pool_items = self.pool_tree.selection()
 
@@ -1263,7 +1078,6 @@ class IPSubnetSplitterApp:
             self.show_info(_("hint"), _("please_select_records_to_swap"))
             return
 
-        # 准备交换的记录数据
         # 1. 从子网需求表收集所有选中记录的数据
         req_items_to_move = []
         for item in selected_requirements:
@@ -1333,7 +1147,6 @@ class IPSubnetSplitterApp:
             new_item_id = self.pool_tree.insert("", tk.END, values=("", data["name"], data["hosts"]))
             new_pool_items.append(new_item_id)
 
-        # 更新两个表格的序号和斑马条纹
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
 
@@ -1345,7 +1158,6 @@ class IPSubnetSplitterApp:
 
         # 选中需求池表中刚刚交换的记录
         if new_pool_items:
-            # selection_set不能直接接受列表，需要将列表转换为单独的参数
             self.pool_tree.selection_set(*new_pool_items)
 
         # 保存交换操作到历史记录
@@ -1595,7 +1407,6 @@ class IPSubnetSplitterApp:
             show="headings",
             height=5,
         )
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.remaining_tree)
         self.remaining_tree.heading("index", text=_("index"))
         self.remaining_tree.heading("cidr", text=_("cidr"))
@@ -1640,7 +1451,6 @@ class IPSubnetSplitterApp:
         self.chart_scrollbar.config(command=self.chart_canvas.yview)
         self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def chart_scrollbar_callback(*args):
             # 更新滚动条位置
             self.chart_scrollbar.set(*args)
@@ -1672,21 +1482,15 @@ class IPSubnetSplitterApp:
         self.remaining_frame.grid_columnconfigure(0, weight=1)
         self.remaining_frame.grid_columnconfigure(1, weight=0)
 
-        # 添加垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
             self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
         )
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def remaining_scrollbar_callback(*args):
-            # 更新滚动条位置
             self.remaining_scroll_v.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 self.remaining_scroll_v.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
 
         self.remaining_tree.configure(yscrollcommand=remaining_scrollbar_callback)
@@ -1698,7 +1502,6 @@ class IPSubnetSplitterApp:
         remaining_scrollbar_callback(0.0, 1.0)
 
         # 绑定窗口大小变化事件，实现表格自适应
-        # 避免重复绑定，使用add='+'参数保留之前的绑定
         self.root.bind("<Configure>", self.on_window_resize, add='+')
 
         # 初始提示
@@ -1711,84 +1514,59 @@ class IPSubnetSplitterApp:
 
     def setup_table_styles(self):
 
-        # 配置滚动条
         self.chart_scrollbar.config(command=self.chart_canvas.yview)
         self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def chart_scrollbar_callback(*args):
-            # 更新滚动条位置
             self.chart_scrollbar.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 self.chart_scrollbar.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 self.chart_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # 配置Canvas的滚动条命令
         self.chart_canvas.config(yscrollcommand=chart_scrollbar_callback, xscrollcommand=None)
 
-        # 初始检查是否需要显示滚动条
         chart_scrollbar_callback(0.0, 1.0)
 
-        # 绑定窗口大小变化事件，实现图表自适应
         self.chart_canvas.bind("<Configure>", self.on_chart_resize)
-        # 绑定鼠标滚轮事件
         self.chart_canvas.bind("<MouseWheel>", self.on_chart_mousewheel)
 
     def _add_result_tabs(self):
         """添加标签页到笔记本"""
-        # 添加标签页，每个标签页设置不同的颜色
         self.notebook.add_tab(_("split_segment_info"), self.split_info_frame, "#e3f2fd")  # 浅蓝色
         self.notebook.add_tab(_("remaining_subnets"), self.remaining_frame, "#e8f5e9")  # 浅绿色
         self.notebook.add_tab(_("distribution_chart"), self.chart_frame, "#f3e5f5")  # 浅紫色
 
     def _setup_scrollbars(self):
         """配置滚动条"""
-        # 配置remaining_frame的grid布局
         self.remaining_frame.grid_rowconfigure(0, weight=1)
         self.remaining_frame.grid_columnconfigure(0, weight=1)
         self.remaining_frame.grid_columnconfigure(1, weight=0)
 
-        # 添加垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
             self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
         )
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def remaining_scrollbar_callback(*args):
-            # 更新滚动条位置
             self.remaining_scroll_v.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 self.remaining_scroll_v.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
 
         self.remaining_tree.configure(yscrollcommand=remaining_scrollbar_callback)
 
-        # 设置布局：Treeview在左，垂直滚动条在右，都填满整个可用空间
         self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        # 初始隐藏滚动条
         self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
         remaining_scrollbar_callback(0.0, 1.0)
 
     def _setup_initial_state(self):
         """设置初始状态"""
-        # 绑定窗口大小变化事件，实现表格自适应
-        # 避免重复绑定，使用add='+'参数保留之前的绑定
         self.root.bind("<Configure>", self.on_window_resize, add='+')
 
-        # 初始提示
         self.clear_result()
 
-        # Treeview表格线样式已在初始化时设置
 
-        # 在窗口完全渲染后再调用动态计算方法，确保获取准确的高度
         self.root.after(100, self.initial_table_setup)
 
     def setup_planning_page(self):
@@ -1844,7 +1622,6 @@ class IPSubnetSplitterApp:
         inner_frame = ttk.Frame(requirements_frame)
         inner_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 设置grid布局
         history_frame.grid_rowconfigure(0, weight=1)
         history_frame.grid_rowconfigure(1, weight=0)
         history_frame.grid_columnconfigure(0, weight=1)
@@ -1852,7 +1629,6 @@ class IPSubnetSplitterApp:
 
         # 创建需求池表格，结构与子网需求表相同
         self.pool_tree = ttk.Treeview(history_frame, columns=("index", "name", "hosts"), show="headings", height=6)
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.pool_tree)
         self.pool_tree.heading("index", text=_("index"))
         self.pool_tree.heading("name", text=_("subnet_name"))
@@ -1863,7 +1639,6 @@ class IPSubnetSplitterApp:
         self.pool_tree.column("name", width=80, minwidth=80, stretch=True)  # 减小初始宽度，允许伸缩
         self.pool_tree.column("hosts", width=80, minwidth=40, stretch=False)
 
-        # 配置斑马条纹样式
         self.configure_treeview_styles(self.pool_tree)
 
         # 绑定双击事件以实现编辑功能
@@ -1887,7 +1662,6 @@ class IPSubnetSplitterApp:
         # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做操作
         # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
 
-        # 设置grid布局
         inner_frame.grid_rowconfigure(0, weight=1)
         inner_frame.grid_columnconfigure(0, weight=0)  # 按钮列，固定宽度
         inner_frame.grid_columnconfigure(1, weight=1)  # 表格列，可伸缩
@@ -1903,7 +1677,6 @@ class IPSubnetSplitterApp:
         self.requirements_tree = ttk.Treeview(
             inner_frame, columns=("index", "name", "hosts"), show="headings", height=5  # 设置为5行高度，添加序号列
         )
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.requirements_tree)
         self.requirements_tree.heading("index", text=_("index"))
         self.requirements_tree.heading("name", text=_("subnet_name"))
@@ -1913,26 +1686,21 @@ class IPSubnetSplitterApp:
         self.requirements_tree.column("name", width=80, minwidth=80, stretch=True)  # 减小初始宽度，允许伸缩
         self.requirements_tree.column("hosts", width=80, minwidth=80, stretch=False)
 
-        # 绑定双击事件以实现编辑功能
         self.requirements_tree.bind("<Double-1>", self.on_requirements_tree_double_click)
-        # 绑定左键单击事件以实现取消选择功能
         self.requirements_tree.bind("<Button-1>", self.on_treeview_click)
 
 
         # 放置表格
         self.requirements_tree.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
-        # 添加滚动条，确保只作用于表格，位于表格右侧
         self.requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL)
 
-        # 使用通用方法创建带自动隐藏滚动条的Treeview
         # self.create_scrollable_treeview_with_grid(
         #     inner_frame, self.requirements_tree, self.requirements_scrollbar,
         #     tree_row=0, tree_column=1, scrollbar_row=0, scrollbar_column=2,
         #     tree_padx=(10, 0), scrollbar_padx=(0, 0)
         # )
 
-        # 直接创建Treeview和滚动条，不使用自动隐藏功能
         self.requirements_tree.grid(row=0, column=1, sticky=tk.NSEW)
         self.requirements_scrollbar.grid(row=0, column=2, sticky=tk.NS)
         self.requirements_scrollbar.config(command=self.requirements_tree.yview)
@@ -1998,7 +1766,6 @@ class IPSubnetSplitterApp:
         # 调用方法更新序号
         self.update_requirements_tree_zebra_stripes()
 
-        # 配置斑马条纹样式
         self.configure_treeview_styles(self.requirements_tree)
         self.configure_treeview_styles(self.pool_tree)  # 配置需求池表格样式
 
@@ -2024,7 +1791,6 @@ class IPSubnetSplitterApp:
         export_planning_btn = ttk.Button(
             result_frame, text=_("export_planning"), command=self.export_planning_result, width=button_width
         )
-        # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
 
         # 创建醒目的按钮样式，使用更深的蓝色系，确保文字清晰显示
@@ -2092,7 +1858,6 @@ class IPSubnetSplitterApp:
             height=5,  # 设置为5行高度
         )
 
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.allocated_tree)
 
         # 设置列标题
@@ -2115,21 +1880,15 @@ class IPSubnetSplitterApp:
         self.allocated_tree.column("netmask", width=0, minwidth=100, stretch=True)  # 子网掩码列自动宽度
         self.allocated_tree.column("broadcast", width=0, minwidth=100, stretch=True)  # 广播地址列自动宽度
 
-        # 添加垂直滚动条
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL, command=self.allocated_tree.yview
         )
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def allocated_scrollbar_callback(*args):
-            # 更新滚动条位置
             allocated_v_scrollbar.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 allocated_v_scrollbar.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 allocated_v_scrollbar.grid()
 
         # 配置表格使用滚动条（仅垂直）
@@ -2143,7 +1902,6 @@ class IPSubnetSplitterApp:
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
         allocated_scrollbar_callback(0.0, 1.0)
 
-        # 配置斑马条纹样式
         self.configure_treeview_styles(self.allocated_tree)
 
         # 剩余网段页面
@@ -2157,10 +1915,8 @@ class IPSubnetSplitterApp:
             height=5,  # 设置为5行高度
         )
 
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.planning_remaining_tree)
 
-        # 设置列标题
         self.planning_remaining_tree.heading("index", text=_("index"))
         self.planning_remaining_tree.heading("cidr", text=_("cidr"))
         self.planning_remaining_tree.heading("network", text=_("network_address"))
@@ -2178,29 +1934,21 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
 
-        # 添加垂直滚动条
         remaining_v_scrollbar = ttk.Scrollbar(
             self.planning_remaining_frame,
             orient=tk.VERTICAL,
             command=self.planning_remaining_tree.yview,
         )
 
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def planning_remaining_scrollbar_callback(*args):
-            # 更新滚动条位置
             remaining_v_scrollbar.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 remaining_v_scrollbar.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 remaining_v_scrollbar.grid()
 
-        # 配置表格使用滚动条（仅垂直）
         self.planning_remaining_tree.configure(yscrollcommand=planning_remaining_scrollbar_callback)
 
-        # 重新布局表格和滚动条，使用grid布局实现自适应
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
         self.planning_remaining_frame.grid_columnconfigure(0, weight=1)
 
@@ -2208,14 +1956,12 @@ class IPSubnetSplitterApp:
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
         planning_remaining_scrollbar_callback(0.0, 1.0)
 
-        # 配置斑马条纹样式
         self.configure_treeview_styles(self.planning_remaining_tree)
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab(_("allocated_subnets"), self.allocated_frame, "#e3f2fd")  # 浅蓝色
         self.planning_notebook.add_tab(_("remaining_subnets"), self.planning_remaining_frame, "#e8f5e9")  # 浅绿色
 
-        # 网段分布图页面
         self.planning_chart_frame = ttk.Frame(
             self.planning_notebook.content_area, padding="5", style=self.planning_notebook.light_purple_style
         )
@@ -2227,23 +1973,17 @@ class IPSubnetSplitterApp:
             highlightthickness=0
         )
         
-        # 添加垂直滚动条
         self.planning_chart_v_scrollbar = ttk.Scrollbar(
             self.planning_chart_frame,
             orient=tk.VERTICAL,
             command=self.planning_chart_canvas.yview
         )
         
-        # 创建自定义滚动条回调函数，实现滚动条按需显示
         def planning_chart_scrollbar_callback(*args):
-            # 更新滚动条位置
             self.planning_chart_v_scrollbar.set(*args)
-            # 检查是否需要显示滚动条
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                # 内容不可滚动，隐藏滚动条
                 self.planning_chart_v_scrollbar.grid_remove()
             else:
-                # 内容可滚动，显示滚动条
                 self.planning_chart_v_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
         # 配置Canvas使用滚动条
@@ -2256,7 +1996,6 @@ class IPSubnetSplitterApp:
         self.planning_chart_canvas.grid(row=0, column=0, sticky="nsew")
         self.planning_chart_v_scrollbar.grid(row=0, column=1, sticky="ns")
         
-        # 初始检查是否需要显示滚动条
         planning_chart_scrollbar_callback(0.0, 1.0)
         
         # 添加鼠标滚轮事件支持
@@ -2281,7 +2020,6 @@ class IPSubnetSplitterApp:
         # 规划剩余网段表格 - 初始化时不添加空行
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
-        # 删除了初始化时添加10行空行的代码
 
     def setup_table_zebra_styles(self):
         """在窗口完全渲染后初始化表格斑马纹样式"""
@@ -2396,7 +2134,6 @@ class IPSubnetSplitterApp:
                 value = tree.item(item, 'values')
                 if value and len(value) > list(tree['columns']).index(col):
                     cell_value = str(value[list(tree['columns']).index(col)])
-                    # 设置临时标签文本并测量宽度
                     self._temp_label.config(text=cell_value)
                     cell_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
                     # 确保cell_width和max_width都是有效的数值
@@ -2428,7 +2165,6 @@ class IPSubnetSplitterApp:
                 if hasattr(self, 'planning_remaining_tree'):
                     self.auto_resize_columns(self.planning_remaining_tree)
         except AttributeError:
-            # 忽略属性不存在的错误
             pass
         except ValueError:
             # 忽略值错误
@@ -2534,17 +2270,14 @@ class IPSubnetSplitterApp:
                 return
 
             # 检查是否存在相同名称的子网，同时检查子网需求表和需求池表
-            # 检查子网需求表
             for item in self.requirements_tree.get_children():
                 values = self.requirements_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
                 if existing_name == name:
                     self.show_error(_("error"), _("subnet_already_exists", name=name))
-                    # 重新将焦点设置到子网名称输入框
                     name_entry.focus_set()
                     return
 
-            # 检查需求池表
             for item in self.pool_tree.get_children():
                 values = self.pool_tree.item(item, "values")
                 existing_name = values[1]  # 子网名称在第二列
@@ -2564,13 +2297,11 @@ class IPSubnetSplitterApp:
                 self.update_requirements_tree_zebra_stripes()
             else:
                 # 添加到需求池表 - 带斑马条纹标签
-                # 获取当前表格中的行数，计算新行的索引（从1开始）
                 current_rows = len(self.pool_tree.get_children())
                 new_index = current_rows + 1
                 tag = "even" if new_index % 2 == 0 else "odd"
                 self.pool_tree.insert("", tk.END, values=(new_index, name, hosts), tags=(tag,))
 
-                # 重新应用所有行的斑马条纹，确保一致性
                 self.update_pool_tree_zebra_stripes()
 
             # 保存当前状态到操作记录，包含添加的子网信息
@@ -2644,7 +2375,6 @@ class IPSubnetSplitterApp:
         for item in selected_pool_items:
             values = self.pool_tree.item(item, "values")
             deleted_subnets.append(f"{values[1]}({values[2]})")
-            # 保存详细记录，包括表格类型和记录数据
             deleted_records.append({"tree": "pool", "values": tuple(values), "item": item})
             self.pool_tree.delete(item)
 
@@ -2684,7 +2414,6 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        # 先隐藏对话框，避免定位过程中的闪现
         dialog.withdraw()
 
         # 计算居中位置，调整高度确保取消按钮能完整显示
@@ -2692,7 +2421,6 @@ class IPSubnetSplitterApp:
         window_height = 280  # 适度增加高度以确保取消按钮显示完整
         self.center_window(dialog, window_width, window_height)
 
-        # 显示对话框
         dialog.deiconify()
 
         # 设置对话框为焦点
@@ -2702,7 +2430,6 @@ class IPSubnetSplitterApp:
         main_frame = ttk.Frame(dialog, padding="20 20 20 0")  # 减少底部padding，确保所有控件能完整显示
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 设置对话框为焦点
         dialog.focus_force()
 
         # 说明文本
@@ -2825,7 +2552,6 @@ class IPSubnetSplitterApp:
             if csv_data is None:
                 raise ValueError("无法识别文件编码，请确保文件使用UTF-8或GBK编码")
 
-            # 跳过表头，从第二行开始读取
             for row_idx, row in enumerate(csv_data[1:], start=2):
                 if row and len(row) >= 2:
                     name = str(row[0]).strip() if row[0] else ""
@@ -2852,12 +2578,10 @@ class IPSubnetSplitterApp:
         # 获取现有数据名称（同时检查子网需求表和需求池表）
         existing_names = set()
 
-        # 检查子网需求表
         for item in self.requirements_tree.get_children():
             values = self.requirements_tree.item(item, "values")
             existing_names.add(values[1])
 
-        # 检查需求池表
         for item in self.pool_tree.get_children():
             values = self.pool_tree.item(item, "values")
             existing_names.add(values[1])
@@ -2920,7 +2644,6 @@ class IPSubnetSplitterApp:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        # 先隐藏对话框，避免定位过程中的闪现
         dialog.withdraw()
 
         # 计算居中位置
@@ -2928,13 +2651,10 @@ class IPSubnetSplitterApp:
         window_height = 500
         self.center_window(dialog, window_width, window_height)
 
-        # 显示对话框
         dialog.deiconify()
 
-        # 设置对话框为焦点
         dialog.focus_force()
 
-        # 创建主内容框架
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -2952,7 +2672,6 @@ class IPSubnetSplitterApp:
 
         result_tree = ttk.Treeview(tree_frame, columns=("row", "name", "hosts", "status"),
                                   show="headings", height=12)
-        # 添加右键复制功能
         result_tree.bind("<Button-3>", lambda event, t=result_tree: self.copy_cell_data(event, t))
         result_tree.heading("row", text=_("row_number"))
         result_tree.heading("name", text=_("subnet_name"))
@@ -2964,7 +2683,6 @@ class IPSubnetSplitterApp:
         result_tree.column("hosts", width=80, minwidth=40)
         result_tree.column("status", width=100, minwidth=80)
 
-        # 添加滚动条
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
         result_tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.config(command=result_tree.yview)
@@ -2998,11 +2716,9 @@ class IPSubnetSplitterApp:
         result_tree.tag_configure("valid", foreground="green")
         result_tree.tag_configure("invalid", foreground="red")
 
-        # 配置斑马条纹样式
         result_tree.tag_configure("even", background="#d8d8d8")
         result_tree.tag_configure("odd", background="#ffffff")
 
-        # 应用斑马条纹效果
         for index, item in enumerate(result_tree.get_children()):
             # 获取当前标签
             current_tags = result_tree.item(item, "tags")
@@ -3209,7 +2925,6 @@ class IPSubnetSplitterApp:
             # 复制到剪贴板
             self.root.clipboard_clear()
             self.root.clipboard_append(cell_data)
-            # 可选：显示复制成功的提示
             self.show_result(_("copied_to_clipboard"), keep_data=True)
 
     def show_custom_dialog(self, title, message, dialog_type="info"):
@@ -3323,15 +3038,12 @@ class IPSubnetSplitterApp:
         """显示自定义的居中确认对话框"""
         result = None
 
-        # 确保主窗口完全初始化，先更新主窗口布局
         self.root.update_idletasks()
 
-        # 获取当前焦点窗口，作为新对话框的父窗口
         parent_window = self.root.focus_get()
         if not parent_window or parent_window == self.root:
             parent_window = self.root
 
-        # 创建Toplevel窗口，将父窗口设置为当前焦点窗口
         dialog = tk.Toplevel(parent_window)
         dialog.title(title)
         dialog.resizable(False, False)
@@ -3341,7 +3053,6 @@ class IPSubnetSplitterApp:
         # 设置对话框最小宽度和高度
         dialog.minsize(width=500, height=150)
 
-        # 设置对话框内容
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
@@ -3355,7 +3066,6 @@ class IPSubnetSplitterApp:
         msg_label = ttk.Label(frame, text=message, wraplength=450, font=('微软雅黑', 10))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
 
-        # 创建按钮框架
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=1, column=0, sticky="e")
 
@@ -3380,42 +3090,33 @@ class IPSubnetSplitterApp:
         # 按钮创建后立即设置焦点
         ok_btn.focus_force()
 
-        # 绑定回车键和Esc键
         dialog.bind('<Return>', lambda e: on_ok())
         dialog.bind('<Escape>', lambda e: on_cancel())
 
-        # 计算并设置对话框居中位置
         dialog.update_idletasks()
         dialog_width = dialog.winfo_width()
         dialog_height = dialog.winfo_height()
 
-        # 获取主窗口在屏幕上的绝对位置和尺寸
         root_x = self.root.winfo_rootx()
         root_y = self.root.winfo_rooty()
         root_width = self.root.winfo_width()
         root_height = self.root.winfo_height()
 
-        # 计算对话框在主窗口中心的坐标
         dialog_x = root_x + (root_width - dialog_width) // 2
         dialog_y = root_y + (root_height - dialog_height) // 2
 
-        # 设置对话框位置
         dialog.geometry(f"+{dialog_x}+{dialog_y}")
 
-        # 显示对话框并设置焦点
         dialog.deiconify()
 
-        # 在对话框显示后强制设置焦点
         def set_focus():
             dialog.lift()  # 确保对话框在最上层
             dialog.focus_force()  # 强制设置对话框为焦点
             if 'ok_btn' in locals():
                 ok_btn.focus_force()  # 强制设置确定按钮为焦点
 
-        # 使用after_idle确保在所有事件处理完成后再设置焦点
         dialog.after_idle(set_focus)
 
-        # 等待对话框关闭
         self.root.wait_window(dialog)
 
         return result
@@ -3523,38 +3224,30 @@ class IPSubnetSplitterApp:
 
     def on_pool_tree_double_click(self, event):
         """双击Treeview单元格时触发编辑功能（需求池表）"""
-        # 获取双击位置的信息
         region = self.pool_tree.identify_region(event.x, event.y)
         if region != "cell":
             return
 
-        # 获取双击的行和列
         item = self.pool_tree.identify_row(event.y)
         column = self.pool_tree.identify_column(event.x)
 
         if not item or not column:
             return
 
-        # 将列标识转换为列索引（例如 #1 -> 0, #2 -> 1）
         column_index = int(column[1:]) - 1
-        # 不允许编辑序号列
         if column_index == 0:
             return
         column_name = self.pool_tree["columns"][column_index]
 
-        # 获取当前值
         current_value = self.pool_tree.item(item, "values")[column_index]
 
-        # 获取单元格的坐标和大小
         cell_x, cell_y, width, height = self.pool_tree.bbox(item, column)
 
-        # 创建编辑框
         self.edit_entry = ttk.Entry(self.pool_tree, width=width // 10)  # 估算字符宽度
         self.edit_entry.insert(0, current_value)
         self.edit_entry.select_range(0, tk.END)
         self.edit_entry.focus()
 
-        # 添加验证和即时反红功能
         def validate_edit(text):
             if column_index == 1:  # 子网名称列
                 is_valid = bool(text.strip())
@@ -3566,16 +3259,13 @@ class IPSubnetSplitterApp:
             return "1"  # 始终允许输入，只做视觉提示
         self.edit_entry.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
 
-        # 设置编辑框在单元格上
         self.edit_entry.place(x=cell_x, y=cell_y, width=width, height=height)
 
-        # 保存当前编辑的信息
         self.current_edit_item = item
         self.current_edit_column = column_name
         self.current_edit_column_index = column_index
         self.current_edit_tree = "pool"  # 保存当前编辑的表格
 
-        # 绑定事件
         self.edit_entry.bind("<FocusOut>", self.on_edit_focus_out)
         self.edit_entry.bind("<Return>", self.on_edit_enter)
         self.edit_entry.bind("<Escape>", self.on_edit_escape)
@@ -3688,14 +3378,12 @@ class IPSubnetSplitterApp:
                     values = list(self.requirements_tree.item(self.current_edit_item, "values"))
                     values[self.current_edit_column_index] = new_value
                     self.requirements_tree.item(self.current_edit_item, values=values)
-                    # 更新斑马条纹
                     self.update_table_zebra_stripes(self.requirements_tree)
                 else:
                     # 更新需求池表
                     values = list(self.pool_tree.item(self.current_edit_item, "values"))
                     values[self.current_edit_column_index] = new_value
                     self.pool_tree.item(self.current_edit_item, values=values)
-                    # 更新斑马条纹
                     self.update_table_zebra_stripes(self.pool_tree)
 
                 # 清理编辑状态
@@ -3718,7 +3406,6 @@ class IPSubnetSplitterApp:
                     existing_name = values[1]  # 子网名称在第二列
                     if existing_name == new_value:
                         self.show_error(_("error"), _("subnet_already_exists", name=new_value))
-                        # 重新将焦点设置到编辑框
                         self.edit_entry.focus_set()
                         return
                 # 2. 检查需求池表
@@ -3737,29 +3424,22 @@ class IPSubnetSplitterApp:
                     hosts = int(new_value)
                     if hosts <= 0:
                         self.show_error(_("error"), _("host_count_must_be_greater_than_0"))
-                        # 重新将焦点设置到编辑框
                         self.edit_entry.focus_set()
                         return
                 except ValueError:
                     self.show_error(_("error"), _("host_count_must_be_integer"))
-                    # 重新将焦点设置到编辑框
                     self.edit_entry.focus_set()
                     return
 
-            # 根据当前编辑的表格，更新相应的Treeview数据
             if hasattr(self, 'current_edit_tree') and self.current_edit_tree == "requirements":
-                # 更新子网需求表
                 values = list(self.requirements_tree.item(self.current_edit_item, "values"))
                 values[self.current_edit_column_index] = new_value
                 self.requirements_tree.item(self.current_edit_item, values=values)
-                # 更新斑马条纹
                 self.update_requirements_tree_zebra_stripes()
             elif hasattr(self, 'current_edit_tree') and self.current_edit_tree == "pool":
-                # 更新需求池表
                 values = list(self.pool_tree.item(self.current_edit_item, "values"))
                 values[self.current_edit_column_index] = new_value
                 self.pool_tree.item(self.current_edit_item, values=values)
-                # 更新斑马条纹
                 self.update_pool_tree_zebra_stripes()
 
             # 销毁编辑框
@@ -3841,7 +3521,6 @@ class IPSubnetSplitterApp:
 
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
-                # 设置斑马条纹标签
                 tags = ("even",) if i % 2 == 0 else ("odd",)
                 self.planning_remaining_tree.insert(
                     "",
@@ -3856,9 +3535,7 @@ class IPSubnetSplitterApp:
                     ),
                     tags=tags,
                 )
-            # 斑马条纹样式已在初始化时配置
 
-            # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.planning_remaining_tree)
 
             # 子网规划完成，不显示对话框提示
@@ -4014,7 +3691,6 @@ class IPSubnetSplitterApp:
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
                 for i, network in enumerate(result["remaining_subnets_info"], 1):
-                    # 设置斑马条纹标签
                     tags = ("even",) if i % 2 == 0 else ("odd",)
                     self.remaining_tree.insert(
                         "",
@@ -4040,21 +3716,17 @@ class IPSubnetSplitterApp:
             if hasattr(self, 'remaining_scroll_v'):
                 # 获取当前滚动位置
                 yview = self.remaining_tree.yview()
-                # 检查是否需要显示滚动条
                 need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
 
                 # 只在状态变化时才更新UI，减少不必要的刷新
                 current_state = self.remaining_scroll_v.winfo_ismapped()
                 if need_scrollbar != current_state:
                     if need_scrollbar:
-                        # 内容可滚动，显示滚动条
                         self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
                         self.remaining_scroll_v.set(yview[0], yview[1])
                     else:
-                        # 内容不可滚动，隐藏滚动条
                         self.remaining_scroll_v.grid_remove()
 
-            # 准备图表数据
             self.prepare_chart_data(result, split_info, result["remaining_subnets_info"])
 
             # 绘制图表
@@ -4073,7 +3745,6 @@ class IPSubnetSplitterApp:
                 # 检查当前切分段是否在列表中，如果不在则添加
                 if split and split not in self.split_networks:
                     self.split_networks.append(split)
-                    # 限制历史记录大小，最多保留100条
                     if len(self.split_networks) > 100:
                         self.split_networks.pop(0)
                     self.split_entry.config(values=self.split_networks)
@@ -4315,7 +3986,6 @@ class IPSubnetSplitterApp:
 
         # 创建Treeview和垂直滚动条
         self.ipv6_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.ipv6_info_tree)
         self.ipv6_info_tree.heading("item", text=_("project"))
         self.ipv6_info_tree.heading("value", text=_("value"))
@@ -4323,10 +3993,8 @@ class IPSubnetSplitterApp:
         self.ipv6_info_tree.column("item", width=100)
         self.ipv6_info_tree.column("value", width=350)
 
-        # 添加垂直滚动条
         ipv6_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
 
-        # 使用通用方法创建带自动隐藏滚动条的Treeview
         self.create_scrollable_treeview(result_frame, self.ipv6_info_tree, ipv6_info_scrollbar)
 
         self.configure_treeview_styles(self.ipv6_info_tree, include_special_tags=True)
@@ -4365,7 +4033,6 @@ class IPSubnetSplitterApp:
         # 子网合并列表输入文本框
         self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=("微软雅黑", 10))
 
-        # 添加垂直滚动条
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26")
 
@@ -4405,9 +4072,7 @@ class IPSubnetSplitterApp:
             # IPv4地址正则表达式 - 修复了点号匹配问题，使用\.转义点号
             ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
             is_valid = bool(re.match(ipv4_pattern, text)) if text else True
-            # 设置文本颜色
             entry.config(foreground='black' if is_valid else 'red')
-            # 始终返回"1"，允许所有输入，只做视觉提示
             return "1"
 
         # 为起始IP添加验证
@@ -4415,7 +4080,6 @@ class IPSubnetSplitterApp:
             return validate_range_ip(text, self.range_start_entry)
         self.range_start_entry.config(validate="all", validatecommand=(self.range_start_entry.register(validate_start_ip), "%P"))
 
-        # 初始验证一次
         validate_start_ip(self.range_start_entry.get())
 
         # 结束IP - 使用Combobox，支持下拉选择和记忆功能
@@ -4433,7 +4097,6 @@ class IPSubnetSplitterApp:
             return validate_range_ip(text, self.range_end_entry)
         self.range_end_entry.config(validate="all", validatecommand=(self.range_end_entry.register(validate_end_ip), "%P"))
 
-        # 初始验证一次
         validate_end_ip(self.range_end_entry.get())
 
         # 范围转CIDR按钮 - 靠左放置
@@ -4447,7 +4110,6 @@ class IPSubnetSplitterApp:
         # 创建正常的结果树（非转置）
         columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
         self.merge_result_tree = ttk.Treeview(self.merge_result_frame, columns=columns, show="headings")
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.merge_result_tree)
 
         # 设置列标题和初始宽度
@@ -4486,7 +4148,6 @@ class IPSubnetSplitterApp:
             # 设置滚动条位置
             scrollbar.set(*args)
 
-            # 检查是否需要显示滚动条
             yview = treeview.yview()
             need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
 
@@ -4538,20 +4199,14 @@ class IPSubnetSplitterApp:
             no_scrollbar_padx: 滚动条隐藏时Treeview的右边距，默认(0, 10)
         """
 
-        # 创建滚动条回调函数，实现自动隐藏和外边距调整
         def scrollbar_callback(*args):
-            # 设置滚动条位置
             scrollbar.set(*args)
 
-            # 检查是否需要显示滚动条
             yview = treeview.yview()
             need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
 
-            # 根据是否需要滚动条调整Treeview的右边距
             if need_scrollbar:
-                # 显示滚动条
                 scrollbar.grid(row=scrollbar_row, column=scrollbar_column, sticky=tk.NS, padx=scrollbar_padx)
-                # 调整Treeview的grid配置，移除右边距
                 treeview.grid_configure(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=tree_padx)
 
                 # 如果是需求池表或子网需求表，减小name列宽度为滚动条留出空间
@@ -4561,25 +4216,19 @@ class IPSubnetSplitterApp:
                     except tk.TclError:
                         pass  # 如果列不存在则忽略
             else:
-                # 隐藏滚动条
                 scrollbar.grid_remove()
-                # 调整Treeview的grid配置，添加右边距
                 adjusted_padx = (tree_padx[0], tree_padx[1] + no_scrollbar_padx[1]) if tree_padx else no_scrollbar_padx
                 treeview.grid_configure(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=adjusted_padx)
 
-        # 绑定滚动条和Treeview
         scrollbar.config(command=treeview.yview)
         treeview.config(yscrollcommand=scrollbar_callback)
 
-        # 使用grid布局，确保Treeview和滚动条正确对齐
         treeview.grid(row=tree_row, column=tree_column, sticky=tk.NSEW, padx=tree_padx)
         scrollbar.grid(row=scrollbar_row, column=scrollbar_column, sticky=tk.NS, padx=scrollbar_padx)
 
-        # 配置grid权重，使Treeview可以扩展
         parent_frame.grid_rowconfigure(tree_row, weight=1)
         parent_frame.grid_columnconfigure(tree_column, weight=1)
 
-        # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
 
     def create_scrollable_text(self, parent_frame, text_widget, scrollbar, no_scrollbar_padx=(0, 10)):
@@ -4593,23 +4242,18 @@ class IPSubnetSplitterApp:
             no_scrollbar_padx: 滚动条隐藏时Text组件的右边距，默认(0, 10)
         """
 
-        # 创建滚动条回调函数，实现自动隐藏和外边距调整
         def scrollbar_callback(*args):
-            # 设置滚动条位置
             scrollbar.set(*args)
 
-            # 检查是否需要显示滚动条
             yview = text_widget.yview()
             need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
 
             # 根据是否需要滚动条调整Text组件的右边距
             if need_scrollbar:
-                # 显示滚动条
                 scrollbar.grid(row=0, column=1, sticky=tk.NS)
                 # 调整Text组件的grid配置，移除右边距
                 text_widget.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
             else:
-                # 隐藏滚动条
                 scrollbar.grid_remove()
                 # 调整Text组件的grid配置，添加右边距
                 text_widget.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=no_scrollbar_padx)
@@ -4626,7 +4270,6 @@ class IPSubnetSplitterApp:
         parent_frame.grid_rowconfigure(0, weight=1)
         parent_frame.grid_columnconfigure(0, weight=1)
 
-        # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
 
     def create_ipv4_info_section(self):
@@ -4635,7 +4278,6 @@ class IPSubnetSplitterApp:
         content_container = ttk.Frame(self.ipv4_info_frame, padding="10")
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
 
-        # 创建输入区域
         input_frame = ttk.LabelFrame(content_container, text=_("ipv4_address_info"), padding="10")
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
@@ -4650,18 +4292,13 @@ class IPSubnetSplitterApp:
         def validate_ipv4(text):
             """验证IPv4地址格式"""
             text = text.strip()
-            # IPv4地址正则表达式 - 修复了点号匹配问题，使用\.转义点号
             ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
             is_valid = bool(re.match(ipv4_pattern, text)) if text else True
-            # 设置文本颜色
             self.ip_info_entry.config(foreground='black' if is_valid else 'red')
-            # 始终返回"1"，允许所有输入，只做视觉提示
             return "1"
 
-        # 配置验证
         self.ip_info_entry.config(validate="all", validatecommand=(self.ip_info_entry.register(validate_ipv4), "%P"))
 
-        # 初始验证一次
         validate_ipv4(self.ip_info_entry.get())
 
         # 常用子网掩码与CIDR的映射关系，包含所有CIDR 1~32
@@ -4730,13 +4367,10 @@ class IPSubnetSplitterApp:
         self.ip_info_btn = ttk.Button(input_frame, text=_("query_info"), command=self.execute_ipv4_info)
         self.ip_info_btn.pack(side=tk.RIGHT)
 
-        # 创建结果区域
         result_frame = ttk.LabelFrame(content_container, text=_("query_result"), padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 创建Treeview和垂直滚动条
         self.ip_info_tree = ttk.Treeview(result_frame, columns=("item", "value"), show="headings")
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.ip_info_tree)
         self.ip_info_tree.heading("item", text=_("project"))
         self.ip_info_tree.heading("value", text=_("value"))
@@ -4744,42 +4378,30 @@ class IPSubnetSplitterApp:
         self.ip_info_tree.column("item", width=100)
         self.ip_info_tree.column("value", width=350)
 
-        # 添加垂直滚动条
         ip_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
         ip_info_scrollbar.config(command=self.ip_info_tree.yview)
 
-        # 创建滚动条回调函数，实现自动隐藏和外边距调整
         def scrollbar_callback(*args):
-            # 设置滚动条位置
             ip_info_scrollbar.set(*args)
 
-            # 检查是否需要显示滚动条
             yview = self.ip_info_tree.yview()
             need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
 
-            # 根据是否需要滚动条调整Treeview的右边距
             if need_scrollbar:
-                # 显示滚动条
                 ip_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-                # 调整Treeview的grid配置，移除右边距
                 self.ip_info_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
             else:
-                # 隐藏滚动条
                 ip_info_scrollbar.grid_remove()
-                # 调整Treeview的grid配置，添加右边距
                 self.ip_info_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=(0, 10))
 
         self.ip_info_tree.config(yscrollcommand=scrollbar_callback)
 
-        # 使用grid布局，确保Treeview和滚动条正确对齐
         self.ip_info_tree.grid(row=0, column=0, sticky=tk.NSEW)
         ip_info_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # 配置grid权重，使Treeview可以扩展
         result_frame.grid_rowconfigure(0, weight=1)
         result_frame.grid_columnconfigure(0, weight=1)
 
-        # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
 
         self.configure_treeview_styles(self.ip_info_tree, include_special_tags=True)
@@ -4794,7 +4416,6 @@ class IPSubnetSplitterApp:
         left_frame = ttk.Frame(content_container)
         right_frame = ttk.Frame(content_container)
 
-        # 使用grid布局，固定左侧宽度，右侧自适应
         content_container.grid_columnconfigure(0, minsize=191, weight=0)  # 固定左侧宽度，参考子网合并页面
         content_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         content_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
@@ -4816,7 +4437,6 @@ class IPSubnetSplitterApp:
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
         overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
 
-        # 使用通用方法创建带自动隐藏滚动条的Text组件
         self.create_scrollable_text(text_frame, self.overlap_text, overlap_text_scrollbar)
 
         # 检测重叠按钮 - 靠左放置
@@ -4828,7 +4448,6 @@ class IPSubnetSplitterApp:
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
-        # 添加右键复制功能
         self.bind_treeview_right_click(self.overlap_result_tree)
         self.overlap_result_tree.heading("status", text=_("status"))
         self.overlap_result_tree.heading("message", text=_("description"))
@@ -4836,10 +4455,8 @@ class IPSubnetSplitterApp:
         self.overlap_result_tree.column("status", width=60, minwidth=60, stretch=True)
         self.overlap_result_tree.column("message", width=400, minwidth=400, stretch=True)
 
-        # 添加垂直滚动条
         overlap_result_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
 
-        # 使用通用方法创建带自动隐藏滚动条的Treeview
         self.create_scrollable_treeview(result_frame, self.overlap_result_tree, overlap_result_scrollbar)
 
         self.configure_treeview_styles(self.overlap_result_tree)
@@ -4896,7 +4513,6 @@ class IPSubnetSplitterApp:
             # 执行合并
             result = merge_subnets(subnets)
 
-            # 检查是否有错误
             if isinstance(result, dict) and "error" in result:
                 self.show_info(_("error"), result["error"])
                 return
@@ -4923,7 +4539,6 @@ class IPSubnetSplitterApp:
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
-            # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.merge_result_tree)
 
             # 操作成功完成，添加到历史记录
@@ -5272,7 +4887,6 @@ class IPSubnetSplitterApp:
                 self.ipv6_info_tree.insert("", tk.END, values=(_("address_usage"), "组播地址"))
                 self.ipv6_info_tree.insert("", tk.END, values=(_("rfc_specification"), "RFC 4291 - IPv6寻址架构"))
 
-            # 操作成功完成，添加到历史记录
             self.update_ipv6_history()
 
         except ValueError as e:
@@ -5296,12 +4910,10 @@ class IPSubnetSplitterApp:
                 ipaddress.IPv4Address(ip)
             except ValueError as e:
                 try:
-                    # 使用handle_ip_subnet_error函数获取友好的错误信息
                     error_info = handle_ip_subnet_error(e)
                     self.show_info(_("error"), error_info["error"])
                     return
                 except ValueError:
-                    # 如果handle_ip_subnet_error失败，使用通用错误信息
                     self.show_info(_("error"), f"{_("ipv4_address")}{_("invalid_ip_format")}")
                     return
 
@@ -5474,7 +5086,6 @@ class IPSubnetSplitterApp:
                 # 基本信息模式
                 self.ip_info_tree.insert("", tk.END, values=(_("ip_address"), info.get("ip_address", ip)))
                 self.ip_info_tree.insert("", tk.END, values=(_("version"), info.get("version", "")))
-                # 网络类别
                 network_class = info.get("class", "")
                 class_text = _(f"class_{network_class.lower()}") if network_class else ""
                 self.ip_info_tree.insert("", tk.END, values=(_("network_class"), class_text))
@@ -5535,7 +5146,6 @@ class IPSubnetSplitterApp:
                     config_advice = "建议配置静态路由和防火墙规则"
                 self.ip_info_tree.insert("", tk.END, values=("配置建议", config_advice))
 
-            # 操作成功完成，添加到历史记录
             self.update_ipv4_history()
 
         except ValueError as e:
@@ -5546,7 +5156,6 @@ class IPSubnetSplitterApp:
     def execute_range_to_cidr(self):
         """执行IP地址范围转CIDR操作"""
         try:
-            # 清空结果树
             for item in self.merge_result_tree.get_children():
                 self.merge_result_tree.delete(item)
 
@@ -5561,24 +5170,20 @@ class IPSubnetSplitterApp:
             # 执行转换
             result = range_to_cidr(start_ip, end_ip)
 
-            # 检查是否有错误
             if isinstance(result, dict) and "error" in result:
                 self.show_info(_("error"), result["error"])
                 return
 
-            # 显示结果
             cidr_list = result.get("cidr_list", [])
 
             # 转置表格：清空并重新创建列
             for item in self.merge_result_tree.get_children():
                 self.merge_result_tree.delete(item)
 
-            # 清除所有列
             for col in self.merge_result_tree["columns"]:
                 self.merge_result_tree.heading(col, text="")
             self.merge_result_tree.config(columns=())
 
-            # 如果没有结果，直接返回
             if not cidr_list:
                 return
 
@@ -5586,7 +5191,6 @@ class IPSubnetSplitterApp:
             columns = [_("attribute")] + cidr_list
             self.merge_result_tree.config(columns=columns)
 
-            # 设置列标题和宽度
             for i, col in enumerate(columns):
                 self.merge_result_tree.heading(col, text=col)
                 if i == 0:  # 第一列（属性列）
@@ -5594,9 +5198,7 @@ class IPSubnetSplitterApp:
                 else:  # 其他列
                     self.merge_result_tree.column(col, width=120)
 
-            # 重新绑定滚动条，保持自动隐藏功能
             if hasattr(self, 'merge_result_scrollbar'):
-                # 重新调用create_scrollable_treeview方法来重新绑定滚动条
                 self.create_scrollable_treeview(
                     self.merge_result_frame,
                     self.merge_result_tree,
@@ -5623,7 +5225,6 @@ class IPSubnetSplitterApp:
                 self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
-            # 操作成功完成，添加到历史记录
             self.update_range_start_history()
             self.update_range_end_history()
 
@@ -5635,7 +5236,6 @@ class IPSubnetSplitterApp:
     def execute_check_overlap(self):
         """执行子网重叠检测操作"""
         try:
-            # 清空结果树
             for item in self.overlap_result_tree.get_children():
                 self.overlap_result_tree.delete(item)
 
@@ -5651,12 +5251,10 @@ class IPSubnetSplitterApp:
             # 执行重叠检测
             result = check_subnet_overlap(subnets)
 
-            # 检查是否有错误
             if isinstance(result, dict) and "error" in result:
                 self.show_info(_("error"), result["error"])
                 return
 
-            # 显示结果
             overlaps = result.get("overlaps", [])
             row_index = 0
 
@@ -5674,7 +5272,6 @@ class IPSubnetSplitterApp:
                     self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
                     row_index += 1
             
-            # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.overlap_result_tree)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
@@ -5696,36 +5293,27 @@ class IPSubnetSplitterApp:
         """更新IPv6地址查询历史记录"""
         ipv6_value = self.ipv6_info_entry.get().strip()
         if ipv6_value and ipv6_value not in self.ipv6_history:
-            # 将新地址添加到历史记录开头
             self.ipv6_history.insert(0, ipv6_value)
-            # 限制历史记录数量为10条
             if len(self.ipv6_history) > 10:
                 self.ipv6_history.pop()
-            # 更新Combobox的values属性
             self.ipv6_info_entry['values'] = self.ipv6_history
 
     def update_range_start_history(self, _event=None):
         """更新IP范围起始地址历史记录"""
         start_value = self.range_start_entry.get().strip()
         if start_value and start_value not in self.range_start_history:
-            # 将新地址添加到历史记录开头
             self.range_start_history.insert(0, start_value)
-            # 限制历史记录数量为10条
             if len(self.range_start_history) > 10:
                 self.range_start_history.pop()
-            # 更新Combobox的values属性
             self.range_start_entry['values'] = self.range_start_history
 
     def update_range_end_history(self, _event=None):
         """更新IP范围结束地址历史记录"""
         end_value = self.range_end_entry.get().strip()
         if end_value and end_value not in self.range_end_history:
-            # 将新地址添加到历史记录开头
             self.range_end_history.insert(0, end_value)
-            # 限制历史记录数量为10条
             if len(self.range_end_history) > 10:
                 self.range_end_history.pop()
-            # 更新Combobox的values属性
             self.range_end_entry['values'] = self.range_end_history
 
     def on_subnet_mask_change(self, _event):
@@ -5766,7 +5354,6 @@ class IPSubnetSplitterApp:
         # 绑定关闭事件，确保对话框关闭时更新状态
         self.test_dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
 
-        # 设置对话框为焦点
         self.test_dialog.focus_force()
 
         # 计算对话框居中显示的位置（相对于主窗口）
@@ -5825,7 +5412,6 @@ class IPSubnetSplitterApp:
         )
         success_btn.grid(row=0, column=0, padx=5, pady=5)
 
-        # 将焦点聚焦到第一个按钮上
         success_btn.focus_force()
 
         error_btn = ttk.Button(
@@ -6018,7 +5604,6 @@ class IPSubnetSplitterApp:
             self.clear_result()
 
         # 显示在信息栏中
-        # 取消之前的自动隐藏定时器
         if self.info_auto_hide_id:
             self.root.after_cancel(self.info_auto_hide_id)
             self.info_auto_hide_id = None
@@ -6150,7 +5735,6 @@ class IPSubnetSplitterApp:
             main_width = self.main_frame.winfo_width()
             bar_width = int(main_width * 0.88) - 20
 
-            # 确保宽度在合理范围内
             bar_width = max(bar_width, 100)
             bar_width = min(bar_width, main_width - 20)
 
@@ -6325,7 +5909,6 @@ class IPSubnetSplitterApp:
                     else:
                         main_data.append(values)
             elif values:
-                # 去重：如果是键值对格式，确保每个项目只出现一次
                 if len(values) >= 2 and values[0] != "":
                     item_key = values[0]
                     if item_key not in added_items:
@@ -6468,7 +6051,6 @@ class IPSubnetSplitterApp:
         if hasattr(self, 'remaining_scroll_v'):
             # 重置滚动条位置
             self.remaining_scroll_v.set(0.0, 1.0)
-            # 隐藏滚动条
             self.remaining_scroll_v.grid_remove()
 
         # 清空图表
@@ -6570,7 +6152,6 @@ class IPSubnetSplitterApp:
         )  # x=-94，向左移动5个像素，y=22，向下移动1px，与信息栏顶部对齐
         self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
 
-        # 绑定鼠标事件实现悬停效果
         self.pin_label.bind("<Enter>", self.on_about_link_enter)
         self.pin_label.bind("<Leave>", self.on_about_link_leave)
 
@@ -6587,7 +6168,6 @@ class IPSubnetSplitterApp:
 
     def on_about_link_leave(self, event):
         """鼠标离开关于链接或钉住按钮时的处理函数"""
-        # 获取事件源，判断是哪个标签触发的事件
         widget = event.widget
 
         # 恢复标签的默认前景色和背景色
@@ -6611,6 +6191,10 @@ class IPSubnetSplitterApp:
         # 更新应用程序名称
         self.app_name = _("app_name")
         self.root.title(f"{self.app_name} v{self.app_version}")
+        
+        # 更新样式，确保新创建的UI元素使用正确的样式
+        from style_manager import update_styles
+        update_styles()
         
         # 重新创建所有UI元素，实现语言更新
         self.destroy_all_widgets()
@@ -6670,7 +6254,6 @@ class IPSubnetSplitterApp:
         # 重新创建右上角的关于链接按钮和钉住按钮
         self.create_about_link()
         
-        # 确保信息栏框架的grid布局配置正确
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
@@ -6698,13 +6281,11 @@ class IPSubnetSplitterApp:
         # 重新初始化历史记录
         self.history_records = []
         
-        # 初始化时获取并保存参考宽度
         self.root.update_idletasks()
         self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
     
     def initialize_component_properties(self):
         """重新初始化所有必要的组件属性"""
-        # 网段规划相关属性
         self.planning_parent_networks = []
         self.planning_parent_entry = None
         self.pool_tree = None
@@ -6712,7 +6293,6 @@ class IPSubnetSplitterApp:
         self.requirements_tree = None
         self.requirements_scrollbar = None
         
-        # 功能调试面板相关属性
         self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
         self.undo_delete_btn = None
         self.swap_btn = None
@@ -6723,14 +6303,12 @@ class IPSubnetSplitterApp:
         self.planning_remaining_frame = None
         self.planning_remaining_tree = None
         
-        # 编辑相关属性
         self.edit_entry = None
         self.current_edit_item = None
         self.current_edit_column = None
         self.current_edit_column_index = None
         self.current_edit_tree = None
         
-        # 高级工具相关属性
         self.advanced_notebook = None
         self.ipv4_info_frame = None
         self.ipv6_info_frame = None
@@ -6762,7 +6340,6 @@ class IPSubnetSplitterApp:
         self.overlap_btn = None
         self.overlap_result_tree = None
         
-        # 切分子网相关属性
         self.split_parent_networks = []
         self.split_networks = []
         self.parent_entry = None
@@ -6828,10 +6405,8 @@ class IPSubnetSplitterApp:
         about_window.transient(self.root)
         about_window.grab_set()
 
-        # 先隐藏对话框，避免定位过程中的闪现
         about_window.withdraw()
 
-        # 获取主窗口的位置和尺寸
         main_x = self.root.winfo_x()
         main_y = self.root.winfo_y()
         main_width = self.root.winfo_width()
@@ -6845,10 +6420,8 @@ class IPSubnetSplitterApp:
         dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
         dialog_y = main_y + (main_height // 2) - (dialog_height // 2)
 
-        # 一次性设置对话框的尺寸和位置
         about_window.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
-        # 显示对话框
         about_window.deiconify()
 
         # 创建内容框架，移除所有边框和焦点指示
@@ -6968,7 +6541,6 @@ if __name__ == "__main__":
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)
 
-    # 设置窗口图标
     def set_window_icon(root_window, icon_ico_path, icon_png_path):
         try:
             import ctypes
