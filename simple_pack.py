@@ -74,6 +74,7 @@ def create_pack_config(pack_type="onefile"):
                 "--add-data=translations.json:.",  # 添加翻译文件
                 "--add-data=icon.ico:.",  # 添加图标文件
                 "--add-data=icon.png:.",  # 添加图标文件
+                "--hidden-import=icon_base64",  # 确保icon_base64模块被正确导入
             ]
         )
 

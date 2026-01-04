@@ -6573,14 +6573,148 @@ class IPSubnetSplitterApp:
         copyright_label.pack(pady=(2, 10))
 
 
+def set_window_icon(root_window):
+    """设置窗口图标，支持开发环境和打包环境"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        import os
+        import sys
+        
+        WM_SETICON = 0x0080
+        ICON_BIG = 1
+        ICON_SMALL = 0
+        LR_LOADFROMFILE = 0x00000010
+        
+        # 获取图标路径
+        icon_path = None
+        
+        if hasattr(sys, 'frozen') and sys.frozen:
+            # 打包环境
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                icon_path = os.path.join(meipass, "icon.ico")
+            else:
+                # 尝试直接使用相对路径
+                icon_path = "icon.ico"
+        else:
+            # 开发环境
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+        
+        if not os.path.exists(icon_path):
+            print(f"⚠️ 图标文件不存在: {icon_path}")
+            return False
+        
+        # 使用Windows API设置图标
+        LoadImageW = ctypes.windll.user32.LoadImageW
+        LoadImageW.restype = wintypes.HANDLE
+        LoadImageW.argtypes = [
+            wintypes.HINSTANCE,
+            wintypes.LPCWSTR,
+            wintypes.UINT,
+            wintypes.INT,
+            wintypes.INT,
+            wintypes.UINT
+        ]
+        
+        SendMessageW = ctypes.windll.user32.SendMessageW
+        SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+        SendMessageW.restype = wintypes.LRESULT
+        
+        hwnd = int(root_window.winfo_id())
+        
+        # 设置大图标
+        hicon = LoadImageW(None, icon_path, 1, 32, 32, LR_LOADFROMFILE)
+        if hicon:
+            SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
+            print(f"✅ 设置大图标成功")
+        
+        # 设置小图标
+        hicon_small = LoadImageW(None, icon_path, 1, 16, 16, LR_LOADFROMFILE)
+        if hicon_small:
+            SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
+            print(f"✅ 设置小图标成功")
+        
+        return True
+    except Exception as e:
+        print(f"⚠️ Windows API设置图标失败: {e}")
+        return False
+
+
+def setup_window_icon(root_window):
+    """综合设置窗口图标，多种方式确保成功"""
+    print("📦 设置窗口图标...")
+    
+    # 方法1: 使用Windows API直接设置（最可靠）
+    if set_window_icon(root_window):
+        return
+    
+    # 方法2: 使用Tkinter的iconbitmap方法
+    try:
+        import os
+        import sys
+        
+        icon_path = None
+        if hasattr(sys, 'frozen') and sys.frozen:
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                icon_path = os.path.join(meipass, "icon.ico")
+            else:
+                icon_path = "icon.ico"
+        else:
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+        
+        if os.path.exists(icon_path):
+            root_window.iconbitmap(default=icon_path)
+            print(f"✅ 使用iconbitmap设置图标成功: {icon_path}")
+            return
+    except Exception as e:
+        print(f"⚠️ iconbitmap设置图标失败: {e}")
+    
+    # 方法3: 使用PIL从PNG加载（高质量）
+    try:
+        import os
+        import sys
+        from PIL import Image, ImageTk
+        
+        icon_path = None
+        if hasattr(sys, 'frozen') and sys.frozen:
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                icon_path = os.path.join(meipass, "icon.png")
+            else:
+                icon_path = "icon.png"
+        else:
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
+        
+        if os.path.exists(icon_path):
+            img = Image.open(icon_path)
+            photo_icon = ImageTk.PhotoImage(img)
+            root_window.iconphoto(True, photo_icon)
+            print(f"✅ 使用PIL加载PNG图标成功: {icon_path}")
+            return
+    except Exception as e:
+        print(f"⚠️ PIL加载PNG图标失败: {e}")
+    
+    # 方法4: 从Base64加载（最可靠的后备方案）
+    try:
+        icon_photo = load_icon()
+        if icon_photo:
+            root_window.iconphoto(True, icon_photo)
+            print("✅ 从Base64加载图标成功")
+            return
+    except Exception as e:
+        print(f"⚠️ 从Base64加载图标失败: {e}")
+    
+    print("❌ 所有图标设置方法均失败")
+
+
 if __name__ == "__main__":
     # 创建主窗口
     root = tk.Tk()
     
-    # 设置窗口图标
-    icon_photo = load_icon()
-    if icon_photo:
-        root.iconphoto(True, icon_photo)
+    # 设置窗口图标（使用综合方法）
+    setup_window_icon(root)
 
     # 获取DPI缩放因子（如果未定义则默认为1.0）
     # 全局变量已在文件开头定义，无需再次声明
@@ -6616,100 +6750,6 @@ if __name__ == "__main__":
 
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)
-
-    def set_window_icon(root_window, icon_ico_path, icon_png_path):
-        try:
-            import ctypes
-            from ctypes import wintypes
-            
-            WM_SETICON = 0x0080
-            ICON_BIG = 1
-            ICON_SMALL = 0
-            LR_LOADFROMFILE = 0x00000010
-            
-            LoadImageW = ctypes.windll.user32.LoadImageW
-            LoadImageW.restype = wintypes.HANDLE
-            LoadImageW.argtypes = [
-                wintypes.HINSTANCE,
-                wintypes.LPCWSTR,
-                wintypes.UINT,
-                wintypes.INT,
-                wintypes.INT,
-                wintypes.UINT
-            ]
-            
-            SendMessageW = ctypes.windll.user32.SendMessageW
-            SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-            SendMessageW.restype = wintypes.LRESULT
-            
-            hwnd = int(root_window.winfo_id())
-            
-            icon_sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
-            
-            for width, height in icon_sizes:
-                hicon = LoadImageW(None, icon_ico_path, 1, width, height, LR_LOADFROMFILE)
-                if hicon:
-                    SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
-                    break
-            
-            for width, height in [(32, 32), (16, 16)]:
-                hicon = LoadImageW(None, icon_ico_path, 1, width, height, LR_LOADFROMFILE)
-                if hicon:
-                    SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
-                    break
-                    
-        except Exception:
-            pass
-
-    try:
-        icon_path = None
-        icon_png_path = None
-        if hasattr(sys, 'frozen') and sys.frozen:
-            meipass = getattr(sys, '_MEIPASS', None)
-            if meipass:
-                icon_path = os.path.join(meipass, "icon.ico")
-                icon_png_path = os.path.join(meipass, "icon.png")
-            else:
-                try:
-                    import nuitka as _nuitka_module  # type: ignore[import]
-                    nuitka_path = getattr(_nuitka_module, '__path__', None)
-                    if nuitka_path and len(nuitka_path) > 0:
-                        icon_path = os.path.join(nuitka_path[0], "icon.ico")
-                        icon_png_path = os.path.join(nuitka_path[0], "icon.png")
-                    else:
-                        icon_path = "icon.ico"
-                        icon_png_path = "icon.png"
-                except (ImportError, AttributeError):
-                    icon_path = "icon.ico"
-                    icon_png_path = "icon.png"
-        else:
-            icon_path = "icon.ico"
-            icon_png_path = "icon.png"
-
-        if os.path.exists(icon_path):
-            # 只使用Windows API方式设置图标，确保高质量显示
-            set_window_icon(root, icon_path, icon_png_path)
-            
-            # 对于Tkinter，我们应该使用高质量的PNG图标而不是ICO
-            if os.path.exists(icon_png_path):
-                try:
-                    # 使用PhotoImage设置PNG图标，支持高质量显示
-                    from PIL import Image, ImageTk
-                    img = Image.open(icon_png_path)
-                    photo_icon = ImageTk.PhotoImage(img)
-                    root.iconphoto(True, photo_icon)  # type: ignore[arg-type]
-                    print(f"✅ 使用高质量PNG图标: {icon_png_path}")
-                except Exception as e:
-                    print(f"⚠️ 设置PNG图标失败: {e}")
-                    # 如果PNG设置失败，尝试使用ICO作为备选
-                    try:
-                        root.iconbitmap(default=icon_path)
-                        print(f"⚠️ 备选: 使用ICO图标: {icon_path}")
-                    except tk.TclError:
-                        pass
-    except (tk.TclError, OSError) as e:
-        print(f"设置窗口图标失败: {e}")
-
     # 创建应用实例并运行
     IPSubnetSplitterApp(root)
     root.mainloop()
