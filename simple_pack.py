@@ -70,7 +70,10 @@ def create_pack_config(pack_type="onefile"):
                 "--exclude-module=win32timezone",
                 # 排除其他可能不使用的模块
                 "--exclude-module=xmlrpc",
-                "--exclude-module=sqlite3"
+                "--exclude-module=sqlite3",
+                "--add-data=translations.json:.",  # 添加翻译文件
+                "--add-data=icon.ico:.",  # 添加图标文件
+                "--add-data=icon.png:.",  # 添加图标文件
             ]
         )
 

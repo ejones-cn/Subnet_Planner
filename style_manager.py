@@ -108,6 +108,10 @@ class StyleManager:
         # 1. 统一设置基本控件的字体样式
         self.style.configure("TLabel", **base_font_style)
         self.style.configure("TEntry", **base_font_style)
+        
+        # 信息标签样式
+        self.style.configure("Error.TLabel", **base_font_style, foreground="red")  # 错误信息红色
+        self.style.configure("Success.TLabel", **base_font_style, foreground="#5E5E5E")  # 成功信息灰色
 
         if current_language == "zh":
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(0, 1))

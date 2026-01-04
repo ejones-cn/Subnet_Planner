@@ -9,8 +9,19 @@
 
 import json
 import os
+import sys
 
-_translations_file = os.path.join(os.path.dirname(__file__), 'translations.json')
+# 处理PyInstaller打包后的文件路径
+def get_resource_path(relative_path):
+    """获取资源文件的绝对路径"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller打包后的路径
+        return os.path.join(sys._MEIPASS, relative_path)
+    # 开发环境下的路径
+    return os.path.join(os.path.dirname(__file__), relative_path)
+
+_translations_file = get_resource_path('translations.json')
+
 
 
 def _load_translations():
