@@ -338,7 +338,7 @@ def _draw_legend(canvas, chart_type, x, y):
 
     canvas.create_rectangle(x, legend_items_y, x + 20, legend_items_y + 12, fill=PARENT_COLOR)
     canvas.create_text(
-        x + 30,
+        x + 31,
         legend_items_y + 6,
         text=f"{_("parent_network")}",
         font=("微软雅黑", 9),
@@ -350,14 +350,14 @@ def _draw_legend(canvas, chart_type, x, y):
         # 子网规划：需求网段（多色）
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
-                x + 100 + j * 20,
+                x + 140 + j * 20,
                 legend_items_y,
-                x + 120 + j * 20,
+                x + 160 + j * 20,
                 legend_items_y + 12,
                 fill=color,
             )
         canvas.create_text(
-            x + 200,
+            x + 233,
             legend_items_y + 6,
             text=f"{_("allocated_subnets")}",
             font=("微软雅黑", 9),
@@ -366,7 +366,7 @@ def _draw_legend(canvas, chart_type, x, y):
         )
         
         # 剩余网段图例排在需求网段后面，使用多色表达
-        remaining_start_x = x + 300
+        remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
                 remaining_start_x + j * 20,
@@ -376,7 +376,7 @@ def _draw_legend(canvas, chart_type, x, y):
                 fill=color,
             )
         canvas.create_text(
-            remaining_start_x + 100,
+            remaining_start_x + 94,
             legend_items_y + 6,
             text=f"{_("remaining_subnets")}",
             font=("微软雅黑", 9),
@@ -385,9 +385,9 @@ def _draw_legend(canvas, chart_type, x, y):
         )
     else:
         # 子网切分：切分网段（蓝色）
-        canvas.create_rectangle(x + 100, legend_items_y, x + 120, legend_items_y + 12, fill=SPLIT_COLOR)
+        canvas.create_rectangle(x + 180, legend_items_y, x + 200, legend_items_y + 12, fill=SPLIT_COLOR)
         canvas.create_text(
-            x + 130,
+            x + 210,
             legend_items_y + 6,
             text=f"{_("split_segment")}",
             font=("微软雅黑", 9),
@@ -396,7 +396,7 @@ def _draw_legend(canvas, chart_type, x, y):
         )
         
         # 剩余网段图例
-        remaining_start_x = x + 200
+        remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
                 remaining_start_x + j * 20,
@@ -406,7 +406,7 @@ def _draw_legend(canvas, chart_type, x, y):
                 fill=color,
             )
         canvas.create_text(
-            remaining_start_x + 100,
+            remaining_start_x + 94,
             legend_items_y + 6,
             text=f"{_("remaining_subnets")}",
             font=("微软雅黑", 9),

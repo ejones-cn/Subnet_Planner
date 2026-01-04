@@ -62,11 +62,78 @@ class StyleManager:
             # 中文版：标签宽度10
             return 10
         elif current_language == "ja":
-            # 日文版：标签宽度16
-            return 16
+            # 日文版：标签宽度14
+            return 20
         else:
             # 英文版：标签宽度14
             return 14
+    
+    def get_button_size(self, button_type="default"):
+        """获取当前语言的按钮尺寸设置
+        
+        Args:
+            button_type: 按钮类型，支持 "default", "execute_planning", "export_planning", "export_result"
+            
+        Returns:
+            tuple: (宽度, 高度)
+        """
+        current_language = get_language()
+        
+        # 为不同按钮类型设置不同宽度，高度统一使用25
+        if current_language == "zh":
+            # 中文版：根据按钮类型设置不同宽度
+            if button_type == "execute_planning":
+                return (12, 10)
+            elif button_type == "export_planning":
+                return (12, 10)
+            elif button_type == "export_result":
+                return (12, 10)
+            else:
+                return (12, 10)
+        elif current_language == "ja":
+            # 日文版：根据按钮类型设置不同宽度
+            if button_type == "execute_planning":
+                return (12, 10)
+            elif button_type == "export_planning":
+                return (12, 10)
+            elif button_type == "export_result":
+                return (12, 10)
+            else:
+                return (12, 10)
+        else:
+            # 英文版：根据按钮类型设置不同宽度
+            if button_type == "execute_planning":
+                return (16, 10)
+            elif button_type == "export_planning":
+                return (16, 10)
+            elif button_type == "export_result":
+                return (16, 10)
+            else:
+                return (14, 10)
+    
+    def get_execute_planning_button_size(self):
+        """获取规划子网按钮尺寸
+        
+        Returns:
+            tuple: (宽度, 高度)
+        """
+        return self.get_button_size("execute_planning")
+    
+    def get_export_planning_button_size(self):
+        """获取导出规划按钮尺寸
+        
+        Returns:
+            tuple: (宽度, 高度)
+        """
+        return self.get_button_size("export_planning")
+    
+    def get_export_result_button_size(self):
+        """获取导出结果按钮尺寸
+        
+        Returns:
+            tuple: (宽度, 高度)
+        """
+        return self.get_button_size("export_result")
     
     def update_all_styles(self):
         """更新所有样式，根据当前语言重新设置"""
@@ -86,8 +153,14 @@ class StyleManager:
         # 1. 统一设置基本控件的字体样式
         self.style.configure("TLabel", **base_font_style)
         self.style.configure("TEntry", **base_font_style)
-        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1)
-        
+
+        if current_language == "zh":
+            self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(0, 1))
+        elif current_language == "ja":
+            self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(2, 3))
+        else:
+            self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(3, 2))
+
         # 2. 设置滚动条宽度一致
         scrollbar_style = {"width": 5}
         for scrollbar_type in ["TScrollbar", "Vertical.TScrollbar", "Horizontal.TScrollbar"]:

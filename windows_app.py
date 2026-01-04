@@ -313,7 +313,7 @@ class ColoredNotebook(ttk.Frame):
             "bg": color,
             "relief": "flat",
             "borderwidth": 0,
-            "padx": 12,
+            "padx": 5,
             "pady": 5,
             "font": (font_family, font_size, "normal"),
             "width": tab_width,  # 从样式管理器获取标签宽度
@@ -378,7 +378,7 @@ class ColoredNotebook(ttk.Frame):
                     relief="flat",
                     bg="#808080",  # 灰色背景
                     font=(font_family, font_size, "normal"),
-                    foreground="white",  # 白色文字
+                    foreground="#fcfcfc",  # 白色文字
                 )
             else:
                 # 内部标签页非激活状态：保持原有背景色，深灰色文字
@@ -386,7 +386,7 @@ class ColoredNotebook(ttk.Frame):
                     relief="flat",
                     bg=tab["color"],
                     font=(font_family, font_size, "normal"),
-                    foreground="#333333",  # 默认深灰色文字
+                    foreground="#808080",  # 默认深灰色文字
                 )
 
         # 显示选中的标签内容
@@ -402,7 +402,7 @@ class ColoredNotebook(ttk.Frame):
             selected_tab["button"].config(
                 relief="flat",
                 bg="#ff9800",  # 橙色背景
-                font=(font_family, font_size, "bold"),  # 加粗字体
+                font=(font_family, font_size, "normal"),  # 加粗字体
                 foreground="#000000",  # 黑色文字
             )
         else:
@@ -410,7 +410,7 @@ class ColoredNotebook(ttk.Frame):
             selected_color = self.mouse_up_colors.get(selected_tab["color"], "#ce93d8")
 
             selected_tab["button"].config(
-                relief="flat", bg=selected_color, font=(font_family, font_size, "bold"), foreground="#000000"
+                relief="flat", bg=selected_color, font=(font_family, font_size, "normal"), foreground="#000000"
             )
 
         # 更新对应内容框架样式的背景色，使其与选中标签的颜色保持一致
@@ -941,10 +941,6 @@ class IPSubnetSplitterApp:
             move_to="需求池"
         )
 
-        # 移动完成后，在目标树中选中刚刚移动的记录
-        if new_items:
-            self.pool_tree.selection_set(*new_items)
-
     def move_right(self):
         """向右移：从需求池向子网需求表移动记录（支持多条记录，移动后保持选中）"""
         selected_items = self.pool_tree.selection()
@@ -955,9 +951,6 @@ class IPSubnetSplitterApp:
             move_from="需求池",
             move_to="子网需求表"
         )
-
-        if new_items:
-            self.requirements_tree.selection_set(*new_items)
 
     def move_records(self):
         """根据选中情况自动判断移动方向：
@@ -979,9 +972,6 @@ class IPSubnetSplitterApp:
                 move_to="需求池"
             )
 
-            if new_items:
-                self.pool_tree.selection_set(*new_items)
-
         # 情况2：仅选中需求池数据，移动到子网需求表
         elif not selected_requirements and selected_pool_items:
             new_items = self._move_records_between_trees(
@@ -991,9 +981,6 @@ class IPSubnetSplitterApp:
                 move_from="需求池",
                 move_to="子网需求表"
             )
-
-            if new_items:
-                self.requirements_tree.selection_set(*new_items)
 
         # 情况3：同时选中两个表数据，交换数据
         elif selected_requirements and selected_pool_items:
@@ -1060,12 +1047,6 @@ class IPSubnetSplitterApp:
             # 更新两个表格的序号和斑马条纹
             self.update_requirements_tree_zebra_stripes()
             self.update_pool_tree_zebra_stripes()
-
-            # 交换完成后，选中所有新插入的记录
-            if new_req_items:
-                self.requirements_tree.selection_set(*new_req_items)
-            if new_pool_items:
-                self.pool_tree.selection_set(*new_pool_items)
 
         # 情况4：未选中任何记录
         else:
@@ -1153,16 +1134,6 @@ class IPSubnetSplitterApp:
 
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
-
-        # 3. 交换完成后，重新选中刚刚交换的记录
-        # 选中子网需求表中刚刚交换的记录
-        if new_req_items:
-            # selection_set不能直接接受列表，需要将列表转换为单独的参数
-            self.requirements_tree.selection_set(*new_req_items)
-
-        # 选中需求池表中刚刚交换的记录
-        if new_pool_items:
-            self.pool_tree.selection_set(*new_pool_items)
 
         # 保存交换操作到历史记录
         action_type = (
@@ -1373,7 +1344,10 @@ class IPSubnetSplitterApp:
         result_frame.grid_columnconfigure(0, weight=1)
 
         # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
-        self.export_btn = ttk.Button(result_frame, text=_("export_result"), command=self.export_result, width=10)
+        from style_manager import get_style_manager
+        style_manager = get_style_manager()
+        btn_width, btn_height = style_manager.get_export_result_button_size() if style_manager else (10, 25)
+        self.export_btn = ttk.Button(result_frame, text=_("export_result"), command=self.export_result, width=btn_width)
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
 
@@ -1394,7 +1368,7 @@ class IPSubnetSplitterApp:
         self.split_tree.heading("item", text=_("item"))
         self.split_tree.heading("value", text=_("value"))
         # 设置合适的列宽
-        self.split_tree.column("item", width=100, minwidth=100, stretch=False)
+        self.split_tree.column("item", width=120, minwidth=120, stretch=False)
         self.split_tree.column("value", width=250)
         self.split_tree.pack(fill=tk.BOTH, expand=True, pady=0)
 
@@ -1789,11 +1763,13 @@ class IPSubnetSplitterApp:
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 设置统一的按钮宽度，使用合适的宽度确保文字完全显示
-        button_width = 10
+        from style_manager import get_style_manager
+        style_manager = get_style_manager()
+        button_width, button_height = style_manager.get_export_planning_button_size() if style_manager else (10, 25)
 
         # 导出规划按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         export_planning_btn = ttk.Button(
-            result_frame, text=_("export_planning"), command=self.export_planning_result, width=button_width
+            result_frame, text=_('export_planning'), command=self.export_planning_result, width=button_width
         )
         export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
 
@@ -1838,8 +1814,9 @@ class IPSubnetSplitterApp:
         )
 
         # 规划子网按钮 - 使用 place 布局，位于导出规划按钮左方，大小相同，使用默认TButton样式
+        execute_btn_width, execute_btn_height = style_manager.get_execute_planning_button_size() if style_manager else (10, 25)
         self.execute_planning_btn = ttk.Button(
-            result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=button_width
+            result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=execute_btn_width
         )
         # 动态计算规划子网按钮的位置：导出规划按钮左边，间隔10像素
         button_gap = 10
@@ -2315,9 +2292,9 @@ class IPSubnetSplitterApp:
 
         # 创建按钮并在按钮框架中居中
         save_requirement_btn = ttk.Button(
-            button_frame, text=_("save_requirement"), command=lambda: save_requirement("requirements"), width=10
+            button_frame, text=_('save_requirement'), command=lambda: save_requirement("requirements"), width=15
         )
-        save_to_pool_btn = ttk.Button(button_frame, text=_("save_to_pool"), command=lambda: save_requirement("pool"), width=10)
+        save_to_pool_btn = ttk.Button(button_frame, text=_('save_to_pool'), command=lambda: save_requirement("pool"), width=15)
 
         # 使用pack布局让按钮在按钮框架中居中显示
         save_requirement_btn.pack(side=tk.LEFT, padx=(0, 10))
@@ -2741,13 +2718,13 @@ class IPSubnetSplitterApp:
         # 导入到需求池表按钮
         import_pool_btn = ttk.Button(button_frame, text=_("import_requirements_pool"),
                                      command=lambda: self._import_valid_data(valid_data, "pool", dialog),
-                                     width=12)
+                                     width=15)
         import_pool_btn.pack(side=tk.LEFT, padx=5)
 
         # 导入到子网需求表按钮
         import_req_btn = ttk.Button(button_frame, text=_("import_subnet_requirements"),
                                     command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
-                                    width=12)
+                                    width=15)
         import_req_btn.pack(side=tk.LEFT, padx=5)
 
         # 取消按钮 - 靠右显示，与其他按钮并排
@@ -6103,7 +6080,7 @@ class IPSubnetSplitterApp:
             textvariable=self.language_var,
             values=["中文", "English", "日本語"],
             state="readonly",
-            font=('微软雅黑', 10, 'bold'),
+            font=('微软雅黑', 10),
             width=8
         )
         
@@ -6169,8 +6146,8 @@ class IPSubnetSplitterApp:
         pin_width = self.pin_label.winfo_width()  # 获取钉住按钮的实际宽度
         combobox_x = pin_x - pin_width - 5  # 计算语言选择框的x坐标：钉住按钮x坐标 - 钉住按钮宽度 - 5px间距
         self.language_combobox.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, x=combobox_x, y=24
-        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮
+            relx=1.0, rely=0.0, anchor=tk.NE, x=combobox_x, y=26
+        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮，与钉住按钮下对齐
 
     def on_about_link_enter(self, event):
         """鼠标进入关于链接或钉住按钮时的处理函数"""
