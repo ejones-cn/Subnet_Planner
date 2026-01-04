@@ -837,26 +837,37 @@ class IPSubnetSplitterApp:
             values = self.requirements_tree.item(item, "values")
             subnet_requirements.append((values[1], int(values[2])))
 
+        # 获取当前需求池
+        pool_requirements = []
+        for item in self.pool_tree.get_children():
+            values = self.pool_tree.item(item, "values")
+            pool_requirements.append((values[1], int(values[2])))
+
         # 获取当前父网段
         parent = self.planning_parent_entry.get().strip()
 
         # 格式化需求信息
         req_str = ", ".join([f"{name}({hosts})" for name, hosts in subnet_requirements])
+        pool_str = ", ".join([f"{name}({hosts})" for name, hosts in pool_requirements])
 
         # 创建操作记录
         history_record = {
             'action_type': action_type,
             'parent': parent,
             'requirements': subnet_requirements,
+            'pool': pool_requirements,
             'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'req_str': req_str,
+            'pool_str': pool_str,
         }
 
         # 检查当前状态是否与上一个状态相同，如果相同则不保存
-        # 只有当连续两次都是"执行规划"操作且状态相同时才跳过
-        if self.history_states and action_type == "执行规划" and self.history_states[-1]['action_type'] == "执行规划":
+        if self.history_states:
             last_state = self.history_states[-1]
-            if last_state['requirements'] == subnet_requirements and last_state['parent'] == parent:
+            # 比较子网需求、需求池和父网段
+            if (last_state['requirements'] == subnet_requirements and 
+                last_state['pool'] == pool_requirements and 
+                last_state['parent'] == parent):
                 return
 
         # 如果当前不是最新状态，截断历史记录
@@ -940,6 +951,8 @@ class IPSubnetSplitterApp:
             move_from="子网需求表",
             move_to="需求池"
         )
+        if new_items:
+            self.save_current_state("移动记录：从子网需求表到需求池")
 
     def move_right(self):
         """向右移：从需求池向子网需求表移动记录（支持多条记录，移动后保持选中）"""
@@ -951,6 +964,8 @@ class IPSubnetSplitterApp:
             move_from="需求池",
             move_to="子网需求表"
         )
+        if new_items:
+            self.save_current_state("移动记录：从需求池到子网需求表")
 
     def move_records(self):
         """根据选中情况自动判断移动方向：
@@ -971,6 +986,8 @@ class IPSubnetSplitterApp:
                 move_from="子网需求表",
                 move_to="需求池"
             )
+            if new_items:
+                self.save_current_state("移动记录：从子网需求表到需求池")
 
         # 情况2：仅选中需求池数据，移动到子网需求表
         elif not selected_requirements and selected_pool_items:
@@ -981,6 +998,8 @@ class IPSubnetSplitterApp:
                 move_from="需求池",
                 move_to="子网需求表"
             )
+            if new_items:
+                self.save_current_state("移动记录：从需求池到子网需求表")
 
         # 情况3：同时选中两个表数据，交换数据
         elif selected_requirements and selected_pool_items:
@@ -1047,6 +1066,9 @@ class IPSubnetSplitterApp:
             # 更新两个表格的序号和斑马条纹
             self.update_requirements_tree_zebra_stripes()
             self.update_pool_tree_zebra_stripes()
+            
+            # 保存交换操作到历史记录
+            self.save_current_state("交换记录：子网需求表和需求池")
 
         # 情况4：未选中任何记录
         else:
@@ -1705,7 +1727,7 @@ class IPSubnetSplitterApp:
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
         # 撤销按钮
-        self.undo_delete_btn = ttk.Button(button_frame, text=_("undo"), command=self.undo_delete, width=7)
+        self.undo_delete_btn = ttk.Button(button_frame, text=_('undo'), command=self.undo, width=7)
         self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
 
         # 移动/交换按钮（根据选中情况自动判断操作）
@@ -1761,6 +1783,9 @@ class IPSubnetSplitterApp:
         # 创建笔记本控件显示规划结果
         self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
+
+        # 保存初始状态到历史记录
+        self.save_current_state("初始状态")
 
         # 设置统一的按钮宽度，使用合适的宽度确保文字完全显示
         from style_manager import get_style_manager
@@ -3102,6 +3127,43 @@ class IPSubnetSplitterApp:
 
         return result
 
+    def undo(self):
+        """撤销最近的操作，支持多次撤销，包括删除、移动、导入等操作"""
+        # 检查是否有可撤销的操作
+        if self.current_history_index <= 0:
+            self.show_info(_("hint"), _("no_undoable_operation"))
+            return
+
+        # 回到上一个状态
+        self.current_history_index -= 1
+        # 获取上一个状态
+        previous_state = self.history_states[self.current_history_index]
+
+        # 清空当前的子网需求表和需求池表
+        for item in self.requirements_tree.get_children():
+            self.requirements_tree.delete(item)
+        for item in self.pool_tree.get_children():
+            self.pool_tree.delete(item)
+
+        # 恢复子网需求表
+        for req in previous_state['requirements']:
+            name, hosts = req
+            self.requirements_tree.insert("", tk.END, values=("", name, hosts))
+
+        # 恢复需求池表
+        for pool_item in previous_state['pool']:
+            name, hosts = pool_item
+            self.pool_tree.insert("", tk.END, values=("", name, hosts))
+
+        # 更新序号和斑马条纹
+        self.update_requirements_tree_zebra_stripes()
+        self.update_pool_tree_zebra_stripes()
+
+        # 显示成功提示
+        # 获取当前状态的 action_type，即被撤销的操作类型
+        current_state = self.history_states[self.current_history_index + 1] if self.current_history_index + 1 < len(self.history_states) else {"action_type": "未知操作"}
+        self.show_info(_("success"), f"{_("successfully_undone")} {current_state['action_type']}")
+
     def undo_delete(self):
         """撤销最近的删除操作，支持多次撤销"""
         # 检查是否有删除记录历史
@@ -3185,7 +3247,9 @@ class IPSubnetSplitterApp:
                 is_valid = text.isdigit() and int(text) > 0 if text else True
             else:
                 is_valid = True
-            self.edit_entry.config(foreground='black' if is_valid else 'red')
+            # 检查编辑框是否仍然存在，避免在编辑框已销毁时访问
+            if hasattr(self, 'edit_entry') and self.edit_entry is not None:
+                self.edit_entry.config(foreground='black' if is_valid else 'red')
             return "1"  # 始终允许输入，只做视觉提示
         self.edit_entry.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
 
@@ -3236,7 +3300,9 @@ class IPSubnetSplitterApp:
                 is_valid = text.isdigit() and int(text) > 0 if text else True
             else:
                 is_valid = True
-            self.edit_entry.config(foreground='black' if is_valid else 'red')
+            # 检查编辑框是否仍然存在，避免在编辑框已销毁时访问
+            if hasattr(self, 'edit_entry') and self.edit_entry is not None:
+                self.edit_entry.config(foreground='black' if is_valid else 'red')
             return "1"  # 始终允许输入，只做视觉提示
         self.edit_entry.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
 
@@ -3253,18 +3319,29 @@ class IPSubnetSplitterApp:
 
     def on_edit_focus_out(self, _):
         """编辑框失去焦点时保存数据"""
-        self.save_edit()
+        # 检查编辑框是否仍然存在，避免在编辑框已销毁时调用save_edit
+        if hasattr(self, 'edit_entry'):
+            self.save_edit()
 
     def on_edit_enter(self, _):
         """按下Enter键时保存数据"""
-        self.save_edit()
+        # 检查编辑框是否仍然存在，避免在编辑框已销毁时调用save_edit
+        if hasattr(self, 'edit_entry'):
+            self.save_edit()
 
     def on_edit_escape(self, _):
         """按下Escape键时取消编辑"""
-        self.edit_entry.destroy()
-        del self.current_edit_item
-        del self.current_edit_column
-        del self.current_edit_column_index
+        # 保存引用，避免在销毁后仍然访问
+        edit_entry = self.edit_entry
+        self.edit_entry = None
+        edit_entry.destroy()
+        # 使用hasattr检查属性是否存在，避免AttributeError
+        if hasattr(self, 'current_edit_item'):
+            del self.current_edit_item
+        if hasattr(self, 'current_edit_column'):
+            del self.current_edit_column
+        if hasattr(self, 'current_edit_column_index'):
+            del self.current_edit_column_index
         if hasattr(self, 'current_edit_tree'):
             del self.current_edit_tree
 
