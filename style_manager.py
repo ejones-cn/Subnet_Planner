@@ -79,61 +79,16 @@ class StyleManager:
         """
         current_language = get_language()
         
-        # 为不同按钮类型设置不同宽度，高度统一使用25
-        if current_language == "zh":
-            # 中文版：根据按钮类型设置不同宽度
-            if button_type == "execute_planning":
-                return (12, 10)
-            elif button_type == "export_planning":
-                return (12, 10)
-            elif button_type == "export_result":
-                return (12, 10)
-            else:
-                return (12, 10)
-        elif current_language == "ja":
-            # 日文版：根据按钮类型设置不同宽度
-            if button_type == "execute_planning":
-                return (12, 10)
-            elif button_type == "export_planning":
-                return (12, 10)
-            elif button_type == "export_result":
-                return (12, 10)
-            else:
-                return (12, 10)
+        # 根据语言和按钮类型确定宽度，高度统一使用10
+        if current_language in ["zh", "ja"]:
+            # 中文和日文版：统一宽度12，特殊按钮类型也是12
+            return (12, 10)
         else:
-            # 英文版：根据按钮类型设置不同宽度
-            if button_type == "execute_planning":
-                return (16, 10)
-            elif button_type == "export_planning":
-                return (16, 10)
-            elif button_type == "export_result":
+            # 英文版：规划和导出按钮宽度16，默认按钮14
+            if button_type in ["execute_planning", "export_planning", "export_result"]:
                 return (16, 10)
             else:
                 return (14, 10)
-    
-    def get_execute_planning_button_size(self):
-        """获取规划子网按钮尺寸
-        
-        Returns:
-            tuple: (宽度, 高度)
-        """
-        return self.get_button_size("execute_planning")
-    
-    def get_export_planning_button_size(self):
-        """获取导出规划按钮尺寸
-        
-        Returns:
-            tuple: (宽度, 高度)
-        """
-        return self.get_button_size("export_planning")
-    
-    def get_export_result_button_size(self):
-        """获取导出结果按钮尺寸
-        
-        Returns:
-            tuple: (宽度, 高度)
-        """
-        return self.get_button_size("export_result")
     
     def update_all_styles(self):
         """更新所有样式，根据当前语言重新设置"""
