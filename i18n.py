@@ -28,6 +28,7 @@ def _load_translations():
 TRANSLATIONS = _load_translations()
 
 
+
 _DEFAULT_TRANSLATIONS = {
     "error": {"zh": "错误", "en": "Error", "ja": "エラー"},
     "ok": {"zh": "确定", "en": "OK", "ja": "OK"},
@@ -55,6 +56,7 @@ def set_language(lang):
     if lang in ["zh", "en", "ja"]:
         _current_language = lang
 
+
 def get_language():
     """
     获取当前语言
@@ -63,6 +65,7 @@ def get_language():
         当前语言代码 ("zh", "en" 或 "ja")
     """
     return _current_language
+
 
 def _(key, **kwargs):
     """
