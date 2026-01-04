@@ -6107,11 +6107,6 @@ class IPSubnetSplitterApp:
             width=8
         )
         
-        # 放置语言选择控件
-        self.language_combobox.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, x=-160, y=22
-        )
-        
         # 绑定语言切换事件
         self.language_combobox.bind("<<ComboboxSelected>>", self.on_language_change)
 
@@ -6156,15 +6151,26 @@ class IPSubnetSplitterApp:
             highlightcolor=border_color,  # 边框颜色（确保一致性）
             cursor="hand2",  # 鼠标指针为手形
         )
-
-        # 放置钉住按钮在橙色标题栏右侧，关于按钮左侧且不重叠，y坐标与信息框对齐，与标签页按钮底部对齐
-        self.pin_label.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, x=-94, y=22
-        )  # x=-94，向左移动5个像素，y=22，向下移动1px，与信息栏顶部对齐
         self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
 
         self.pin_label.bind("<Enter>", self.on_about_link_enter)
         self.pin_label.bind("<Leave>", self.on_about_link_leave)
+        
+        # 动态计算并放置钉住按钮在关于按钮左侧，紧靠着关于按钮
+        self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
+        about_width = self.about_label.winfo_width()  # 获取关于按钮的实际宽度
+        pin_x = -24 - about_width - 5  # 计算钉住按钮的x坐标：关于按钮x坐标 - 关于按钮宽度 - 5px间距
+        self.pin_label.place(
+            relx=1.0, rely=0.0, anchor=tk.NE, x=pin_x, y=22
+        )  # 动态放置在关于按钮左侧，紧靠着关于按钮
+        
+        # 动态计算并放置语言选择框在钉住按钮左侧，紧靠着钉住按钮
+        self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
+        pin_width = self.pin_label.winfo_width()  # 获取钉住按钮的实际宽度
+        combobox_x = pin_x - pin_width - 5  # 计算语言选择框的x坐标：钉住按钮x坐标 - 钉住按钮宽度 - 5px间距
+        self.language_combobox.place(
+            relx=1.0, rely=0.0, anchor=tk.NE, x=combobox_x, y=24
+        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮
 
     def on_about_link_enter(self, event):
         """鼠标进入关于链接或钉住按钮时的处理函数"""

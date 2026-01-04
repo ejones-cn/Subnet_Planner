@@ -41,8 +41,11 @@ class StyleManager:
         current_language = get_language()
         
         if current_language == "zh":
-            # 中文版：微软雅黑，14号字体
+            # 中文版：微软雅黑，10号字体
             return ("微软雅黑", 10)
+        elif current_language == "ja":
+            # 日文版：MS Gothic，10号字体
+            return ("MS Gothic", 10)
         else:
             # 英文版：Arial，10号字体
             return ("Arial", 10)
@@ -56,10 +59,13 @@ class StyleManager:
         current_language = get_language()
         
         if current_language == "zh":
-            # 中文版：标签宽度12
+            # 中文版：标签宽度10
             return 10
+        elif current_language == "ja":
+            # 日文版：标签宽度16
+            return 16
         else:
-            # 英文版：标签宽度10
+            # 英文版：标签宽度14
             return 14
     
     def update_all_styles(self):
@@ -267,4 +273,9 @@ def get_current_font_settings():
     else:
         # 未初始化时返回默认设置
         current_language = get_language()
-        return ("微软雅黑", 10) if current_language == "zh" else ("Arial", 10)
+        if current_language == "zh":
+            return ("微软雅黑", 10)
+        elif current_language == "ja":
+            return ("MS Gothic", 10)
+        else:
+            return ("Arial", 10)
