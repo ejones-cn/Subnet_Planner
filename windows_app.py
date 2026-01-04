@@ -6627,13 +6627,13 @@ def set_window_icon(root_window):
         hicon = LoadImageW(None, icon_path, 1, 32, 32, LR_LOADFROMFILE)
         if hicon:
             SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
-            print(f"✅ 设置大图标成功")
+            print("✅ 设置大图标成功")
         
         # 设置小图标
         hicon_small = LoadImageW(None, icon_path, 1, 16, 16, LR_LOADFROMFILE)
         if hicon_small:
             SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon_small)
-            print(f"✅ 设置小图标成功")
+            print("✅ 设置小图标成功")
         
         return True
     except Exception as e:
