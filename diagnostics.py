@@ -36,9 +36,24 @@ for file in files_to_check:
         ast.parse(content)
         print("  ✓ 语法正确")
         
-        # 检查是否有明显的变量遮蔽问题
-        if '_(' in content and 'from i18n import _' in content:
-            print("  ⚠ 可能存在翻译函数变量遮蔽问题")
+        # 检查是否有变量遮蔽问题 - 查找函数内部定义的_变量
+        # 首先检查文件是否直接导入了翻译函数_
+        has_translation_import = 'from i18n import _' in content
+        
+        if has_translation_import and '_(' in content and 'def ' in content:
+            # 查找函数内部是否重新定义了_变量
+            lines = content.split('\n')
+            in_function = False
+            for line in lines:
+                line = line.strip()
+                if line.startswith('def '):
+                    in_function = True
+                elif in_function and (line.startswith('return ') or line.startswith('def ') or line == ''):
+                    # 重置函数状态 on return, new def, or empty line
+                    in_function = line.startswith('def ')
+                elif in_function and ('_ = ' in line or 'def _(' in line):
+                    print("  ⚠ 可能存在翻译函数变量遮蔽问题")
+                    break
         
         passed_files += 1
         print("  ✅ 检查通过\n")

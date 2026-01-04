@@ -5,16 +5,19 @@
 用于集中管理子网规划师的版本号
 """
 
-__version__ = "2.0.1"
+__version__ = "2.5.0"
 
 MAJOR_VERSION = 2
-MINOR_VERSION = 0
-PATCH_VERSION = 1
+MINOR_VERSION = 5
+PATCH_VERSION = 0
 
 VERSION_TUPLE = (MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
 
 # 版本发布日期
 RELEASE_DATES = {
+    "2.5.0": "2026-01-04",
+    "2.1.0": "2026-01-04",
+    "2.0.2": "2026-01-04",
     "2.0.1": "2025-12-30",
     "2.0.0": "2025-12-29",
     "1.4.5": "2025-12-22",

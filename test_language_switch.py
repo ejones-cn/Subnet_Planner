@@ -11,7 +11,7 @@ import os
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from windows_app import SubnetPlannerApp
+from windows_app import IPSubnetSplitterApp
 from i18n import set_language, _, get_language, get_supported_languages
 
 class MockRoot:
@@ -56,7 +56,7 @@ def test_language_switch():
     print("\n3. 模拟语言切换事件处理:")
     
     # 创建SubnetPlannerApp实例，但只初始化必要的部分
-    app = SubnetPlannerApp()
+    app = IPSubnetSplitterApp(MockRoot())
     
     # 模拟根窗口
     app.root = MockRoot()
