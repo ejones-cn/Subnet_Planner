@@ -865,9 +865,9 @@ class IPSubnetSplitterApp:
         if self.history_states:
             last_state = self.history_states[-1]
             # 比较子网需求、需求池和父网段
-            if (last_state['requirements'] == subnet_requirements and 
-                last_state['pool'] == pool_requirements and 
-                last_state['parent'] == parent):
+            if (last_state['requirements'] == subnet_requirements
+                    and last_state['pool'] == pool_requirements
+                    and last_state['parent'] == parent):
                 return
 
         # 如果当前不是最新状态，截断历史记录

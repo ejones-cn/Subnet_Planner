@@ -12,6 +12,7 @@ import os
 
 _translations_file = os.path.join(os.path.dirname(__file__), 'translations.json')
 
+
 def _load_translations():
     """从JSON文件加载翻译数据"""
     try:
@@ -25,6 +26,7 @@ def _load_translations():
         return None
 
 TRANSLATIONS = _load_translations()
+
 
 _DEFAULT_TRANSLATIONS = {
     "error": {"zh": "错误", "en": "Error", "ja": "エラー"},
@@ -40,6 +42,7 @@ if TRANSLATIONS is None:
     TRANSLATIONS = _DEFAULT_TRANSLATIONS
 
 _current_language = "zh"
+
 
 def set_language(lang):
     """
@@ -79,6 +82,7 @@ def _(key, **kwargs):
         text = text.format(**kwargs)
     
     return text
+
 
 def get_supported_languages():
     """
