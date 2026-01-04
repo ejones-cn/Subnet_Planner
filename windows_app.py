@@ -1368,7 +1368,7 @@ class IPSubnetSplitterApp:
         # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         from style_manager import get_style_manager
         style_manager = get_style_manager()
-        btn_width, btn_height = style_manager.get_export_result_button_size() if style_manager else (10, 25)
+        btn_width, btn_height = style_manager.get_button_size("export_result") if style_manager else (10, 25)
         self.export_btn = ttk.Button(result_frame, text=_("export_result"), command=self.export_result, width=btn_width)
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
@@ -1790,7 +1790,7 @@ class IPSubnetSplitterApp:
         # 设置统一的按钮宽度，使用合适的宽度确保文字完全显示
         from style_manager import get_style_manager
         style_manager = get_style_manager()
-        button_width, button_height = style_manager.get_export_planning_button_size() if style_manager else (10, 25)
+        button_width, button_height = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
 
         # 导出规划按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         export_planning_btn = ttk.Button(
@@ -1839,7 +1839,7 @@ class IPSubnetSplitterApp:
         )
 
         # 规划子网按钮 - 使用 place 布局，位于导出规划按钮左方，大小相同，使用默认TButton样式
-        execute_btn_width, execute_btn_height = style_manager.get_execute_planning_button_size() if style_manager else (10, 25)
+        execute_btn_width, execute_btn_height = style_manager.get_button_size("execute_planning") if style_manager else (10, 25)
         self.execute_planning_btn = ttk.Button(
             result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=execute_btn_width
         )

@@ -62,8 +62,8 @@ class StyleManager:
             # 中文版：标签宽度10
             return 10
         elif current_language == "ja":
-            # 日文版：标签宽度14
-            return 20
+            # 日文版：标签宽度18
+            return 18
         else:
             # 英文版：标签宽度14
             return 14
