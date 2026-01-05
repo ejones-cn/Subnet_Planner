@@ -152,13 +152,13 @@
     "execute_split": {
         "zh": "执行切分",
         "zh_tw": "執行切分",
-        "en": "Execute Split",
+        "en": "Split",
         "ja": "分割実行"
     },
     "reexecute_split": {
         "zh": "重新切分",
         "zh_tw": "重新切分",
-        "en": "Re-execute Split",
+        "en": "Re-Split",
         "ja": "再分割"
     },
     "split_result": {
@@ -314,7 +314,7 @@
     "execute_planning": {
         "zh": "执行规划",
         "zh_tw": "執行規劃",
-        "en": "Execute Planning",
+        "en": "Plan",
         "ja": "計画実行"
     },
     "required_count": {
