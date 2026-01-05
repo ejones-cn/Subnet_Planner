@@ -6159,7 +6159,6 @@ class IPSubnetSplitterApp:
             textvariable=self.language_var,
             values=["简体中文", "繁體中文", "English", "日本語"],
             state="readonly",
-            font=('微软雅黑', 10),
             width=12
         )
         
@@ -6167,10 +6166,14 @@ class IPSubnetSplitterApp:
         self.language_combobox.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与信息框一致
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
         self.about_label = tk.Label(
             self.root,
-            text=_("about") + "…",
-            font=('微软雅黑', 10, 'bold'),  # 字体与子网标签激活状态一致，加粗
+            text=_('about') + '…',
+            font=(font_family, font_size, 'bold'),  # 使用统一的字体设置，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
             padx=12,  # 水平内边距，与子网标签一致
@@ -6195,7 +6198,7 @@ class IPSubnetSplitterApp:
         self.pin_label = tk.Label(
             self.root,
             text="📌",
-            font=('微软雅黑', 10, 'bold'),  # 字体与子网标签激活状态一致，加粗
+            font=(font_family, font_size, 'bold'),  # 使用统一的字体设置，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
             padx=4.4,  # 水平内边距，调整为与pady一致，使其宽度与高度相同
