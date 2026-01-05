@@ -5,7 +5,7 @@ a = Analysis(
     ['windows_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('translations.json', '.')],
+    datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.')],
     hiddenimports=['tkinter', 'reportlab', 'charset_normalizer', 'openpyxl', 'urllib'],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['Subnet_Planner.ico'],
 )

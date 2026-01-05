@@ -6783,7 +6783,15 @@ if __name__ == "__main__":
     root = tk.Tk()
 
     # 设置窗口图标，使用PIL库处理多分辨率图标
-    icon_path = "Subnet_Planner.ico"
+    import sys
+    # 获取正确的图标路径，兼容PyInstaller打包后的环境
+    if getattr(sys, 'frozen', False):
+        # 打包后的环境
+        icon_path = os.path.join(sys._MEIPASS, "Subnet_Planner.ico")
+    else:
+        # 开发环境
+        icon_path = "Subnet_Planner.ico"
+    
     if os.path.exists(icon_path):
         try:
             from PIL import Image, ImageTk

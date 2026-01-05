@@ -52,7 +52,8 @@ def create_pack_config(pack_type="onefile"):
         "--hidden-import=reportlab",  # 确保reportlab被正确导入
         "--hidden-import=charset_normalizer",  # reportlab的依赖项
         "--hidden-import=openpyxl",  # Excel导出功能依赖
-        "--hidden-import=urllib"  # 确保urllib被正确导入
+        "--hidden-import=urllib",  # 确保urllib被正确导入
+        "--icon=Subnet_Planner.ico"  # 添加图标文件
     ]
 
     # 针对单文件版本的优化参数，减少360误报
@@ -71,6 +72,7 @@ def create_pack_config(pack_type="onefile"):
                 "--exclude-module=xmlrpc",
                 "--exclude-module=sqlite3",
                 "--add-data=translations.json:.",  # 添加翻译文件
+                "--add-data=Subnet_Planner.ico:."  # 添加图标文件
             ]
         )
 
