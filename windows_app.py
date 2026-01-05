@@ -48,7 +48,7 @@ from version import get_version
 from icon_base64 import APP_ICON_BASE64
 
 # 国际化模块
-from i18n import _, set_language, get_language
+from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
@@ -214,7 +214,7 @@ class ColoredNotebook(ttk.Frame):
         self.tabs = []
         self.active_tab = None
 
-    def on_configure(self, _event):
+    def on_configure(self, event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         if hasattr(self, 'content_area'):
             # 更新content_area的布局，确保它能完全填充笔记本控件的空间
@@ -646,11 +646,15 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
+        # 获取当前语言的字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
         self.style.configure(
             "InfoBarCloseButton.TButton",
             padding=(2, 0),
             foreground="#9E9E9E",
-            font=("微软雅黑", 8),
+            font=(font_family, 8),
             width=2,
         )
 
@@ -1190,8 +1194,12 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(2, weight=0)
         input_frame.grid_rowconfigure(3, weight=0, minsize=0)
 
+        # 导入样式管理器函数获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
-        ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(("微软雅黑", 10))).grid(
+        ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(font_family, font_size)).grid(
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
@@ -1203,7 +1211,7 @@ class IPSubnetSplitterApp:
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,
-            font=("微软雅黑", 10),
+            font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
@@ -1212,14 +1220,14 @@ class IPSubnetSplitterApp:
         self.parent_entry.config(state="normal")  # 允许手动输入
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
-        ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(("微软雅黑", 10))).grid(
+        ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
             row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
             values=self.split_networks,
-            font=("微软雅黑", 10),
+            font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
@@ -1243,7 +1251,7 @@ class IPSubnetSplitterApp:
 
         # 创建历史记录列表 - 撑满整个框架
         self.history_listbox = tk.Listbox(
-            history_frame, height=3, font=("微软雅黑", 10),
+            history_frame, height=3, font=(font_family, font_size),
             highlightthickness=1, highlightbackground="#999999", highlightcolor="#999999",
             bd=0, selectbackground="#0078D7", selectforeground="white", takefocus=False
         )
@@ -2242,7 +2250,7 @@ class IPSubnetSplitterApp:
         hosts_entry.config(validate="all", validatecommand=(temp_window.register(validate_hosts), "%P"))
 
         # 定义回车键事件处理函数
-        def on_return_key(_event):
+        def on_return_key(event):
             save_requirement()
 
         # 只在窗口创建时绑定一次回车键事件
@@ -3317,19 +3325,19 @@ class IPSubnetSplitterApp:
         self.edit_entry.bind("<Return>", self.on_edit_enter)
         self.edit_entry.bind("<Escape>", self.on_edit_escape)
 
-    def on_edit_focus_out(self, _):
+    def on_edit_focus_out(self, event):
         """编辑框失去焦点时保存数据"""
         # 检查编辑框是否仍然存在，避免在编辑框已销毁时调用save_edit
         if hasattr(self, 'edit_entry'):
             self.save_edit()
 
-    def on_edit_enter(self, _):
+    def on_edit_enter(self, event):
         """按下Enter键时保存数据"""
         # 检查编辑框是否仍然存在，避免在编辑框已销毁时调用save_edit
         if hasattr(self, 'edit_entry'):
             self.save_edit()
 
-    def on_edit_escape(self, _):
+    def on_edit_escape(self, event):
         """按下Escape键时取消编辑"""
         # 保存引用，避免在销毁后仍然访问
         edit_entry = self.edit_entry
@@ -5335,7 +5343,7 @@ class IPSubnetSplitterApp:
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("execute_subnet_overlap_detection_failed")}: {str(e)}")
 
-    def update_ipv4_history(self, _event=None):
+    def update_ipv4_history(self, event=None):
         """更新IPv4地址查询历史记录"""
         ip_value = self.ip_info_entry.get().strip()
         if ip_value and ip_value not in self.ipv4_history:
@@ -5347,7 +5355,7 @@ class IPSubnetSplitterApp:
             # 更新Combobox的values属性
             self.ip_info_entry['values'] = self.ipv4_history
 
-    def update_ipv6_history(self, _event=None):
+    def update_ipv6_history(self, event=None):
         """更新IPv6地址查询历史记录"""
         ipv6_value = self.ipv6_info_entry.get().strip()
         if ipv6_value and ipv6_value not in self.ipv6_history:
@@ -5356,7 +5364,7 @@ class IPSubnetSplitterApp:
                 self.ipv6_history.pop()
             self.ipv6_info_entry['values'] = self.ipv6_history
 
-    def update_range_start_history(self, _event=None):
+    def update_range_start_history(self, event=None):
         """更新IP范围起始地址历史记录"""
         start_value = self.range_start_entry.get().strip()
         if start_value and start_value not in self.range_start_history:
@@ -5365,7 +5373,7 @@ class IPSubnetSplitterApp:
                 self.range_start_history.pop()
             self.range_start_entry['values'] = self.range_start_history
 
-    def update_range_end_history(self, _event=None):
+    def update_range_end_history(self, event=None):
         """更新IP范围结束地址历史记录"""
         end_value = self.range_end_entry.get().strip()
         if end_value and end_value not in self.range_end_history:
@@ -5374,21 +5382,21 @@ class IPSubnetSplitterApp:
                 self.range_end_history.pop()
             self.range_end_entry['values'] = self.range_end_history
 
-    def on_subnet_mask_change(self, _event):
+    def on_subnet_mask_change(self, event):
         """当子网掩码改变时，更新CIDR值"""
         selected_mask = self.ip_mask_var.get()
         if selected_mask in self.subnet_mask_cidr_map:
             cidr = self.subnet_mask_cidr_map[selected_mask]
             self.ip_cidr_var.set(cidr)
 
-    def on_cidr_change(self, _event):
+    def on_cidr_change(self, event):
         """当CIDR改变时，更新子网掩码值"""
         selected_cidr = self.ip_cidr_var.get()
         if selected_cidr in self.cidr_subnet_mask_map:
             subnet_mask = self.cidr_subnet_mask_map[selected_cidr]
             self.ip_mask_var.set(subnet_mask)
 
-    def toggle_test_info_bar(self, _event=None):
+    def toggle_test_info_bar(self, event=None):
         """打开功能调试对话框（彩蛋功能）
         快捷键：Ctrl+Shift+I
         """
@@ -5707,7 +5715,10 @@ class IPSubnetSplitterApp:
 
         # 创建字体对象，用于测量文本宽度
         try:
-            font = tkfont.Font(family="微软雅黑", size=10)
+            # 获取当前语言的字体设置
+            from style_manager import get_current_font_settings
+            font_family, _ = get_current_font_settings()
+            font = tkfont.Font(family=font_family, size=10)
         except tk.TclError:
             font = tkfont.Font(family="Arial", size=10)
 
@@ -5889,12 +5900,12 @@ class IPSubnetSplitterApp:
             # 如果出现任何错误，就不绘制图表
             self.chart_data = None
 
-    def on_chart_resize(self, _):
+    def on_chart_resize(self, event):
         """Canvas尺寸变化时重新绘制图表"""
         # 当Canvas尺寸变化时重新绘制图表
         self.draw_distribution_chart()
 
-    def on_planning_chart_resize(self, _):
+    def on_planning_chart_resize(self, event):
         """规划图表尺寸变化时重新绘制"""
         # 检查是否有规划结果数据
         if hasattr(self, 'planning_chart_data') and self.planning_chart_data:
@@ -5932,7 +5943,7 @@ class IPSubnetSplitterApp:
         if hasattr(self, 'chart_data') and self.chart_data:
             draw_distribution_chart(self.chart_canvas, self.chart_data, self.chart_frame)
 
-    def on_window_resize(self, _):
+    def on_window_resize(self, event):
         """窗口大小变化时的处理函数，实现表格和图表自适应"""
 
     def _prepare_export_data(self, data_source):
@@ -6271,7 +6282,7 @@ class IPSubnetSplitterApp:
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
     
-    def on_language_change(self, _event):
+    def on_language_change(self, event):
         """语言选择变化时的处理函数"""
         selected_language = self.language_var.get()
         if selected_language == "简体中文":
@@ -6456,7 +6467,7 @@ class IPSubnetSplitterApp:
         self.chart_canvas = None
         self.remaining_scroll_v = None
     
-    def on_window_configure(self, _event):
+    def on_window_configure(self, event):
         """窗口大小变化时动态调整右上角按钮位置"""
         # 窗口大小变化时重新获取窗口背景色，确保按钮背景色与窗口一致
         self.bg_color = self.root.cget("background")

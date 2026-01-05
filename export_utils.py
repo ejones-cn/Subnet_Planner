@@ -23,7 +23,7 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from i18n import _ as translate
+from i18n import _ as translate  # _ 是翻译函数，这里重命名为 translate 以避免冲突
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
@@ -529,7 +529,7 @@ class ExportUtils:
         export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
         
         # 创建页眉回调函数
-        def on_page(canvas, _):
+        def on_page(canvas, event):
             """页面回调函数，用于绘制页眉"""
             canvas.saveState()
             # 获取当前页面尺寸
@@ -908,7 +908,7 @@ class ExportUtils:
             main_name: 主数据名称，用于区分子网切分和子网规划
         """
         # 导入翻译函数，避免与局部变量冲突
-        from i18n import _ as translate
+        from i18n import _ as translate  # _ 是翻译函数，这里重命名为 translate 以避免冲突
         
         if not chart_data or 'networks' not in chart_data or len(chart_data['networks']) == 0:
             print("没有有效的网段分布图数据，跳过")
@@ -1402,7 +1402,7 @@ class ExportUtils:
                         self.data = data
                         self.columns = list(range(len(headers)))
                     
-                    def heading(self, col, _):
+                    def heading(self, col, event):
                         """获取列标题
                         
                         Args:

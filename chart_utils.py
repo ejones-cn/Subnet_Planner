@@ -7,6 +7,7 @@
 from i18n import _
 import tkinter as tk
 import math
+from style_manager import get_current_font_settings
 
 SUBNET_COLORS = (
     "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",
@@ -32,13 +33,16 @@ def draw_text_with_stroke(canvas, text, x, y, style):
         y: y坐标
         style: 样式字典，包含font、anchor、fill等参数
     """
+    # 获取当前语言的字体设置
+    font_family, font_size = get_current_font_settings()
+    
     # 绘制描边
     for dx in [-1, 1]:
         for dy in [-1, 1]:
             canvas.create_text(
                 x + dx, y + dy,
                 text=text,
-                font=style.get("font", ("微软雅黑", 12)),
+                font=style.get("font", (font_family, 12)),
                 anchor=style.get("anchor", tk.CENTER),
                 fill="#000000"
             )
@@ -46,7 +50,7 @@ def draw_text_with_stroke(canvas, text, x, y, style):
     canvas.create_text(
         x, y,
         text=text,
-        font=style.get("font", ("微软雅黑", 12)),
+        font=style.get("font", (font_family, 12)),
         anchor=style.get("anchor", tk.CENTER),
         fill=style.get("fill", "#ffffff")
     )
@@ -102,6 +106,9 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
     bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
     bar_width = min(bar_width, chart_width)
 
+    # 获取当前语言的字体设置
+    font_family, font_size = get_current_font_settings()
+    
     color = PARENT_COLOR
     canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
@@ -110,7 +117,7 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
     segment_text = f"{_("parent_network")}: {parent_cidr}"
     text_x = x + 15
     text_y = y + bar_height / 2
-    font = ("微软雅黑", 11, "bold")
+    font = (font_family, 11, "bold")
     draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
         "font": font,
         "anchor": tk.W,
@@ -135,7 +142,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
     
     Args:
         canvas: tk.Canvas 对象
-        split_networks: 分割网段列表
+        split_networks: 切分网段列表
         chart_type: 图表类型
         x: x坐标
         y: y坐标
@@ -149,6 +156,9 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
     Returns:
         int: 新的y坐标
     """
+    # 获取当前语言的字体设置
+    font_family, font_size = get_current_font_settings()
+    
     if chart_type == "plan":
         # 子网规划：需求网段
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
@@ -160,7 +170,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             x,
             y,
             text=f"{_("allocated_subnets")} ({demand_count} {_("pieces")}):",
-            font=("微软雅黑", 11),
+            font=(font_family, 11),
             anchor=tk.W,
             fill="#ffffff",
         )
@@ -184,7 +194,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             segment_text = f"{_("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
             text_y = y + bar_height / 2
-            font = ("微软雅黑", 9, "bold")
+            font = (font_family, 9, "bold")
             draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
                 "font": font,
                 "anchor": tk.W,
@@ -221,7 +231,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
             segment_text = f"{_("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
-            font = ("微软雅黑", 11, "bold")
+            font = (font_family, 11, "bold")
             draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
                 "font": font,
                 "anchor": tk.W,
@@ -268,8 +278,11 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
     Returns:
         int: 新的y坐标
     """
+    # 获取当前语言的字体设置
+    font_family, font_size = get_current_font_settings()
+    
     y += 20
-    title_font = ("微软雅黑", 11)
+    title_font = (font_family, 11)
     remaining_count = len([n for n in networks if n.get("type") != "split"])
     canvas.create_text(
         x, y,
@@ -298,7 +311,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
         segment_text = f"{_("segment")} {i + 1}: {name}"
         text_x = x + 15
         text_y = y + bar_height / 2
-        font = ("微软雅黑", 9, "bold")
+        font = (font_family, 9, "bold")
         draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
             "font": font,
             "anchor": tk.W,
@@ -331,17 +344,20 @@ def _draw_legend(canvas, chart_type, x, y):
         x: x坐标
         y: y坐标
     """
-    legend_y = y + 15
-    canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=("微软雅黑", 11), anchor=tk.W, fill="#ffffff")
+    # 获取当前语言的字体设置
+    font_family, font_size = get_current_font_settings()
+    
+    legend_y = y + 35
+    canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
 
-    legend_items_y = legend_y + 25
+    legend_items_y = legend_y + 20
 
     canvas.create_rectangle(x, legend_items_y, x + 20, legend_items_y + 12, fill=PARENT_COLOR)
     canvas.create_text(
         x + 31,
         legend_items_y + 6,
         text=f"{_("parent_network")}",
-        font=("微软雅黑", 9),
+        font=(font_family, 9),
         anchor=tk.W,
         fill="#ffffff",
     )
@@ -360,7 +376,7 @@ def _draw_legend(canvas, chart_type, x, y):
             x + 233,
             legend_items_y + 6,
             text=f"{_("allocated_subnets")}",
-            font=("微软雅黑", 9),
+            font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
         )
@@ -379,7 +395,7 @@ def _draw_legend(canvas, chart_type, x, y):
             remaining_start_x + 94,
             legend_items_y + 6,
             text=f"{_("remaining_subnets")}",
-            font=("微软雅黑", 9),
+            font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
         )
@@ -390,7 +406,7 @@ def _draw_legend(canvas, chart_type, x, y):
             x + 210,
             legend_items_y + 6,
             text=f"{_("split_segment")}",
-            font=("微软雅黑", 9),
+            font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
         )
@@ -409,7 +425,7 @@ def _draw_legend(canvas, chart_type, x, y):
             remaining_start_x + 94,
             legend_items_y + 6,
             text=f"{_("remaining_subnets")}",
-            font=("微软雅黑", 9),
+            font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
         )
@@ -439,7 +455,9 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         networks = chart_data.get("networks", [])
         
         if not networks:
-            canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=("微软雅黑", 12))
+            # 获取当前语言的字体设置
+            font_family, font_size = get_current_font_settings()
+            canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=(font_family, 12))
             return
         
         # 计算对数参数
@@ -491,7 +509,8 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         canvas.delete("all")
         width = canvas.winfo_width() or 600
         height = canvas.winfo_height() or 400
-        title_font = ("微软雅黑", 12, "bold")
+        # 获取当前语言的字体设置
+        font_family, font_size = get_current_font_settings()
+        title_font = (font_family, 12, "bold")
         canvas.create_text(
-            width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red"
-        )
+            width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red")
