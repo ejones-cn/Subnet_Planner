@@ -1179,11 +1179,11 @@ class IPSubnetSplitterApp:
         input_frame = ttk.LabelFrame(
             self.split_frame, text=_("input_parameters"), padding=(10, 10, 10, 10)
         )
-        input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        input_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5), pady=(0, 10))
 
         # 右侧：历史记录面板
         history_frame = ttk.LabelFrame(self.split_frame, text=_("history"), padding=(10, 10, 10, 10))
-        history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
+        history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 10))
 
         # 配置 input_frame 的 grid 行列
         input_frame.grid_columnconfigure(0, minsize=30, weight=0)
@@ -1747,7 +1747,6 @@ class IPSubnetSplitterApp:
         import_btn = ttk.Button(button_frame, text=_("import"), command=self.import_requirements, width=7)
         import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
 
-        # 规划子网按钮已移动到规划结果区域，此处不再显示
 
         # 添加示例数据 - 带斑马条纹标签
         requirements_data = [
