@@ -14,6 +14,15 @@ VERSION_FILE = "version.py"
 README_FILE = "README.md"
 WEB_APP_FILE = "web_app.py"
 WINDOWS_APP_FILE = "windows_app.py"
+TRANSLATIONS_FILE = "translations.json"
+
+# 核心模块列表
+CORE_MODULES = [
+    "chart_utils.py",
+    "export_utils.py",
+    "style_manager.py",
+    "i18n.py"
+]
 
 
 def read_current_version():
@@ -175,6 +184,40 @@ def update_ip_subnet_calculator_file(new_version):
         f.write(content)
 
 
+def update_core_modules_version(new_version):
+    """更新核心模块中的版本注释"""
+    for module in CORE_MODULES:
+        try:
+            with open(module, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # 更新文档字符串中的版本号
+            content = re.sub(
+                r'项目版本：v\d+\.\d+\.\d+', f'项目版本：v{new_version}', content
+            )
+
+            with open(module, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            print(f"更新 {module} 版本注释失败：{e}")
+
+
+def update_translations_version(new_version):
+    """更新translations.json中的版本号"""
+    import json
+    try:
+        with open(TRANSLATIONS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # 更新__version__字段
+        data["__version__"] = new_version
+
+        with open(TRANSLATIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"更新 {TRANSLATIONS_FILE} 版本号失败：{e}")
+
+
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(description="子网规划师版本号自动更新脚本")
@@ -228,6 +271,8 @@ def main():
         update_web_app_file(new_version)
         update_windows_app_file(new_version)
         update_ip_subnet_calculator_file(new_version)
+        update_core_modules_version(new_version)
+        update_translations_version(new_version)
 
         print("版本号更新成功！")
         print(f"已更新版本号从 {current_version} 到 {new_version}")

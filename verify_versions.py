@@ -5,7 +5,6 @@
 """
 
 import re
-import os
 import ip_subnet_calculator
 
 # 导入版本管理模块
@@ -72,6 +71,57 @@ print("-" * 40)
 # 检查web_version.py (Web版)
 print(f"web_version.py 版本: v{web_version}")
 print("状态: ✓ 正确")
+
+print("\n" + "=" * 60)
+print("核心模块版本验证")
+print("=" * 60)
+
+# 核心模块列表
+core_modules = [
+    "chart_utils.py",
+    "export_utils.py",
+    "style_manager.py",
+    "i18n.py"
+]
+
+# 检查Python核心模块的版本注释
+for module in core_modules:
+    try:
+        with open(module, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # 检查文档字符串中的版本号
+        match = re.search(r"项目版本：v(\d+\.\d+\.\d+)", content)
+        if match:
+            module_version = match.group(1)
+            print(f"{module} 版本: v{module_version}")
+            print(f"状态: {'✓ 正确' if module_version == windows_version else '✗ 不一致'}")
+        else:
+            print(f"{module} 版本: 未找到版本注释")
+            print("状态: ✗ 错误")
+    except Exception as e:
+        print(f"{module} 版本: 读取失败 - {e}")
+        print("状态: ✗ 错误")
+    print("-" * 40)
+
+# 检查translations.json的版本
+print("translations.json 版本检查")
+try:
+    import json
+    with open("translations.json", "r", encoding="utf-8") as f:
+        translations_data = json.load(f)
+    
+    if "__version__" in translations_data:
+        version_value = translations_data["__version__"]
+        translations_version = str(version_value)
+        print(f"translations.json 版本: v{translations_version}")
+        print(f"状态: {'✓ 正确' if translations_version == windows_version else '✗ 不一致'}")
+    else:
+        print("translations.json 版本: 未找到__version__字段")
+        print("状态: ✗ 错误")
+except Exception as e:
+    print(f"translations.json 版本: 读取失败 - {e}")
+    print("状态: ✗ 错误")
 
 print("=" * 60)
 print("验证完成！")
