@@ -896,61 +896,61 @@
     "is_global_routable": {
         "zh": "是否全局可路由",
         "en": "Is Globally Routable",
-        "ja": "グローバルルーティング可能かどうか",
+        "ja": "グローバルルーティング",
         "zh_tw": "是否全局可路由"
     },
     "is_private_address": {
         "zh": "是否私有地址",
         "en": "Is Private Address",
-        "ja": "プライベートアドレスかどうか",
+        "ja": "プライベートアドレス",
         "zh_tw": "是否私有地址"
     },
     "is_private": {
         "zh": "是否私有地址",
         "en": "Is Private",
-        "ja": "プライベートかどうか",
+        "ja": "プライベート",
         "zh_tw": "是否私有地址"
     },
     "is_reserved": {
         "zh": "是否保留地址",
         "en": "Is Reserved",
-        "ja": "予約かどうか",
+        "ja": "予約",
         "zh_tw": "是否保留地址"
     },
     "is_loopback": {
         "zh": "是否回环地址",
         "en": "Is Loopback",
-        "ja": "ループバックかどうか",
+        "ja": "ループバック",
         "zh_tw": "是否回环地址"
     },
     "is_multicast": {
         "zh": "是否组播地址",
         "en": "Is Multicast",
-        "ja": "マルチキャストかどうか",
+        "ja": "マルチキャスト",
         "zh_tw": "是否组播地址"
     },
     "is_global": {
         "zh": "是否全局可路由",
         "en": "Is Global",
-        "ja": "グローバルかどうか",
+        "ja": "グローバル",
         "zh_tw": "是否全局可路由"
     },
     "is_link_local": {
         "zh": "是否链路本地地址",
         "en": "Is Link Local",
-        "ja": "リンクローカルかどうか",
+        "ja": "リンクローカル",
         "zh_tw": "是否链路本地地址"
     },
     "is_unspecified": {
         "zh": "是否未指定地址",
         "en": "Is Unspecified",
-        "ja": "未指定かどうか",
+        "ja": "未指定",
         "zh_tw": "是否未指定地址"
     },
     "is_ipv4_mapped": {
         "zh": "是否IPv4映射地址",
         "en": "Is IPv4 Mapped",
-        "ja": "IPv4マップかどうか",
+        "ja": "IPv4マップ",
         "zh_tw": "是否IPv4映射地址"
     },
     "address_structure_analysis": {
@@ -1918,18 +1918,6 @@
         "zh_tw": "子網需求匯入範本",
         "en": "Subnet Requirement Import Template",
         "ja": "サブネット要件インポートテンプレート"
-    },
-    "subnet_name": {
-        "zh": "子网名称",
-        "zh_tw": "子網名稱",
-        "en": "Subnet Name",
-        "ja": "サブネット名"
-    },
-    "host_count": {
-        "zh": "主机数量",
-        "zh_tw": "主機數量",
-        "en": "Hosts",
-        "ja": "ホスト数"
     },
     "office": {
         "zh": "办公室",

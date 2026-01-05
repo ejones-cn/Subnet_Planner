@@ -4056,8 +4056,8 @@ class IPSubnetSplitterApp:
         self.ipv6_info_tree.heading("item", text=_("project"))
         self.ipv6_info_tree.heading("value", text=_("value"))
 
-        self.ipv6_info_tree.column("item", width=100)
-        self.ipv6_info_tree.column("value", width=350)
+        self.ipv6_info_tree.column("item", width=185, minwidth=185, stretch=False)
+        self.ipv6_info_tree.column("value", width=200)
 
         ipv6_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
 
@@ -4441,8 +4441,8 @@ class IPSubnetSplitterApp:
         self.ip_info_tree.heading("item", text=_("project"))
         self.ip_info_tree.heading("value", text=_("value"))
 
-        self.ip_info_tree.column("item", width=100)
-        self.ip_info_tree.column("value", width=350)
+        self.ip_info_tree.column("item", width=185, minwidth=185, stretch=False)
+        self.ip_info_tree.column("value", width=200)
 
         ip_info_scrollbar = ttk.Scrollbar(result_frame, orient=tk.VERTICAL)
         ip_info_scrollbar.config(command=self.ip_info_tree.yview)
@@ -5260,9 +5260,9 @@ class IPSubnetSplitterApp:
             for i, col in enumerate(columns):
                 self.merge_result_tree.heading(col, text=col)
                 if i == 0:  # 第一列（属性列）
-                    self.merge_result_tree.column(col, width=90, minwidth=90, stretch=False)  # 增大一半并固定
+                    self.merge_result_tree.column(col, width=140, minwidth=140, stretch=False)  # 增大一半并固定
                 else:  # 其他列
-                    self.merge_result_tree.column(col, width=120)
+                    self.merge_result_tree.column(col, width=200)
 
             if hasattr(self, 'merge_result_scrollbar'):
                 self.create_scrollable_treeview(
