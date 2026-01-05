@@ -1853,6 +1853,12 @@
         "ja": "属性",
         "zh_tw": "属性"
     },
+    "email": {
+        "zh": "邮箱",
+        "zh_tw": "電子郵件",
+        "en": "Email",
+        "ja": "メール"
+    },
     "success": {
         "zh": "成功",
         "en": "Success",
@@ -2128,5 +2134,11 @@
         "en": "partial overlap",
         "ja": "部分重複",
         "zh_tw": "部分重叠"
+    },
+    "copyright": {
+        "zh": "© 2025 {app_name} 版权所有",
+        "zh_tw": "© 2025 {app_name} 版權所有",
+        "en": "Copyright © 2025 {app_name}",
+        "ja": "© 2025 {app_name} 著作権所有"
     }
 }

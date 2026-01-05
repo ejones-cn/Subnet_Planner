@@ -6135,7 +6135,8 @@ class IPSubnetSplitterApp:
         self.hover_bg_color = "#e0e0e0"  # 更浅的灰色背景，柔和过渡
         self.hover_fg_color = "#333333"  # 深灰色文字，保持可读性
         self.normal_fg_color = "#666666"
-        border_color = "#cccccc"  # 更浅的灰色边框，视觉上更细
+        # 使用系统默认控件边框颜色，与ttk.Combobox边框颜色一致
+        border_color = "#a9a9a9"  # 系统默认灰色边框，与ttk.Combobox一致
 
         # 初始化窗口置顶状态
         self.is_pinned = False
@@ -6187,7 +6188,13 @@ class IPSubnetSplitterApp:
         )
 
         # 放置在窗口标题栏右侧位置，y坐标调整为与信息框垂直对齐，与标签页按钮底部对齐
-        self.about_label.place(relx=1.0, rely=0.0, anchor=tk.NE, x=-24, y=22)  # y=22，向下移动1px，与信息栏顶部对齐
+        # 使用固定像素尺寸，确保高度和宽度设置起作用
+        self.about_label.place(
+            relx=1.0, rely=0.0, anchor=tk.NE, 
+            x=-25, y=22, 
+            width=88,   # 固定宽度80px，足够显示各种语言的"关于"文本
+            height=26   # 固定高度26px，与钉住按钮高度一致
+        )  # y=22，向下移动1px，与信息栏顶部对齐
         self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
 
         # 绑定鼠标事件实现悬停效果
@@ -6201,8 +6208,8 @@ class IPSubnetSplitterApp:
             font=(font_family, font_size, 'bold'),  # 使用统一的字体设置，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
-            padx=4.4,  # 水平内边距，调整为与pady一致，使其宽度与高度相同
-            pady=4.4,  # 调整垂直内边距，高度调小1px
+            padx=4.4,  # 适当的水平内边距
+            pady=4.4,  # 适当的垂直内边距
             bd=0,  # 无边框，扁平化风格
             relief="flat",  # 平坦样式，扁平化风格
             highlightthickness=1,  # 高亮边框宽度，模拟边框
@@ -6218,18 +6225,26 @@ class IPSubnetSplitterApp:
         # 动态计算并放置钉住按钮在关于按钮左侧，紧靠着关于按钮
         self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
         about_width = self.about_label.winfo_width()  # 获取关于按钮的实际宽度
-        pin_x = -24 - about_width - 5  # 计算钉住按钮的x坐标：关于按钮x坐标 - 关于按钮宽度 - 5px间距
+        pin_x = -25 - about_width - 5  # 计算钉住按钮的x坐标：关于按钮x坐标 - 关于按钮宽度 - 5px间距
+        # 使用固定像素尺寸，确保显示为1:1比例
         self.pin_label.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, x=pin_x, y=22
+            relx=1.0, rely=0.0, anchor=tk.NE, 
+            x=pin_x, y=22, 
+            width=28,  # 固定宽度28px
+            height=26   # 固定高度26px，确保1:1比例
         )  # 动态放置在关于按钮左侧，紧靠着关于按钮
         
         # 动态计算并放置语言选择框在钉住按钮左侧，紧靠着钉住按钮
         self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
         pin_width = self.pin_label.winfo_width()  # 获取钉住按钮的实际宽度
         combobox_x = pin_x - pin_width - 5  # 计算语言选择框的x坐标：钉住按钮x坐标 - 钉住按钮宽度 - 5px间距
+        # 设置固定高度，与其他两个按钮保持一致，并调整y坐标使其垂直对齐
         self.language_combobox.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, x=combobox_x, y=26
-        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮，与钉住按钮下对齐
+            relx=1.0, rely=0.0, anchor=tk.NE, 
+            x=combobox_x, 
+            y=22,  # 调整y坐标为22，与其他两个按钮垂直对齐
+            height=26  # 设置固定高度26px，与其他两个按钮保持一致
+        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮，垂直对齐
 
     def on_about_link_enter(self, event):
         """鼠标进入关于链接或钉住按钮时的处理函数"""
@@ -6550,13 +6565,29 @@ class IPSubnetSplitterApp:
         info_frame = ttk.Frame(inner_frame)
         info_frame.pack(pady=(0, 8))
 
+        # 获取当前字体设置，确保与应用程序其他部分一致
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 更新标题和版本号的字体设置，保持大小和加粗样式不变
+        app_name_label.config(font=(font_family, 16, "bold"))
+        version_label.config(font=(font_family, font_size))
+        
         # 添加作者信息
-        author_label = ttk.Label(info_frame, text=f"{_("author")}：Ejones", font=("微软雅黑", 10), style="About.TLabel")
+        author_label = ttk.Label(
+            info_frame, 
+            text=f"{_("author")}：Ejones", 
+            font=(font_family, font_size), 
+            style="About.TLabel"
+        )
         author_label.pack(pady=(0, 1))
 
         # 添加联系方式
         email_label = ttk.Label(
-            info_frame, text=f"{_("email")}：ejones.cn@hotmail.com", font=("微软雅黑", 10), style="About.TLabel"
+            info_frame, 
+            text=f"{_("email")}：ejones.cn@hotmail.com", 
+            font=(font_family, font_size), 
+            style="About.TLabel"
         )
         email_label.pack()
 
@@ -6573,9 +6604,12 @@ class IPSubnetSplitterApp:
         about_window.bind('<Return>', lambda e: ok_button.invoke())
         about_window.bind('<Escape>', lambda e: ok_button.invoke())
 
-        # 添加版权信息
+        # 添加版权信息，使用动态字体设置
         copyright_label = ttk.Label(
-            inner_frame, text=_("copyright").format(app_name=self.app_name), font=("微软雅黑", 8), style="About.TLabel"
+            inner_frame, 
+            text=_("copyright").format(app_name=self.app_name), 
+            font=(font_family, 8),  # 使用动态字体，保持8号大小
+            style="About.TLabel"
         )
         copyright_label.pack(pady=(2, 10))
 
