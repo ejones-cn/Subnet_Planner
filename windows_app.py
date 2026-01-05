@@ -48,7 +48,7 @@ from version import get_version
 from icon_base64 import APP_ICON_BASE64
 
 # 国际化模块
-from i18n import _, set_language, get_language, get_supported_languages
+from i18n import _, set_language, get_language
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
@@ -214,7 +214,7 @@ class ColoredNotebook(ttk.Frame):
         self.tabs = []
         self.active_tab = None
 
-    def on_configure(self, event):
+    def on_configure(self, _event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         if hasattr(self, 'content_area'):
             # 更新content_area的布局，确保它能完全填充笔记本控件的空间
@@ -1368,7 +1368,7 @@ class IPSubnetSplitterApp:
         # 导出结果按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         from style_manager import get_style_manager
         style_manager = get_style_manager()
-        btn_width, btn_height = style_manager.get_button_size("export_result") if style_manager else (10, 25)
+        btn_width, __ = style_manager.get_button_size("export_result") if style_manager else (10, 25)
         self.export_btn = ttk.Button(result_frame, text=_("export_result"), command=self.export_result, width=btn_width)
         # 手动指定按钮位置：右上角，距离右边0像素，距离顶部-3像素
         self.export_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
@@ -1790,7 +1790,7 @@ class IPSubnetSplitterApp:
         # 设置统一的按钮宽度，使用合适的宽度确保文字完全显示
         from style_manager import get_style_manager
         style_manager = get_style_manager()
-        button_width, button_height = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
+        button_width, __ = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
 
         # 导出规划按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
         export_planning_btn = ttk.Button(
@@ -1839,7 +1839,7 @@ class IPSubnetSplitterApp:
         )
 
         # 规划子网按钮 - 使用 place 布局，位于导出规划按钮左方，大小相同，使用默认TButton样式
-        execute_btn_width, execute_btn_height = style_manager.get_button_size("execute_planning") if style_manager else (10, 25)
+        execute_btn_width, __ = style_manager.get_button_size("execute_planning") if style_manager else (10, 25)
         self.execute_planning_btn = ttk.Button(
             result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=execute_btn_width
         )
@@ -3936,7 +3936,7 @@ class IPSubnetSplitterApp:
         self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
         self.info_auto_hide_scheduled_time = time.time()
 
-    def _on_hide_animation_complete(self, bar_x, bar_width):
+    def _on_hide_animation_complete(self, _bar_x, _bar_width):
         """隐藏动画完成后的回调"""
         self.info_bar_frame.place_forget()
         self.info_spacer.pack_forget()
@@ -6271,7 +6271,7 @@ class IPSubnetSplitterApp:
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
     
-    def on_language_change(self, event):
+    def on_language_change(self, _event):
         """语言选择变化时的处理函数"""
         selected_language = self.language_var.get()
         if selected_language == "简体中文":
@@ -6549,7 +6549,7 @@ class IPSubnetSplitterApp:
 
         # 获取当前字体设置，确保与应用程序其他部分一致
         from style_manager import get_current_font_settings
-        font_family, font_size = get_current_font_settings()
+        font_family, __ = get_current_font_settings()
         
         # 标题区域
         title_frame = ttk.Frame(inner_frame)
@@ -6616,8 +6616,9 @@ class IPSubnetSplitterApp:
         
         # 为邮箱添加点击事件，启动邮件客户端
         import webbrowser
+
         def open_email_client():
-            webbrowser.open(f"mailto:ejones.cn@hotmail.com")
+            webbrowser.open("mailto:ejones.cn@hotmail.com")
         email_label.bind("<Button-1>", lambda e: open_email_client())
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
@@ -6656,6 +6657,10 @@ def set_window_icon(root_window):
         import os
         import sys
         
+        print("\n🔍 开始设置窗口图标...")
+        print(f"🔧 当前工作目录: {os.getcwd()}")
+        print(f"📁 脚本目录: {os.path.dirname(__file__)}")
+        
         WM_SETICON = 0x0080
         ICON_BIG = 1
         ICON_SMALL = 0
@@ -6667,6 +6672,7 @@ def set_window_icon(root_window):
         if hasattr(sys, 'frozen') and sys.frozen:
             # 打包环境
             meipass = getattr(sys, '_MEIPASS', None)
+            print(f"📦 打包环境，MEIPASS: {meipass}")
             if meipass:
                 icon_path = os.path.join(meipass, "icon.ico")
             else:
@@ -6676,9 +6682,19 @@ def set_window_icon(root_window):
             # 开发环境
             icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
         
+        print(f"📍 计算得到的图标路径: {icon_path}")
+        
         if not os.path.exists(icon_path):
             print(f"⚠️ 图标文件不存在: {icon_path}")
-            return False
+            # 尝试直接使用当前目录的icon.ico
+            current_dir_icon = "icon.ico"
+            print(f"🔄 尝试当前目录图标: {current_dir_icon}")
+            if os.path.exists(current_dir_icon):
+                icon_path = current_dir_icon
+                print(f"✅ 当前目录图标存在，使用它: {icon_path}")
+            else:
+                print(f"❌ 当前目录图标也不存在: {current_dir_icon}")
+                return False
         
         # 使用Windows API设置图标
         LoadImageW = ctypes.windll.user32.LoadImageW
@@ -6694,7 +6710,8 @@ def set_window_icon(root_window):
         
         SendMessageW = ctypes.windll.user32.SendMessageW
         SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-        SendMessageW.restype = wintypes.LRESULT
+        # 在Python 3.13+中wintypes.LRESULT已移除，使用c_void_p替代
+        SendMessageW.restype = ctypes.c_void_p
         
         hwnd = int(root_window.winfo_id())
         
@@ -6721,8 +6738,7 @@ def setup_window_icon(root_window):
     print("📦 设置窗口图标...")
     
     # 方法1: 使用Windows API直接设置（最可靠）
-    if set_window_icon(root_window):
-        return
+    set_window_icon(root_window)  # 不提前返回，继续尝试其他方法
     
     # 方法2: 使用Tkinter的iconbitmap方法
     try:
@@ -6742,7 +6758,7 @@ def setup_window_icon(root_window):
         if os.path.exists(icon_path):
             root_window.iconbitmap(default=icon_path)
             print(f"✅ 使用iconbitmap设置图标成功: {icon_path}")
-            return
+            # 不提前返回，继续尝试其他方法
     except Exception as e:
         print(f"⚠️ iconbitmap设置图标失败: {e}")
     
@@ -6767,7 +6783,7 @@ def setup_window_icon(root_window):
             photo_icon = ImageTk.PhotoImage(img)
             root_window.iconphoto(True, photo_icon)
             print(f"✅ 使用PIL加载PNG图标成功: {icon_path}")
-            return
+            # 不提前返回，继续尝试其他方法
     except Exception as e:
         print(f"⚠️ PIL加载PNG图标失败: {e}")
     
@@ -6776,12 +6792,12 @@ def setup_window_icon(root_window):
         icon_photo = load_icon()
         if icon_photo:
             root_window.iconphoto(True, icon_photo)
-            print("✅ 从Base64加载图标成功")
-            return
+            print("✅ 使用Base64加载图标成功")
+            # 不提前返回，继续尝试其他方法
     except Exception as e:
         print(f"⚠️ 从Base64加载图标失败: {e}")
     
-    print("❌ 所有图标设置方法均失败")
+    print("✅ 图标设置完成")
 
 
 if __name__ == "__main__":
