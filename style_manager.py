@@ -4,7 +4,7 @@
 样式管理器模块
 负责集中管理应用程序的所有样式设置
 支持根据当前语言动态调整样式
-项目版本：v2.5.2
+项目版本：v2.5.3
 """
 
 import tkinter as tk
@@ -288,11 +288,11 @@ def update_styles():
     """更新所有样式，根据当前语言重新设置
     这是一个便捷函数，用于在语言切换时调用
     """
-    global style_manager
     if style_manager:
         style_manager.update_all_styles()
     else:
         print("[StyleManager] 样式管理器未初始化")
+
 
 
 def get_current_font_settings():
@@ -301,7 +301,6 @@ def get_current_font_settings():
     Returns:
         tuple: (字体名称, 字体大小)
     """
-    global style_manager
     if style_manager:
         return style_manager.get_current_font_settings()
     else:
