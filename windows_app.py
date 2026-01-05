@@ -1751,25 +1751,25 @@ class IPSubnetSplitterApp:
 
         # 添加示例数据 - 带斑马条纹标签
         requirements_data = [
-            ("Office", "20"),
-            ("HR", "10"),
-            ("Finance", "10"),
-            ("Planning", "30"),
-            ("Legal", "10"),
-            ("Procurement", "10"),
-            ("Security", "10"),
-            ("Party", "20"),
-            ("Discipline", "10"),
-            ("IT", "20"),
-            ("Engineering", "20"),
-            ("Sales", "20"),
-            ("R&D", "15"),
-            ("Production", "100"),
-            ("Transportation", "20"),
+            ("office", "20"),
+            ("hr_department", "10"),
+            ("finance_department", "10"),
+            ("planning_department", "30"),
+            ("legal", "10"),
+            ("procurement", "10"),
+            ("security", "10"),
+            ("party", "20"),
+            ("discipline", "10"),
+            ("it_department", "20"),
+            ("engineering", "20"),
+            ("sales", "20"),
+            ("rd", "15"),
+            ("production", "100"),
+            ("transportation", "20"),
         ]
-        for index, (name, hosts) in enumerate(requirements_data, 1):
+        for index, (name_key, hosts) in enumerate(requirements_data, 1):
             tag = "even" if index % 2 == 0 else "odd"
-            self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=(tag,))
+            self.requirements_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
 
         # 调用方法更新序号
         self.update_requirements_tree_zebra_stripes()
@@ -2831,7 +2831,7 @@ class IPSubnetSplitterApp:
             title=_("save_template"),
             defaultextension=default_ext,
             filetypes=filetypes,
-            initialfile=f"子网需求导入模板{default_ext}",
+            initialfile=f"{_("subnet_requirement_import_template")}{default_ext}",
             initialdir=""
         )
 
@@ -2843,10 +2843,10 @@ class IPSubnetSplitterApp:
                 # 生成Excel模板
                 wb = Workbook()
                 ws = wb.active
-                ws.title = "子网需求"
+                ws.title = _("subnet_requirements")
 
                 # 设置表头
-                headers = ["子网名称", "主机数量"]
+                headers = [_("subnet_name"), _("host_count")]
                 for col_idx, header in enumerate(headers, 1):
                     cell = ws.cell(row=1, column=col_idx, value=header)
                     cell.font = Font(bold=True)
@@ -2854,11 +2854,11 @@ class IPSubnetSplitterApp:
 
                 # 添加示例数据
                 example_data = [
-                    ["办公室", "20"],
-                    ["人事部", "10"],
-                    ["财务部", "10"],
-                    ["规划部", "30"],
-                    ["信息部", "20"],
+                    [_("office"), "20"],
+                    [_("hr_department"), "10"],
+                    [_("finance_department"), "10"],
+                    [_("planning_department"), "30"],
+                    [_("it_department"), "20"],
                 ]
                 for row_idx, row_data in enumerate(example_data, 2):
                     for col_idx, value in enumerate(row_data, 1):
@@ -2871,13 +2871,13 @@ class IPSubnetSplitterApp:
                 with open(file_path, 'w', encoding='utf-8-sig', newline='') as f:
                     writer = csv.writer(f)
                     # 写入表头
-                    writer.writerow(["子网名称", "主机数量"])
+                    writer.writerow([_("subnet_name"), _("host_count")])
                     # 写入示例数据
-                    writer.writerow(["办公室", "20"])
-                    writer.writerow(["人事部", "10"])
-                    writer.writerow(["财务部", "10"])
-                    writer.writerow(["规划部", "30"])
-                    writer.writerow(["信息部", "20"])
+                    writer.writerow([_("office"), "20"])
+                    writer.writerow([_("hr_department"), "10"])
+                    writer.writerow([_("finance_department"), "10"])
+                    writer.writerow([_("planning_department"), "30"])
+                    writer.writerow([_("it_department"), "20"])
 
             self.show_info(_("success"), _("template_saved_to").format(file_path=file_path))
 
@@ -4694,27 +4694,27 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_properties"), ""), tags=("section",))
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_global_routable"), "是" if ipv6_info.get("is_global") else "否")
+                "", tk.END, values=(_("is_global_routable"), _("yes") if ipv6_info.get("is_global") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_private_address"), "是" if ipv6_info.get("is_private") else "否")
+                "", tk.END, values=(_("is_private_address"), _("yes") if ipv6_info.get("is_private") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_link_local"), "是" if ipv6_info.get("is_link_local") else "否")
+                "", tk.END, values=(_("is_link_local"), _("yes") if ipv6_info.get("is_link_local") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_loopback"), "是" if ipv6_info.get("is_loopback") else "否")
+                "", tk.END, values=(_("is_loopback"), _("yes") if ipv6_info.get("is_loopback") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_multicast"), "是" if ipv6_info.get("is_multicast") else "否")
+                "", tk.END, values=(_("is_multicast"), _("yes") if ipv6_info.get("is_multicast") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_unspecified"), "是" if ipv6_info.get("is_unspecified") else "否")
+                "", tk.END, values=(_("is_unspecified"), _("yes") if ipv6_info.get("is_unspecified") else _("no"))
             )
             self.ipv6_info_tree.insert(
-                "", tk.END, values=(_("is_reserved"), "是" if ipv6_info.get("is_reserved") else "否")
+                "", tk.END, values=(_("is_reserved"), _("yes") if ipv6_info.get("is_reserved") else _("no"))
             )
-            self.ipv6_info_tree.insert("", tk.END, values=(_("is_ipv4_mapped"), "是" if "::ffff:" in ip_address else "否"))
+            self.ipv6_info_tree.insert("", tk.END, values=(_("is_ipv4_mapped"), _("yes") if "::ffff:" in ip_address else _("no")))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_structure_analysis"), ""), tags=("section",))
@@ -5166,25 +5166,25 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=())
                 self.ip_info_tree.insert("", tk.END, values=(_("section_ip_properties"), ""), tags=("section",))
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否私有IP", "是" if info.get("is_private", False) else "否")
+                    "", tk.END, values=(_("is_private"), _("yes") if info.get("is_private", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否保留IP", "是" if info.get("is_reserved", False) else "否")
+                    "", tk.END, values=(_("is_reserved"), _("yes") if info.get("is_reserved", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否回环地址", "是" if info.get("is_loopback", False) else "否")
+                    "", tk.END, values=(_("is_loopback"), _("yes") if info.get("is_loopback", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否组播地址", "是" if info.get("is_multicast", False) else "否")
+                    "", tk.END, values=(_("is_multicast"), _("yes") if info.get("is_multicast", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否全局可路由", "是" if info.get("is_global", False) else "否")
+                    "", tk.END, values=(_("is_global_routable"), _("yes") if info.get("is_global", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否链路本地地址", "是" if info.get("is_link_local", False) else "否")
+                    "", tk.END, values=(_("is_link_local"), _("yes") if info.get("is_link_local", False) else _("no"))
                 )
                 self.ip_info_tree.insert(
-                    "", tk.END, values=("是否未指定地址", "是" if info.get("is_unspecified", False) else "否")
+                    "", tk.END, values=(_("is_unspecified"), _("yes") if info.get("is_unspecified", False) else _("no"))
                 )
 
                 self.ip_info_tree.insert("", tk.END, values=())
@@ -5516,14 +5516,23 @@ class IPSubnetSplitterApp:
 
         # 添加第三行按钮：隐藏信息栏和清空结果
         hide_info_btn = ttk.Button(
-            button_frame, text=_("hide_info_bar"), width=button_width, style=button_style, command=self.hide_info_bar
+            button_frame, text=_(
+            "hide_info_bar"), width=button_width, style=button_style, command=self.hide_info_bar
         )
         hide_info_btn.grid(row=2, column=0, padx=5, pady=5)
 
         clear_result_btn = ttk.Button(
-            button_frame, text=_("clear_subnet_split"), width=button_width, style=button_style, command=self.clear_result
+            button_frame, text=_(
+            "clear_subnet_split"), width=button_width, style=button_style, command=self.clear_result
         )
         clear_result_btn.grid(row=2, column=1, padx=5, pady=5)
+
+        # 添加一键导出按钮
+        one_click_export_btn = ttk.Button(
+            button_frame, text=_(
+            "one_click_export"), width=button_width, style=button_style, command=self.one_click_export
+        )
+        one_click_export_btn.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
 
         # 主题切换部分
         theme_frame = ttk.LabelFrame(content_frame, text=_("theme_switch"), padding="10")
@@ -6027,6 +6036,18 @@ class IPSubnetSplitterApp:
             failure_msg: 失败消息格式字符串
         """
         try:
+            # 先准备默认文件名
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # 根据数据类型生成默认文件名前缀
+            if data_source["main_name"] == _("split_segment_info"):
+                # 子网切分结果
+                default_file_name = f"{_("subnet_split")}_{timestamp}"
+            else:
+                # 子网规划结果
+                default_file_name = f"{_("subnet_planning")}_{timestamp}"
+            
             # 先显示文件选择对话框，不准备数据
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".pdf",
@@ -6040,6 +6061,7 @@ class IPSubnetSplitterApp:
                 ],
                 title=title,
                 initialdir="",
+                initialfile=default_file_name
             )
 
             if not file_path:
@@ -6135,6 +6157,115 @@ class IPSubnetSplitterApp:
             self.chart_scrollbar.set(0.0, 1.0)
             # 使用grid_remove()直接隐藏滚动条
             self.chart_scrollbar.grid_remove()
+    
+    def one_click_export(self):
+        """一键导出功能：自动执行规划和切分，然后导出所有格式的结果"""
+        try:
+            # 1. 自动执行规划
+            self.execute_subnet_planning(from_history=True)
+            
+            # 2. 自动执行切分
+            self.execute_split(from_history=True)
+            
+            # 3. 让用户选择导出目录
+            export_dir = filedialog.askdirectory(title=_("select_export_directory"))
+            if not export_dir:
+                return
+            
+            # 4. 导出所有格式的结果
+            self.batch_export_all_formats(export_dir)
+            
+            # 5. 显示成功消息
+            self.show_result(_("one_click_export_success").format(dir=export_dir), keep_data=True)
+        except Exception as e:
+            self.show_result(_("one_click_export_failed").format(error=str(e)), error=True)
+    
+    def batch_export_all_formats(self, export_dir):
+        """批量导出所有支持的格式
+        
+        Args:
+            export_dir: 导出目录路径
+        """
+        import os
+        from datetime import datetime
+        
+        # 获取当前时间作为文件名前缀
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # 支持的导出格式
+        formats = ['.pdf', '.csv', '.json', '.txt', '.xlsx']
+        
+        # 导出子网切分结果
+        for fmt in formats:
+            # 准备数据
+            split_data_source = {
+                "main_tree": self.split_tree,
+                "main_name": _("split_segment_info"),
+                "main_filter": lambda values: values[0] not in [_("hint"), _("error"), "-", _("split_segment_info"), _("remaining_segment_info")],
+                "main_headers": [_("item"), _("value")],
+                "remaining_tree": self.remaining_tree,
+                "remaining_name": _("remaining_segment_info"),
+                "pdf_title": f"{_("subnet_planner")} - {_("split_result")}",
+                "main_table_cols": None,
+                "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],
+                "chart_data": getattr(self, 'chart_data', None),
+            }
+            
+            # 准备文件名 - 使用翻译后的名称
+            split_file_name = _("subnet_split")
+            split_file_path = os.path.join(export_dir, f"{split_file_name}_{timestamp}{fmt}")
+            
+            # 导出数据
+            self._export_data_to_format(split_file_path, split_data_source)
+        
+        # 导出子网规划结果
+        for fmt in formats:
+            # 准备数据
+            planning_data_source = {
+                "main_tree": self.allocated_tree,
+                "main_name": _("allocated_subnets"),
+                "main_filter": None,
+                "main_headers": None,
+                "remaining_tree": self.planning_remaining_tree,
+                "remaining_name": _("remaining_segment_info"),
+                "pdf_title": f"{_("subnet_planner")} - {_("planning_result")}",
+                "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],
+                "remaining_table_cols": [40, 90, 80, 110, 80, 60],
+                "chart_data": getattr(self, 'planning_chart_data', None),
+            }
+            
+            # 准备文件名 - 使用翻译后的名称
+            planning_file_name = _("subnet_planning")
+            planning_file_path = os.path.join(export_dir, f"{planning_file_name}_{timestamp}{fmt}")
+            
+            # 导出数据
+            self._export_data_to_format(planning_file_path, planning_data_source)
+    
+    def _export_data_to_format(self, file_path, data_source):
+        """导出数据到指定格式文件
+        
+        Args:
+            file_path: 导出文件路径
+            data_source: 数据源字典
+        """
+        try:
+            # 准备数据
+            success, message, data = self.export_utils.export_data(data_source, "", "", "")
+            if not success:
+                raise Exception(message)
+            
+            main_data, main_headers, remaining_data, remaining_headers = data
+            
+            # 使用导出工具导出到文件
+            success, message = self.export_utils.export_to_file(
+                file_path, data_source, main_data, main_headers, remaining_data, remaining_headers
+            )
+            
+            if not success:
+                raise Exception(message)
+        except Exception as e:
+            # 记录错误但继续导出其他格式
+            print(f"导出失败 {file_path}: {e}")
 
     def create_about_link(self):
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""

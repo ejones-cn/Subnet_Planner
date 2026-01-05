@@ -173,6 +173,30 @@
         "en": "Export Result",
         "ja": "結果出力"
     },
+    "one_click_export": {
+        "zh": "一键导出",
+        "zh_tw": "一鍵匯出",
+        "en": "One-Click Export",
+        "ja": "ワンクリックエクスポート"
+    },
+    "select_export_directory": {
+        "zh": "选择导出目录",
+        "zh_tw": "選擇匯出目錄",
+        "en": "Select Export Directory",
+        "ja": "エクスポートディレクトリを選択"
+    },
+    "one_click_export_success": {
+        "zh": "一键导出成功！导出目录：{dir}",
+        "zh_tw": "一鍵匯出成功！匯出目錄：{dir}",
+        "en": "One-click export succeeded! Export directory: {dir}",
+        "ja": "ワンクリックエクスポートが成功しました！エクスポートディレクトリ：{dir}"
+    },
+    "one_click_export_failed": {
+        "zh": "一键导出失败：{error}",
+        "zh_tw": "一鍵匯出失敗：{error}",
+        "en": "One-click export failed: {error}",
+        "ja": "ワンクリックエクスポートが失敗しました：{error}"
+    },
     "parent_network_settings": {
         "zh": "父网段设置",
         "zh_tw": "父網段設定",
@@ -534,7 +558,7 @@
         "ja": "セグメント分布図"
     },
     "record_already_exists": {
-        "zh": "中已存在名称为 '{name},' 的记录",
+        "zh": "中已存在名称为 '{name}' 的记录",
         "zh_tw": "中已存在名稱為 '{name}' 的記錄",
         "en": "already contains a record named '{name}'",
         "ja": "には '{name}' という名前のレコードが既に存在します"
@@ -546,7 +570,7 @@
         "ja": "入力は空にできません"
     },
     "subnet_already_exists": {
-        "zh": "已经存在名称为 '{name},' 的子网，请使用其他名称",
+        "zh": "已经存在名称为 '{name}' 的子网，请使用其他名称",
         "zh_tw": "已經存在名稱為 '{name}' 的子網，請使用其他名稱",
         "en": "A subnet named '{name}' already exists, please use another name",
         "ja": "'{name}' という名前のサブネットが既に存在します。別の名前を使用してください"
@@ -1284,10 +1308,10 @@
         "zh_tw": "无"
     },
     "msg_already_exists": {
-        "zh": "中已存在名称为 '{name},' 的记录",
+        "zh": "中已存在名称为 '{name}' 的记录",
         "en": "already contains a record named '{name}'",
         "ja": "には '{name}' という名前のレコードが既に存在します",
-        "zh_tw": "中已存在名称为 '{name},' 的记录"
+        "zh_tw": "中已存在名称为 '{name}' 的记录"
     },
     "no_valid_data_found": {
         "zh": "文件中没有找到有效数据",
@@ -1884,10 +1908,148 @@
         "zh_tw": "条记录到"
     },
     "template_saved_to": {
-        "zh": "模板已保存到: {file_path},",
+        "zh": "模板已保存到: {file_path}",
         "en": "Template saved to: {file_path}",
         "ja": "テンプレートが保存されました: {file_path}",
-        "zh_tw": "模板已保存到: {file_path},"
+        "zh_tw": "模板已保存到: {file_path}"
+    },
+    "subnet_requirement_import_template": {
+        "zh": "子网需求导入模板",
+        "zh_tw": "子網需求匯入範本",
+        "en": "Subnet Requirement Import Template",
+        "ja": "サブネット要件インポートテンプレート"
+    },
+    "subnet_name": {
+        "zh": "子网名称",
+        "zh_tw": "子網名稱",
+        "en": "Subnet Name",
+        "ja": "サブネット名"
+    },
+    "host_count": {
+        "zh": "主机数量",
+        "zh_tw": "主機數量",
+        "en": "Hosts",
+        "ja": "ホスト数"
+    },
+    "office": {
+        "zh": "办公室",
+        "zh_tw": "辦公室",
+        "en": "Office",
+        "ja": "オフィス"
+    },
+    "hr_department": {
+        "zh": "人事部",
+        "zh_tw": "人事部",
+        "en": "HR Department",
+        "ja": "人事部"
+    },
+    "finance_department": {
+        "zh": "财务部",
+        "zh_tw": "財務部",
+        "en": "Finance Department",
+        "ja": "財務部"
+    },
+    "planning_department": {
+        "zh": "规划部",
+        "zh_tw": "規劃部",
+        "en": "Planning Department",
+        "ja": "計画部"
+    },
+    "it_department": {
+        "zh": "信息部",
+        "zh_tw": "資訊部",
+        "en": "IT Department",
+        "ja": "IT部"
+    },
+    "security": {
+        "zh": "安全部",
+        "zh_tw": "安全部",
+        "en": "Security",
+        "ja": "セキュリティ"
+    },
+    "party": {
+        "zh": "党群部",
+        "zh_tw": "黨群部",
+        "en": "Party",
+        "ja": "党群部"
+    },
+    "discipline": {
+        "zh": "纪检部",
+        "zh_tw": "紀檢部",
+        "en": "Discipline",
+        "ja": "紀律委員会"
+    },
+    "engineering": {
+        "zh": "工程部",
+        "zh_tw": "工程部",
+        "en": "Engineering",
+        "ja": "エンジニアリング"
+    },
+    "sales": {
+        "zh": "销售部",
+        "zh_tw": "銷售部",
+        "en": "Sales",
+        "ja": "営業部"
+    },
+    "legal": {
+        "zh": "法务部",
+        "zh_tw": "法務部",
+        "en": "Legal",
+        "ja": "法務部"
+    },
+    "procurement": {
+        "zh": "采购部",
+        "zh_tw": "採購部",
+        "en": "Procurement",
+        "ja": "調達部"
+    },
+    "rd": {
+        "zh": "研发部",
+        "zh_tw": "研發部",
+        "en": "R & D",
+        "ja": "R & D"
+    },
+    "production": {
+        "zh": "生产部",
+        "zh_tw": "生產部",
+        "en": "Production",
+        "ja": "製造部"
+    },
+    "transportation": {
+        "zh": "运输部",
+        "zh_tw": "運輸部",
+        "en": "Transportation",
+        "ja": "輸送部"
+    },
+    "export_time": {
+        "zh": "导出时间",
+        "zh_tw": "匯出時間",
+        "en": "Export Time",
+        "ja": "エクスポート時間"
+    },
+    "parent_network_info": {
+        "zh": "父网段信息",
+        "zh_tw": "父網段資訊",
+        "en": "Parent Network Info",
+        "ja": "親ネットワーク情報"
+    },
+    "parent_cidr": {
+        "zh": "父网段CIDR",
+        "zh_tw": "父網段CIDR",
+        "en": "Parent CIDR",
+        "ja": "親ネットワークCIDR"
+    },
+    "available_addresses": {
+        "zh": "可用地址数",
+        "zh_tw": "可用位址數",
+        "en": "Available Addresses",
+        "ja": "利用可能なアドレス数"
+    },
+    "host_address_range": {
+        "zh": "主机地址范围",
+        "zh_tw": "主機位址範圍",
+        "en": "Host Address Range",
+        "ja": "ホストアドレス範囲"
     },
     "copied_to_clipboard": {
         "zh": "已复制到剪贴板",

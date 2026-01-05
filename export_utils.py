@@ -23,7 +23,7 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from i18n import _ as translate  # _ 是翻译函数，这里重命名为 translate 以避免冲突
+from i18n import _ as translate, get_language  # _ 是翻译函数，这里重命名为 translate 以避免冲突
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
@@ -151,11 +151,13 @@ class ExportUtils:
                 text_width = 0
                 for char in text:
                     if ord(char) > 127:
-                        text_width += 12
+                        # 中文、日文等非ASCII字符使用更大的宽度
+                        text_width += 14
                     else:
-                        text_width += 6
+                        # ASCII字符使用更合理的宽度，英文数字宽度约为中文的一半
+                        text_width += 8
 
-                text_width += 16
+                text_width += 24
 
                 if text_width > max_col_widths[col_idx]:
                     max_col_widths[col_idx] = text_width
@@ -174,7 +176,7 @@ class ExportUtils:
         return max_col_widths
 
     def _is_k2v_headers(self, headers):
-        return len(headers) == 2 and headers[0] == "项目" and headers[1] == "值"
+        return len(headers) == 2 and headers[0] == translate("item") and headers[1] == translate("value")
 
     def _get_col_widths(self, table_data, table_width, col_widths, num_cols):
         """获取表格列宽，确保自适应页面宽度"""
@@ -210,8 +212,10 @@ class ExportUtils:
             ("TEXTCOLOR", (0, 0), (-1, 0), table_colors["header_text"]),
             ("FONTNAME", (0, 0), (-1, 0), header_font),
             ("BOX", (0, 0), (-1, -1), 1.5, table_colors["box"]),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ]
-        return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE)
+        return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE + [("WORDWRAP", (0, 0), (-1, -1), False)])
 
     def _prepare_export_data(self, data_source):
         """准备导出数据
@@ -272,13 +276,16 @@ class ExportUtils:
 
     def _export_to_json(self, file_path, data_source, main_data, main_headers, remaining_data):
         """导出数据为JSON格式（UTF-8编码，不转义中文）"""
-        if data_source["main_name"] == "切分段信息":
-            export_data = {"split_info": dict(main_data), "remaining_subnets": remaining_data}
+        if data_source["main_name"] == translate("split_segment_info"):
+            export_data = {
+                translate("split_segment_info"): dict(main_data), 
+                translate("remaining_subnets"): remaining_data
+            }
         else:
             export_data = {
                 f"{data_source['main_name']}": [dict(zip(main_headers, item)) for item in main_data],
                 
-                "remaining_subnets": remaining_data,
+                translate("remaining_subnets"): remaining_data,
             }
 
         with open(file_path, "w", encoding="utf-8") as f:
@@ -478,12 +485,18 @@ class ExportUtils:
                 values = remaining_tree.item(item, "values")
                 writer.writerow(values)
 
-    def _export_to_excel(self, file_path, main_data, main_headers, remaining_tree, remaining_headers):
+    def _export_to_excel(self, file_path, data_source, main_data, main_headers, remaining_tree, remaining_headers):
         """导出数据为Excel格式（原生支持中文）"""
         wb = Workbook()
 
         main_sheet = wb.active
-        main_sheet.title = "主数据"
+        # 根据数据类型设置不同的sheet名称
+        if data_source["main_name"] == translate("split_segment_info"):
+            # 子网切分结果
+            main_sheet.title = translate("split_segment_info")
+        else:
+            # 子网规划结果
+            main_sheet.title = translate("subnet_requirements")
 
         for col_idx, header in enumerate(main_headers, 1):
             cell = main_sheet.cell(row=1, column=col_idx, value=header)
@@ -494,7 +507,7 @@ class ExportUtils:
             for col_idx, value in enumerate(values, 1):
                 main_sheet.cell(row=row_idx, column=col_idx, value=value)
 
-        remaining_sheet = wb.create_sheet(title="剩余数据")
+        remaining_sheet = wb.create_sheet(title=translate("remaining_subnets"))
 
         for col_idx, header in enumerate(remaining_headers, 1):
             cell = remaining_sheet.cell(row=1, column=col_idx, value=header)
@@ -525,8 +538,16 @@ class ExportUtils:
         landscape_width, landscape_height = landscape(A4)
         portrait_width, portrait_height = A4
         
+        # 根据当前语言获取日期格式
+        def get_date_format():
+            lang = get_language()
+            if lang in ["zh", "zh_tw", "ja"]:
+                return "%Y年%m月%d日 %H:%M:%S"
+            else:  # 英文
+                return "%Y-%m-%d %H:%M:%S"
+        
         # 生成导出时间，用于页眉显示
-        export_time = time.strftime("%Y年%m月%d日 %H:%M:%S")
+        export_time = time.strftime(get_date_format())
         
         # 创建页眉回调函数
         def on_page(canvas, event):
@@ -542,7 +563,7 @@ class ExportUtils:
             canvas.drawRightString(
                 current_width - margins[1],  # x坐标：页面宽度 - 右边距
                 current_height - 40,  # y坐标：页面顶部 - 20像素，留有适当边距
-                f"导出时间: {export_time}"
+                f"{translate('export_time')}: {export_time}"
             )
             canvas.restoreState()
         
@@ -612,9 +633,9 @@ class ExportUtils:
         elements.append(Spacer(1, 15))
 
         # 在切分段信息/已分配子网信息前添加父网段信息
-        if data_source["main_name"] in ["切分段信息", "已分配子网信息"]:
+        if data_source["main_name"] in [translate("split_segment_info"), translate("allocated_subnet_info")]:
             # 显示父网段信息
-            elements.append(Paragraph("父网段信息", heading2_style))
+            elements.append(Paragraph(translate("parent_network_info"), heading2_style))
             
             # 从chart_data获取父网段信息
             chart_data = data_source.get("chart_data")
@@ -632,13 +653,13 @@ class ExportUtils:
                 
                 # 第一行：标题行
                 parent_table_data.append([
-                    Paragraph("父网段CIDR", table_text_style),
-                    Paragraph("网络地址", table_text_style),
-                    Paragraph("子网掩码", table_text_style),
-                    Paragraph("广播地址", table_text_style),
-                    Paragraph("前缀长度", table_text_style),
-                    Paragraph("可用地址数", table_text_style),
-                    Paragraph("主机地址范围", table_text_style)
+                    Paragraph(translate("parent_cidr"), table_text_style),
+                    Paragraph(translate("network_address"), table_text_style),
+                    Paragraph(translate("subnet_mask"), table_text_style),
+                    Paragraph(translate("broadcast_address"), table_text_style),
+                    Paragraph(translate("prefix_length"), table_text_style),
+                    Paragraph(translate("available_addresses"), table_text_style),
+                    Paragraph(translate("host_address_range"), table_text_style)
                 ])
                 
                 # 第二行：数据行
@@ -690,10 +711,10 @@ class ExportUtils:
         elements.append(Paragraph(data_source["main_name"], heading2_style))
 
         # 特殊处理：子网切分PDF的切分段信息表格
-        if data_source["main_name"] == "切分段信息":
+        if data_source["main_name"] == translate("split_segment_info"):
             # 转置表格并移除指定列
             # 定义要移除的列名
-            columns_to_remove = ["父网段", "分割线", "前缀长度", "CIDR", "----------", "网络地址"]
+            columns_to_remove = [translate("parent_network"), translate("split_line"), translate("prefix_length"), translate("cidr"), translate("separator"), translate("network_address")]
             
             # 键值对格式处理
             filtered_data = {}
@@ -752,7 +773,7 @@ class ExportUtils:
             main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
             elements.append(main_table)
         else:
-            elements.append(Paragraph(f"无{data_source['main_name']}", normal_style))
+            elements.append(Paragraph(f"{translate('no')}{data_source['main_name']}", normal_style))
 
         elements.append(Spacer(1, 20))
 
@@ -787,7 +808,7 @@ class ExportUtils:
             remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_chinese_font))
             elements.append(remaining_table)
         else:
-            elements.append(Paragraph(f"无{data_source['remaining_name']}", normal_style))
+            elements.append(Paragraph(f"{translate('no')}{data_source['remaining_name']}", normal_style))
 
         # 添加网段分布图（对子网切分和子网规划功能，放在剩余网段表之后）
         chart_data = data_source.get("chart_data")
@@ -1397,7 +1418,7 @@ class ExportUtils:
                 # 对于CSV导出，需要创建一个模拟的tree对象
                 class MockTree:
                     """模拟Treeview对象，用于CSV导出"""
-                    def __init_translate(self, headers, data):
+                    def __init__(self, headers, data):
                         self.headers = headers
                         self.data = data
                         self.columns = list(range(len(headers)))
@@ -1438,7 +1459,7 @@ class ExportUtils:
                         else:
                             return None
                     
-                    def __getitem_translate(self, key):
+                    def __getitem__(self, key):
                         """支持字典访问方式"""
                         if key == "columns":
                             return self.columns
@@ -1461,7 +1482,7 @@ class ExportUtils:
                 # 对于Excel导出，需要创建一个模拟的tree对象
                 class MockTree:
                     """模拟Treeview对象，用于Excel导出"""
-                    def __init_translate(self, headers, data):
+                    def __init__(self, headers, data):
                         self.headers = headers
                         self.data = data
                         self.columns = list(range(len(headers)))
@@ -1481,7 +1502,7 @@ class ExportUtils:
                         else:
                             return None
                     
-                    def __getitem_translate(self, key):
+                    def __getitem__(self, key):
                         """支持字典访问方式"""
                         if key == "columns":
                             return self.columns
@@ -1499,7 +1520,7 @@ class ExportUtils:
                         remaining_data_list.append(item)
                 
                 mock_tree = MockTree(remaining_headers, remaining_data_list)
-                self._export_to_excel(file_path, main_data, main_headers, mock_tree, remaining_headers)
+                self._export_to_excel(file_path, data_source, main_data, main_headers, mock_tree, remaining_headers)
             elif file_ext == ".pdf":
                 self._export_to_pdf(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
             else:
