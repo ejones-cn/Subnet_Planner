@@ -43,7 +43,6 @@ def create_pack_config(pack_type="onefile"):
         "PyInstaller",
         f"--{pack_type}",  # 打包模式
         "--windowed",  # 窗口模式，无控制台
-        "--icon=icon.ico",  # 指定图标
         f"--name=SubnetPlannerV{version}",  # 程序名称（英文版）包含版本号，使用V代替-
         "--distpath=dist",  # 输出目录
         "--workpath=build",  # 工作目录
@@ -72,9 +71,6 @@ def create_pack_config(pack_type="onefile"):
                 "--exclude-module=xmlrpc",
                 "--exclude-module=sqlite3",
                 "--add-data=translations.json:.",  # 添加翻译文件
-                "--add-data=icon.ico:.",  # 添加图标文件
-                "--add-data=icon.png:.",  # 添加图标文件
-                "--hidden-import=icon_base64",  # 确保icon_base64模块被正确导入
             ]
         )
 
