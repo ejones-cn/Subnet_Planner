@@ -44,16 +44,11 @@ from chart_utils import draw_text_with_stroke, draw_distribution_chart
 # 版本管理模块
 from version import get_version
 
-
-
 # 国际化模块
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
-
-
-
 
 
 if sys.platform == 'win32':
@@ -563,6 +558,29 @@ class IPSubnetSplitterApp:
 
         self.root = main_window
         self.root.title(f"{_("app_name")} v{self.app_version}")
+        # 设置应用图标
+        try:
+            # 使用PIL加载高分辨率图标
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Subnet_Planner.ico")
+            if os.path.exists(icon_path):
+                from PIL import Image, ImageTk
+                # 打开图标文件
+                icon_image = Image.open(icon_path)
+                # 转换为PhotoImage对象
+                photo = ImageTk.PhotoImage(icon_image)
+                # 设置应用图标
+                self.root.iconphoto(True, photo)
+                # 保存引用，防止被GC回收
+                self._icon_photo = photo
+        except Exception as e:
+            print(f"设置图标失败: {e}")
+            # 降级方案：使用传统iconbitmap方法
+            try:
+                icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Subnet_Planner.ico")
+                if os.path.exists(icon_path):
+                    self.root.iconbitmap(icon_path)
+            except Exception as fallback_e:
+                print(f"降级方案也失败: {fallback_e}")
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
         # 这里只设置窗口标题
 
@@ -6781,31 +6799,7 @@ class IPSubnetSplitterApp:
 if __name__ == "__main__":
     # 创建主窗口
     root = tk.Tk()
-
-    # 设置窗口图标，使用PIL库处理多分辨率图标
-    import sys
-    # 获取正确的图标路径，兼容PyInstaller打包后的环境
-    if getattr(sys, 'frozen', False):
-        # 打包后的环境
-        icon_path = os.path.join(sys._MEIPASS, "Subnet_Planner.ico")
-    else:
-        # 开发环境
-        icon_path = "Subnet_Planner.ico"
     
-    if os.path.exists(icon_path):
-        try:
-            from PIL import Image, ImageTk
-            # 使用PIL打开图标文件
-            icon_image = Image.open(icon_path)
-            # 转换为PhotoImage对象
-            icon_photo = ImageTk.PhotoImage(icon_image)
-            # 设置窗口图标
-            root.iconphoto(True, icon_photo)
-        except Exception as e:
-            # 如果PIL方法失败，回退到传统方法
-            print(f"⚠️ PIL设置图标失败，回退到传统方法: {e}")
-            root.iconbitmap(icon_path)
-
     # 获取DPI缩放因子（如果未定义则默认为1.0）
     # 全局变量已在文件开头定义，无需再次声明
     try:
