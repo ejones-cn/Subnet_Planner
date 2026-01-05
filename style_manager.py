@@ -40,8 +40,8 @@ class StyleManager:
         """
         current_language = get_language()
         
-        if current_language == "zh":
-            # 中文版：微软雅黑，10号字体
+        if current_language in ["zh", "zh_tw"]:
+            # 中文(简/繁)版：微软雅黑，10号字体
             return ("微软雅黑", 10)
         elif current_language == "ja":
             # 日文版：MS Gothic，10号字体
@@ -58,8 +58,8 @@ class StyleManager:
         """
         current_language = get_language()
         
-        if current_language == "zh":
-            # 中文版：标签宽度10
+        if current_language in ["zh", "zh_tw"]:
+            # 中文(简/繁)版：标签宽度10
             return 10
         elif current_language == "ja":
             # 日文版：标签宽度18
@@ -80,8 +80,8 @@ class StyleManager:
         current_language = get_language()
         
         # 根据语言和按钮类型确定宽度，高度统一使用10
-        if current_language in ["zh", "ja"]:
-            # 中文和日文版：统一宽度12，特殊按钮类型也是12
+        if current_language in ["zh", "zh_tw", "ja"]:
+            # 中文(简/繁)和日文版：统一宽度12，特殊按钮类型也是12
             return (12, 10)
         else:
             # 英文版：规划和导出按钮宽度16，默认按钮14
@@ -113,7 +113,7 @@ class StyleManager:
         self.style.configure("Error.TLabel", **base_font_style, foreground="red")  # 错误信息红色
         self.style.configure("Success.TLabel", **base_font_style, foreground="#5E5E5E")  # 成功信息灰色
 
-        if current_language == "zh":
+        if current_language in ["zh", "zh_tw"]:
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(0, 1))
         elif current_language == "ja":
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(2, 3))
@@ -305,7 +305,7 @@ def get_current_font_settings():
     else:
         # 未初始化时返回默认设置
         current_language = get_language()
-        if current_language == "zh":
+        if current_language in ["zh", "zh_tw"]:
             return ("微软雅黑", 10)
         elif current_language == "ja":
             return ("MS Gothic", 10)

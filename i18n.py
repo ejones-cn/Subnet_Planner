@@ -44,13 +44,13 @@ TRANSLATIONS = _load_translations()
 
 
 _DEFAULT_TRANSLATIONS = {
-    "error": {"zh": "错误", "en": "Error", "ja": "エラー"},
-    "ok": {"zh": "确定", "en": "OK", "ja": "OK"},
-    "cancel": {"zh": "取消", "en": "Cancel", "ja": "キャンセル"},
-    "export": {"zh": "导出", "en": "Export", "ja": "エクスポート"},
-    "subnet_planner": {"zh": "子网规划师", "en": "Subnet Planner", "ja": "サブネット設計師"},
-    "about": {"zh": "关于", "en": "About", "ja": "アプリについて"},
-    "close": {"zh": "关闭", "en": "Close", "ja": "閉じる"}
+    "error": {"zh": "错误", "zh_tw": "錯誤", "en": "Error", "ja": "エラー"},
+    "ok": {"zh": "确定", "zh_tw": "確定", "en": "OK", "ja": "OK"},
+    "cancel": {"zh": "取消", "zh_tw": "取消", "en": "Cancel", "ja": "キャンセル"},
+    "export": {"zh": "导出", "zh_tw": "匯出", "en": "Export", "ja": "エクスポート"},
+    "subnet_planner": {"zh": "子网规划师", "zh_tw": "子網規劃師", "en": "Subnet Planner", "ja": "サブネット設計師"},
+    "about": {"zh": "关于", "zh_tw": "關於", "en": "About", "ja": "アプリについて"},
+    "close": {"zh": "关闭", "zh_tw": "關閉", "en": "Close", "ja": "閉じる"}
 }
 
 if TRANSLATIONS is None:
@@ -64,10 +64,10 @@ def set_language(lang):
     设置当前语言
     
     Args:
-        lang: 语言代码，支持 "zh" (中文), "en" (英文) 和 "ja" (日语)
+        lang: 语言代码，支持 "zh" (中文), "zh_tw" (繁体中文), "en" (英文) 和 "ja" (日语)
     """
     global _current_language
-    if lang in ["zh", "en", "ja"]:
+    if lang in ["zh", "zh_tw", "en", "ja"]:
         _current_language = lang
 
 
@@ -109,7 +109,8 @@ def get_supported_languages():
         支持的语言列表，格式为 [(语言代码, 语言名称)]
     """
     return [
-        ("zh", "中文"),
+        ("zh", "简体中文"),
+        ("zh_tw", "繁體中文"),
         ("en", "English"),
         ("ja", "日本語")
     ]
