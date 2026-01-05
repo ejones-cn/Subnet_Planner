@@ -1855,9 +1855,15 @@
     },
     "email": {
         "zh": "邮箱",
-        "zh_tw": "電子郵件",
+        "zh_tw": "郵箱",
         "en": "Email",
         "ja": "メール"
+    },
+    "app_description": {
+        "zh": "专业的子网规划工具",
+        "zh_tw": "專業的子網規劃工具",
+        "en": "Professional Subnet Planning Tool",
+        "ja": "プロフェッショナルなサブネット設計ツール"
     },
     "success": {
         "zh": "成功",

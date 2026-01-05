@@ -6498,6 +6498,7 @@ class IPSubnetSplitterApp:
         about_window = tk.Toplevel(self.root)
         about_window.title(f"{_("about")} {self.app_name}")
         about_window.resizable(False, False)
+        about_window.configure(bg="#ffffff")  # 设置背景色为白色
 
         # 确保对话框在主窗口之上
         about_window.transient(self.root)
@@ -6510,9 +6511,9 @@ class IPSubnetSplitterApp:
         main_width = self.root.winfo_width()
         main_height = self.root.winfo_height()
 
-        # 设置对话框尺寸
-        dialog_width = 350
-        dialog_height = 220
+        # 设置对话框尺寸，适当增大以容纳更丰富的内容，确保所有语言下都能完整显示
+        dialog_width = 400
+        dialog_height = 300
 
         # 计算对话框在主窗口中心的位置
         dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
@@ -6523,19 +6524,13 @@ class IPSubnetSplitterApp:
         about_window.deiconify()
 
         # 创建内容框架，移除所有边框和焦点指示
-        content_frame = ttk.Frame(about_window, padding=(15, 0, 15, 0), relief="flat", borderwidth=0)
+        content_frame = ttk.Frame(about_window, padding=(20, 20, 20, 15), relief="flat", borderwidth=0)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 创建上下占位框架实现内容垂直居中
-        top_spacer = ttk.Frame(content_frame)
-        top_spacer.pack(side="top", expand=True, fill="y")
-
-        # 创建内部框架放置实际内容
+        # 创建内部框架放置实际内容，不使用占位符框架
         inner_frame = ttk.Frame(content_frame)
-        inner_frame.pack(side="top", fill="both")
-
-        bottom_spacer = ttk.Frame(content_frame)
-        bottom_spacer.pack(side="top", expand=True, fill="y")
+        inner_frame.pack(side="top", fill="both", expand=True)
+        inner_frame.configure(style="About.TFrame")
 
         # 移除可能影响焦点的事件绑定
         about_window.unbind("<FocusIn>")
@@ -6544,57 +6539,95 @@ class IPSubnetSplitterApp:
         # 为关于对话框中的标签和按钮添加焦点样式，移除虚线
         # 创建对话框专用的样式，避免影响主窗口
         self.style.configure("About.TLabel", focuscolor="none")
-        self.style.configure("About.TButton", focuscolor="none", focuswidth=0)
-        self.style.map("About.TButton", focuscolor=[("focus", "none")], focuswidth=[("focus", 0)])
-
-        # 标题区域
-        title_frame = ttk.Frame(inner_frame)
-        title_frame.pack(pady=(10, 8))
-
-        # 添加应用名称作为主要标题
-        app_name_label = ttk.Label(title_frame, text=self.app_name, font=("微软雅黑", 16, "bold"), style="About.TLabel")
-        app_name_label.pack()
-
-        # 添加版本号
-        version_label = ttk.Label(
-            title_frame, text=f"{_("version")} {self.app_version}", font=("微软雅黑", 10), style="About.TLabel"
-        )
-        version_label.pack(pady=(1, 0))
-
-        # 信息区域
-        info_frame = ttk.Frame(inner_frame)
-        info_frame.pack(pady=(0, 8))
+        self.style.configure("About.TButton", 
+                           focuscolor="none", 
+                           focuswidth=0, 
+                           padding=(10, 5))
+        self.style.map("About.TButton", 
+                      focuscolor=[("focus", "none")], 
+                      focuswidth=[("focus", 0)])
 
         # 获取当前字体设置，确保与应用程序其他部分一致
         from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
-        # 更新标题和版本号的字体设置，保持大小和加粗样式不变
-        app_name_label.config(font=(font_family, 16, "bold"))
-        version_label.config(font=(font_family, font_size))
+        # 标题区域
+        title_frame = ttk.Frame(inner_frame)
+        title_frame.pack(pady=(10, 8))
+
+        # 添加应用名称作为主要标题，使用蓝色主题色
+        app_name_label = ttk.Label(title_frame, 
+                                 text=self.app_name, 
+                                 font=(font_family, 18, "bold"), 
+                                 style="About.TLabel",
+                                 foreground="#1976d2")
+        app_name_label.pack(anchor=tk.CENTER)
+
+        # 添加版本号，使用灰色调
+        version_label = ttk.Label(
+            title_frame, 
+            text=f"{_("version")} {self.app_version}", 
+            font=(font_family, 11, "bold"), 
+            style="About.TLabel",
+            foreground="#666666"
+        )
+        version_label.pack(anchor=tk.CENTER, pady=(5, 0))
+
+        # 添加分隔线，增强视觉层次
+        separator = ttk.Separator(title_frame, orient='horizontal')
+        separator.pack(fill=tk.X, pady=(5, 0))
+
+        # 添加应用描述，使用翻译函数确保多语言适配
+        desc_label = ttk.Label(
+            title_frame, 
+            text=_("app_description"), 
+            font=(font_family, 11), 
+            style="About.TLabel",
+            foreground="#555555"
+        )
+        desc_label.pack(anchor=tk.CENTER, pady=(5, 0))
+
+        # 信息区域
+        info_frame = ttk.Frame(inner_frame)
+        info_frame.pack(pady=(10, 5))
         
         # 添加作者信息
+        # 使用ttk.Label与其他标签保持一致
         author_label = ttk.Label(
             info_frame, 
             text=f"{_("author")}：Ejones", 
-            font=(font_family, font_size), 
-            style="About.TLabel"
+            font=(font_family, 10), 
+            style="About.TLabel",
+            foreground="#444444"
         )
-        author_label.pack(pady=(0, 1))
+        author_label.pack(anchor=tk.CENTER, pady=(2, 0))
 
-        # 添加联系方式
+        # 添加联系方式，使用蓝色调，可点击复制
+        # 使用ttk.Label与其他标签保持一致
         email_label = ttk.Label(
             info_frame, 
             text=f"{_("email")}：ejones.cn@hotmail.com", 
-            font=(font_family, font_size), 
-            style="About.TLabel"
+            font=(font_family, 10), 
+            style="About.TLabel",
+            foreground="#1976d2",
+            cursor="hand2"
         )
-        email_label.pack()
+        email_label.pack(anchor=tk.CENTER, pady=(0, 0))
+        
+        # 为邮箱添加点击事件，启动邮件客户端
+        import webbrowser
+        def open_email_client():
+            webbrowser.open(f"mailto:ejones.cn@hotmail.com")
+        email_label.bind("<Button-1>", lambda e: open_email_client())
 
         # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
-        # 添加确定按钮，使用默认样式
-        ok_button = ttk.Button(inner_frame, text=_("ok"), command=about_window.destroy, width=12)
-        ok_button.pack(pady=(0, 2))
+        # 添加确定按钮，使用更大的宽度和更好的居中效果
+        ok_button = ttk.Button(inner_frame, 
+                             text=_("ok"), 
+                             command=about_window.destroy, 
+                             width=10,
+                             style="About.TButton")
+        ok_button.pack(anchor=tk.CENTER, pady=(2, 1))
 
         # 将焦点聚焦到确定按钮上，使用更可靠的方式
         about_window.after_idle(ok_button.focus_set)
@@ -6604,14 +6637,15 @@ class IPSubnetSplitterApp:
         about_window.bind('<Return>', lambda e: ok_button.invoke())
         about_window.bind('<Escape>', lambda e: ok_button.invoke())
 
-        # 添加版权信息，使用动态字体设置
+        # 添加版权信息，使用动态字体设置，灰色调
         copyright_label = ttk.Label(
             inner_frame, 
             text=_("copyright").format(app_name=self.app_name), 
-            font=(font_family, 8),  # 使用动态字体，保持8号大小
-            style="About.TLabel"
+            font=(font_family, 8),  # 使用动态字体，保持9号大小
+            style="About.TLabel",
+            foreground="#888888"
         )
-        copyright_label.pack(pady=(2, 10))
+        copyright_label.pack(anchor=tk.CENTER, pady=(5, 10))
 
 
 def set_window_icon(root_window):
