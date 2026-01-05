@@ -4629,19 +4629,19 @@ class IPSubnetSplitterApp:
             except ValueError as e:
                 try:
                     # 使用handle_ip_subnet_error函数获取友好的错误信息
-                    error_info = handle_ip_subnet_error(e)
-                    self.show_info(_("error"), error_info["error"])
+                    self.show_info(_("error"), handle_ip_subnet_error(e)["error"])
                     return
                 except ValueError:
                     # 如果handle_ip_subnet_error失败，使用通用错误信息
                     self.show_info(_("error"), f"{_("ipv6_address")}{_("invalid_ip_format")}")
                     return
 
+            # 构建网络字符串
             network_str = f"{ipv6}/{cidr}"
-
             ipv6_info = get_ip_info(network_str)
             original_ip_info = get_ip_info(ipv6)
 
+            # 插入基本信息
             self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info.get("ip_address", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("version"), ipv6_info.get("version", "")))
             ip_address = ipv6_info.get("ip_address", "")
@@ -4680,8 +4680,8 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=(_("reverse_dns_format"), ipv6_info.get("reverse_dns", "")))
 
             if "::ffff:" in ip_address:
-                ipv4_part = ip_address.split("::ffff:")[-1]
-                self.ipv6_info_tree.insert("", tk.END, values=(_("mapped_ipv4_address"), ipv4_part))
+                mapped_ipv4 = ip_address.split("::ffff:")[-1]
+                self.ipv6_info_tree.insert("", tk.END, values=(_("mapped_ipv4_address"), mapped_ipv4))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_properties"), ""), tags=("section",))
@@ -4761,30 +4761,30 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=(_("prefix_analysis"), full_prefix_analysis))
 
             # 使用原始IP地址的展开格式计算段数（总是8段）
-            original_segments = original_ip_info.get("exploded", "").split(":")
-            if len(original_segments) > 1:
-                self.ipv6_info_tree.insert("", tk.END, values=(_("address_segment_count"), f"{len(original_segments)}"))
+            segments_count = original_ip_info.get("exploded", "").split(":")
+            if len(segments_count) > 1:
+                self.ipv6_info_tree.insert("", tk.END, values=(_("address_segment_count"), f"{len(segments_count)}"))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("binary_representation"), ""), tags=("section",))
             self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info.get("binary", "")))
 
             if ipv6_info.get("subnet_mask"):
-                subnet_mask = ipv6_info["subnet_mask"]
-                subnet_bin = subnet_mask.replace(':', '').zfill(32)
-                subnet_bin_grouped = ' '.join([subnet_bin[i:i + 4] for i in range(0, 32, 4)])
+                subnet_mask_value = ipv6_info["subnet_mask"]
+                subnet_bin_value = subnet_mask_value.replace(':', '').zfill(32)
+                subnet_bin_grouped = ' '.join([subnet_bin_value[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=(_("subnet_mask"), subnet_bin_grouped))
 
             if ipv6_info.get("network_address"):
-                network_addr = ipv6_info["network_address"]
-                network_bin = network_addr.replace(':', '').zfill(32)
-                network_bin_grouped = ' '.join([network_bin[i:i + 4] for i in range(0, 32, 4)])
+                network_addr_value = ipv6_info["network_address"]
+                network_bin_value = network_addr_value.replace(':', '').zfill(32)
+                network_bin_grouped = ' '.join([network_bin_value[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), network_bin_grouped))
 
             if ipv6_info.get("broadcast_address"):
-                broadcast_addr = ipv6_info["broadcast_address"]
-                broadcast_bin = broadcast_addr.replace(':', '').zfill(32)
-                broadcast_bin_grouped = ' '.join([broadcast_bin[i:i + 4] for i in range(0, 32, 4)])
+                broadcast_addr_value = ipv6_info["broadcast_address"]
+                broadcast_bin_value = broadcast_addr_value.replace(':', '').zfill(32)
+                broadcast_bin_grouped = ' '.join([broadcast_bin_value[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=(_("broadcast_address"), broadcast_bin_grouped))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
