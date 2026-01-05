@@ -177,7 +177,7 @@
         "zh": "一键导出",
         "zh_tw": "一鍵匯出",
         "en": "One-Click Export",
-        "ja": "ワンクリックエクスポート"
+        "ja": "エクスポート"
     },
     "select_export_directory": {
         "zh": "选择导出目录",
@@ -726,10 +726,10 @@
         "ja": "利用可能数"
     },
     "prefix_length": {
-        "zh": "前缀长度",
-        "zh_tw": "前綴長度",
-        "en": "Prefix Length",
-        "ja": "プレフィックス長"
+        "zh": "前缀",
+        "zh_tw": "前綴",
+        "en": "Prefix",
+        "ja": "プレフィックス"
     },
     "app_name": {
         "zh": "子网规划师",
@@ -806,7 +806,7 @@
     "usable_hosts": {
         "zh": "可用主机数",
         "en": "Usable Hosts",
-        "ja": "利用可能なホスト数",
+        "ja": "利用可能数",
         "zh_tw": "可用主机数"
     },
     "address_format": {
@@ -1346,19 +1346,19 @@
     "test_success_message": {
         "zh": "测试正确信息",
         "en": "Test Success Message",
-        "ja": "成功メッセージのテスト",
+        "ja": "成功テスト",
         "zh_tw": "测试正确信息"
     },
     "test_error_message": {
         "zh": "测试错误信息",
         "en": "Test Error Message",
-        "ja": "エラーメッセージのテスト",
+        "ja": "エラーテスト",
         "zh_tw": "测试错误信息"
     },
     "test_long_text_message": {
         "zh": "测试长文本信息",
-        "en": "Test Long Text Message",
-        "ja": "長いテキストメッセージのテスト",
+        "en": "Test Long Message",
+        "ja": "長文テスト",
         "zh_tw": "测试长文本信息"
     },
     "test_mixed_language": {
@@ -1370,13 +1370,13 @@
     "hide_info_bar": {
         "zh": "隐藏信息栏",
         "en": "Hide Info Bar",
-        "ja": "情報バーを非表示",
+        "ja": "情報バー隠す",
         "zh_tw": "隐藏信息栏"
     },
     "clear_subnet_split": {
         "zh": "清空子网切分",
         "en": "Clear Subnet Split",
-        "ja": "サブネット分割をクリア",
+        "ja": "サブネットクリア",
         "zh_tw": "清空子网切分"
     },
     "function_debug": {
@@ -2043,7 +2043,7 @@
         "zh": "可用地址数",
         "zh_tw": "可用位址數",
         "en": "Available Addresses",
-        "ja": "利用可能なアドレス数"
+        "ja": "利用可能数"
     },
     "host_address_range": {
         "zh": "主机地址范围",
@@ -2190,10 +2190,10 @@
         "zh_tw": "无法为"
     },
     "with_prefix_length": {
-        "zh": "创建前缀长度为",
-        "en": "with prefix length",
-        "ja": "プレフィックス長",
-        "zh_tw": "创建前缀长度为"
+        "zh": "创建前缀为",
+        "en": "with prefix",
+        "ja": "プレフィックス",
+        "zh_tw": "创建前缀为"
     },
     "failed_to_create_subnet": {
         "zh": "创建子网失败",

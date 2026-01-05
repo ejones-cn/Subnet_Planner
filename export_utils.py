@@ -38,6 +38,7 @@ from reportlab.platypus import (  # type: ignore
     Image as RLImage,
     PageBreak,
     NextPageTemplate,
+    KeepTogether,
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
 from reportlab.pdfbase import pdfmetrics  # type: ignore
@@ -66,16 +67,17 @@ TABLE_COMMON_STYLE = [
     ("BACKGROUND", (0, 1), (-1, -1), "#f8f9fa"),
     ("ROWBACKGROUNDS", (0, 1), (-1, -1), ["white", "#f0f4f8"]),
     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ("LEFTPADDING", (0, 0), (-1, -1), 8),
-    ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-    ("TOPPADDING", (0, 1), (-1, -1), 6),
-    ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+    ("LEFTPADDING", (0, 0), (-1, -1), 2),
+    ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+    ("TOPPADDING", (0, 0), (-1, -1), 2),
+    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
 ]
 
 HEADER_STYLE = [
     ("FONTSIZE", (0, 0), (-1, 0), 11),
-    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-    ("TOPPADDING", (0, 0), (-1, 0), 8),
+    ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
+    ("BOTTOMPADDING", (0, 0), (-1, 0), 4),
+    ("TOPPADDING", (0, 0), (-1, 0), 4),
 ]
 
 K2V_HEADERS = ["项目", "值"]
@@ -137,8 +139,9 @@ class ExportUtils:
         """
         table_cols = len(table_data[0]) if table_data else 0
         max_col_widths = [0] * table_cols
-        min_col_width = 50
+        min_col_width = 60  # 调整最小列宽
 
+        # 计算每列的最大内容宽度
         for row in table_data:
             for col_idx, cell in enumerate(row):
                 if hasattr(cell, 'getPlainText'):
@@ -148,32 +151,84 @@ class ExportUtils:
                 else:
                     text = str(cell)
 
+                # 更精确的字符宽度计算，确保足够容纳内容
                 text_width = 0
                 for char in text:
                     if ord(char) > 127:
-                        # 中文、日文等非ASCII字符使用更大的宽度
-                        text_width += 14
+                        # 中文、日文等非ASCII字符使用12宽度
+                        text_width += 12
                     else:
-                        # ASCII字符使用更合理的宽度，英文数字宽度约为中文的一半
+                        # ASCII字符使用8宽度，确保足够容纳英文字母和数字
                         text_width += 8
-
-                text_width += 24
+                text_width += 15  # 调整额外边距，确保有足够空间
 
                 if text_width > max_col_widths[col_idx]:
                     max_col_widths[col_idx] = text_width
 
+        # 确保最小列宽
         for i, width in enumerate(max_col_widths):
             if width < min_col_width:
                 max_col_widths[i] = min_col_width
 
+        # 计算总宽度和比例
         total_width = sum(max_col_widths)
+        final_widths = []
 
-        if total_width > table_width:
-            scale_factor = table_width / total_width
-            for i, width in enumerate(max_col_widths):
-                max_col_widths[i] = width * scale_factor
+        # 收集所有数据行的内容宽度，不仅仅是表头
+        data_col_widths = [0] * table_cols
+        for row_idx, row in enumerate(table_data):
+            if row_idx == 0:  # 跳过表头，只考虑数据行
+                continue
+            for col_idx, cell in enumerate(row):
+                if hasattr(cell, 'getPlainText'):
+                    text = cell.getPlainText()
+                elif hasattr(cell, 'text'):
+                    text = cell.text
+                else:
+                    text = str(cell)
+                
+                # 计算数据行内容宽度
+                text_width = 0
+                for char in text:
+                    if ord(char) > 127:
+                        text_width += 12
+                    else:
+                        text_width += 8
+                text_width += 15
+                
+                if text_width > data_col_widths[col_idx]:
+                    data_col_widths[col_idx] = text_width
 
-        return max_col_widths
+        if total_width > 0:
+            # 结合表头和数据行的宽度，计算最终列宽
+            combined_widths = [max(max_col_widths[i], data_col_widths[i]) for i in range(table_cols)]
+            
+            # 先分配最小宽度
+            remaining_width = table_width
+            for i in range(table_cols):
+                final_widths.append(min_col_width)
+                remaining_width -= min_col_width
+            
+            # 计算每列可分配的额外宽度，基于实际内容（表头+数据行的最大值）
+            if remaining_width > 0:
+                # 计算各列超出最小宽度的部分
+                extra_widths = [max(0, combined_widths[i] - min_col_width) for i in range(table_cols)]
+                total_extra = sum(extra_widths)
+                
+                if total_extra > 0:
+                    # 按比例分配额外宽度
+                    for i in range(table_cols):
+                        if extra_widths[i] > 0:
+                            extra = (extra_widths[i] / total_extra) * remaining_width
+                            final_widths[i] += extra
+                        # 对于数据行内容很少的列，限制最大宽度
+                        if data_col_widths[i] < min_col_width * 1.5:
+                            final_widths[i] = min(final_widths[i], min_col_width * 1.5)
+        else:
+            # 平均分配宽度
+            final_widths = [table_width / table_cols] * table_cols
+
+        return final_widths
 
     def _is_k2v_headers(self, headers):
         return len(headers) == 2 and headers[0] == translate("item") and headers[1] == translate("value")
@@ -197,12 +252,6 @@ class ExportUtils:
             else:
                 valid.append(width)
 
-        # 确保总宽度接近表格可用宽度
-        total = sum(valid)
-        if total > 0:
-            scale_factor = table_width / total
-            valid = [w * scale_factor for w in valid]
-
         return valid
 
     def _get_table_style(self, table_colors, has_chinese_font):
@@ -211,11 +260,13 @@ class ExportUtils:
             ("BACKGROUND", (0, 0), (-1, 0), table_colors["header_bg"]),
             ("TEXTCOLOR", (0, 0), (-1, 0), table_colors["header_text"]),
             ("FONTNAME", (0, 0), (-1, 0), header_font),
-            ("BOX", (0, 0), (-1, -1), 1.5, table_colors["box"]),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            # 使用GRID代替BOX，避免重复线条
+            ("GRID", (0, 0), (-1, -1), 1, "#bdc3c7"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ]
-        return TableStyle(style + TABLE_COMMON_STYLE + HEADER_STYLE + [("WORDWRAP", (0, 0), (-1, -1), False)])
+        # 只添加必要的样式，避免与TABLE_COMMON_STYLE冲突
+        return TableStyle(style + HEADER_STYLE + [("WORDWRAP", (0, 0), (-1, -1), False)])
 
     def _prepare_export_data(self, data_source):
         """准备导出数据
@@ -627,6 +678,10 @@ class ExportUtils:
             fontName="ChineseFont" if self.has_chinese_font else "Helvetica",
             fontSize=10,
             alignment=TA_CENTER,
+            wordWrap="None",  # 禁用自动换行
+            leading=12,  # 设置行间距为12，确保垂直居中
+            spaceBefore=0,
+            spaceAfter=0,
         )
 
         elements.append(Paragraph(data_source["pdf_title"], title_style))
@@ -708,7 +763,9 @@ class ExportUtils:
                 elements.append(Spacer(1, 20))
         
         # 显示切分段信息或已分配子网信息
-        elements.append(Paragraph(data_source["main_name"], heading2_style))
+        main_heading = Paragraph(data_source["main_name"], heading2_style)
+        # 准备KeepTogether的内容列表
+        keep_together_main = [main_heading]
 
         # 特殊处理：子网切分PDF的切分段信息表格
         if data_source["main_name"] == translate("split_segment_info"):
@@ -721,8 +778,8 @@ class ExportUtils:
             for values in main_data:
                 key = str(values[0]) if values[0] is not None else ""
                 value = str(values[1]) if values[1] is not None else ""
-                # 只保留非空键和不需要移除的键
-                if key and key not in columns_to_remove:
+                # 只保留非空键和不需要移除的键，同时移除虚线列
+                if key and key not in columns_to_remove and not all(c == '-' for c in key):
                     filtered_data[key] = value
             
             # 转置：将键作为表头，值作为一行
@@ -769,15 +826,76 @@ class ExportUtils:
 
             valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols)
 
-            main_table = Table(main_table_data, colWidths=valid_col_widths, repeatRows=1)
-            main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
-            elements.append(main_table)
-        else:
-            elements.append(Paragraph(f"{translate('no')}{data_source['main_name']}", normal_style))
+            # 动态调整表格单元格的字体大小
+            adjusted_table_data = []
+            for row_idx, row in enumerate(main_table_data):
+                adjusted_row = []
+                for col_idx, cell in enumerate(row):
+                    # 获取当前单元格的文本内容
+                    if hasattr(cell, 'getPlainText'):
+                        text = cell.getPlainText()
+                    elif hasattr(cell, 'text'):
+                        text = cell.text
+                    else:
+                        text = str(cell)
 
+                    # 计算文本宽度
+                    text_width = 0
+                    for char in text:
+                        if ord(char) > 127:
+                            text_width += 10
+                        else:
+                            text_width += 5
+                    text_width += 8
+
+                    # 初始字号
+                    font_size = 10
+                    if row_idx == 0:  # 表头使用稍大的字号
+                        font_size = 11
+                    min_font_size = 8
+
+                    # 根据列宽调整字号，确保内容不换行
+                    column_width = valid_col_widths[col_idx]
+                    # 使用更严格的判断条件，确保内容能够完全容纳
+                    if text_width > column_width * 0.9:  # 当文本宽度超过列宽的90%时，就缩小字号
+                        # 计算合适的字号，确保内容能够完全显示
+                        scale_factor = (column_width * 0.95) / text_width
+                        # 应用缩放因子，确保字号足够小以容纳内容
+                        font_size = font_size * scale_factor
+                        # 确保不小于最小字号
+                        font_size = max(font_size, min_font_size)
+
+                    # 创建自定义的ParagraphStyle，包含动态计算的字体大小和禁用自动换行
+                    custom_style = ParagraphStyle(
+                        f"CustomStyle_{row_idx}_{col_idx}",
+                        parent=table_text_style,
+                        fontSize=font_size,
+                        wordWrap="None"  # 明确禁用自动换行
+                    )
+
+                    # 使用自定义样式创建新的Paragraph对象
+                    if hasattr(cell, 'getPlainText'):
+                        adjusted_cell = Paragraph(text, custom_style)
+                    else:
+                        adjusted_cell = Paragraph(str(cell), custom_style)
+                    
+                    adjusted_row.append(adjusted_cell)
+                adjusted_table_data.append(adjusted_row)
+
+            main_table = Table(adjusted_table_data, colWidths=valid_col_widths, repeatRows=1)
+            main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
+            keep_together_main.append(main_table)
+        else:
+            keep_together_main.append(Paragraph(f"{translate('no')}{data_source['main_name']}", normal_style))
+        
+        # 将标题和表格包装在KeepTogether中
+        elements.append(KeepTogether(keep_together_main))
         elements.append(Spacer(1, 20))
 
-        elements.append(Paragraph(data_source["remaining_name"], heading2_style))
+        # 显示剩余网段信息
+        remaining_heading = Paragraph(data_source["remaining_name"], heading2_style)
+        # 准备KeepTogether的内容列表
+        keep_together_remaining = [remaining_heading]
         remaining_table_data = [[Paragraph(h, table_text_style) for h in remaining_headers]]
         for item in data_source["remaining_tree"].get_children():
             values = data_source["remaining_tree"].item(item, "values")
@@ -804,11 +922,70 @@ class ExportUtils:
 
             valid_col_widths = self._get_col_widths(remaining_table_data, table_width, col_widths, table_cols)
 
-            remaining_table = Table(remaining_table_data, colWidths=valid_col_widths, repeatRows=1)
+            # 动态调整剩余网段表格单元格的字体大小
+            adjusted_remaining_data = []
+            for row_idx, row in enumerate(remaining_table_data):
+                adjusted_row = []
+                for col_idx, cell in enumerate(row):
+                    # 获取当前单元格的文本内容
+                    if hasattr(cell, 'getPlainText'):
+                        text = cell.getPlainText()
+                    elif hasattr(cell, 'text'):
+                        text = cell.text
+                    else:
+                        text = str(cell)
+
+                    # 计算文本宽度
+                    text_width = 0
+                    for char in text:
+                        if ord(char) > 127:
+                            text_width += 10
+                        else:
+                            text_width += 5
+                    text_width += 8
+
+                    # 初始字号
+                    font_size = 10
+                    if row_idx == 0:  # 表头使用稍大的字号
+                        font_size = 11
+                    min_font_size = 8
+
+                    # 根据列宽调整字号，确保内容不换行
+                    column_width = valid_col_widths[col_idx]
+                    # 使用更严格的判断条件，确保内容能够完全容纳
+                    if text_width > column_width * 0.9:  # 当文本宽度超过列宽的90%时，就缩小字号
+                        # 计算合适的字号，确保内容能够完全显示
+                        scale_factor = (column_width * 0.95) / text_width
+                        # 应用缩放因子，确保字号足够小以容纳内容
+                        font_size = font_size * scale_factor
+                        # 确保不小于最小字号
+                        font_size = max(font_size, min_font_size)
+
+                    # 创建自定义的ParagraphStyle，包含动态计算的字体大小和禁用自动换行
+                    custom_style = ParagraphStyle(
+                        f"CustomRemainingStyle_{row_idx}_{col_idx}",
+                        parent=table_text_style,
+                        fontSize=font_size,
+                        wordWrap="None"  # 明确禁用自动换行
+                    )
+
+                    # 使用自定义样式创建新的Paragraph对象
+                    if hasattr(cell, 'getPlainText'):
+                        adjusted_cell = Paragraph(text, custom_style)
+                    else:
+                        adjusted_cell = Paragraph(str(cell), custom_style)
+                    
+                    adjusted_row.append(adjusted_cell)
+                adjusted_remaining_data.append(adjusted_row)
+
+            remaining_table = Table(adjusted_remaining_data, colWidths=valid_col_widths, repeatRows=1)
             remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_chinese_font))
-            elements.append(remaining_table)
+            keep_together_remaining.append(remaining_table)
         else:
-            elements.append(Paragraph(f"{translate('no')}{data_source['remaining_name']}", normal_style))
+            keep_together_remaining.append(Paragraph(f"{translate('no')}{data_source['remaining_name']}", normal_style))
+        
+        # 将标题和表格包装在KeepTogether中
+        elements.append(KeepTogether(keep_together_remaining))
 
         # 添加网段分布图（对子网切分和子网规划功能，放在剩余网段表之后）
         chart_data = data_source.get("chart_data")

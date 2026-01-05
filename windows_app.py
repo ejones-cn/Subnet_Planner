@@ -3729,7 +3729,7 @@ class IPSubnetSplitterApp:
             # 切分网段
             self.split_tree.insert("", tk.END, values=(_("split_segment"), result["split_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 == 0 else "even",))
+            self.split_tree.insert("", tk.END, values=(("-" * 10), ("-" * 20)), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
 
             # 添加切分后的网段信息
@@ -5423,7 +5423,7 @@ class IPSubnetSplitterApp:
         self.test_dialog.focus_force()
 
         # 计算对话框居中显示的位置（相对于主窗口）
-        dialog_width = 400
+        dialog_width = 500  # 加大窗体宽度，适应不同语言
         dialog_height = 550  # 增加对话框高度，确保所有控件能完整显示
 
         # 获取主窗口的位置和大小
@@ -5466,7 +5466,8 @@ class IPSubnetSplitterApp:
 
         # 按钮样式
         button_style = "TButton"
-        button_width = 15
+        button_width = 20  # 其他按钮宽度小一些
+        original_button_width = 15  # 应用主题和关闭按钮保持原来宽度
 
         # 第一行按钮
         success_btn = ttk.Button(
@@ -5605,9 +5606,9 @@ class IPSubnetSplitterApp:
                 # 出错时恢复到默认主题
                 self.style.theme_use("vista")
 
-        # 创建应用主题按钮
+        # 创建应用主题按钮 - 使用原来宽度
         theme_switch_btn = ttk.Button(
-            theme_frame, text=_('apply_theme'), width=button_width, style=button_style, command=switch_theme
+            theme_frame, text=_('apply_theme'), width=original_button_width, style=button_style, command=switch_theme
         )
         theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
 
@@ -5633,9 +5634,9 @@ class IPSubnetSplitterApp:
         close_frame.grid(row=5, column=0, sticky=tk.EW, pady=(15, 0))
         close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
 
-        # 添加关闭按钮到右下角
+        # 添加关闭按钮到右下角 - 使用原来宽度
         close_btn = ttk.Button(
-            close_frame, text=_('close'), width=button_width, style=button_style, command=self.close_test_dialog
+            close_frame, text=_('close'), width=original_button_width, style=button_style, command=self.close_test_dialog
         )
         close_btn.grid(row=0, column=1, padx=5)
 
