@@ -47,6 +47,8 @@ from version import get_version
 # 国际化模块
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
 
+# 导入样式管理器（将在运行时导入，避免循环依赖）
+
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
 
@@ -130,11 +132,11 @@ class ColoredNotebook(ttk.Frame):
         self.light_pink_style = f"LightPink{self.unique_id}.TFrame"
 
         # 初始化这些样式
-        self.style.configure(self.light_blue_style, background="#e3f2fd")
-        self.style.configure(self.light_green_style, background="#e8f5e9")
-        self.style.configure(self.light_orange_style, background="#fff3e0")
-        self.style.configure(self.light_purple_style, background="#f3e5f5")
-        self.style.configure(self.light_pink_style, background="#fce4ec")
+        # self.style.configure(self.light_blue_style, background="#e3f2fd")
+        # self.style.configure(self.light_green_style, background="#e8f5e9")
+        # self.style.configure(self.light_orange_style, background="#fff3e0")
+        # self.style.configure(self.light_purple_style, background="#f3e5f5")
+        # self.style.configure(self.light_pink_style, background="#fce4ec")
 
         # 颜色映射字典，用于优化重复的条件判断
         self.color_styles = {
@@ -213,7 +215,7 @@ class ColoredNotebook(ttk.Frame):
             active_color = self.mouse_down_colors.get(color, "#e1bee7")
             # 获取对应的样式名称
             style_name = self.color_styles.get(color, self.light_blue_style)
-            self.style.configure(style_name, background=active_color)
+            # self.style.configure(style_name, background=active_color)
 
     def _on_tab_mouse_up(self, button, color):
         """当鼠标释放标签页时，恢复内容区域背景色为激活状态颜色"""
@@ -222,7 +224,7 @@ class ColoredNotebook(ttk.Frame):
             # 根据标签颜色设置内容区域背景色为激活状态颜色（使用更亮的颜色）
             active_color = self.mouse_up_colors.get(color, "#ce93d8")
             style_name = self.color_styles.get(color, self.light_blue_style)
-            self.style.configure(style_name, background=active_color)
+            # self.style.configure(style_name, background=active_color)
 
     def _update_background_to_result_frame_color(self):
         """更新标签栏背景色以匹配result_frame"""
@@ -279,12 +281,8 @@ class ColoredNotebook(ttk.Frame):
         tab = {"label": label, "content": content_frame, "color": color, "button": None}
 
         # 从样式管理器获取当前字体设置
-        from style_manager import get_current_font_settings
+        from style_manager import get_current_font_settings, get_style_manager
         font_family, font_size = get_current_font_settings()
-        
-        # 创建标签按钮 - 移除边框和间距，使标签栏更好地融入背景
-        # 设置初始样式参数
-        from style_manager import get_style_manager
         style_manager = get_style_manager()
         tab_width = style_manager.get_tab_width() if style_manager else 10
         
@@ -343,7 +341,7 @@ class ColoredNotebook(ttk.Frame):
         """选中一个标签"""
         if tab_index < 0 or tab_index >= len(self.tabs):
             return
-        
+
         from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
 
@@ -769,69 +767,6 @@ class IPSubnetSplitterApp:
         # 执行切分，设置from_history=True，不记入历史
         self.execute_split(from_history=True)
 
-    # def update_planning_history_tree(self):
-    #     """更新子网规划历史记录列表"""
-    #     # 清空现有历史记录
-    #     for item in self.planning_history_tree.get_children():
-    #         self.planning_history_tree.delete(item)
-    #
-    #     # 重新插入所有历史记录
-    #     for index, history_record in enumerate(self.planning_history_records, 1):
-    #         # 格式化记录内容
-    #         if history_record['action_type'] == "初始状态":
-    #             base_record = f"{index}. 初始状态"
-    #         elif history_record['action_type'].startswith("删除子网") or history_record['action_type'].startswith("添加子网"):
-    #             # 对于删除和添加操作，只显示操作本身的信息，不显示所有子网
-    #             base_record = f"{index}. {history_record['action_type']}"
-    #         else:
-    #             base_record = f"{index}. {history_record['action_type']}: {history_record['req_str']}"
-    #         # 为当前步骤添加明显标记
-    #         if index - 1 == self.current_history_index:
-    #             formatted_record = f"→ {base_record}"
-    #             tags = ("even" if index % 2 == 0 else "odd", "current")
-    #             formatted_record = f"  {base_record}"
-    #             tags = ("even" if index % 2 == 0 else "odd",)
-    #         # 插入历史记录
-    #         self.planning_history_tree.insert(
-    #             "",
-    #             tk.END,
-    #             values=(formatted_record,),
-    #             tags=tags
-    #         )
-
-    # def update_current_operation_indicator(self):
-    #     """更新当前操作记录的指示"""
-    #     # 更新历史记录树，显示当前操作的指示
-    #     self.update_planning_history_tree()
-
-    # def reexecute_planning_from_history(self, event):
-    #     """从历史记录重新执行子网规划"""
-    #     # 获取选中的历史记录（双击事件会自动选择）
-    #     selected_items = self.planning_history_tree.selection()
-    #     if not selected_items:
-    #         return
-    #     # 获取选中项的索引
-    #     selected_item = selected_items[0]
-    #     # 获取选中项在树中的索引
-    #     item_index = self.planning_history_tree.index(selected_item)
-    #     # 获取对应的历史记录
-    #     if 0 <= item_index < len(self.planning_history_records):
-    #         history_record = self.planning_history_records[item_index]
-    #         # 更新父网段输入框
-    #         self.planning_parent_entry.delete(0, tk.END)
-    #         self.planning_parent_entry.insert(0, history_record['parent'])
-    #         # 清空现有子网需求
-    #         for item in self.requirements_tree.get_children():
-    #             self.requirements_tree.delete(item)
-    #         # 添加历史记录中的子网需求
-    #         for i, (name, hosts) in enumerate(history_record['requirements']):
-    #             tags = ("even",) if i % 2 == 0 else ("odd",)
-    #             self.requirements_tree.insert("", tk.END, values=("", name, hosts), tags=tags)
-    #         # 更新序号和斑马条纹
-    #         self.update_requirements_tree_zebra_stripes()
-    #         # 执行子网规划，设置from_history=True，不记入历史
-    #         self.execute_subnet_planning(from_history=True)
-
     def save_current_state(self, action_type):
         """保存当前状态到操作记录中
 
@@ -1197,7 +1132,7 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(2, weight=0)
         input_frame.grid_rowconfigure(3, weight=0, minsize=0)
 
-        # 导入样式管理器函数获取当前字体设置
+        # 获取当前字体设置
         from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
 
@@ -1661,17 +1596,11 @@ class IPSubnetSplitterApp:
         # 添加滚动条，确保只作用于表格，位于表格右侧
         self.pool_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
 
-        # 使用通用方法创建带自动隐藏滚动条的Treeview
-        # self.create_scrollable_treeview(history_frame, self.pool_tree, self.pool_scrollbar)
-
-        # 直接创建Treeview和滚动条，不使用自动隐藏功能
+        # 直接创建Treeview和滚动条
         self.pool_tree.grid(row=0, column=0, sticky=tk.NSEW)
         self.pool_scrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.pool_scrollbar.config(command=self.pool_tree.yview)
         self.pool_tree.config(yscrollcommand=self.pool_scrollbar.set)
-
-        # 移除双击事件绑定，用户不能直接选择历史记录，只能通过撤销/重做操作
-        # self.planning_history_tree.bind("<Double-1>", self.reexecute_planning_from_history)
 
         inner_frame.grid_rowconfigure(0, weight=1)
         inner_frame.grid_columnconfigure(0, weight=0)  # 按钮列，固定宽度
@@ -2021,19 +1950,14 @@ class IPSubnetSplitterApp:
         self.planning_chart_canvas.bind("<Configure>", self.on_planning_chart_resize)
         
         # 为规划模块添加图表标签页
-        self.planning_notebook.add_tab(_("distribution_chart"), self.planning_chart_frame, "#f3e5f5")  # 浅紫色
+        self.planning_notebook.add_tab(_("distribution_chart"), self.planning_chart_frame, "#f3e5f5")
 
         # 添加窗口大小变化事件处理，确保表格能自适应宽度
         self.planning_notebook.content_area.bind('<Configure>', lambda e: self.resize_tables())
 
         # 为规划模块表格添加空行或示例数据，显示斑马条纹效果
-        # 子网需求表格 - 保留示例数据，确保有数据
-        # 已分配子网表格 - 初始化时不添加空行
         for item in self.allocated_tree.get_children():
             self.allocated_tree.delete(item)
-        # 删除了初始化时添加10行空行的代码
-
-        # 规划剩余网段表格 - 初始化时不添加空行
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
 
@@ -2639,7 +2563,7 @@ class IPSubnetSplitterApp:
             # 检查重复性（同时检查两张表）
             if name in existing_names:
                 errors.append({"row": row, "name": name, "hosts": hosts,
-                              "error": _("subnet_already_exists")})
+                              "error": _("subnet_already_exists", name=name)})
                 continue
 
             # 添加到已存在名称集合中，避免同批次重复
@@ -2943,6 +2867,32 @@ class IPSubnetSplitterApp:
             self.root.clipboard_append(cell_data)
             self.show_result(_("copied_to_clipboard"), keep_data=True)
 
+    def _center_dialog(self, dialog):
+        """将对话框居中显示在主窗口中"""
+        dialog.update_idletasks()
+        dialog_width = dialog.winfo_width()
+        dialog_height = dialog.winfo_height()
+
+        root_x = self.root.winfo_rootx()
+        root_y = self.root.winfo_rooty()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+
+        dialog_x = root_x + (root_width - dialog_width) // 2
+        dialog_y = root_y + (root_height - dialog_height) // 2
+
+        dialog.geometry(f"+{dialog_x}+{dialog_y}")
+        dialog.deiconify()
+
+    def _set_dialog_focus(self, dialog, ok_btn):
+        """设置对话框焦点"""
+        def set_focus():
+            dialog.lift()
+            dialog.focus_force()
+            if ok_btn:
+                ok_btn.focus_force()
+        dialog.after_idle(set_focus)
+
     def show_custom_dialog(self, title, message, dialog_type="info"):
         """显示自定义的居中对话框，支持info、error、warning类型"""
         result = None
@@ -3003,35 +2953,10 @@ class IPSubnetSplitterApp:
             ok_btn.focus_set()
 
         # 计算并设置对话框居中位置
-        dialog.update_idletasks()
-        dialog_width = dialog.winfo_width()
-        dialog_height = dialog.winfo_height()
-
-        # 获取主窗口在屏幕上的绝对位置和尺寸
-        root_x = self.root.winfo_rootx()
-        root_y = self.root.winfo_rooty()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-
-        # 计算对话框在主窗口中心的坐标
-        dialog_x = root_x + (root_width - dialog_width) // 2
-        dialog_y = root_y + (root_height - dialog_height) // 2
-
-        # 设置对话框位置
-        dialog.geometry(f"+{dialog_x}+{dialog_y}")
-
-        # 显示对话框并设置焦点
-        dialog.deiconify()
+        self._center_dialog(dialog)
 
         # 在对话框显示后强制设置焦点
-        def set_focus():
-            dialog.lift()  # 确保对话框在最上层
-            dialog.focus_force()  # 强制设置对话框为焦点
-            if 'ok_btn' in locals():
-                ok_btn.focus_force()  # 强制设置确定按钮为焦点
-
-        # 使用after_idle确保在所有事件处理完成后再设置焦点
-        dialog.after_idle(set_focus)
+        self._set_dialog_focus(dialog, ok_btn)
 
         # 等待对话框关闭
         self.root.wait_window(dialog)
@@ -3109,29 +3034,11 @@ class IPSubnetSplitterApp:
         dialog.bind('<Return>', lambda e: on_ok())
         dialog.bind('<Escape>', lambda e: on_cancel())
 
-        dialog.update_idletasks()
-        dialog_width = dialog.winfo_width()
-        dialog_height = dialog.winfo_height()
+        # 计算并设置对话框居中位置
+        self._center_dialog(dialog)
 
-        root_x = self.root.winfo_rootx()
-        root_y = self.root.winfo_rooty()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-
-        dialog_x = root_x + (root_width - dialog_width) // 2
-        dialog_y = root_y + (root_height - dialog_height) // 2
-
-        dialog.geometry(f"+{dialog_x}+{dialog_y}")
-
-        dialog.deiconify()
-
-        def set_focus():
-            dialog.lift()  # 确保对话框在最上层
-            dialog.focus_force()  # 强制设置对话框为焦点
-            if 'ok_btn' in locals():
-                ok_btn.focus_force()  # 强制设置确定按钮为焦点
-
-        dialog.after_idle(set_focus)
+        # 在对话框显示后强制设置焦点
+        self._set_dialog_focus(dialog, ok_btn)
 
         self.root.wait_window(dialog)
 
