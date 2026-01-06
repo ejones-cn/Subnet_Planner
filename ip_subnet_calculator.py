@@ -155,7 +155,8 @@ def handle_ip_subnet_error(error):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
             invalid_octet = octet_match.group(1)
-            error_info = f"{_('invalid_octet_in_ip')} '{invalid_octet}' {_('max_3_chars_0_255_allowed')}"
+            # 使用完整翻译键和变量占位符
+            error_info = _('invalid_octet_in_ip').format(octet=invalid_octet)
 
     # 使用默认错误信息
     if not error_info:
@@ -273,7 +274,9 @@ def split_subnet(parent_cidr, split_cidr):
 
         # 检查split_net是否是parent_net的子网
         if not split_net.subnet_of(parent_net):
-            return {"error": f"{split_cidr} {_('is_not_a_subnet_of')} {parent_cidr}"}
+            # 直接使用翻译键的完整句子和变量占位符
+            error_msg = _('is_not_a_subnet_of').format(split_cidr=split_cidr, parent_cidr=parent_cidr)
+            return {"error": error_msg}
 
         # 如果父网段和切分网段相同，直接返回空列表
         if parent_net == split_net:
@@ -326,7 +329,9 @@ def _allocate_subnet(available_subnets, required):
                 subnets_gen = available.subnets(new_prefix=new_prefix)
                 new_subnet = next(subnets_gen, None)
                 if not new_subnet:
-                    return False, None, None, f"{_('cannot_create_subnet_for')} {required['name']} {_('with_prefix_length')} {new_prefix}"
+                    # 使用完整翻译键和变量占位符
+                    error_msg = _('cannot_create_subnet_for').format(name=required['name'], prefix=new_prefix)
+                    return False, None, None, error_msg
 
                 # 计算剩余子网
                 remaining = list(available.address_exclude(new_subnet))
@@ -339,7 +344,9 @@ def _allocate_subnet(available_subnets, required):
             except ValueError as e:
                 return False, None, None, f"{_('failed_to_create_subnet')}: {str(e)}"
 
-    return False, None, None, f"{_('cannot_allocate_sufficiently_large_subnet_for')} {required['name']}"
+    # 使用完整翻译键和变量占位符
+    error_msg = _('cannot_allocate_sufficiently_large_subnet_for').format(name=required['name'])
+    return False, None, None, error_msg
 
 
 def suggest_subnet_planning(parent_cidr, required_subnets):

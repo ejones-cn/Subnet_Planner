@@ -2089,10 +2089,10 @@
         "zh_tw": "实际为"
     },
     "invalid_octet_in_ip": {
-        "zh": "IP地址中八位组",
-        "en": "Invalid octet in IP",
-        "ja": "IPアドレス内の無効なオクテット",
-        "zh_tw": "IP地址中八位组"
+        "zh": "IP地址中八位组 '{octet}' 无效, 最多允许3个字符(0-255)",
+        "en": "Invalid octet '{octet}' in IP address, max 3 chars (0-255) allowed",
+        "ja": "IPアドレス内のオクテット '{octet}' は無効です、最大3文字(0-255)が許可されています",
+        "zh_tw": "IP地址中八位组 '{octet}' 无效, 最多允许3个字符(0-255)"
     },
     "must_be_less_than_or_equal_to_255": {
         "zh": "无效, 必须≤255（例如：192.168.1.1）",
@@ -2161,10 +2161,10 @@
         "zh_tw": "无效, 最多允许3个字符(0-255)"
     },
     "is_not_a_subnet_of": {
-        "zh": "不是",
-        "en": "is not a subnet of",
-        "ja": "のサブネットではありません",
-        "zh_tw": "不是"
+        "zh": "{split_cidr} 不是 {parent_cidr} 的子网",
+        "en": "{split_cidr} is not a subnet of {parent_cidr}",
+        "ja": "{split_cidr} は {parent_cidr} のサブネットではありません",
+        "zh_tw": "{split_cidr} 不是 {parent_cidr} 的子網"
     },
     "is_not_ipv4_mapped_ipv6_address": {
         "zh": "不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)",
@@ -2173,16 +2173,16 @@
         "zh_tw": "不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)"
     },
     "cannot_create_subnet_for": {
-        "zh": "无法为",
-        "en": "Cannot create subnet for",
-        "ja": "のサブネットを作成できません",
-        "zh_tw": "无法为"
+        "zh": "无法为 {name} 创建前缀为 {prefix} 的子网",
+        "en": "Cannot create subnet for {name} with prefix {prefix}",
+        "ja": "{name} のプレフィックス {prefix} のサブネットを作成できません",
+        "zh_tw": "无法为 {name} 建立前置码为 {prefix} 的子網"
     },
     "with_prefix_length": {
-        "zh": "创建前缀为",
+        "zh": "with prefix",
         "en": "with prefix",
         "ja": "プレフィックス",
-        "zh_tw": "创建前缀为"
+        "zh_tw": "with prefix"
     },
     "failed_to_create_subnet": {
         "zh": "创建子网失败",
@@ -2191,10 +2191,10 @@
         "zh_tw": "创建子网失败"
     },
     "cannot_allocate_sufficiently_large_subnet_for": {
-        "zh": "无法为",
-        "en": "Cannot allocate sufficiently large subnet for",
-        "ja": "の十分な大きさのサブネットを割り当てることができません",
-        "zh_tw": "无法为"
+        "zh": "无法为 {name} 分配足够大的子网",
+        "en": "Cannot allocate sufficiently large subnet for {name}",
+        "ja": "{name} の十分な大きさのサブネットを割り当てることができません",
+        "zh_tw": "無法為 {name} 分配足夠大的子網"
     },
     "subnet_list_cannot_be_empty": {
         "zh": "子网列表不能为空",

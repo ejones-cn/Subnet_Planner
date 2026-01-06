@@ -435,8 +435,8 @@ class IPSubnetSplitterApp:
         self.deleted_history = []
 
         # 高级工具历史记录列表
-        self.ipv4_history = ["192.168.1.1"]  # IPv4地址查询历史
-        self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]  # IPv6地址查询历史
+        self.ipv4_history = ["192.168.1.1", "10.0.0.1"]  # IPv4地址查询历史，两条初始记录
+        self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334", "fe80::1"]  # IPv6地址查询历史，两条初始记录
 
         # 图表相关属性（预声明，避免Attribute-defined-outside-init警告）
         self.planning_chart_frame = None
@@ -446,8 +446,8 @@ class IPSubnetSplitterApp:
 
         # 窗口背景色（预声明，动态更新）
         self.bg_color = None
-        self.range_start_history = ["192.168.0.1"]  # IP范围起始地址历史
-        self.range_end_history = ["192.168.30.254"]  # IP范围结束地址历史
+        self.range_start_history = ["192.168.0.1", "10.0.0.1"]  # IP范围起始地址历史，两条初始记录
+        self.range_end_history = ["192.168.30.254", "10.0.0.254"]  # IP范围结束地址历史，两条初始记录
 
         # 切分子网相关属性 - 使用deque优化历史记录管理
         self.split_parent_networks = deque(maxlen=100)
@@ -1092,20 +1092,21 @@ class IPSubnetSplitterApp:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
-        self.split_parent_networks = ["10.0.0.0/8"]  # 子网切分的父网段历史记录
-        self.split_networks = ["10.21.50.0/23"]  # 子网切分的切分段历史记录
+        self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]  # 提供两条初始记录，改善宽度计算
+        self.split_networks = ["10.21.50.0/23", "192.168.1.0/24"]  # 提供两条初始记录，改善宽度计算
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
-            values=self.split_parent_networks,
+            values=self.split_parent_networks,  # 使用包含两条记录的列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
         self.parent_entry.grid(row=1, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
-        self.parent_entry.insert(0, "10.0.0.0/8")  # 默认值
+        default_parent = "10.0.0.0/8"  # 默认父网段
+        self.parent_entry.insert(0, default_parent)  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
@@ -1115,13 +1116,14 @@ class IPSubnetSplitterApp:
         vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
-            values=self.split_networks,
+            values=self.split_networks,  # 使用包含两条记录的列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
         self.split_entry.grid(row=2, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
-        self.split_entry.insert(0, "10.21.50.0/23")  # 默认值
+        default_split = "10.21.50.0/23"  # 默认切分段
+        self.split_entry.insert(0, default_split)  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
 
         # 按钮区域 - 执行按钮，跨四行的方形样式
@@ -1441,21 +1443,22 @@ class IPSubnetSplitterApp:
         parent_frame.configure(width=250)
 
         # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
-        self.planning_parent_networks = ["10.21.48.0/20"]  # 默认父网段
+        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]  # 提供两条初始记录，改善宽度计算
 
         # 父网段下拉文本框
         ttk.Label(parent_frame, text="").pack(side=tk.LEFT, padx=(0, 0))
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
         self.planning_parent_entry = ttk.Combobox(
             parent_frame,
-            values=self.planning_parent_networks,
+            values=self.planning_parent_networks,  # 使用包含两条记录的列表
             width=16,
             font=("微软雅黑", 10),
             validate='all',
             validatecommand=vcmd,
         )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
-        self.planning_parent_entry.insert(0, "10.21.48.0/20")  # 默认值
+        default_parent = "10.21.48.0/20"  # 默认父网段
+        self.planning_parent_entry.insert(0, default_parent)  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
 
         # 需求池区域
