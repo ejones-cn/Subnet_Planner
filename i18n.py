@@ -65,10 +65,10 @@ def set_language(lang):
     设置当前语言
     
     Args:
-        lang: 语言代码，支持 "zh" (中文), "zh_tw" (繁体中文), "en" (英文) 和 "ja" (日语)
+        lang: 语言代码，支持 "zh" (简体中文), "zh_tw" (繁体中文), "en" (英文), "ja" (日语) 和 "ko" (韩语)
     """
     global _current_language
-    if lang in ["zh", "zh_tw", "en", "ja"]:
+    if lang in ["zh", "zh_tw", "en", "ja", "ko"]:
         _current_language = lang
 
 
@@ -113,5 +113,6 @@ def get_supported_languages():
         ("zh", "简体中文"),
         ("zh_tw", "繁體中文"),
         ("en", "English"),
-        ("ja", "日本語")
+        ("ja", "日本語"),
+        ("ko", "한국어")
     ]
