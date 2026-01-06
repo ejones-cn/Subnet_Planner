@@ -40,114 +40,126 @@ def handle_ip_subnet_error(error):
     """
     error_msg = str(error)
     error_info = None
+    error_type = "IPSubnet"
 
-    # 定义错误模式匹配列表, 包含错误类型、匹配模式和错误信息模板
+    # 定义错误模式匹配列表, 包含匹配函数和翻译键
     error_patterns = [
-        # (匹配函数, 英文模板, 中文模板)
-        (lambda msg: "not a valid netmask" in msg,
-         lambda m: f"'{m.split()[0]}' is not a valid subnet mask",
-         lambda m: f"'{m.split()[0]}' 不是有效的子网掩码"),
-
-        (lambda msg: "does not appear to be an IPv4 or IPv6 network" in msg,
-         lambda m: f"Invalid network address format: {m.split()[-1]}",
-         lambda m: f"无效的网络地址格式: {m.split()[-1]}"),
-
-        (lambda msg: "has host bits set" in msg,
-         lambda m: f"CIDR address has host bits set: {m.split()[0]}",
-         lambda m: f"CIDR地址包含主机位: {m.split()[0]}"),
-
-        (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL),
-         lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
-         lambda m: "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'（例如：192.168.1.1）"),
-
-        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE),
-         lambda m: f"Invalid octet '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' in IP, must be ≤ 255",
-         lambda m: f"IP地址中八位组 '{re.search(r'octet.*?(\d+)', m, re.IGNORECASE).group(1)}' 无效, 必须≤255（例如：192.168.1.1）"),
-
-
-        # 处理Only decimal digits permitted错误
-        (lambda msg: "Only decimal digits permitted" in msg,
-         lambda m: f"Invalid IP address format: {m}",
-         lambda m: "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）"),
-
-        # 处理Unexpected '/'错误
-        (lambda msg: "Unexpected '/'" in msg,
-         lambda m: "Invalid IP address format: unexpected '/' in IP address",
-         lambda m: "无效的IPv4地址格式: IP地址中包含不允许的字符'/'（例如：192.168.1.1）"),
-
-        # 处理IPv6地址错误
-        (lambda msg: "does not appear to be an IPv6 address" in msg,
-         lambda m: "Invalid IPv6 address format",
-         lambda m: "无效的IPv6地址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
-
-        (lambda msg: "at most 4 hex digits per group" in msg,
-         lambda m: "Invalid IPv6 address: at most 4 hex digits per group",
-         lambda m: "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
-
-        (lambda msg: "too many colons" in msg,
-         lambda m: "Invalid IPv6 address: too many colons",
-         lambda m: "无效的IPv6地址: 冒号数量过多（例如：2001:0db8::1）"),
-
-        # 处理Only hex digits permitted错误
-        (lambda msg: "Only hex digits permitted" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）"),
-
-        # 处理IPv4的At most 3 characters permitted错误（优先匹配IPv4错误）
-        (lambda msg: "At most 3 characters permitted" in msg,
-         lambda m: "Invalid IP address: octet too long, max 3 characters allowed",
-         lambda m: "无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）"),
-
-        # 处理IPv6的At most 4 characters permitted错误
-        (lambda msg: "At most 4 characters permitted" in msg,
-         lambda m: f"Invalid IPv6 address: group '{re.search(r"'([^']+)'", m).group(1)}' too long, max 4 hex characters allowed",
-         lambda m: f"无效的IPv6地址: 组 '{re.search(r"'([^']+)'", m).group(1)}' 过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
-
-        # 处理IPv6的At most 8 colons permitted错误
-        (lambda msg: "At most 8 colons permitted" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 冒号数量过多, 最多允许8个冒号（例如：2001:0db8::1）"),
-
-        # 处理IPv6的At most 45 characters expected错误
-        (lambda msg: "At most 45 characters expected" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）"),
-
-        # 处理其他IPv6的At most X characters permitted错误
-        (lambda msg: "At most" in msg and "characters permitted" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）"),
-
-        # 处理Trailing ':' only permitted as part of '::'错误
-        (lambda msg: "Trailing ':' only permitted as part of '::'" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）"),
-
-        # 处理Exactly 8 parts expected错误
-        (lambda msg: "Exactly 8 parts expected" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: IPv6地址需要8个部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）"),
-
-        # 处理IPv6地址部分过多或过少的错误
-        (lambda msg: "parts expected" in msg,
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: IPv6地址格式不正确（例如：2001:0db8::1）"),
-
-        # 处理IPv6地址中冒号相关的其他错误 - 更严格的匹配，只匹配IPv6特定错误
-        (lambda msg: "IPv6" in msg or ("colon" in msg.lower() and "hex" in msg.lower()),
-         lambda m: f"Invalid IPv6 address: {m}",
-         lambda m: "无效的IPv6地址: 格式错误（例如：2001:0db8::1）"),
-
-        # 处理Expected 4 octets错误（添加示例）
-        (lambda msg: "Expected 4 octets" in msg,
-         lambda m: "Invalid IP format, expected 4 octets" if not re.search(r"'([^']+)'", m) else f"Invalid IP format, expected 4 octets, got '{re.search(r"'([^']+)'", m).group(1)}'",
-         lambda m: "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）" if not re.search(r"'([^']+)'", m) else f"IP地址格式错误, 需要4个八位组, 实际为 '{re.search(r"'([^']+)'", m).group(1)}'（例如：192.168.1.1）"),
+        # (匹配函数, 翻译键)
+        (lambda msg: "not a valid netmask" in msg, 'invalid_subnet_mask'),
+        (lambda msg: "does not appear to be an IPv4 or IPv6 network" in msg, 'invalid_network_address_format'),
+        (lambda msg: "has host bits set" in msg, 'cidr_has_host_bits_set'),
+        (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL), 'invalid_ip_format_4_octets'),
+        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE), 'invalid_octet_in_ip'),
+        (lambda msg: "Only decimal digits permitted" in msg, 'invalid_ipv4_decimal_digits'),
+        (lambda msg: "Unexpected '/'" in msg, 'invalid_ipv4_unexpected_slash'),
+        (lambda msg: "does not appear to be an IPv6 address" in msg, 'invalid_ipv6_address_format'),
+        (lambda msg: "at most 4 hex digits per group" in msg, 'invalid_ipv6_hex_digits'),
+        (lambda msg: "too many colons" in msg, 'invalid_ipv6_too_many_colons'),
+        (lambda msg: "Only hex digits permitted" in msg, 'invalid_ipv6_hex_only'),
+        (lambda msg: "At most 8 colons permitted" in msg, 'invalid_ipv6_too_many_colons'),
+        (lambda msg: "At most 45 characters expected" in msg, 'invalid_ipv6_address_too_long'),
+        (lambda msg: "Trailing ':' only permitted as part of '::'" in msg, 'invalid_ipv6_trailing_colon'),
+        (lambda msg: "Exactly 8 parts expected" in msg, 'invalid_ipv6_exactly_8_parts'),
+        (lambda msg: "parts expected" in msg, 'invalid_ipv6_parts_count'),
+        (lambda msg: "At most one '::' permitted" in msg, 'invalid_ipv6_double_colon'),
+        (lambda msg: "IPv6" in msg or ("colon" in msg.lower() and "hex" in msg.lower()), 'invalid_ipv6_format'),
+        (lambda msg: "Expected 4 octets" in msg, 'invalid_ip_format_4_octets'),
+        # 处理At most X other parts with ':' in 错误，使用更通用的匹配方式
+        (lambda msg: "Expected at most" in msg, 'invalid_ipv6_parts_count'),
+        # 处理At most X characters permitted错误，按具体情况匹配
+        (lambda msg: "At most 3 characters permitted" in msg, 'invalid_ipv4_octet_too_long'),
+        (lambda msg: "At most 4 characters permitted" in msg, 'invalid_ipv6_group_too_long'),
+        (lambda msg: "At most" in msg and "characters permitted" in msg, 'invalid_ipv6_characters_limit'),
     ]
 
     # 检查错误模式
-    for match_func, en_template, zh_template in error_patterns:
+    for match_func, translation_key in error_patterns:
         if match_func(error_msg):
-            error_info = en_template(error_msg)  # 暂时使用英文模板，后面会替换为翻译函数
+            # 提取错误中的变量
+            if translation_key == 'invalid_subnet_mask':
+                # 从错误信息中提取网络掩码，去除单引号
+                try:
+                    netmask_match = re.search(r"'([^']+)'", error_msg)
+                    netmask = netmask_match.group(1) if netmask_match else error_msg.split()[0].strip("'")
+                    error_info = _(translation_key).format(netmask=netmask)
+                except (AttributeError, IndexError):
+                    error_info = _(translation_key).format(netmask="invalid_netmask")
+            elif translation_key == 'invalid_network_address_format':
+                # 从错误信息中提取网络地址
+                try:
+                    network_match = re.search(r"'([^']+)'", error_msg)
+                    network = network_match.group(1) if network_match else "invalid_network"
+                    error_info = _(translation_key).format(network=network)
+                except AttributeError:
+                    error_info = _(translation_key).format(network="invalid_network")
+            elif translation_key == 'cidr_has_host_bits_set':
+                # 从错误信息中提取CIDR地址
+                try:
+                    cidr_match = re.search(r"'([^']+)'", error_msg)
+                    cidr = cidr_match.group(1) if cidr_match else error_msg.split()[0]
+                    error_info = _(translation_key).format(cidr=cidr)
+                except (AttributeError, IndexError):
+                    error_info = _(translation_key).format(cidr="invalid_cidr")
+            elif translation_key == 'invalid_ipv6_group_too_long':
+                # 处理IPv6组过长错误
+                try:
+                    group_match = re.search(r"'([^']+)'", error_msg)
+                    group = group_match.group(1) if group_match else "invalid_group"
+                    error_info = _(translation_key).format(group=group)
+                except AttributeError:
+                    # 如果没有找到引号，使用默认值
+                    error_info = _(translation_key).format(group="invalid_group")
+            elif translation_key == 'invalid_ipv6_double_colon':
+                # 提取错误中的变量：address
+                address = None
+                try:
+                    # 提取地址
+                    address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
+                    if address_match:
+                        address = address_match.group(1)
+                    
+                    # 格式化错误信息
+                    error_info = _(translation_key, address=address if address else error_msg)
+                except Exception:
+                    # 异常情况下使用默认值
+                    error_info = _(translation_key, address=error_msg)
+            elif translation_key == 'invalid_ipv6_parts_count':
+                # 提取错误中的变量：max_parts和address
+                max_parts = None
+                address = None
+                try:
+                    # 提取最大部分数
+                    max_parts_match = re.search(r'Expected at most (\d+)', error_msg)
+                    if max_parts_match:
+                        max_parts = max_parts_match.group(1)
+                    
+                    # 提取地址
+                    address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
+                    if address_match:
+                        address = address_match.group(1)
+                    
+                    # 格式化错误信息
+                    error_info = _(translation_key, max_parts=max_parts if max_parts else '7', address=address if address else error_msg)
+                except Exception:
+                    # 异常情况下使用默认值
+                    error_info = _(translation_key, max_parts='7', address=error_msg)
+            elif translation_key in ['invalid_ip_format_4_octets', 'invalid_ipv4_decimal_digits', 'invalid_ipv4_unexpected_slash',
+                                    'invalid_ipv6_address_format', 'invalid_ipv6_hex_digits', 'invalid_ipv6_too_many_colons',
+                                    'invalid_ipv6_hex_only', 'invalid_ipv4_octet_too_long', 'invalid_ipv6_address_too_long',
+                                    'invalid_ipv6_characters_limit', 'invalid_ipv6_trailing_colon', 'invalid_ipv6_exactly_8_parts',
+                                    'invalid_ipv6_format']:
+                # 这些错误不需要额外变量
+                error_info = _(translation_key)
+            elif translation_key == 'invalid_octet_in_ip':
+                octet_match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
+                if octet_match:
+                    octet = octet_match.group(1)
+                    error_info = _(translation_key).format(octet=octet)
+            elif translation_key == 'invalid_ipv6_group_too_long':
+                group_match = re.search(r"'([^']+)'", error_msg)
+                if group_match:
+                    group = group_match.group(1)
+                    error_info = _(translation_key).format(group=group)
             break
 
     # 检查octet长度错误(特殊处理)
@@ -155,7 +167,6 @@ def handle_ip_subnet_error(error):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
             invalid_octet = octet_match.group(1)
-            # 使用完整翻译键和变量占位符
             error_info = _('invalid_octet_in_ip').format(octet=invalid_octet)
 
     # 使用默认错误信息
