@@ -9,7 +9,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-from i18n import get_language
+from i18n import get_language, _ as translate
 
 
 class StyleManager:
@@ -104,7 +104,7 @@ class StyleManager:
             "font": (font_family, font_size)
         }
         
-        print(f"[StyleManager] 更新样式，当前语言: {current_language}, 字体: {font_family}, 大小: {font_size}")
+        print(f"[StyleManager] {translate('updating_styles')}, {translate('current_language')}: {current_language}, {translate('font')}: {font_family}, {translate('size')}: {font_size}")
         
         # 1. 统一设置基本控件的字体样式
         self.style.configure("TLabel", **base_font_style)
@@ -291,7 +291,7 @@ def update_styles():
     if style_manager:
         style_manager.update_all_styles()
     else:
-        print("[StyleManager] 样式管理器未初始化")
+        print(f"[StyleManager] {translate('style_manager_not_initialized')}")
 
 
 

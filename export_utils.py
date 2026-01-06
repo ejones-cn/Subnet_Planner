@@ -80,7 +80,7 @@ HEADER_STYLE = [
     ("TOPPADDING", (0, 0), (-1, 0), 4),
 ]
 
-K2V_HEADERS = ["项目", "值"]
+K2V_HEADERS = [translate("item"), translate("value")]
 
 
 class ExportUtils:
@@ -121,10 +121,10 @@ class ExportUtils:
                 pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
                 self.has_chinese_font = True
             except (OSError, ValueError, ImportError) as e:
-                print(f"注册字体失败: {e}")
+                print(f"{translate('failed_to_register_font')}: {e}")
                 self.has_chinese_font = False
         else:
-            print("未找到可用的中文字体")
+            print(f"{translate('no_chinese_font_found')}")
             self.has_chinese_font = False
 
     def _calculate_auto_col_widths(self, table_data, table_width):

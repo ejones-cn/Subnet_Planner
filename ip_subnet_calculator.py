@@ -40,7 +40,7 @@ def handle_ip_subnet_error(error):
     """
     error_msg = str(error)
     error_info = None
-    error_type = "IPSubnet"
+    error_type = translate("ip_subnet")
 
     # 定义错误模式匹配列表, 包含匹配函数和翻译键
     error_patterns = [
