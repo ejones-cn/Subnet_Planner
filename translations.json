@@ -574,7 +574,7 @@
         "zh": "已经存在名称为 '{name}' 的子网，请使用其他名称",
         "zh_tw": "已經存在名稱為 '{name}' 的子網，請使用其他名稱",
         "en": "A subnet named '{name}' already exists, please use another name",
-        "ja": "'{name}' という名前のサブネットが既に存在します。別の名前を使用してください"
+        "ja": "'{name}' という名前のサブネットが既に存在します。"
     },
     "host_count_must_be_greater_than_0": {
         "zh": "主机数量必须大于0",
