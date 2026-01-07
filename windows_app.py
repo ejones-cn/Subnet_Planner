@@ -5457,10 +5457,15 @@ class IPSubnetSplitterApp:
 
         # 添加一键导出按钮
         one_click_export_btn = ttk.Button(
-            button_frame, text=_(
-            "one_click_export"), width=button_width, style=button_style, command=self.one_click_export
+            button_frame, text=_("one_click_export"), width=button_width, style=button_style, command=self.one_click_export
         )
-        one_click_export_btn.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+        one_click_export_btn.grid(row=3, column=0, padx=5, pady=5)
+        
+        # 添加一键PDF按钮
+        one_click_pdf_btn = ttk.Button(
+            button_frame, text=_("one_click_pdf"), width=button_width, style=button_style, command=self.one_click_pdf
+        )
+        one_click_pdf_btn.grid(row=3, column=1, padx=5, pady=5)
 
         # 主题切换部分
         theme_frame = ttk.LabelFrame(content_frame, text=_("theme_switch"), padding="10")
@@ -6108,11 +6113,34 @@ class IPSubnetSplitterApp:
         except Exception as e:
             self.show_result(_("one_click_export_failed").format(error=str(e)), error=True)
     
-    def batch_export_all_formats(self, export_dir):
-        """批量导出所有支持的格式
+    def one_click_pdf(self):
+        """一键PDF功能：自动执行规划和切分，然后只导出PDF格式的结果"""
+        try:
+            # 1. 自动执行规划
+            self.execute_subnet_planning(from_history=True)
+            
+            # 2. 自动执行切分
+            self.execute_split(from_history=True)
+            
+            # 3. 让用户选择导出目录
+            export_dir = filedialog.askdirectory(title=_("select_export_directory"))
+            if not export_dir:
+                return
+            
+            # 4. 只导出PDF格式的结果
+            self.batch_export_all_formats(export_dir, formats=['.pdf'])
+            
+            # 5. 显示成功消息
+            self.show_result(_("one_click_pdf_success").format(dir=export_dir), keep_data=True)
+        except Exception as e:
+            self.show_result(_("one_click_pdf_failed").format(error=str(e)), error=True)
+    
+    def batch_export_all_formats(self, export_dir, formats=None):
+        """批量导出所有支持的格式或指定格式
         
         Args:
             export_dir: 导出目录路径
+            formats: 要导出的格式列表，默认为所有支持的格式
         """
         import os
         from datetime import datetime
@@ -6121,10 +6149,11 @@ class IPSubnetSplitterApp:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # 支持的导出格式
-        formats = ['.pdf', '.csv', '.json', '.txt', '.xlsx']
+        default_formats = ['.pdf', '.csv', '.json', '.txt', '.xlsx']
+        export_formats = formats if formats is not None else default_formats
         
         # 导出子网切分结果
-        for fmt in formats:
+        for fmt in export_formats:
             # 准备数据
             split_data_source = {
                 "main_tree": self.split_tree,
@@ -6147,7 +6176,7 @@ class IPSubnetSplitterApp:
             self._export_data_to_format(split_file_path, split_data_source)
         
         # 导出子网规划结果
-        for fmt in formats:
+        for fmt in export_formats:
             # 准备数据
             planning_data_source = {
                 "main_tree": self.allocated_tree,
@@ -6464,6 +6493,10 @@ class IPSubnetSplitterApp:
         self.pool_scrollbar = None
         self.requirements_tree = None
         self.requirements_scrollbar = None
+        
+        # 重新初始化export_utils，确保使用当前语言的字体
+        from export_utils import ExportUtils
+        self.export_utils = ExportUtils()
         
         self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
         self.undo_delete_btn = None

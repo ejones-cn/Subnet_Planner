@@ -4,7 +4,7 @@
 import subprocess
 import os
 
-os.chdir(r"f:\trae_projects\Netsub tools")
+os.chdir(r"f:\trae_projects\Subnet_Planner")
 
 cmd = [
     r"C:\Users\ejone\AppData\Local\Programs\Python\Python314\python.exe",
@@ -47,7 +47,7 @@ print(f"返回码: {result.returncode}")
 
 if result.returncode == 0:
     print("\n打包成功！")
-    exe_path = r"f:\trae_projects\Netsub tools\dist\SubnetPlanner.exe"
+    exe_path = r"f:\trae_projects\Subnet_Planner\dist\SubnetPlanner.exe"
     if os.path.exists(exe_path):
         size_mb = os.path.getsize(exe_path) / (1024 * 1024)
         print(f"文件: {exe_path}")

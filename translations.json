@@ -231,6 +231,27 @@
         "ja": "ワンクリックエクスポートが失敗しました：{error}",
         "ko": "원클릭 내보내기 실패: {error}"
     },
+    "one_click_pdf": {
+        "zh": "一键PDF",
+        "zh_tw": "一鍵PDF",
+        "en": "One-Click PDF",
+        "ja": "ワンクリックPDF",
+        "ko": "원클릭 PDF"
+    },
+    "one_click_pdf_success": {
+        "zh": "一键PDF导出成功！导出目录：{dir}",
+        "zh_tw": "一鍵PDF匯出成功！匯出目錄：{dir}",
+        "en": "One-click PDF export succeeded! Export directory: {dir}",
+        "ja": "ワンクリックPDFエクスポートが成功しました！エクスポートディレクトリ：{dir}",
+        "ko": "원클릭 PDF 내보내기에 성공했습니다! 디렉터리 내보내기: {dir}"
+    },
+    "one_click_pdf_failed": {
+        "zh": "一键PDF导出失败：{error}",
+        "zh_tw": "一鍵PDF匯出失敗：{error}",
+        "en": "One-click PDF export failed: {error}",
+        "ja": "ワンクリックPDFエクスポートが失敗しました：{error}",
+        "ko": "원클릭 PDF 내보내기 실패: {error}"
+    },
     "parent_network_settings": {
         "zh": "父网段设置",
         "zh_tw": "父網段設定",

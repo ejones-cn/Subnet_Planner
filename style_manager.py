@@ -249,7 +249,7 @@ class StyleManager:
         # 10. 选中状态设置
         self.style.map("TTreeview", background=[("selected", "#4A6984")], foreground=[("selected", "white")])
         
-        # 11.# 设置Combobox样式
+        # 11. 设置Combobox样式
         self.style.configure("TCombobox", **base_font_style)
         self.style.map(
             "TCombobox",

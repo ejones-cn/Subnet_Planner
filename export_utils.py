@@ -88,44 +88,130 @@ class ExportUtils:
 
     def __init__(self):
         """初始化导出工具"""
-        self.has_chinese_font = False
-        self._register_chinese_fonts()
+        self.has_asian_font = False
+        self._register_asian_fonts()
 
-    def _register_chinese_fonts(self):
-        """注册中文字体供PDF导出使用"""
+    def _register_asian_fonts(self):
+        """注册亚洲字体（中文、韩语、日语）供PDF导出使用"""
         font_path = None
 
         if sys.platform == "win32":
-            font_dir = "C:\\Windows\\Fonts"
+            font_dir = r"C:\\Windows\\Fonts"
             if os.path.exists(font_dir):
+                # 包含中文、韩语、日语的通用字体候选列表
                 font_candidates = [
+                    # 韩语专用字体（添加更多韩语字体选项）
+                    ("malgun.ttf", "Malgun Gothic"),  # 标准韩语无衬线字体
+                    ("malgunbd.ttf", "Malgun Gothic Bold"),  # 加粗版
+                    ("malgunsl.ttf", "Malgun Gothic Semilight"),  # 细体版
+                    ("gulim.ttc", "Gulim"),  # 标准韩语无衬线字体
+                    ("gulimbd.ttc", "Gulim Bold"),  # 加粗版
+                    ("dotum.ttc", "Dotum"),  # 标准韩语无衬线字体
+                    ("dotumbd.ttc", "Dotum Bold"),  # 加粗版
+                    ("batang.ttc", "Batang"),  # 标准韩语衬线字体
+                    ("batangbd.ttc", "Batang Bold"),  # 加粗版
+                    
+                    # 日语专用字体
+                    ("meiryo.ttc", "Meiryo"),  # 支持日语和英文
+                    ("msgothic.ttc", "MS Gothic"),
+                    ("msmincho.ttc", "MS Mincho"),
+                    ("meiryob.ttc", "Meiryo Bold"),
+                    
+                    # 中文常用字体
+                    ("msyh.ttf", "Microsoft YaHei"),  # 支持中文和英文
                     ("simhei.ttf", "SimHei"),
                     ("simsun.ttc", "SimSun"),
-                    ("msyh.ttf", "Microsoft YaHei"),
                     ("msyhbd.ttf", "Microsoft YaHei Bold"),
                     ("msyhui.ttf", "Microsoft YaHei UI"),
                     ("stsong.ttf", "STSong"),
                     ("stheiti.ttf", "STHeiti"),
-                    ("stkaiti.ttf", "STKaiti"),
+                    ("stkaiti.ttc", "STKaiti"),
                 ]
 
-                for font_file, _unused in font_candidates:
+                # 根据当前语言优先选择对应字体
+                from i18n import get_language
+                current_lang = get_language()
+                print(f"🔍 当前语言: {current_lang}")
+                
+                # 优先选择适合当前语言的字体
+                prioritized_candidates = []
+                
+                # 确保正确识别韩语字体文件
+                korean_fonts = [
+                    "malgun.ttf", "malgunbd.ttf", "malgunsl.ttf",
+                    "batang.ttc", "batangbd.ttc", "batangche.ttc",
+                    "gulim.ttc", "gulimbd.ttc", "gulimche.ttc",
+                    "dotum.ttc", "dotumbd.ttc", "dotumche.ttc"
+                ]
+                
+                # 确保正确识别日语字体文件
+                japanese_fonts = [
+                    "meiryo.ttc", "meiryob.ttc", "meiryom.ttc",
+                    "msgothic.ttc", "msmincho.ttc", "msuigothic.ttc",
+                    "msuimincho.ttc"
+                ]
+                
+                # 确保正确识别中文字体文件
+                chinese_fonts = [
+                    "msyh.ttf", "msyhbd.ttf", "msyhl.ttf",
+                    "simhei.ttf", "simsun.ttc", "simfang.ttf",
+                    "simkai.ttf", "simli.ttf"
+                ]
+                
+                if current_lang == "ko":
+                    # 韩语优先选择韩语字体
+                    print("🔍 韩语环境，优先选择韩语字体")
+                    prioritized_candidates = [font for font in font_candidates if font[0] in korean_fonts]
+                elif current_lang == "ja":
+                    # 日语优先选择日语字体
+                    print("🔍 日语环境，优先选择日语字体")
+                    prioritized_candidates = [font for font in font_candidates if font[0] in japanese_fonts]
+                elif current_lang in ["zh", "zh_tw"]:
+                    # 中文优先选择中文字体
+                    print("🔍 中文环境，优先选择中文字体")
+                    prioritized_candidates = [font for font in font_candidates if font[0] in chinese_fonts]
+                else:
+                    # 其他语言优先选择多语言通用字体
+                    print("🔍 英文环境，优先选择多语言通用字体")
+                    prioritized_candidates = [font for font in font_candidates if font[0] in ["msyh.ttf", "meiryo.ttc", "malgun.ttf"]]
+                
+                # 添加所有候选字体作为备选
+                remaining_fonts = [font for font in font_candidates if font not in prioritized_candidates]
+                prioritized_candidates.extend(remaining_fonts)
+                
+                print(f"🔍 字体优先级列表: {[font[0] for font in prioritized_candidates]}")
+
+                # 遍历字体列表，查找可用的字体
+                for font_file, font_name in prioritized_candidates:
                     potential_path = os.path.join(font_dir, font_file)
                     if os.path.exists(potential_path):
                         font_path = potential_path
-                        if font_file.lower() == "simhei.ttf":
-                            break
+                        print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
+                        break
 
         if font_path:
             try:
+                # 先检查并删除旧的字体注册，确保新字体能被正确使用
+                if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
+                    # reportlab没有直接删除字体的方法，我们可以通过重新注册来覆盖
+                    print("🔍 已存在ChineseFont注册，将进行覆盖")
+                
+                # 始终使用"ChineseFont"作为注册的字体名称，确保所有样式都能正确使用
                 pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
-                self.has_chinese_font = True
+                self.has_asian_font = True
+                print(f"✅ 成功注册亚洲字体: {os.path.basename(font_path)} 作为 ChineseFont")
+                
+                # 额外注册一个相同的字体作为KoreanFont，确保韩语环境下也能正常使用
+                if get_language() == "ko":
+                    pdfmetrics.registerFont(TTFont("KoreanFont", font_path))
+                    print(f"✅ 同时注册为韩语专用字体: KoreanFont")
             except (OSError, ValueError, ImportError) as e:
                 print(f"{translate('failed_to_register_font')}: {e}")
-                self.has_chinese_font = False
+                traceback.print_exc()
+                self.has_asian_font = False
         else:
             print(f"{translate('no_chinese_font_found')}")
-            self.has_chinese_font = False
+            self.has_asian_font = False
 
     def _calculate_auto_col_widths(self, table_data, table_width):
         """根据内容计算自适应列宽
@@ -231,7 +317,8 @@ class ExportUtils:
         return final_widths
 
     def _is_k2v_headers(self, headers):
-        return len(headers) == 2 and headers[0] == translate("item") and headers[1] == translate("value")
+        # 更灵活的判断：如果只有两列，就认为是键值对格式
+        return len(headers) == 2
 
     def _get_col_widths(self, table_data, table_width, col_widths, num_cols):
         """获取表格列宽，确保自适应页面宽度"""
@@ -254,8 +341,8 @@ class ExportUtils:
 
         return valid
 
-    def _get_table_style(self, table_colors, has_chinese_font):
-        header_font = "ChineseFont" if has_chinese_font else "Helvetica-Bold"
+    def _get_table_style(self, table_colors, has_asian_font):
+        header_font = "ChineseFont" if has_asian_font else "Helvetica-Bold"
         style = [
             ("BACKGROUND", (0, 0), (-1, 0), table_colors["header_bg"]),
             ("TEXTCOLOR", (0, 0), (-1, 0), table_colors["header_text"]),
@@ -573,7 +660,104 @@ class ExportUtils:
         wb.save(file_path)
 
     def _export_to_pdf(self, file_path, data_source, main_data, main_headers, _remaining_data, remaining_headers):
-        """导出数据为PDF格式（支持中文）"""
+        """导出数据为PDF格式（支持中文、韩语、日语）"""
+        # 直接获取当前语言，不依赖于之前的注册
+        current_lang = get_language()
+        print(f"🔍 导出PDF时当前语言: {current_lang}")
+        
+        # 直接指定字体文件路径，确保在任何情况下都能使用正确的字体
+        # 使用双反斜杠或os.path.join避免转义序列问题
+        font_dir = r"C:\\Windows\\Fonts"
+        
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        
+        # 根据当前语言选择对应的字体列表
+        font_candidates = []
+        
+        # 扩展字体列表，确保能显示所有语言字符
+        if current_lang == "ko":
+            # 韩语字体优先列表 - 确保能显示所有韩语字符
+            font_candidates = [
+                "malgun.ttf", "malgunbd.ttf", "malgunsl.ttf",  # Malgun Gothic系列
+                "gulim.ttc", "gulimbd.ttc", "gulimche.ttc",  # Gulim系列
+                "dotum.ttc", "dotumbd.ttc", "dotumche.ttc",  # Dotum系列
+                "batang.ttc", "batangbd.ttc", "batangche.ttc"   # Batang系列
+            ]
+        elif current_lang == "ja":
+            # 日语字体优先列表
+            font_candidates = [
+                "meiryo.ttc", "meiryob.ttc", "meiryom.ttc",  # Meiryo系列
+                "msgothic.ttc", "msmincho.ttc", "msuigothic.ttc",  # MS系列
+                "msuimincho.ttc"
+            ]
+        elif current_lang in ["zh", "zh_tw"]:
+            # 中文字体优先列表
+            font_candidates = [
+                "msyh.ttf", "msyhbd.ttf", "msyhl.ttf",  # 微软雅黑系列
+                "simhei.ttf", "simsun.ttc", "simfang.ttf",  # 宋体黑体系列
+                "simkai.ttf", "simli.ttf", "simyou.ttf"  # 其他中文字体
+            ]
+        else:
+            # 默认字体列表，包含多种语言支持
+            font_candidates = [
+                "msyh.ttf", "meiryo.ttc", "malgun.ttf",  # 多语言支持字体
+                "simhei.ttf", "simsun.ttc", "msgothic.ttc"
+            ]
+        
+        font_path = None
+        
+        # 查找可用字体
+        for font_file in font_candidates:
+            potential_path = os.path.join(font_dir, font_file)
+            if os.path.exists(potential_path):
+                font_path = potential_path
+                print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
+                break
+        
+        # 如果找到字体，直接注册
+        if font_path:
+            try:
+                print(f"🔍 尝试注册字体: {font_path}")
+                print(f"🔍 当前已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+
+                # 尝试注册字体,如果已存在则先清理
+                font_name = "ChineseFont"
+                if font_name in pdfmetrics.getRegisteredFontNames():
+                    # 字体已注册,尝试删除并重新注册
+                    print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
+                    try:
+                        # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
+                        if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:
+                            del pdfmetrics._fonts[font_name]
+                            print(f"🔍 已删除旧的字体注册")
+                    except Exception as del_error:
+                        print(f"⚠️ 删除旧字体时出现警告: {del_error}")
+
+                # 重新注册字体
+                pdfmetrics.registerFont(TTFont(font_name, font_path))
+                self.has_asian_font = True
+                print(f"✅ 成功注册字体: {os.path.basename(font_path)} 作为 {font_name}")
+                print(f"🔍 注册后已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+
+            except Exception as e:
+                print(f"❌ 注册字体失败: {e}")
+                print(f"❌ 异常类型: {type(e).__name__}")
+                traceback.print_exc()
+
+                # 如果注册失败,检查是否有已注册的字体可以回退
+                if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
+                    print(f"🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
+                    self.has_asian_font = True
+                else:
+                    print(f"🔍 无可用字体,将使用默认字体(Helvetica)")
+                    self.has_asian_font = False
+        else:
+            print(f"🔍 未找到合适字体，将使用默认字体")
+            self.has_asian_font = False
+
+        print(f"🔍 使用的主要字体: ChineseFont, has_asian_font={self.has_asian_font}")
+        
         margins = (2.5 * cm, 2.5 * cm, 2.5 * cm, 2.5 * cm)
 
         doc = BaseDocTemplate(
@@ -592,7 +776,7 @@ class ExportUtils:
         # 根据当前语言获取日期格式
         def get_date_format():
             lang = get_language()
-            if lang in ["zh", "zh_tw", "ja"]:
+            if lang in ["zh", "zh_tw", "ja", "ko"]:
                 return "%Y年%m月%d日 %H:%M:%S"
             else:  # 英文
                 return "%Y-%m-%d %H:%M:%S"
@@ -607,7 +791,7 @@ class ExportUtils:
             # 获取当前页面尺寸
             current_width, current_height = canvas._pagesize
             # 设置字体
-            font_name = "ChineseFont" if self.has_chinese_font else "Helvetica"
+            font_name = "ChineseFont" if self.has_asian_font else "Helvetica"
             canvas.setFont(font_name, 10)
             canvas.setFillColor(colors.HexColor("#666666"))
             # 在页眉右侧绘制导出时间
@@ -645,7 +829,7 @@ class ExportUtils:
         title_style = ParagraphStyle(
             "ChineseTitle",
             parent=styles["Title"],
-            fontName="ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
+            fontName="ChineseFont" if self.has_asian_font else "Helvetica-Bold",
             fontSize=20,
             textColor=colors.HexColor("#2c3e50"),
             alignment=TA_CENTER,
@@ -655,7 +839,7 @@ class ExportUtils:
         heading2_style = ParagraphStyle(
             "ChineseHeading2",
             parent=styles["Heading2"],
-            fontName="ChineseFont" if self.has_chinese_font else "Helvetica-Bold",
+            fontName="ChineseFont" if self.has_asian_font else "Helvetica-Bold",
             fontSize=16,
             textColor=colors.HexColor("#34495e"),
             alignment=TA_LEFT,
@@ -666,7 +850,7 @@ class ExportUtils:
         normal_style = ParagraphStyle(
             "ChineseNormal",
             parent=styles["Normal"],
-            fontName="ChineseFont" if self.has_chinese_font else "Helvetica",
+            fontName="ChineseFont" if self.has_asian_font else "Helvetica",
             fontSize=11,
             textColor=colors.HexColor("#34495e"),
             spaceAfter=5,
@@ -675,7 +859,7 @@ class ExportUtils:
         table_text_style = ParagraphStyle(
             "ChineseTableText",
             parent=styles["Normal"],
-            fontName="ChineseFont" if self.has_chinese_font else "Helvetica",
+            fontName="ChineseFont" if self.has_asian_font else "Helvetica",
             fontSize=10,
             alignment=TA_CENTER,
             wordWrap="None",  # 禁用自动换行
@@ -688,7 +872,7 @@ class ExportUtils:
         elements.append(Spacer(1, 15))
 
         # 在切分段信息/已分配子网信息前添加父网段信息
-        if data_source["main_name"] in [translate("split_segment_info"), translate("allocated_subnet_info")]:
+        if data_source["main_name"] in [translate("split_segment_info"), translate("allocated_subnets")]:
             # 显示父网段信息
             elements.append(Paragraph(translate("parent_network_info"), heading2_style))
             
@@ -758,7 +942,7 @@ class ExportUtils:
                 # 创建表格时直接传递列宽
                 parent_table = Table(valid_table_data, colWidths=valid_col_widths, repeatRows=1)
                 # 应用样式
-                parent_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
+                parent_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_asian_font))
                 elements.append(parent_table)
                 elements.append(Spacer(1, 20))
         
@@ -883,7 +1067,7 @@ class ExportUtils:
                 adjusted_table_data.append(adjusted_row)
 
             main_table = Table(adjusted_table_data, colWidths=valid_col_widths, repeatRows=1)
-            main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_chinese_font))
+            main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_asian_font))
             keep_together_main.append(main_table)
         else:
             keep_together_main.append(Paragraph(f"{translate('no')}{data_source['main_name']}", normal_style))
@@ -896,13 +1080,21 @@ class ExportUtils:
         remaining_heading = Paragraph(data_source["remaining_name"], heading2_style)
         # 准备KeepTogether的内容列表
         keep_together_remaining = [remaining_heading]
+        
+        # 使用传入的remaining_data和remaining_headers，而不是直接从Treeview获取
         remaining_table_data = [[Paragraph(h, table_text_style) for h in remaining_headers]]
-        for item in data_source["remaining_tree"].get_children():
-            values = data_source["remaining_tree"].item(item, "values")
-            if values:
-                remaining_table_data.append(
-                    [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
-                )
+        
+        # 将remaining_data转换为表格数据
+        for item in _remaining_data:
+            if isinstance(item, dict):
+                # 如果是字典，按照remaining_headers的顺序提取值
+                values = [item.get(header, '') for header in remaining_headers]
+            else:
+                # 如果已经是列表，直接使用
+                values = item
+            remaining_table_data.append(
+                [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
+            )
 
         if len(remaining_table_data) > 1:
             table_width = page_width - margins[0] - margins[1]
@@ -979,7 +1171,7 @@ class ExportUtils:
                 adjusted_remaining_data.append(adjusted_row)
 
             remaining_table = Table(adjusted_remaining_data, colWidths=valid_col_widths, repeatRows=1)
-            remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_chinese_font))
+            remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_asian_font))
             keep_together_remaining.append(remaining_table)
         else:
             keep_together_remaining.append(Paragraph(f"{translate('no')}{data_source['remaining_name']}", normal_style))
@@ -1001,7 +1193,7 @@ class ExportUtils:
         doc.build(elements)
 
     def _load_system_font(self, font_size=36, bold_offset=4, verbose=False):
-        """加载系统中文字体
+        """加载系统字体（支持中文、韩语、日语）
 
         Args:
             font_size: 字体大小
@@ -1015,13 +1207,37 @@ class ExportUtils:
         bold_font = None
         font_loaded = False
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
-            font_candidates = [
-                ('msyh.ttc', font_size, '微软雅黑'),
-                ('simhei.ttf', font_size, '黑体'),
-                ('simsun.ttc', font_size - 2, '宋体'),
-                ('simkai.ttf', font_size - 2, '楷体'),
-            ]
+            from i18n import get_language
+            current_lang = get_language()
+            
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\\Windows'), 'Fonts')
+            
+            # 根据当前语言设置字体候选列表
+            if current_lang == "ko":
+                # 韩语字体候选列表
+                font_candidates = [
+                    ('malgun.ttf', font_size, 'Malgun Gothic'),  # 标准韩语无衬线字体
+                    ('gulim.ttc', font_size, 'Gulim'),  # 标准韩语无衬线字体
+                    ('dotum.ttc', font_size, 'Dotum'),  # 标准韩语无衬线字体
+                    ('batang.ttc', font_size, 'Batang'),  # 标准韩语衬线字体
+                    ('msyh.ttc', font_size, '微软雅黑'),  # 备用中文字体
+                ]
+            elif current_lang == "ja":
+                # 日语字体候选列表
+                font_candidates = [
+                    ('meiryo.ttc', font_size, 'Meiryo'),  # 支持日语和英文
+                    ('msgothic.ttc', font_size, 'MS Gothic'),
+                    ('msmincho.ttc', font_size, 'MS Mincho'),
+                    ('msyh.ttc', font_size, '微软雅黑'),  # 备用中文字体
+                ]
+            else:
+                # 中文/英文字体候选列表
+                font_candidates = [
+                    ('msyh.ttc', font_size, '微软雅黑'),
+                    ('simhei.ttf', font_size, '黑体'),
+                    ('simsun.ttc', font_size - 2, '宋体'),
+                    ('simkai.ttf', font_size - 2, '楷体'),
+                ]
 
             for font_file, size, font_name in font_candidates:
                 font_path = os.path.join(system_font_dir, font_file)
@@ -1045,7 +1261,7 @@ class ExportUtils:
                     print("使用默认字体")
         except (IOError, OSError, ValueError, TypeError) as e:
             if verbose:
-                print(f"加载中文字体失败: {e}")
+                print(f"加载系统字体失败: {e}")
             font = ImageFont.load_default()
             bold_font = ImageFont.load_default()
         return font, bold_font, font_loaded
@@ -1250,15 +1466,10 @@ class ExportUtils:
         text_font = None
         bold_text_font = None
         try:
-            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
-            text_font_path = os.path.join(system_font_dir, 'msyh.ttc')
-            if os.path.exists(text_font_path):
-                text_font = ImageFont.truetype(text_font_path, text_font_size)
-                bold_text_font = ImageFont.truetype(text_font_path, text_font_size + 6)
-            else:
-                text_font = font
-                bold_text_font = bold_font
-        except (IOError, OSError, ValueError, TypeError):
+            # 使用 _load_system_font 方法获取适合当前语言的字体，而不是硬编码微软雅黑
+            text_font, bold_text_font, _ = self._load_system_font(font_size=text_font_size, bold_offset=6, verbose=True)
+        except (IOError, OSError, ValueError, TypeError) as e:
+            print(f"加载系统字体失败，使用默认字体: {e}")
             text_font = font
             bold_text_font = bold_font
 
@@ -1552,14 +1763,18 @@ class ExportUtils:
             is_valid = True
             error_msg = ""
 
-            if data_source["main_name"] == "切分段信息":
+            # 使用翻译函数进行比较，确保在任何语言环境下都能正确匹配
+            split_segment_info = translate("split_segment_info")
+            allocated_subnets = translate("allocated_subnets")
+            
+            if data_source["main_name"] == split_segment_info:
                 if not main_data:
                     is_valid = False
-                    error_msg = "未找到切分数据，请先执行子网切分！"
-            elif data_source["main_name"] == "已分配子网信息":
+                    error_msg = translate("no_split_data_found")
+            elif data_source["main_name"] == allocated_subnets:
                 if not main_data:
                     is_valid = False
-                    error_msg = "未找到规划数据，请先执行子网规划！"
+                    error_msg = translate("no_planning_data_found")
 
             if not is_valid:
                 return False, error_msg, None
