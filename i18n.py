@@ -45,13 +45,13 @@ TRANSLATIONS = _load_translations()
 
 
 _DEFAULT_TRANSLATIONS = {
-    "error": {"zh": "错误", "zh_tw": "錯誤", "en": "Error", "ja": "エラー"},
-    "ok": {"zh": "确定", "zh_tw": "確定", "en": "OK", "ja": "OK"},
-    "cancel": {"zh": "取消", "zh_tw": "取消", "en": "Cancel", "ja": "キャンセル"},
-    "export": {"zh": "导出", "zh_tw": "匯出", "en": "Export", "ja": "エクスポート"},
-    "subnet_planner": {"zh": "子网规划师", "zh_tw": "子網規劃師", "en": "Subnet Planner", "ja": "サブネット設計師"},
-    "about": {"zh": "关于", "zh_tw": "關於", "en": "About", "ja": "アプリについて"},
-    "close": {"zh": "关闭", "zh_tw": "關閉", "en": "Close", "ja": "閉じる"}
+    "error": {"zh": "错误", "zh_tw": "錯誤", "en": "Error", "ja": "エラー", "ko": "오류"},
+    "ok": {"zh": "确定", "zh_tw": "確定", "en": "OK", "ja": "OK", "ko": "확인"},
+    "cancel": {"zh": "取消", "zh_tw": "取消", "en": "Cancel", "ja": "キャンセル", "ko": "취소"},
+    "export": {"zh": "导出", "zh_tw": "匯出", "en": "Export", "ja": "エクスポート", "ko": "내보내기"},
+    "subnet_planner": {"zh": "子网规划师", "zh_tw": "子網規劃師", "en": "Subnet Planner", "ja": "サブネット設計師", "ko": "서브넷 플래너"},
+    "about": {"zh": "关于", "zh_tw": "關於", "en": "About", "ja": "アプリについて", "ko": "정보"},
+    "close": {"zh": "关闭", "zh_tw": "關閉", "en": "Close", "ja": "閉じる", "ko": "닫기"}
 }
 
 if TRANSLATIONS is None:

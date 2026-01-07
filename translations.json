@@ -103,7 +103,7 @@
         "zh_tw": "剩餘網段資訊",
         "en": "Remaining Segment Info",
         "ja": "残りのセグメント情報",
-        "ko": "나머지 네트워크 세그먼트 정보"
+        "ko": "남은 세그먼트"
     },
     "subnet_planner": {
         "zh": "子网规划师",
@@ -152,7 +152,7 @@
         "zh_tw": "關閉",
         "en": "Close",
         "ja": "閉じる",
-        "ko": "Close"
+        "ko": "닫기"
     },
     "history": {
         "zh": "历史记录",
@@ -250,7 +250,7 @@
         "zh_tw": "子網需求",
         "en": "Subnet Requirements",
         "ja": "サブネット要件",
-        "ko": "서브넷 요구 사항"
+        "ko": "서브넷 요구"
     },
     "move_records": {
         "zh": "↔",
@@ -334,7 +334,7 @@
         "zh_tw": "暫存到池",
         "en": "Save to Pool",
         "ja": "プールに保存",
-        "ko": "풀로 스테이징"
+        "ko": "풀에 저장"
     },
     "import_from_file": {
         "zh": "从文件导入",
@@ -586,7 +586,7 @@
         "zh_tw": "序號",
         "en": "Index",
         "ja": "番号",
-        "ko": "Number"
+        "ko": "번호"
     },
     "network_address": {
         "zh": "网络地址",
@@ -614,7 +614,7 @@
         "zh_tw": "可用位址數",
         "en": "Usable Addrs",
         "ja": "利用可能数",
-        "ko": "사용 가능한 주소 수"
+        "ko": "사용 가능 수"
     },
     "item": {
         "zh": "项目",
@@ -642,14 +642,14 @@
         "zh_tw": "剩餘網段",
         "en": "Remaining Subnets",
         "ja": "残りのセグメント",
-        "ko": "나머지 네트워크 세그먼트"
+        "ko": "남은 서브넷"
     },
     "distribution_chart": {
         "zh": "网段分布图",
         "zh_tw": "網段分佈圖",
         "en": "Distribution Chart",
         "ja": "セグメント分布図",
-        "ko": "네트워크 세그먼트 분포 맵"
+        "ko": "세그먼트 분포"
     },
     "record_already_exists": {
         "zh": "中已存在名称为 '{name}' 的记录",
@@ -845,7 +845,7 @@
         "zh_tw": "可用位址數",
         "en": "Usable Address",
         "ja": "利用可能数",
-        "ko": "사용 가능한 주소 수"
+        "ko": "사용 가능 수"
     },
     "prefix_length": {
         "zh": "前缀",
@@ -908,7 +908,7 @@
         "zh_tw": "唯一本地單播位址 (ULA)",
         "en": "Unique Local Unicast Address (ULA)",
         "ja": "ユニークローカルユニキャストアドレス (ULA)",
-        "ko": "고유 로컬 유니캐스트 주소 (ULA)"
+        "ko": "ULA 유니캐스트"
     },
     "documentation_test_address": {
         "zh": "文档/测试地址",
@@ -1167,7 +1167,7 @@
         "en": "Network Scale and Usage",
         "ja": "ネットワーク規模と使用法",
         "zh_tw": "网络规模与用途",
-        "ko": "네트워크 크기 및 사용량"
+        "ko": "네트워크 규모"
     },
     "subnet_size": {
         "zh": "子网规模",
