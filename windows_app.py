@@ -628,7 +628,9 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
         self.info_label = ttk.Label(
-            self.info_bar_frame, text="", padding=(2, 0, 0, 0), anchor="w"
+            self.info_bar_frame, text="", padding=(0, 0, 0, 0), anchor="w",
+            wraplength=0,  # 初始设置为0，后面根据需要调整
+            justify="left"
         )
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
 
@@ -3892,6 +3894,165 @@ class IPSubnetSplitterApp:
                 return
         
         self.animate_info_bar('hide')
+        
+    def toggle_info_bar_expand(self, event=None):
+        """切换信息栏文本显示状态（完整/截断）"""
+        if not hasattr(self, '_info_truncated') or not self._info_truncated:
+            return
+            
+        # 切换显示状态
+        self._info_currently_expanded = not self._info_currently_expanded
+        
+        if self._info_currently_expanded:
+            # 获取当前字体设置
+            from style_manager import get_current_font_settings
+            font_family, _ = get_current_font_settings()
+            font = tkfont.Font(family=font_family, size=10)
+            
+            # 获取当前信息栏宽度（保持不变）
+            current_width = self.info_bar_frame.winfo_width()
+            
+            # 实现智能换行，避免标点符号出现在行首
+            def smart_wrap_text(text, max_width):
+                """智能换行文本，避免标点符号出现在行首"""
+                # 定义中文标点符号，应该出现在行尾
+                chinese_end_punct = "，。；：！？、）】》”’}" 
+                # 定义英文标点符号，应该出现在行尾
+                english_end_punct = ",.;:!?)]}"
+                
+                # 初始化结果行列表
+                lines = []
+                current_line = ""
+                
+                # 遍历文本中的每个字符
+                for char in text:
+                    if char.isspace():
+                        if current_line:
+                            # 检查添加空格后的宽度
+                            test_line = current_line + char
+                            test_width = font.measure(test_line)
+                            if test_width <= max_width:
+                                current_line = test_line
+                            else:
+                                # 换行，确保行尾没有标点符号
+                                lines.append(current_line.rstrip())
+                                current_line = ""
+                    else:
+                        # 检查添加当前字符后的宽度
+                        test_line = current_line + char
+                        test_width = font.measure(test_line)
+                        
+                        if test_width <= max_width:
+                            current_line = test_line
+                        else:
+                            # 检查当前行是否可以换行
+                            if current_line:
+                                # 检查当前字符是否是标点符号
+                                if char in chinese_end_punct + english_end_punct:
+                                    # 标点符号应该留在当前行
+                                    current_line = test_line
+                                else:
+                                    # 检查当前行末尾是否有标点符号
+                                    if current_line and current_line[-1] in chinese_end_punct + english_end_punct:
+                                        # 如果有，将标点符号留在当前行
+                                        lines.append(current_line)
+                                        current_line = char
+                                    else:
+                                        # 正常换行
+                                        lines.append(current_line)
+                                        current_line = char
+                            else:
+                                # 空行直接添加
+                                current_line = char
+                
+                if current_line:
+                    lines.append(current_line)
+                
+                return "\n".join(lines)
+            
+            # 显示完整文本，不带图标
+            max_line_width = current_width - 34  # 减去左右内边距
+            wrapped_text = smart_wrap_text(self._full_info_text, max_line_width)
+            self.info_label.config(text=wrapped_text)
+            
+            # 强制更新布局，让label计算出正确的高度
+            self.root.update_idletasks()
+            
+            # 获取label的实际高度
+            label_height = self.info_label.winfo_reqheight()
+            
+            # 计算新的信息栏高度（label高度 + 内边距 + 关闭按钮高度）
+            new_height = label_height + 10 + 20  # 10px内边距 + 20px关闭按钮高度
+            new_height = max(new_height, 30)  # 最小高度30px
+            
+            # 更新信息栏框架高度
+            self.info_bar_frame.place_configure(height=new_height)
+            
+            # 更新spacer高度，确保有足够空间显示
+            self.info_spacer.configure(height=new_height)
+            
+            # 展开时停止自动消失计时
+            if hasattr(self, 'info_auto_hide_id') and self.info_auto_hide_id:
+                self.root.after_cancel(self.info_auto_hide_id)
+                self.info_auto_hide_id = None
+        else:
+            # 显示截断文本
+            # 重新计算截断文本
+            def calculate_pixel_width(text):
+                from style_manager import get_current_font_settings
+                font_family, _ = get_current_font_settings()
+                font = tkfont.Font(family=font_family, size=10)
+                return font.measure(text)
+            
+            def truncate_text_by_pixel(text, icon, max_pixel_width):
+                icon_width = calculate_pixel_width(icon)
+                available_width = max_pixel_width - icon_width
+                full_text_with_icon = icon + text
+                full_width = calculate_pixel_width(full_text_with_icon)
+                
+                if full_width <= max_pixel_width:
+                    return text
+                
+                ellipsis_width = calculate_pixel_width("...")
+                low = 0
+                high = len(text)
+                best_length = 0
+                
+                while low <= high:
+                    mid = (low + high) // 2
+                    current_text = text[:mid]
+                    current_width = calculate_pixel_width(current_text)
+                    
+                    if current_width <= available_width - ellipsis_width:
+                        best_length = mid
+                        low = mid + 1
+                    else:
+                        high = mid - 1
+                
+                truncated = text[:best_length]
+                while best_length > 0:
+                    truncated = text[:best_length]
+                    truncated_width = calculate_pixel_width(truncated) + ellipsis_width + icon_width
+                    if truncated_width <= max_pixel_width:
+                        return truncated + "..."
+                    best_length -= 1
+                
+                return "..."
+            
+            truncated_text = truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
+            self.info_label.config(text=self._info_icon + truncated_text)
+            
+            # 恢复单行显示，取消自动换行
+            self.info_label.config(wraplength=0)
+            
+            # 恢复原始高度，宽度保持不变
+            original_height = 30
+            self.info_bar_frame.place_configure(height=original_height)
+            self.info_spacer.configure(height=original_height)
+            
+            # 收起时重新开始自动消失计时
+            if hasattr(self, 'root'):
+                self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
 
     def setup_advanced_tools_page(self):
         """设置高级工具功能的界面"""
@@ -5722,9 +5883,21 @@ class IPSubnetSplitterApp:
         # 调用截断函数
         truncated_text = truncate_text_by_pixel(text, icon, max_pixel_width)
 
-        # 显示完整文本（带有图标）
+        # 保存完整文本和相关信息到实例变量
+        self._full_info_text = text
+        self._info_icon = icon
+        self._info_label_style = label_style
+        self._info_frame_style = frame_style
+        self._info_max_pixel_width = max_pixel_width
+        self._info_truncated = truncated_text != text
+        self._info_currently_expanded = False
+        
+        # 显示截断文本（带有图标）
         self.info_label.config(text=icon + truncated_text, style=label_style)
         self.info_bar_frame.configure(style=frame_style)
+        
+        # 添加点击事件绑定，用于切换显示完整/截断文本
+        self.info_label.bind("<Button-1>", self.toggle_info_bar_expand)
 
         # 显示信息栏 - 使用高度动画实现滑入效果
 
