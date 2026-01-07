@@ -96,7 +96,7 @@ class ExportUtils:
         font_path = None
 
         if sys.platform == "win32":
-            font_dir = r"C:\\Windows\\Fonts"
+            font_dir = r"C:\Windows\Fonts"
             if os.path.exists(font_dir):
                 # 包含中文、韩语、日语的通用字体候选列表
                 font_candidates = [
@@ -182,7 +182,7 @@ class ExportUtils:
                 print(f"🔍 字体优先级列表: {[font[0] for font in prioritized_candidates]}")
 
                 # 遍历字体列表，查找可用的字体
-                for font_file, font_name in prioritized_candidates:
+                for font_file, _ in prioritized_candidates:
                     potential_path = os.path.join(font_dir, font_file)
                     if os.path.exists(potential_path):
                         font_path = potential_path
@@ -201,10 +201,7 @@ class ExportUtils:
                 self.has_asian_font = True
                 print(f"✅ 成功注册亚洲字体: {os.path.basename(font_path)} 作为 ChineseFont")
                 
-                # 额外注册一个相同的字体作为KoreanFont，确保韩语环境下也能正常使用
-                if get_language() == "ko":
-                    pdfmetrics.registerFont(TTFont("KoreanFont", font_path))
-                    print(f"✅ 同时注册为韩语专用字体: KoreanFont")
+
             except (OSError, ValueError, ImportError) as e:
                 print(f"{translate('failed_to_register_font')}: {e}")
                 traceback.print_exc()
@@ -667,7 +664,7 @@ class ExportUtils:
         
         # 直接指定字体文件路径，确保在任何情况下都能使用正确的字体
         # 使用双反斜杠或os.path.join避免转义序列问题
-        font_dir = r"C:\\Windows\\Fonts"
+        font_dir = r"C:\Windows\Fonts"
         
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
@@ -730,7 +727,7 @@ class ExportUtils:
                         # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
                         if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:
                             del pdfmetrics._fonts[font_name]
-                            print(f"🔍 已删除旧的字体注册")
+                            print("🔍 已删除旧的字体注册")
                     except Exception as del_error:
                         print(f"⚠️ 删除旧字体时出现警告: {del_error}")
 
@@ -747,13 +744,13 @@ class ExportUtils:
 
                 # 如果注册失败,检查是否有已注册的字体可以回退
                 if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                    print(f"🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
+                    print("🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
                     self.has_asian_font = True
                 else:
-                    print(f"🔍 无可用字体,将使用默认字体(Helvetica)")
+                    print("🔍 无可用字体,将使用默认字体(Helvetica)")
                     self.has_asian_font = False
         else:
-            print(f"🔍 未找到合适字体，将使用默认字体")
+            print("🔍 未找到合适字体，将使用默认字体")
             self.has_asian_font = False
 
         print(f"🔍 使用的主要字体: ChineseFont, has_asian_font={self.has_asian_font}")
@@ -785,7 +782,7 @@ class ExportUtils:
         export_time = time.strftime(get_date_format())
         
         # 创建页眉回调函数
-        def on_page(canvas, event):
+        def on_page(canvas, _event):
             """页面回调函数，用于绘制页眉"""
             canvas.saveState()
             # 获取当前页面尺寸
@@ -1210,7 +1207,7 @@ class ExportUtils:
             from i18n import get_language
             current_lang = get_language()
             
-            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\\Windows'), 'Fonts')
+            system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
             
             # 根据当前语言设置字体候选列表
             if current_lang == "ko":
@@ -1815,7 +1812,7 @@ class ExportUtils:
                         self.data = data
                         self.columns = list(range(len(headers)))
                     
-                    def heading(self, col, event):
+                    def heading(self, col, _event):
                         """获取列标题
                         
                         Args:
