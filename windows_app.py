@@ -6221,8 +6221,10 @@ class IPSubnetSplitterApp:
             self.language_var.set("繁體中文")
         elif current_lang == "en":
             self.language_var.set("English")
-        else:  # ja
+        elif current_lang == "ja":
             self.language_var.set("日本語")
+        elif current_lang == "ko":
+            self.language_var.set("한국어")
         
         # 使用ttk.Combobox创建语言选择控件
         self.language_combobox = ttk.Combobox(

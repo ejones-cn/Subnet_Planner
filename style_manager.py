@@ -47,6 +47,9 @@ class StyleManager:
         elif current_language == "ja":
             # 日文版：MS Gothic，10号字体
             return ("MS Gothic", 10)
+        elif current_language == "ko":
+            # 韩文版：Malgun Gothic，10号字体
+            return ("Malgun Gothic", 10)
         else:
             # 英文版：Arial，10号字体
             return ("Arial", 10)
@@ -65,6 +68,9 @@ class StyleManager:
         elif current_language == "ja":
             # 日文版：标签宽度18
             return 18
+        elif current_language == "ko":
+            # 韩文版：标签宽度18
+            return 18
         else:
             # 英文版：标签宽度14
             return 14
@@ -81,8 +87,8 @@ class StyleManager:
         current_language = get_language()
         
         # 根据语言和按钮类型确定宽度，高度统一使用10
-        if current_language in ["zh", "zh_tw", "ja"]:
-            # 中文(简/繁)和日文版：统一宽度12，特殊按钮类型也是12
+        if current_language in ["zh", "zh_tw", "ja", "ko"]:
+            # 中文(简/繁)、日文和韩文版：统一宽度12，特殊按钮类型也是12
             return (12, 10)
         else:
             # 英文版：规划和导出按钮宽度16，默认按钮14
@@ -116,7 +122,7 @@ class StyleManager:
 
         if current_language in ["zh", "zh_tw"]:
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(0, 1))
-        elif current_language == "ja":
+        elif current_language == "ja" or current_language == "ko":
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(2, 3))
         else:
             self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=(3, 2))
@@ -310,5 +316,7 @@ def get_current_font_settings():
             return ("微软雅黑", 10)
         elif current_language == "ja":
             return ("MS Gothic", 10)
+        elif current_language == "ko":
+            return ("Malgun Gothic", 10)
         else:
             return ("Arial", 10)

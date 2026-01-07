@@ -2501,7 +2501,7 @@
     },
     "invalid_ipv4_address_format": {
         "zh": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
-        "en": "Invalid IPv4 address format",
+        "en": "Invalid IPv4 address format: Only decimal digits and dots allowed (e.g., 192.168.1.1)",
         "ja": "無効なIPv4アドレス形式: IPアドレスには10進数とドットのみが許可されています（例：192.168.1.1）",
         "zh_tw": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
         "ko": "잘못된 IPv4 주소 형식: IP 주소에는 10진수 및 점만 허용됩니다 (예: 192.168.1.1)."
@@ -2637,14 +2637,14 @@
         "en": "Class A",
         "ja": "クラスA",
         "zh_tw": "A类",
-        "ko": "패키지 A"
+        "ko": "클래스 A"
     },
     "class_b": {
         "zh": "B类",
         "en": "Class B",
         "ja": "クラスB",
         "zh_tw": "B类",
-        "ko": "套餐B"
+        "ko": "클래스 B"
     },
     "class_c": {
         "zh": "C类",
@@ -2665,7 +2665,7 @@
         "en": "Class E",
         "ja": "クラスE",
         "zh_tw": "E类",
-        "ko": "<g id=\"98\">E</g><g id=\"99\">종</g>"
+        "ko": "클래스 E"
     },
     "segment": {
         "zh": "网段",
@@ -2747,85 +2747,85 @@
     "invalid_ipv4_decimal_digits": {
         "zh": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
         "zh_tw": "無效的IPv4位址格式: IP位址中只允許使用十進制數字和點（例如：192.168.1.1）",
-        "en": "Invalid IPv4 address format: Only decimal digits permitted",
-        "ja": "無効なIPv4アドレス形式：十進数のみが許可されています",
+        "en": "Invalid IPv4 address format: Only decimal digits and dots allowed (e.g., 192.168.1.1)",
+        "ja": "無効なIPv4アドレス形式：十進数のみが許可されています（例：192.168.1.1）",
         "ko": "잘못된 IPv4 주소 형식: IP 주소에는 10진수 및 점만 허용됩니다 (예: 192.168.1.1)."
     },
     "invalid_ipv4_unexpected_slash": {
         "zh": "无效的IPv4地址格式: IP地址中包含不允许的字符'/'（例如：192.168.1.1）",
         "zh_tw": "無效的IPv4位址格式: IP位址中包含不允許的字元'/'（例如：192.168.1.1）",
-        "en": "Invalid IPv4 address format: unexpected '/' in IP address",
-        "ja": "無効なIPv4アドレス形式：IPアドレスに予期しない'/'が含まれています",
+        "en": "Invalid IPv4 address format: unexpected '/' in IP address (e.g., 192.168.1.1)",
+        "ja": "無効なIPv4アドレス形式：IPアドレスに予期しない'/'が含まれています（例：192.168.1.1）",
         "ko": "잘못된 IPv4 주소 형식: IP 주소에 허용되지 않는 문자가 포함되어 있습니다 '/' (예: 192.168.1.1)"
     },
     "invalid_ipv6_address_format": {
         "zh": "无效的IPv6地址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
         "zh_tw": "無效的IPv6位址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-        "en": "Invalid IPv6 address format",
+        "en": "Invalid IPv6 address format (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334)",
         "ja": "無効なIPv6アドレス形式（例：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
         "ko": "잘못된 IPv6 주소 형식 (예: 2001: 0db 8:85 a3: 0000: 0000: 8a2e: 0370: 7334)"
     },
     "invalid_ipv6_hex_digits": {
         "zh": "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: at most 4 hex digits per group",
-        "ja": "無効なIPv6アドレス: グループごとに最大4桁の16進数が許可されます",
+        "en": "Invalid IPv6 address: at most 4 hex digits per group (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: グループごとに最大4桁の16進数が許可されます（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 그룹당 허용되는 최대 4 16진수 문자 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_too_many_colons": {
         "zh": "无效的IPv6地址: 冒号数量过多（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 冒號數量過多（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: too many colons",
-        "ja": "無効なIPv6アドレス: コロンが多すぎます",
+        "en": "Invalid IPv6 address: too many colons (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: コロンが多すぎます（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 콜론이 너무 많음 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_hex_only": {
         "zh": "无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 每組只允許使用十六進制字元（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: Only hex digits permitted",
-        "ja": "無効なIPv6アドレス：16進数のみが許可されています",
+        "en": "Invalid IPv6 address: Only hex digits allowed per group (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス：16進数のみが許可されています（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 그룹당 16진수 문자만 허용됩니다 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv4_octet_too_long": {
         "zh": "无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）",
         "zh_tw": "無效的IPv4位址: 八位元組過長, 最多允許3個字元（例如：192.168.1.1）",
-        "en": "Invalid IP address: octet too long, max 3 characters allowed",
-        "ja": "無効なIPv4アドレス: オクテットが長すぎます、最大3文字が許可されています",
+        "en": "Invalid IPv4 address: octet too long, max 3 characters allowed (e.g., 192.168.1.1)",
+        "ja": "無効なIPv4アドレス: オクテットが長すぎます、最大3文字が許可されています（例：192.168.1.1）",
         "ko": "유효하지 않은 IPv4 주소: 옥텟이 너무 깁니다. 최대 3자까지 허용됩니다 (예: 192.168.1.1)."
     },
     "invalid_ipv6_group_too_long": {
         "zh": "无效的IPv6地址: 组 '{group}' 过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 組 '{group}' 過長, 每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: group '{group}' too long, max 4 hex characters allowed",
-        "ja": "無効なIPv6アドレス: グループ '{group}' が長すぎます、グループごとに最大4桁の16進数が許可されます",
+        "en": "Invalid IPv6 address: group '{group}' too long, max 4 hex characters allowed (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: グループ '{group}' が長すぎます、グループごとに最大4桁の16進数が許可されます（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 그룹 '{group}' 이 (가) 너무 깁니다. 그룹당 허용되는 최대 4자 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_address_too_long": {
         "zh": "无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 位址過長, 最多允許45個字元（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: address too long, max 45 characters allowed",
-        "ja": "無効なIPv6アドレス: アドレスが長すぎます、最大45文字が許可されています",
+        "en": "Invalid IPv6 address: address too long, max 45 characters allowed (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: アドレスが長すぎます、最大45文字が許可されています（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 주소가 너무 깁니다. 최대 45자까지 허용됩니다 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_characters_limit": {
         "zh": "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: max characters limit exceeded",
-        "ja": "無効なIPv6アドレス: 最大文字数制限を超えています",
+        "en": "Invalid IPv6 address: max characters limit exceeded (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: 最大文字数制限を超えています（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 그룹당 허용되는 최대 4 16진수 문자 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_trailing_colon": {
         "zh": "无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 冒號使用錯誤，單獨的尾部冒號只允許作為'::'的一部分（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: trailing ':' only permitted as part of '::'",
-        "ja": "無効なIPv6アドレス: 末尾の ':' は '::' の一部としてのみ許可されます",
+        "en": "Invalid IPv6 address: trailing ':' only permitted as part of '::' (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: 末尾の ':' は '::' の一部としてのみ許可されます（例：2001:0db8::1）",
         "ko": "유효하지 않은 IPv6 주소: 콜론이 잘못 사용됨, 별도의 후행 콜론은 '::' 의 일부로만 허용됨 (예: 2001: 0db8:: 1)"
     },
     "invalid_ipv6_exactly_8_parts": {
         "zh": "无效的IPv6地址: IPv6地址需要8个部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
         "zh_tw": "無效的IPv6位址: IPv6位址需要8個部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-        "en": "Invalid IPv6 address: exactly 8 parts expected",
-        "ja": "無効なIPv6アドレス: 正確に8つの部分が必要です",
+        "en": "Invalid IPv6 address: exactly 8 parts expected (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334)",
+        "ja": "無効なIPv6アドレス: 正確に8つの部分が必要です（例：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
         "ko": "잘못된 IPv6 주소: IPv6 주소에는 8개의 부품이 필요합니다 (예: 2001: 0db 8:85 a3: 0000: 0000: 8a2e: 0370: 7334)"
     },
     "invalid_ipv6_double_colon": {
@@ -2845,8 +2845,8 @@
     "invalid_ipv6_format": {
         "zh": "无效的IPv6地址: 格式错误（例如：2001:0db8::1）",
         "zh_tw": "無效的IPv6位址: 格式錯誤（例如：2001:0db8::1）",
-        "en": "Invalid IPv6 address: format error",
-        "ja": "無效なIPv6アドレス: 形式エラー",
+        "en": "Invalid IPv6 address: format error (e.g., 2001:0db8::1)",
+        "ja": "無効なIPv6アドレス: 形式エラー（例：2001:0db8::1）",
         "ko": "잘못된 IPv6 주소: 잘못된 형식 (예: 2001: 0db8:: 1)"
     },
     "copyright": {
