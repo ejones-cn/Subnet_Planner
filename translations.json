@@ -998,7 +998,7 @@
         "zh": "映射的IPv4地址",
         "en": "Mapped IPv4 Address",
         "ja": "マップされたIPv4アドレス",
-        "zh_tw": "映射的IPv4地址",
+        "zh_tw": "映射的IPv4位址",
         "ko": "매핑된 IPv4 주소"
     },
     "address_properties": {
@@ -1075,7 +1075,7 @@
         "zh": "是否私有地址",
         "en": "Is Private Address",
         "ja": "プライベートアドレス",
-        "zh_tw": "是否私有地址",
+        "zh_tw": "是否私有位址",
         "ko": "비공개 주소 사용 여부"
     },
     "is_private": {
@@ -1089,21 +1089,21 @@
         "zh": "是否保留地址",
         "en": "Is Reserved",
         "ja": "予約",
-        "zh_tw": "是否保留地址",
+        "zh_tw": "是否保留位址",
         "ko": "주소를 유지하시겠습니까?"
     },
     "is_loopback": {
         "zh": "是否回环地址",
         "en": "Is Loopback",
         "ja": "ループバック",
-        "zh_tw": "是否回環地址",
+        "zh_tw": "是否回環位址",
         "ko": "주소를 루프백할지 여부"
     },
     "is_multicast": {
         "zh": "是否组播地址",
         "en": "Is Multicast",
         "ja": "マルチキャスト",
-        "zh_tw": "是否組播地址",
+        "zh_tw": "是否組播位址",
         "ko": "주소 멀티캐스트 여부"
     },
     "is_global": {
@@ -1117,21 +1117,21 @@
         "zh": "是否链路本地地址",
         "en": "Is Link Local",
         "ja": "リンクローカル",
-        "zh_tw": "是否鏈路本地地址",
+        "zh_tw": "是否鏈路本地位址",
         "ko": "링크-로컬 주소 여부"
     },
     "is_unspecified": {
         "zh": "是否未指定地址",
         "en": "Is Unspecified",
         "ja": "未指定",
-        "zh_tw": "是否未指定地址",
+        "zh_tw": "是否未指定位址",
         "ko": "주소가 지정되지 않았습니다"
     },
     "is_ipv4_mapped": {
         "zh": "是否IPv4映射地址",
         "en": "Is IPv4 Mapped",
         "ja": "IPv4マップ",
-        "zh_tw": "是否IPv4映射地址",
+        "zh_tw": "是否IPv4映射位址",
         "ko": "IPv4 주소 매핑 여부"
     },
     "address_structure_analysis": {
@@ -1313,7 +1313,7 @@
         "zh": "网络地址",
         "en": "Network Address",
         "ja": "ネットワークアドレス",
-        "zh_tw": "網絡地址",
+        "zh_tw": "網絡位址",
         "ko": "네트워크 주소"
     },
     "first_host": {
@@ -1369,7 +1369,7 @@
         "zh": "地址属性",
         "en": "Address Attributes",
         "ja": "アドレス属性",
-        "zh_tw": "地址属性",
+        "zh_tw": "地址屬性",
         "ko": "주소 속성"
     },
     "address_structure": {
@@ -1383,21 +1383,21 @@
         "zh": "总地址数",
         "en": "Total Addresses",
         "ja": "総アドレス数",
-        "zh_tw": "總地址數",
+        "zh_tw": "總位址數",
         "ko": "총 주소"
     },
     "host_range_start": {
         "zh": "起始地址",
         "en": "Start Address",
         "ja": "開始アドレス",
-        "zh_tw": "起始地址",
+        "zh_tw": "起始位址",
         "ko": "폼주소"
     },
     "host_range_end": {
         "zh": "结束地址",
         "en": "End Address",
         "ja": "終了アドレス",
-        "zh_tw": "結束地址",
+        "zh_tw": "結束位址",
         "ko": "끝 주소"
     },
     "split_info": {
@@ -1880,133 +1880,133 @@
         "zh": "唯一本地地址前缀 (fc00::/7)",
         "en": "Unique Local Address Prefix (fc00::/7)",
         "ja": "ユニークローカルアドレスプレフィックス (fc00::/7)",
-        "zh_tw": "唯一本地地址前缀 (fc00::/7)",
+        "zh_tw": "唯一本地位址前綴 (fc00::/7)",
         "ko": "고유 로컬 주소 접두사 (fc00::/7)"
     },
     "global_unicast_prefix": {
         "zh": "全球单播地址前缀 (2000::/3)",
         "en": "Global Unicast Prefix (2000::/3)",
         "ja": "グローバルユニキャストプレフィックス (2000::/3)",
-        "zh_tw": "全球单播地址前缀 (2000::/3)",
+        "zh_tw": "全球單播位址前綴 (2000::/3)",
         "ko": "글로벌 유니캐스트 주소 접두사 (2000::/3)"
     },
     "ipv4_mapped_prefix": {
         "zh": "IPv4映射地址前缀 (::ffff:0:0/96)",
         "en": "IPv4-Mapped Address Prefix (::ffff:0:0/96)",
         "ja": "IPv4マップアドレスプレフィックス (::ffff:0:0/96)",
-        "zh_tw": "IPv4映射地址前缀 (::ffff:0:0/96)",
+        "zh_tw": "IPv4映射位址前綴 (::ffff:0:0/96)",
         "ko": "IPv4 매핑된 주소 접두사 (:: ffff: 0: 0/96)"
     },
     "ipv4_ipv6_translation_prefix": {
         "zh": "IPv4/IPv6转换地址前缀 (64:ff9b::/96)",
         "en": "IPv4/IPv6 Translation Prefix (64:ff9b::/96)",
         "ja": "IPv4/IPv6変換アドレスプレフィックス (64:ff9b::/96)",
-        "zh_tw": "IPv4/IPv6转换地址前缀 (64:ff9b::/96)",
+        "zh_tw": "IPv4/IPv6轉換位址前綴 (64:ff9b::/96)",
         "ko": "IPv4/IPv6 번역 주소 접두사 (64: ff9b::/96)"
     },
     "documentation_prefix": {
         "zh": "文档地址前缀 (2001:db8::/32)",
         "en": "Documentation Prefix (2001:db8::/32)",
         "ja": "ドキュメントアドレスプレフィックス (2001:db8::/32)",
-        "zh_tw": "文档地址前缀 (2001:db8::/32)",
+        "zh_tw": "文檔位址前綴 (2001:db8::/32)",
         "ko": "문서 주소 접두사 (2001: db8::/32)"
     },
     "blackhole_prefix": {
         "zh": "黑洞地址前缀 (100::/64)",
         "en": "Blackhole Prefix (100::/64)",
         "ja": "ブラックホールアドレスプレフィックス (100::/64)",
-        "zh_tw": "黑洞地址前缀 (100::/64)",
+        "zh_tw": "黑洞位址前綴 (100::/64)",
         "ko": "블랙홀 주소 접두사 (100::/64)"
     },
     "orchid_prefix": {
         "zh": "ORCHID地址前缀 (2001:10::/28)",
         "en": "ORCHID Prefix (2001:10::/28)",
         "ja": "ORCHIDアドレスプレフィックス (2001:10::/28)",
-        "zh_tw": "ORCHID地址前缀 (2001:10::/28)",
+        "zh_tw": "ORCHID位址前綴 (2001:10::/28)",
         "ko": "난초 주소 접두사 (2001: 10::/28)"
     },
     "deprecated_site_local_prefix": {
         "zh": "站点本地地址前缀 (已弃用)",
         "en": "Deprecated Site-Local Prefix",
         "ja": "非推奨サイトローカルプレフィックス",
-        "zh_tw": "站点本地地址前缀 (已弃用)",
+        "zh_tw": "站點本地位址前綴 (已棄用)",
         "ko": "사이트 로컬 주소 접두사 (더 이상 사용되지 않음)"
     },
     "global_unicast_prefix_generic": {
         "zh": "全球单播地址前缀",
         "en": "Global Unicast Prefix",
         "ja": "グローバルユニキャストプレフィックス",
-        "zh_tw": "全球单播地址前缀",
+        "zh_tw": "全球單播位址前綴",
         "ko": "글로벌 유니캐스트 주소 접두사"
     },
     "private_prefix": {
         "zh": "私有地址前缀",
         "en": "Private Prefix",
         "ja": "プライベートアドレスプレフィックス",
-        "zh_tw": "私有地址前缀",
+        "zh_tw": "私有位址前綴",
         "ko": "비공개 주소 접두사"
     },
     "link_local_prefix_generic": {
         "zh": "链路本地地址前缀",
         "en": "Link-Local Prefix",
         "ja": "リンクローカルアドレスプレフィックス",
-        "zh_tw": "链路本地地址前缀",
+        "zh_tw": "鏈路本地位址前綴",
         "ko": "링크 로컬 주소 접두사"
     },
     "unknown_prefix": {
         "zh": "未知地址前缀",
         "en": "Unknown Address Prefix",
         "ja": "未知のアドレスプレフィックス",
-        "zh_tw": "未知地址前缀",
+        "zh_tw": "未知位址前綴",
         "ko": "알 수 없는 주소 접두사"
     },
     "single_host_address": {
         "zh": "单主机地址（/128前缀）",
         "en": "Single Host Address (/128 Prefix)",
         "ja": "単一ホストアドレス (/128プレフィックス)",
-        "zh_tw": "单主机地址（/128前缀）",
+        "zh_tw": "單主機位址（/128前綴）",
         "ko": "단일 호스트 주소 (/128 접두사)"
     },
     "small_network": {
         "zh": "小型网络（/64前缀）",
         "en": "Small Network (/64 Prefix)",
         "ja": "小規模ネットワーク (/64プレフィックス)",
-        "zh_tw": "小型网络（/64前缀）",
+        "zh_tw": "小型網絡（/64前綴）",
         "ko": "소규모 네트워크 (/64 접두사)"
     },
     "medium_network": {
         "zh": "中型网络（/48前缀）",
         "en": "Medium Network (/48 Prefix)",
         "ja": "中規模ネットワーク (/48プレフィックス)",
-        "zh_tw": "中型网络（/48前缀）",
+        "zh_tw": "中型網絡（/48前綴）",
         "ko": "중간 네트워크 (/48 접두사)"
     },
     "regional_network": {
         "zh": "区域级网络（/{0},前缀）",
         "en": "Regional Network (/ {0} Prefix)",
         "ja": "地域ネットワーク (/ {0}プレフィックス)",
-        "zh_tw": "区域级网络（/{0},前缀）",
+        "zh_tw": "區域級網絡（/{0},前綴）",
         "ko": "영역 레벨 네트워크 (/{0}, 접두사)"
     },
     "large_network": {
         "zh": "大型网络（/{0},前缀）",
         "en": "Large Network (/ {0} Prefix)",
         "ja": "大規模ネットワーク (/ {0}プレフィックス)",
-        "zh_tw": "大型网络（/{0},前缀）",
+        "zh_tw": "大型網絡（/{0},前綴）",
         "ko": "대형 네트워크 (/{0}, 접두사)"
     },
     "extra_large_network": {
         "zh": "超大型网络（/32或更短前缀）",
         "en": "Extra Large Network (/32 or Shorter Prefix)",
         "ja": "超大規模ネットワーク (/32またはそれより短いプレフィックス)",
-        "zh_tw": "超大型网络（/32或更短前缀）",
+        "zh_tw": "超大型網絡（/32或更短前綴）",
         "ko": "매우 큰 네트워크 (/32 이하 접두사)"
     },
     "special_network": {
         "zh": "特殊网络（/{0},前缀）",
         "en": "Special Network (/ {0} Prefix)",
         "ja": "特殊ネットワーク (/ {0}プレフィックス)",
-        "zh_tw": "特殊网络（/{0},前缀）",
+        "zh_tw": "特殊網絡（/{0},前綴）",
         "ko": "특수 네트워크 (/{0}, 접두사)"
     },
     "purpose_loopback_ipv6": {
@@ -2034,28 +2034,28 @@
         "zh": "用于在IPv6网络中表示IPv4地址",
         "en": "Used to represent IPv4 addresses in IPv6 networks",
         "ja": "IPv6ネットワーク内でIPv4アドレスを表すために使用",
-        "zh_tw": "用于在IPv6网络中表示IPv4地址",
+        "zh_tw": "用於在IPv6網絡中表示IPv4位址",
         "ko": "IPv6 네트워크의 IPv4 주소를 나타내는 데 사용됩니다."
     },
     "purpose_ipv4_ipv6_translation": {
         "zh": "用于IPv4/IPv6网络之间的地址转换",
         "en": "Used for address translation between IPv4 and IPv6 networks",
         "ja": "IPv4/IPv6ネットワーク間のアドレス変換に使用",
-        "zh_tw": "用于IPv4/IPv6网络之间的地址转换",
+        "zh_tw": "用於IPv4/IPv6網絡之間的位址轉換",
         "ko": "IPv4/IPv6 네트워크 간의 주소 변환에 사용됨"
     },
     "purpose_ula": {
         "zh": "用于内部网络通信，不可路由到公网",
         "en": "Used for internal network communication, not routable to the public internet",
         "ja": "内部ネットワーク通信に使用、公衆インターネットにはルーティング不可",
-        "zh_tw": "用于内部网络通信，不可路由到公网",
+        "zh_tw": "用於內部網絡通信，不可路由到公網",
         "ko": "내부 네트워크 통신의 경우 공용 네트워크로 라우팅할 수 없음"
     },
     "purpose_documentation": {
         "zh": "用于文档示例和教学，不用于实际网络部署",
         "en": "Used for documentation examples and teaching, not for actual network deployment",
         "ja": "ドキュメントの例と教育に使用、実際のネットワーク展開には使用しない",
-        "zh_tw": "用于文档示例和教学，不用于实际网络部署",
+        "zh_tw": "用於文檔範例和教學，不用於實際網絡部署",
         "ko": "실제 네트워크 배포가 아닌 문서 샘플 및 교육에 사용됨"
     },
     "purpose_blackhole": {
@@ -2076,28 +2076,28 @@
         "zh": "表示未指定地址，通常用于初始启动阶段",
         "en": "Represents unspecified address, typically used during initial startup phase",
         "ja": "未指定アドレスを表し、通常は初期起動フェーズで使用",
-        "zh_tw": "表示未指定地址，通常用于初始启动阶段",
+        "zh_tw": "表示未指定位址，通常用於初始啟動階段",
         "ko": "일반적으로 초기 시작 단계에서 사용되는 지정되지 않은 주소를 나타냅니다."
     },
     "purpose_deprecated_site_local": {
         "zh": "已弃用的站点本地地址，不建议在新网络中使用",
         "en": "Deprecated site-local address, not recommended for use in new networks",
         "ja": "非推奨のサイトローカルアドレス、新しいネットワークでは使用しないことを推奨",
-        "zh_tw": "已弃用的站点本地地址，不建议在新网络中使用",
+        "zh_tw": "已棄用的站點本地位址，不建議在新網絡中使用",
         "ko": "사용되지 않는 사이트 로컬 주소, 새 네트워크에 대해 사용되지 않음"
     },
     "purpose_specific": {
         "zh": "根据地址类型和前缀规划的特定用途",
         "en": "Specific purpose based on address type and prefix planning",
         "ja": "アドレスタイプとプレフィックス計画に基づく特定の用途",
-        "zh_tw": "根据地址类型和前缀规划的特定用途",
+        "zh_tw": "根據位址類型和前綴規劃的特定用途",
         "ko": "주소 유형 및 접두사를 기반으로 계획된 특정 용도"
     },
     "purpose_global_unicast": {
         "zh": "全球单播地址，用于公网通信",
         "en": "Global unicast address, used for public network communication",
         "ja": "グローバルユニキャストアドレス、公衆ネットワーク通信に使用",
-        "zh_tw": "全球单播地址，用于公网通信",
+        "zh_tw": "全球單播位址，用於公網通信",
         "ko": "공용 네트워크 통신을 위한 글로벌 유니캐스트 주소"
     },
     "advice_global_routable": {
@@ -2111,7 +2111,7 @@
         "zh": "建议使用SLAAC或DHCPv6自动分配地址",
         "en": "It is recommended to use SLAAC or DHCPv6 for automatic address assignment",
         "ja": "SLAACまたはDHCPv6を使用してアドレスを自動割り当てることを推奨",
-        "zh_tw": "建议使用SLAAC或DHCPv6自动分配地址",
+        "zh_tw": "建議使用SLAAC或DHCPv6自動分配位址",
         "ko": "SLAAC 또는 DHCPv6을 사용한 자동 주소 할당 권장"
     },
     "advice_prefix_length": {
@@ -2132,7 +2132,7 @@
         "zh": "网络前缀",
         "en": "Network Prefix",
         "ja": "ネットワークプレフィックス",
-        "zh_tw": "网络前缀",
+        "zh_tw": "網絡前綴",
         "ko": "네트워크 접두사"
     },
     "segment_index": {
@@ -2167,56 +2167,56 @@
         "zh": "请输入IPv6地址",
         "en": "Please enter IPv6 address",
         "ja": "IPv6アドレスを入力してください",
-        "zh_tw": "请输入IPv6地址",
+        "zh_tw": "請輸入IPv6位址",
         "ko": "IPv6 주소를 입력하세요"
     },
     "enter_ip_address": {
         "zh": "请输入IP地址",
         "en": "Please enter IP address",
         "ja": "IPアドレスを入力してください",
-        "zh_tw": "请输入IP地址",
+        "zh_tw": "請輸入IP位址",
         "ko": "IP 주소를 입력하세요"
     },
     "ip_purpose": {
         "zh": "IP地址用途",
         "en": "IP Address Purpose",
         "ja": "IPアドレスの用途",
-        "zh_tw": "IP地址用途",
+        "zh_tw": "IP位址用途",
         "ko": "IP 주소 사용"
     },
     "purpose_loopback": {
         "zh": "本地回环地址，用于测试本地网络",
         "en": "Local loopback address, used for testing local network",
         "ja": "ローカルループバックアドレス、ローカルネットワークのテストに使用",
-        "zh_tw": "本地回环地址，用于测试本地网络",
+        "zh_tw": "本地迴環位址，用於測試本地網絡",
         "ko": "로컬 네트워크 테스트를 위한 로컬 루프백 주소"
     },
     "purpose_private": {
         "zh": "私有地址，用于内部网络",
         "en": "Private address, used for internal network",
         "ja": "プライベートアドレス、内部ネットワークに使用",
-        "zh_tw": "私有地址，用于内部网络",
+        "zh_tw": "私有位址，用於內部網絡",
         "ko": "내부 네트워크용 비공개 주소"
     },
     "purpose_multicast": {
         "zh": "组播地址，用于一对多通信",
         "en": "Multicast address, used for one-to-many communication",
         "ja": "マルチキャストアドレス、一対多通信に使用",
-        "zh_tw": "组播地址，用于一对多通信",
+        "zh_tw": "組播位址，用於一對多通信",
         "ko": "일대다 통신을 위한 멀티캐스트 주소"
     },
     "purpose_reserved": {
         "zh": "保留地址，用于特殊用途",
         "en": "Reserved address, used for special purposes",
         "ja": "予約アドレス、特殊な用途に使用",
-        "zh_tw": "保留地址，用于特殊用途",
+        "zh_tw": "保留位址，用於特殊用途",
         "ko": "특수 목적으로 주소를 보관하세요."
     },
     "purpose_global": {
         "zh": "全球可路由地址，用于公网通信",
         "en": "Globally routable address, used for public network communication",
         "ja": "グローバルルーティング可能なアドレス、公衆ネットワーク通信に使用",
-        "zh_tw": "全球可路由地址，用于公网通信",
+        "zh_tw": "全球可路由位址，用於公網通信",
         "ko": "공용 네트워크 트래픽에 대한 글로벌 라우팅 가능 주소"
     },
     "purpose_unknown": {
@@ -2230,21 +2230,21 @@
         "zh": "小型网络，适合家庭或小型办公室",
         "en": "Small network, suitable for home or small office",
         "ja": "小規模ネットワーク、家庭または小規模オフィスに適しています",
-        "zh_tw": "小型网络，适合家庭或小型办公室",
+        "zh_tw": "小型網絡，適合家庭或小型辦公室",
         "ko": "가정 또는 소규모 사무실을 위한 소규모 네트워크"
     },
     "size_medium": {
         "zh": "中型网络，适合企业或校园网络",
         "en": "Medium network, suitable for enterprise or campus network",
         "ja": "中規模ネットワーク、企業またはキャンパスネットワークに適しています",
-        "zh_tw": "中型网络，适合企业或校园网络",
+        "zh_tw": "中型網絡，適合企業或校園網絡",
         "ko": "기업 또는 캠퍼스 네트워크를 위한 중간 규모 네트워크"
     },
     "size_large": {
         "zh": "大型网络，适合大型机构或运营商",
         "en": "Large network, suitable for large organizations or ISPs",
         "ja": "大規模ネットワーク、大規模組織またはISPに適しています",
-        "zh_tw": "大型网络，适合大型机构或运营商",
+        "zh_tw": "大型網絡，適合大型機構或運營商",
         "ko": "대규모 기관 또는 운영자를 위한 대규모 네트워크"
     },
     "advice_large_subnet": {
@@ -2489,14 +2489,14 @@
         "zh": "CIDR地址包含主机位",
         "en": "CIDR address has host bits set",
         "ja": "CIDRアドレスにはホストビットが設定されています",
-        "zh_tw": "CIDR地址包含主机位",
+        "zh_tw": "CIDR位址包含主機位",
         "ko": "CIDR 주소에 호스트 비트 포함"
     },
     "invalid_ip_format_expected_4_octets": {
         "zh": "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）",
         "en": "Invalid IP format, expected 4 octets",
         "ja": "無効なIP形式、4つのオクテットが必要です（例：192.168.1.1）",
-        "zh_tw": "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）",
+        "zh_tw": "IP位址格式錯誤, 需要4個八位元組（例如：192.168.1.1）",
         "ko": "잘못된 IP 주소 형식, 4 옥텟 필요 (예: 192.168.1.1)"
     },
     "got": {
@@ -2510,7 +2510,7 @@
         "zh": "IP地址中八位组 '{octet}' 无效, 最多允许3个字符(0-255)",
         "en": "Invalid octet '{octet}' in IP address, max 3 chars (0-255) allowed",
         "ja": "IPアドレス内のオクテット '{octet}' は無効です、最大3文字(0-255)が許可されています",
-        "zh_tw": "IP地址中八位组 '{octet}' 无效, 最多允许3个字符(0-255)",
+        "zh_tw": "IP位址中八位元組 '{octet}' 無效, 最多允許3個字元(0-255)",
         "ko": "IP 주소의 유효하지 않은 옥텟 '{octet}', 최대 3자 허용 (0-255)"
     },
     "must_be_less_than_or_equal_to_255": {
@@ -2524,28 +2524,28 @@
         "zh": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
         "en": "Invalid IPv4 address format: Only decimal digits and dots allowed (e.g., 192.168.1.1)",
         "ja": "無効なIPv4アドレス形式: IPアドレスには10進数とドットのみが許可されています（例：192.168.1.1）",
-        "zh_tw": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
+        "zh_tw": "無效的IPv4位址格式: IP位址中只允許使用十進制數字和點（例如：192.168.1.1）",
         "ko": "잘못된 IPv4 주소 형식: IP 주소에는 10진수 및 점만 허용됩니다 (예: 192.168.1.1)."
     },
     "invalid_ip_address_format": {
         "zh": "无效的IP地址格式",
         "en": "Invalid IP address format",
         "ja": "無効なIPアドレス形式",
-        "zh_tw": "无效的IP地址格式",
+        "zh_tw": "無效的IP位址格式",
         "ko": "유효하지 않은 IP 주소 형식"
     },
     "unexpected_slash_in_ip_address": {
         "zh": "IP地址中包含不允许的字符'/'（例如：192.168.1.1）",
         "en": "unexpected '/' in IP address",
         "ja": "IPアドレスに許可されていない文字'/'が含まれています（例：192.168.1.1）",
-        "zh_tw": "IP地址中包含不允许的字符'/'（例如：192.168.1.1）",
+        "zh_tw": "IP位址中包含不允許的字元'/'（例如：192.168.1.1）",
         "ko": "IP 주소에 허용되지 않는 문자가 포함되어 있습니다 '/' (예: 192.168.1.1)"
     },
     "invalid_ipv6_address": {
         "zh": "无效的IPv6地址",
         "en": "Invalid IPv6 address",
         "ja": "無効なIPv6アドレス",
-        "zh_tw": "无效的IPv6地址",
+        "zh_tw": "無效的IPv6位址",
         "ko": "유효하지 않은 IPv6 주소"
     },
     "at_most_4_hex_digits_per_group": {
@@ -2594,7 +2594,7 @@
         "zh": "不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)",
         "en": "is not an IPv4-mapped IPv6 address, this feature only supports IPv4-mapped format (e.g., ::ffff:192.168.1.1)",
         "ja": "IPv4マップIPv6アドレスではありません、この機能はIPv4マップ形式のみをサポートします（例：::ffff:192.168.1.1）",
-        "zh_tw": "不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)",
+        "zh_tw": "不是IPv4映射的IPv6位址，該功能僅支援IPv4映射格式(如::ffff:192.168.1.1)",
         "ko": "IPv4 매핑 IPv6 주소가 아닌 이 기능은 IPv4 매핑 형식만 지원합니다 (예:: ffff: 192.168.1.1)."
     },
     "cannot_create_subnet_for": {
@@ -2636,7 +2636,7 @@
         "zh": "起始IP地址必须小于或等于结束IP地址",
         "en": "Start IP address must be less than or equal to end IP address",
         "ja": "開始IPアドレスは終了IPアドレス以下でなければなりません",
-        "zh_tw": "起始IP地址必须小于或等于结束IP地址",
+        "zh_tw": "起始IP位址必須小於或等於結束IP位址",
         "ko": "시작 IP 주소는 종료 IP 주소보다 작거나 같아야 합니다"
     },
     "at_least_two_subnets_needed_to_check_overlap": {
