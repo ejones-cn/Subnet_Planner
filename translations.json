@@ -2876,5 +2876,12 @@
         "en": "Copyright © 2025 {app_name}",
         "ja": "© 2025 {app_name} 著作権所有",
         "ko": "© 2025 {app_name} 판권 소유"
+    },
+    "db_language": {
+        "zh": "简体中文",
+        "zh_tw": "繁体中文",
+        "en": "双字节字符",
+        "ja": "日本語",
+        "ko": "한국어"
     }
 }

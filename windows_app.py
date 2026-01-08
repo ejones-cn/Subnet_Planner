@@ -627,12 +627,27 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
-        self.info_label = ttk.Label(
-            self.info_bar_frame, text="", padding=(0, 0, 0, 0), anchor="w",
-            wraplength=0,  # 初始设置为0，后面根据需要调整
-            justify="left"
+        # 使用Text组件替代Label，以支持更灵活的文本布局
+        self.info_label = tk.Text(
+            self.info_bar_frame, wrap="word", padx=3, pady=0, height=0,
+            borderwidth=0, relief="flat", state="disabled",
+            font=(font_family, font_size),  # 使用与原Label相同的字体
+            takefocus=False,  # 不接受焦点
+            cursor="arrow",  # 显示普通箭头光标
+            selectbackground="#f0f0f0",  # 选中背景与组件背景相同
+            selectforeground="#000000",  # 选中前景与普通文本相同
+            insertbackground="#f0f0f0",  # 插入光标颜色与背景相同
+            highlightthickness=0  # 移除焦点高亮边框
         )
-        self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
+        # 设置左对齐
+        self.info_label.tag_configure("justify", justify="left")
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(0, 0), pady=2)
+        # 禁用文本选择
+        self.info_label.bind("<Button-1>", lambda e: "break")
+        self.info_label.bind("<Double-1>", lambda e: "break")
+        self.info_label.bind("<Triple-1>", lambda e: "break")
+        self.info_label.bind("<B1-Motion>", lambda e: "break")
+        self.info_label.bind("<Control-a>", lambda e: "break")
 
         self.info_close_btn = ttk.Button(
             self.info_bar_frame,
@@ -641,7 +656,7 @@ class IPSubnetSplitterApp:
             style="InfoBarCloseButton.TButton",
             cursor="hand2",
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1)
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1, sticky="se")
 
         self.info_auto_hide_id = None
         self.info_auto_hide_scheduled_time = None  # 记录定时器设置的时间
@@ -1431,6 +1446,9 @@ class IPSubnetSplitterApp:
         """设置子网规划功能的界面"""
         # 直接使用self.planning_frame，移除中间层main_planning_frame
 
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 设置grid布局
         self.planning_frame.grid_columnconfigure(0, weight=1)  # 左侧列可伸缩
         self.planning_frame.grid_columnconfigure(1, weight=1)  # 右侧列可伸缩
@@ -1454,7 +1472,7 @@ class IPSubnetSplitterApp:
             parent_frame,
             values=self.planning_parent_networks,  # 使用包含两条记录的列表
             width=16,
-            font=("微软雅黑", 10),
+            font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
@@ -2210,6 +2228,9 @@ class IPSubnetSplitterApp:
 
     def _import_data(self):
         """导入数据的主方法"""
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 显示导入选项对话框
         dialog = tk.Toplevel(self.root)
         dialog.title(_("import_data"))
@@ -2237,7 +2258,7 @@ class IPSubnetSplitterApp:
 
         # 说明文本
         info_text = _("choose_import_method")
-        ttk.Label(main_frame, text=info_text, font=('微软雅黑', 10)).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=info_text, font=(font_family, font_size)).pack(pady=(0, 15))
 
         # 按钮框架 - 纵向排列，居中放置
         button_frame = ttk.Frame(main_frame)
@@ -2441,6 +2462,9 @@ class IPSubnetSplitterApp:
             errors: 错误列表
             data_list: 数据列表
         """
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         dialog = tk.Toplevel(self.root)
         dialog.title(_("import_data"))
         dialog.resizable(False, False)
@@ -2467,7 +2491,7 @@ class IPSubnetSplitterApp:
         valid_count = total_count - error_count
 
         summary_text = _("data_import_summary").format(total_count=total_count, valid_count=valid_count, error_count=error_count)
-        ttk.Label(main_frame, text=summary_text, font=('微软雅黑', 10, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=summary_text, font=(font_family, font_size, 'bold')).pack(pady=(0, 10))
 
         # 创建表格显示所有数据
         tree_frame = ttk.Frame(main_frame)
@@ -2760,6 +2784,9 @@ class IPSubnetSplitterApp:
         """显示自定义的居中对话框，支持info、error、warning类型"""
         result = None
 
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 确保主窗口完全初始化，先更新主窗口布局
         self.root.update_idletasks()
 
@@ -2788,7 +2815,7 @@ class IPSubnetSplitterApp:
         frame.grid_columnconfigure(0, weight=1)
 
         # 添加消息文本，居中显示，调整wraplength适应新的宽度
-        msg_label = ttk.Label(frame, text=message, wraplength=250, font=('微软雅黑', 10))
+        msg_label = ttk.Label(frame, text=message, wraplength=250, font=(font_family, font_size))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
 
         # 创建按钮框架
@@ -2888,6 +2915,9 @@ class IPSubnetSplitterApp:
         """显示自定义的居中确认对话框"""
         result = None
 
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         self.root.update_idletasks()
 
         parent_window = self.root.focus_get()
@@ -2913,7 +2943,7 @@ class IPSubnetSplitterApp:
         frame.grid_rowconfigure(2, weight=1)
 
         # 添加消息文本，居中显示，使用合适的wraplength
-        msg_label = ttk.Label(frame, text=message, wraplength=450, font=('微软雅黑', 10))
+        msg_label = ttk.Label(frame, text=message, wraplength=450, font=(font_family, font_size))
         msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
 
         btn_frame = ttk.Frame(frame)
@@ -3618,11 +3648,14 @@ class IPSubnetSplitterApp:
             active_color: 悬停颜色
             pressed_color: 按下颜色
         """
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         self.style.configure(
             style_name,
             background=background_color,
             foreground="white",
-            font=("微软雅黑", 10, "bold"),
+            font=(font_family, font_size, "bold"),
             padding=6,
         )
         self.style.map(
@@ -3936,7 +3969,7 @@ class IPSubnetSplitterApp:
                             else:
                                 # 换行，确保行尾没有标点符号
                                 lines.append(current_line.rstrip())
-                                current_line = ""
+                                current_line = char  # 保留当前空格作为新行的开始
                     else:
                         # 检查添加当前字符后的宽度
                         test_line = current_line + char
@@ -3958,9 +3991,17 @@ class IPSubnetSplitterApp:
                                         lines.append(current_line)
                                         current_line = char
                                     else:
-                                        # 正常换行
-                                        lines.append(current_line)
-                                        current_line = char
+                                        # 检查当前行是否可以在空格处换行，避免英文单词分割
+                                        last_space = current_line.rfind(' ')
+                                        if last_space != -1:
+                                            # 回溯到最近的空格，将空格前的内容作为一行
+                                            lines.append(current_line[:last_space].rstrip())
+                                            # 空格后的内容（包括当前字符）作为新行的开始
+                                            current_line = current_line[last_space+1:] + char
+                                        else:
+                                            # 整个行就是一个很长的单词，无法避免分割
+                                            lines.append(current_line)
+                                            current_line = char
                             else:
                                 # 空行直接添加
                                 current_line = char
@@ -3970,10 +4011,32 @@ class IPSubnetSplitterApp:
                 
                 return "\n".join(lines)
             
-            # 显示完整文本，不带图标
+            # 显示完整文本，首行加上图标
+            # 先将图标添加到文本开头
+            text_with_icon = self._info_icon + self._full_info_text
+            
+            # 计算最大行宽（不包括额外边距）
             max_line_width = current_width - 34  # 减去左右内边距
-            wrapped_text = smart_wrap_text(self._full_info_text, max_line_width)
-            self.info_label.config(text=wrapped_text)
+            
+            # 对带图标的完整文本进行智能换行处理
+            final_text = smart_wrap_text(text_with_icon, max_line_width)
+            
+            # 使用Text组件的方法设置文本
+            self.info_label.configure(state="normal")
+            self.info_label.delete(1.0, tk.END)
+            self.info_label.insert(tk.END, final_text, "justify")
+            
+            # 根据消息类型设置文本颜色
+            if "Error" in self._info_label_style:
+                self.info_label.configure(fg="#c62828")  # 错误信息显示红色
+            else:
+                self.info_label.configure(fg="#424242")  # 正确信息显示灰色
+            
+            self.info_label.configure(state="disabled")
+            
+            # 计算需要显示的行数
+            line_count = final_text.count('\n') + 1
+            self.info_label.configure(height=line_count)
             
             # 强制更新布局，让label计算出正确的高度
             self.root.update_idletasks()
@@ -3981,8 +4044,9 @@ class IPSubnetSplitterApp:
             # 获取label的实际高度
             label_height = self.info_label.winfo_reqheight()
             
-            # 计算新的信息栏高度（label高度 + 内边距 + 关闭按钮高度）
-            new_height = label_height + 10 + 20  # 10px内边距 + 20px关闭按钮高度
+            # 计算新的信息栏高度，添加额外的上下边距以确保文本完整显示
+            # 给最后一行文字留出足够空间，添加4px额外高度
+            new_height = label_height + 4  # 额外添加4px高度，确保最后一行完整显示
             new_height = max(new_height, 30)  # 最小高度30px
             
             # 更新信息栏框架高度
@@ -4040,10 +4104,22 @@ class IPSubnetSplitterApp:
                 return "..."
             
             truncated_text = truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
-            self.info_label.config(text=self._info_icon + truncated_text)
             
-            # 恢复单行显示，取消自动换行
-            self.info_label.config(wraplength=0)
+            # 使用Text组件的方法设置文本
+            self.info_label.configure(state="normal")
+            self.info_label.delete(1.0, tk.END)
+            self.info_label.insert(tk.END, self._info_icon + truncated_text, "justify")
+            
+            # 根据消息类型设置文本颜色
+            if "Error" in self._info_label_style:
+                self.info_label.configure(fg="#c62828")  # 错误信息显示红色
+            else:
+                self.info_label.configure(fg="#424242")  # 正确信息显示灰色
+            
+            self.info_label.configure(state="disabled")
+            
+            # 恢复单行显示
+            self.info_label.configure(height=1)
             
             # 恢复原始高度，宽度保持不变
             original_height = 30
@@ -4092,6 +4168,9 @@ class IPSubnetSplitterApp:
 
     def create_ipv6_info_section(self):
         """创建IPv6地址信息查询功能界面"""
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 在ipv6_info_frame中增加中间容器，内边距10
         content_container = ttk.Frame(self.ipv6_info_frame, padding="10")
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
@@ -4102,7 +4181,7 @@ class IPSubnetSplitterApp:
 
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
         ttk.Label(input_frame, text=_("ipv6_address")).pack(side=tk.LEFT, padx=(0, 5))
-        self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=48, font=("微软雅黑", 10))
+        self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=48, font=(font_family, font_size))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
         self.ipv6_info_entry.config(state="normal")  # 允许手动输入
@@ -4129,7 +4208,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text=_("cidr")).pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_cidr_var = tk.StringVar()
         self.ipv6_cidr_combobox = ttk.Combobox(
-            input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly", font=("微软雅黑", 10)
+            input_frame, textvariable=self.ipv6_cidr_var, width=3, state="readonly", font=(font_family, font_size)
         )
         self.ipv6_cidr_combobox['values'] = list(range(1, 129))
         self.ipv6_cidr_combobox.current(63)  # 默认选择64
@@ -4159,6 +4238,9 @@ class IPSubnetSplitterApp:
 
     def create_merged_subnets_and_cidr_section(self):
         """创建子网合并和范围转CIDR功能界面"""
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 创建输入部分的容器，包含所有组件
         input_container = ttk.Frame(self.merge_frame, padding="10")
         input_container.pack(fill=tk.BOTH, expand=True)
@@ -4189,7 +4271,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
 
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=("微软雅黑", 10))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size))
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26")
@@ -4217,7 +4299,7 @@ class IPSubnetSplitterApp:
 
         ttk.Label(start_frame, text=_("start")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_start_entry = ttk.Combobox(
-            start_frame, values=self.range_start_history, width=13, font=("微软雅黑", 10)
+            start_frame, values=self.range_start_history, width=13, font=(font_family, font_size)
         )
         self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_start_entry.insert(0, "192.168.0.1")
@@ -4245,7 +4327,7 @@ class IPSubnetSplitterApp:
         end_frame.pack(fill=tk.X, pady=(5, 0))
 
         ttk.Label(end_frame, text=_("end")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
-        self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=("微软雅黑", 10))
+        self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=(font_family, font_size))
         self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.30.254")
         self.range_end_entry.config(state="normal")  # 允许手动输入
@@ -4432,6 +4514,9 @@ class IPSubnetSplitterApp:
 
     def create_ipv4_info_section(self):
         """创建IPv4地址信息查询功能界面"""
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 在ipv4_info_frame中增加中间容器
         content_container = ttk.Frame(self.ipv4_info_frame, padding="10")
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
@@ -4441,7 +4526,7 @@ class IPSubnetSplitterApp:
 
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
         ttk.Label(input_frame, text=_("ipv4_address")).pack(side=tk.LEFT, padx=(0, 5))
-        self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=("微软雅黑", 10))
+        self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=(font_family, font_size))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
         self.ip_info_entry.insert(0, "192.168.1.1")
         self.ip_info_entry.config(state="normal")  # 允许手动输入
@@ -4503,7 +4588,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text=_("subnet_mask")).pack(side=tk.LEFT, padx=(0, 5))
         self.ip_mask_var = tk.StringVar()
         self.ip_mask_combobox = ttk.Combobox(
-            input_frame, textvariable=self.ip_mask_var, width=15, state="readonly", font=("微软雅黑", 10)
+            input_frame, textvariable=self.ip_mask_var, width=15, state="readonly", font=(font_family, font_size)
         )
         self.ip_mask_combobox['values'] = list(self.subnet_mask_cidr_map.keys())
         self.ip_mask_combobox.current(list(self.subnet_mask_cidr_map.keys()).index("255.255.255.0"))
@@ -4515,7 +4600,7 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text="CIDR").pack(side=tk.LEFT, padx=(0, 5))
         self.ip_cidr_var = tk.StringVar()
         self.ip_cidr_combobox = ttk.Combobox(
-            input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly", font=("微软雅黑", 10)
+            input_frame, textvariable=self.ip_cidr_var, width=3, state="readonly", font=(font_family, font_size)
         )
         self.ip_cidr_combobox['values'] = list(range(1, 33))
         self.ip_cidr_combobox.current(23)  # 默认选择24
@@ -4567,6 +4652,9 @@ class IPSubnetSplitterApp:
 
     def create_subnet_overlap_section(self):
         """创建子网重叠检测功能界面"""
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 在overlap_frame中增加中间容器，内边距10
         content_container = ttk.Frame(self.overlap_frame, padding="10")
         content_container.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
@@ -4590,7 +4678,7 @@ class IPSubnetSplitterApp:
         text_frame = ttk.Frame(input_frame)
         text_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=("微软雅黑", 10))
+        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23")
 
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
@@ -5527,6 +5615,9 @@ class IPSubnetSplitterApp:
         # 设置对话框大小和位置
         self.test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
 
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+
         # 创建对话框内容框架
         content_frame = ttk.Frame(self.test_dialog, padding="15")
         content_frame.pack(fill=tk.BOTH, expand=True)
@@ -5541,7 +5632,7 @@ class IPSubnetSplitterApp:
         content_frame.grid_columnconfigure(0, weight=1)  # 唯一列扩展
 
         # 添加标题标签
-        title_label = ttk.Label(content_frame, text=_("function_debug_panel"), font=("微软雅黑", 12, "bold"))
+        title_label = ttk.Label(content_frame, text=_("function_debug_panel"), font=(font_family, 12, "bold"))
         title_label.grid(row=0, column=0, pady=(0, 15))
 
         # 添加说明标签
@@ -5579,7 +5670,7 @@ class IPSubnetSplitterApp:
         error_btn.grid(row=0, column=1, padx=5, pady=5)
 
         # 第二行按钮
-        long_text = _("test_long_text_content") * 8
+        long_text = _("test_long_text_content") * 5
         long_text_btn = ttk.Button(
             button_frame,
             text=_("test_long_text_message"),
@@ -5591,8 +5682,8 @@ class IPSubnetSplitterApp:
 
         # 中英文混排长文本测试按钮
         mixed_text = (
-            _("test_mixed_text_content") + "This is a long text with mixed Chinese and English characters."
-            * 8
+            (_("test_mixed_text_content") + "This is a long text with mixed " + _("db_language") + " and English characters. "
+             ) * 5
         )
         mixed_text_btn = ttk.Button(
             button_frame,
@@ -5679,13 +5770,14 @@ class IPSubnetSplitterApp:
                     self.style.configure(
                         "InfoBarCloseButton.TButton",
                         padding=(2, 0),  # 按用户要求统一设置padding为(2, 0)
-                        font=('微软雅黑', 8),  # 字体设置为微软雅黑，大小为8
+                        font=(font_family, 8),  # 使用统一的字体设置，大小为8
                         foreground="#9E9E9E",
                         width=2,  # 字符宽度，配合padding使用
+                        sticky="se",
                     )
 
                     # 重新配置信息栏标签样式，确保错误信息颜色正确
-                    base_info_label_style = {"font": ("微软雅黑", 10), "relief": "flat"}
+                    base_info_label_style = {"font": (font_family, font_size), "relief": "flat"}
                     self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
                     self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
                     self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
@@ -5893,10 +5985,25 @@ class IPSubnetSplitterApp:
         self._info_currently_expanded = False
         
         # 显示截断文本（带有图标）
-        self.info_label.config(text=icon + truncated_text, style=label_style)
+        # 使用Text组件的方法设置文本
+        self.info_label.configure(state="normal")
+        self.info_label.delete(1.0, tk.END)
+        self.info_label.insert(tk.END, icon + truncated_text, "justify")
+        self.info_label.configure(state="disabled")
+        # Text组件不支持style参数，通过直接设置样式属性来实现
+        self.info_label.configure(bg="#f0f0f0")  # 设置背景色
+        
+        # 根据消息类型设置文本颜色
+        if error:
+            self.info_label.configure(fg="#c62828")  # 错误信息显示红色
+        else:
+            self.info_label.configure(fg="#424242")  # 正确信息显示灰色
         self.info_bar_frame.configure(style=frame_style)
         
-        # 添加点击事件绑定，用于切换显示完整/截断文本
+        # 确保点击事件能够正常触发展开/折叠功能
+        # 先解绑可能存在的冲突绑定
+        self.info_label.unbind("<Button-1>")
+        # 重新绑定点击事件
         self.info_label.bind("<Button-1>", self.toggle_info_bar_expand)
 
         # 显示信息栏 - 使用高度动画实现滑入效果
@@ -6608,6 +6715,9 @@ class IPSubnetSplitterApp:
         # 重新初始化所有必要的组件属性
         self.initialize_component_properties()
         
+        # 获取当前字体设置
+        font_family, font_size = get_current_font_settings()
+        
         # 重新创建主框架
         self.main_frame = ttk.Frame(self.root, padding="15")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
@@ -6640,14 +6750,29 @@ class IPSubnetSplitterApp:
             style="InfoBarCloseButton.TButton",
             cursor="hand2",
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1)
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1, sticky="se")
         
-        # 重新创建信息标签
-        self.info_label = ttk.Label(
-            self.info_bar_frame, text="", padding=(2, 0, 0, 0), anchor="w"
+        # 重新创建信息标签（使用Text组件替代Label，以支持更灵活的文本布局）
+        self.info_label = tk.Text(
+            self.info_bar_frame, wrap="word", padx=3, pady=2, height=1,
+            borderwidth=0, relief="flat", state="disabled",
+            font=(font_family, font_size),
+            takefocus=False,  # 不接受焦点
+            cursor="arrow",  # 显示普通箭头光标
+            selectbackground="#f0f0f0",  # 选中背景与组件背景相同
+            selectforeground="#000000",  # 选中前景与普通文本相同
+            insertbackground="#f0f0f0",  # 插入光标颜色与背景相同
+            highlightthickness=0  # 移除焦点高亮边框
         )
-        self.info_label.grid(row=0, column=0, sticky="ew", padx=(3, 0), pady=2)
+        # 设置左对齐
+        self.info_label.tag_configure("justify", justify="left")
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(0, 0), pady=0)
         self.info_label.lift(self.info_close_btn)
+        # 禁用文本选择，但保留点击事件以支持展开/折叠
+        self.info_label.bind("<Double-1>", lambda e: "break")
+        self.info_label.bind("<Triple-1>", lambda e: "break")
+        self.info_label.bind("<B1-Motion>", lambda e: "break")
+        self.info_label.bind("<Control-a>", lambda e: "break")
         
         # 重新初始化图表数据
         self.chart_data = None
