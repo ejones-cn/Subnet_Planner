@@ -666,6 +666,9 @@ class IPSubnetSplitterApp:
         self.root.update_idletasks()
         self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
 
+        # 创建信息栏字体对象并保存，避免重复创建导致渲染不一致
+        self._info_font = tkfont.Font(family=font_family, size=font_size)
+
         self.info_label.lift(self.info_close_btn)
 
         # 初始化图表数据
@@ -3939,8 +3942,8 @@ class IPSubnetSplitterApp:
         if self._info_currently_expanded:
             # 获取当前字体设置
             from style_manager import get_current_font_settings
-            font_family, _ = get_current_font_settings()
-            font = tkfont.Font(family=font_family, size=10)
+            font_family, font_size = get_current_font_settings()
+            font = tkfont.Font(family=font_family, size=font_size)
             
             # 获取当前信息栏宽度（保持不变）
             current_width = self.info_bar_frame.winfo_width()
@@ -4141,7 +4144,139 @@ class IPSubnetSplitterApp:
                 if current_line:
                     lines.append(current_line)
                 
-                return '\n'.join(lines)
+                # 实现两端对齐
+                def justify_line(line, target_width, font):
+                    """对单行进行两端对齐"""
+                    if not line:
+                        return line
+                    
+                    line_width = font.measure(line)
+                    
+                    # 如果行宽已经达到或超过目标宽度，不需要对齐
+                    if line_width >= target_width:
+                        return line
+                    
+                    # 检查是否包含空格
+                    has_space = ' ' in line
+                    
+                    # 计算需要填充的宽度
+                    padding_width = target_width - line_width
+                    
+                    if has_space:
+                        # 有空格的文本（如英文）：在空格位置均匀分配额外空格
+                        # 找到所有空格的位置
+                        space_positions = []
+                        for i, char in enumerate(line):
+                            if char == ' ':
+                                space_positions.append(i)
+                        
+                        if not space_positions:
+                            return line
+                        
+                        # 计算每个空格需要增加的宽度
+                        num_spaces = len(space_positions)
+                        extra_width_per_space = padding_width / num_spaces
+                        
+                        # 计算空格的宽度
+                        space_width = font.measure(' ')
+                        
+                        # 计算需要增加的空格数量（向上取整以确保达到目标宽度）
+                        extra_spaces_per_gap = int(extra_width_per_space / space_width) + 1
+                        
+                        # 在每个空格位置增加空格
+                        result = []
+                        space_count = 0
+                        for i, char in enumerate(line):
+                            result.append(char)
+                            if char == ' ' and space_count < num_spaces - 1:
+                                # 增加额外的空格
+                                for _ in range(extra_spaces_per_gap):
+                                    result.append(' ')
+                                space_count += 1
+                        
+                        justified_line = ''.join(result)
+                        
+                        # 检查是否超出目标宽度，如果超出则减少一个空格
+                        justified_width = font.measure(justified_line)
+                        if justified_width > target_width and extra_spaces_per_gap > 0:
+                            # 减少一个空格
+                            result = []
+                            space_count = 0
+                            for i, char in enumerate(line):
+                                result.append(char)
+                                if char == ' ' and space_count < num_spaces - 1:
+                                    for _ in range(extra_spaces_per_gap - 1):
+                                        result.append(' ')
+                                    space_count += 1
+                            justified_line = ''.join(result)
+                        
+                        return justified_line
+                    else:
+                        # 没有空格的文本（如中文）：在汉字之间均匀添加空格
+                        # 找到所有非标点符号的汉字位置
+                        char_positions = []
+                        for i, char in enumerate(line):
+                            # 跳过标点符号
+                            if char not in '，。、；：「」『』（）【】！？.,;:!?':
+                                char_positions.append(i)
+                        
+                        if len(char_positions) <= 1:
+                            return line
+                        
+                        # 计算每个间隙需要增加的宽度
+                        num_gaps = len(char_positions) - 1
+                        extra_width_per_gap = padding_width / num_gaps
+                        
+                        # 计算空格的宽度
+                        space_width = font.measure(' ')
+                        
+                        # 计算需要增加的空格数量（向上取整以确保达到目标宽度）
+                        extra_spaces_per_gap = int(extra_width_per_gap / space_width) + 1
+                        
+                        if extra_spaces_per_gap <= 0:
+                            return line
+                        
+                        # 在每个汉字之间添加空格
+                        result = []
+                        gap_count = 0
+                        for i, char in enumerate(line):
+                            result.append(char)
+                            # 在汉字之间添加空格
+                            if i in char_positions and gap_count < num_gaps:
+                                for _ in range(extra_spaces_per_gap):
+                                    result.append(' ')
+                                gap_count += 1
+                        
+                        justified_line = ''.join(result)
+                        
+                        # 检查是否超出目标宽度，如果超出则减少一个空格
+                        justified_width = font.measure(justified_line)
+                        if justified_width > target_width and extra_spaces_per_gap > 0:
+                            # 减少一个空格
+                            result = []
+                            gap_count = 0
+                            for i, char in enumerate(line):
+                                result.append(char)
+                                if i in char_positions and gap_count < num_gaps:
+                                    for _ in range(extra_spaces_per_gap - 1):
+                                        result.append(' ')
+                                    gap_count += 1
+                            justified_line = ''.join(result)
+                        
+                        return justified_line
+                
+                # 对除最后一行外的所有行进行两端对齐
+                justified_lines = []
+                for i, line in enumerate(lines):
+                    if i == len(lines) - 1:
+                        # 最后一行不进行两端对齐
+                        justified_lines.append(line)
+                    else:
+                        # 对其他行进行两端对齐
+                        justified_line = justify_line(line, max_width, font)
+                        justified_lines.append(justified_line)
+                
+                return '\n'.join(justified_lines)
             # 显示完整文本，首行加上图标
             # 先将图标添加到文本开头
             text_with_icon = self._info_icon + self._full_info_text
@@ -4153,9 +4288,12 @@ class IPSubnetSplitterApp:
             final_text = smart_wrap_text(text_with_icon, max_line_width)
             
             # 使用Text组件的方法设置文本
+            # 强制将焦点从Text组件移开，避免渲染问题
+            self.root.focus_set()
+            
             self.info_label.configure(state="normal")
             self.info_label.delete(1.0, tk.END)
-            self.info_label.insert(tk.END, final_text, "justify")
+            self.info_label.insert(tk.END, final_text)
             
             # 根据消息类型设置文本颜色
             if "Error" in self._info_label_style:
@@ -4164,6 +4302,10 @@ class IPSubnetSplitterApp:
                 self.info_label.configure(fg="#424242")  # 正确信息显示灰色
             
             self.info_label.configure(state="disabled")
+            
+            # 强制将焦点从Text组件移开，避免渲染问题
+            # 使用after延迟确保焦点转移在禁用状态之后生效
+            self.root.after(1, lambda: self.root.focus_set())
             
             # 计算需要显示的行数
             line_count = final_text.count('\n') + 1
@@ -4190,13 +4332,16 @@ class IPSubnetSplitterApp:
             if hasattr(self, 'info_auto_hide_id') and self.info_auto_hide_id:
                 self.root.after_cancel(self.info_auto_hide_id)
                 self.info_auto_hide_id = None
+            
+            # 强制将焦点从Text组件移开，避免渲染问题
+            self.root.focus_set()
         else:
             # 显示截断文本
             # 重新计算截断文本
             def calculate_pixel_width(text):
                 from style_manager import get_current_font_settings
-                font_family, _ = get_current_font_settings()
-                font = tkfont.Font(family=font_family, size=10)
+                font_family, font_size = get_current_font_settings()
+                font = tkfont.Font(family=font_family, size=font_size)
                 return font.measure(text)
             
             def truncate_text_by_pixel(text, icon, max_pixel_width):
@@ -4237,9 +4382,12 @@ class IPSubnetSplitterApp:
             truncated_text = truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
             
             # 使用Text组件的方法设置文本
+            # 强制将焦点从Text组件移开，避免渲染问题
+            self.root.focus_set()
+            
             self.info_label.configure(state="normal")
             self.info_label.delete(1.0, tk.END)
-            self.info_label.insert(tk.END, self._info_icon + truncated_text, "justify")
+            self.info_label.insert(tk.END, self._info_icon + truncated_text)
             
             # 根据消息类型设置文本颜色
             if "Error" in self._info_label_style:
@@ -4257,9 +4405,16 @@ class IPSubnetSplitterApp:
             self.info_bar_frame.place_configure(height=original_height)
             self.info_spacer.configure(height=original_height)
             
+            # 强制将焦点从Text组件移开，避免渲染问题
+            # 使用after延迟确保焦点转移在禁用状态之后生效
+            self.root.after(1, lambda: self.root.focus_set())
+            
             # 收起时重新开始自动消失计时
             if hasattr(self, 'root'):
                 self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
+            
+            # 强制将焦点从Text组件移开，避免渲染问题
+            self.root.focus_set()
 
     def setup_advanced_tools_page(self):
         """设置高级工具功能的界面"""
