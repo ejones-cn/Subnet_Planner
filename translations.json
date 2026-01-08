@@ -1873,7 +1873,7 @@
         "zh": "链路本地前缀 (fe80::/10)",
         "en": "Link-Local Prefix (fe80::/10)",
         "ja": "リンクローカルプレフィックス (fe80::/10)",
-        "zh_tw": "链路本地前缀 (fe80::/10)",
+        "zh_tw": "鏈路本地位址前綴 (fe80::/10)",
         "ko": "링크 로컬 접두사 (fe80::/10)"
     },
     "unique_local_prefix": {
@@ -2118,7 +2118,7 @@
         "zh": "\n建议为终端设备分配/64前缀，符合IPv6最佳实践",
         "en": "\nIt is recommended to assign /64 prefixes to end devices, which complies with IPv6 best practices",
         "ja": "\nエンドデバイスには/64プレフィックスを割り当てることを推奨、IPv6のベストプラクティスに準拠",
-        "zh_tw": "\n建议为终端设备分配/64前缀，符合IPv6最佳实践",
+        "zh_tw": "\n建議為終端設備分配/64前綴，符合IPv6最佳實踐",
         "ko": "IPv6 모범 사례에 따라/64 접두사를 최종 장치에 할당하는 것이 좋습니다."
     },
     "related_rfc": {
