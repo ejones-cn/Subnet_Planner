@@ -1229,7 +1229,7 @@
         "zh": "扩展信息",
         "en": "Extended Information",
         "ja": "拡張情報",
-        "zh_tw": "擴展信息",
+        "zh_tw": "擴展資訊",
         "ko": "확장 정보"
     },
     "address_usage": {
@@ -1369,14 +1369,14 @@
         "zh": "地址属性",
         "en": "Address Attributes",
         "ja": "アドレス属性",
-        "zh_tw": "地址屬性",
+        "zh_tw": "位址屬性",
         "ko": "주소 속성"
     },
     "address_structure": {
         "zh": "地址结构分析",
         "en": "Address Structure Analysis",
         "ja": "アドレス構造分析",
-        "zh_tw": "地址結構分析",
+        "zh_tw": "位址結構分析",
         "ko": "주소 구조 분석"
     },
     "num_addresses": {
@@ -1523,7 +1523,7 @@
         "zh": "共 {total_count}, 条数据，{valid_count} 条有效，{error_count} 条无效",
         "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
         "ja": "合計 {total_count} 件のデータ、{valid_count} 件有効、{error_count} 件無効",
-        "zh_tw": "共 {total_count}, 條數據，{valid_count} 條有效，{error_count} 條無效",
+        "zh_tw": "共 {total_count} 條數據，{valid_count} 條有效，{error_count} 條無效",
         "ko": "{total_count}/{valid_count} 유효, {error_count} 유효하지 않음"
     },
     "valid": {
@@ -1551,7 +1551,7 @@
         "zh": "中已存在名称为 '{name}' 的记录",
         "en": "already contains a record named '{name}'",
         "ja": "には '{name}' という名前のレコードが既に存在します",
-        "zh_tw": "中已存在名称为 '{name}' 的记录",
+        "zh_tw": "中已存在名稱為 '{name}' 的記錄",
         "ko": "이름이 '{name}' 인 레코드가 이미 존재합니다"
     },
     "no_valid_data_found": {
@@ -1775,7 +1775,7 @@
         "zh": "地址范围",
         "en": "Address Range",
         "ja": "アドレス範囲",
-        "zh_tw": "地址範圍",
+        "zh_tw": "位址範圍",
         "ko": "주소 범위"
     },
     "first_usable_address": {
@@ -1866,7 +1866,7 @@
         "zh": "(其他多播类型)",
         "en": "(Other Multicast Type)",
         "ja": "(その他のマルチキャストタイプ)",
-        "zh_tw": "(其他多播类型)",
+        "zh_tw": "(其他多播類型)",
         "ko": "(기타 멀티캐스트 유형)"
     },
     "link_local_prefix": {
@@ -2013,7 +2013,7 @@
         "zh": "用于本地主机测试和诊断",
         "en": "Used for local host testing and diagnostics",
         "ja": "ローカルホストのテストと診断に使用",
-        "zh_tw": "用于本地主机测试和诊断",
+        "zh_tw": "用於本地主機測試和診斷",
         "ko": "localhost 테스트 및 진단용"
     },
     "purpose_link_local": {
@@ -2027,7 +2027,7 @@
         "zh": "用于一对多通信，支持组播应用",
         "en": "Used for one-to-many communication, supports multicast applications",
         "ja": "一対多通信に使用、マルチキャストアプリケーションをサポート",
-        "zh_tw": "用于一对多通信，支持组播应用",
+        "zh_tw": "用於一對多通信，支援群播應用",
         "ko": "일대다 통신을 위한 멀티캐스트 애플리케이션 지원"
     },
     "purpose_ipv4_mapped": {
@@ -2062,7 +2062,7 @@
         "zh": "用于黑洞路由，丢弃不需要的流量",
         "en": "Used for blackhole routing, discarding unwanted traffic",
         "ja": "ブラックホールルーティングに使用、不要なトラフィックを破棄",
-        "zh_tw": "用于黑洞路由，丢弃不需要的流量",
+        "zh_tw": "用於黑洞路由，丟棄不需要的流量",
         "ko": "원치 않는 트래픽을 드롭하는 블랙홀 라우팅에 사용"
     },
     "purpose_orchid": {
@@ -2552,28 +2552,28 @@
         "zh": "每组最多允许4个十六进制字符（例如：2001:0db8::1）",
         "en": "at most 4 hex digits per group",
         "ja": "グループごとに最大4桁の16進数が許可されています（例：2001:0db8::1）",
-        "zh_tw": "每组最多允许4个十六进制字符（例如：2001:0db8::1）",
+        "zh_tw": "每組最多允許4個十六進制字元（例如：2001:0db8::1）",
         "ko": "그룹당 최대 4개의 16진수 문자 허용 (예: 2001: 0db8:: 1)"
     },
     "too_many_colons": {
         "zh": "冒号数量过多（例如：2001:0db8::1）",
         "en": "too many colons",
         "ja": "コロンの数が多すぎます（例：2001:0db8::1）",
-        "zh_tw": "冒号数量过多（例如：2001:0db8::1）",
+        "zh_tw": "冒號數量過多（例如：2001:0db8::1）",
         "ko": "콜론이 너무 많음 (예: 2001: 0db8:: 1)"
     },
     "octet_too_long_max_3_characters_allowed": {
         "zh": "八位组过长, 最多允许3个字符（例如：192.168.1.1）",
         "en": "octet too long, max 3 characters allowed",
         "ja": "オクテットが長すぎます、最大3文字が許可されています（例：192.168.1.1）",
-        "zh_tw": "八位组过长, 最多允许3个字符（例如：192.168.1.1）",
+        "zh_tw": "八位元組過長，最多允許3個字元（例如：192.168.1.1）",
         "ko": "옥텟이 너무 깁니다. 최대 3자까지 허용됩니다 (예: 192.168.1.1)."
     },
     "group_too_long_max_4_hex_characters_allowed": {
         "zh": "组过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
         "en": "group too long, max 4 hex characters allowed",
         "ja": "グループが長すぎます、グループごとに最大4桁の16進数が許可されています（例：2001:0db8::1）",
-        "zh_tw": "组过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
+        "zh_tw": "組過長，每組最多允許4個十六進制字元（例如：2001:0db8::1）",
         "ko": "그룹이 너무 깁니다. 그룹당 최대 4개의 16진수 문자가 허용됩니다 (예: 2001: 0db8:: 1)."
     },
     "max_3_chars_0_255_allowed": {
@@ -2650,7 +2650,7 @@
         "zh": "个",
         "en": "pieces",
         "ja": "個",
-        "zh_tw": "个",
+        "zh_tw": "個",
         "ko": "통"
     },
     "class_a": {
