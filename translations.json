@@ -18,7 +18,7 @@
         "zh": "确定",
         "zh_tw": "確定",
         "en": "OK",
-        "ja": "OK",
+        "ja": "確定",
         "ko": "확인"
     },
     "cancel": {
@@ -33,7 +33,7 @@
         "zh_tw": "確認",
         "en": "Confirm",
         "ja": "確認",
-        "ko": "확   인"
+        "ko": "확인"
     },
     "export": {
         "zh": "导出",
@@ -432,7 +432,7 @@
         "zh_tw": "可用數",
         "en": "Available",
         "ja": "可能数",
-        "ko": "사용 가능"
+        "ko": "사용 가능 수"
     },
     "ipv6_address_info": {
         "zh": "IPv6地址信息查询",
@@ -502,7 +502,7 @@
         "zh_tw": "結束",
         "en": "End",
         "ja": "終了",
-        "ko": "닫기"
+        "ko": "끝"
     },
     "convert_to_cidr": {
         "zh": "转换为CIDR",
@@ -544,14 +544,14 @@
         "zh_tw": "檢測重疊",
         "en": "Check Overlap",
         "ja": "重複チェック",
-        "ko": "검출 중첩"
+        "ko": "중첩 검사"
     },
     "detection_result": {
         "zh": "检测结果",
         "zh_tw": "檢測結果",
         "en": "Detection Result",
         "ja": "検出結果",
-        "ko": "테스트 결과"
+        "ko": "검출 결과"
     },
     "function_debug_panel": {
         "zh": "功能调试面板",
@@ -593,7 +593,7 @@
         "zh_tw": "關於",
         "en": "About",
         "ja": "について",
-        "ko": "관련 있는"
+        "ko": "소개"
     },
     "author": {
         "zh": "作者",
@@ -621,7 +621,7 @@
         "zh_tw": "萬用字元遮罩",
         "en": "Wildcard Mask",
         "ja": "ワイルドマスク",
-        "ko": "와일드카드 가면"
+        "ko": "와일드카드 마스크"
     },
     "broadcast_address": {
         "zh": "广播地址",
@@ -845,7 +845,7 @@
         "zh_tw": "起始位址",
         "en": "Start Address",
         "ja": "開始アドレス",
-        "ko": "폼주소"
+        "ko": "시작 주소"
     },
     "end_address": {
         "zh": "结束地址",
@@ -894,7 +894,7 @@
         "zh_tw": "未知",
         "en": "Unknown",
         "ja": "未知",
-        "ko": "의문의"
+        "ko": "알 수 없는"
     },
     "loopback_address": {
         "zh": "回环地址",
@@ -970,7 +970,7 @@
         "zh": "地址格式",
         "en": "Address Format",
         "ja": "アドレス形式",
-        "zh_tw": "地址格式",
+        "zh_tw": "位址格式",
         "ko": "주소 형식"
     },
     "compressed_format": {
@@ -1005,21 +1005,21 @@
         "zh": "地址属性",
         "en": "Address Properties",
         "ja": "アドレスプロパティ",
-        "zh_tw": "地址屬性",
+        "zh_tw": "位址屬性",
         "ko": "주소 속성"
     },
     "section_address_properties": {
         "zh": "地址属性",
         "en": "Address Properties",
         "ja": "アドレスプロパティ",
-        "zh_tw": "地址屬性",
+        "zh_tw": "位址屬性",
         "ko": "주소 속성"
     },
     "section_address_range": {
         "zh": "地址范围",
         "en": "Address Range",
         "ja": "アドレス範囲",
-        "zh_tw": "地址範圍",
+        "zh_tw": "位址範圍",
         "ko": "주소 범위"
     },
     "section_binary_representation": {
@@ -1054,7 +1054,7 @@
         "zh": "扩展信息",
         "en": "Extended Info",
         "ja": "拡張情報",
-        "zh_tw": "擴展信息",
+        "zh_tw": "擴展資訊",
         "ko": "확장 정보"
     },
     "row_number": {
@@ -1068,7 +1068,7 @@
         "zh": "是否全局可路由",
         "en": "Is Globally Routable",
         "ja": "グローバルルーティング",
-        "zh_tw": "是否全局可路由",
+        "zh_tw": "是否全域可路由",
         "ko": "전 세계로 라우팅 가능"
     },
     "is_private_address": {
@@ -1082,7 +1082,7 @@
         "zh": "是否私有地址",
         "en": "Is Private",
         "ja": "プライベート",
-        "zh_tw": "是否私有地址",
+        "zh_tw": "是否私有位址",
         "ko": "비공개 주소 사용 여부"
     },
     "is_reserved": {
@@ -1138,7 +1138,7 @@
         "zh": "地址结构分析",
         "en": "Address Structure Analysis",
         "ja": "アドレス構造分析",
-        "zh_tw": "地址結構分析",
+        "zh_tw": "位址結構分析",
         "ko": "주소 구조 분석"
     },
     "prefix_analysis": {
@@ -1152,21 +1152,21 @@
         "zh": "地址段数量",
         "en": "Address Segment Count",
         "ja": "アドレスセグメント数",
-        "zh_tw": "地址段數量",
+        "zh_tw": "位址段數量",
         "ko": "주소 세그먼트 수"
     },
     "binary_representation": {
         "zh": "二进制表示",
         "en": "Binary Representation",
         "ja": "バイナリ表現",
-        "zh_tw": "二进制表示",
+        "zh_tw": "二進制表示",
         "ko": "이진 표현"
     },
     "hexadecimal_representation": {
         "zh": "十六进制表示",
         "en": "Hexadecimal Representation",
         "ja": "16進数表現",
-        "zh_tw": "十六进制表示",
+        "zh_tw": "十六進制表示",
         "ko": "16진수 표현"
     },
     "decimal_value_representation": {
@@ -1180,7 +1180,7 @@
         "zh": "地址段详情",
         "en": "Address Segment Details",
         "ja": "アドレスセグメントの詳細",
-        "zh_tw": "地址段詳情",
+        "zh_tw": "位址段詳情",
         "ko": "주소 세그먼트 세부 정보"
     },
     "network_scale_and_usage": {
@@ -1236,7 +1236,7 @@
         "zh": "地址用途",
         "en": "Address Usage",
         "ja": "アドレスの使用法",
-        "zh_tw": "地址用途",
+        "zh_tw": "位址用途",
         "ko": "주소 사용"
     },
     "rfc_specification": {
@@ -1334,21 +1334,21 @@
         "zh": "地址类型",
         "en": "Address Type",
         "ja": "アドレスタイプ",
-        "zh_tw": "地址類型",
+        "zh_tw": "位址類型",
         "ko": "주소 유형"
     },
     "compressed": {
         "zh": "压缩格式",
         "en": "Compressed Format",
         "ja": "圧縮形式",
-        "zh_tw": "压缩格式",
+        "zh_tw": "壓縮格式",
         "ko": "압축 형식"
     },
     "exploded": {
         "zh": "展开格式",
         "en": "Expanded Format",
         "ja": "展開形式",
-        "zh_tw": "展开格式",
+        "zh_tw": "展開格式",
         "ko": "형식 확장"
     },
     "reverse_dns": {
@@ -1362,7 +1362,7 @@
         "zh": "映射的IPv4地址",
         "en": "Mapped IPv4 Address",
         "ja": "マップされたIPv4アドレス",
-        "zh_tw": "映射的IPv4地址",
+        "zh_tw": "映射的IPv4位址",
         "ko": "매핑된 IPv4 주소"
     },
     "address_attributes": {
@@ -1391,7 +1391,7 @@
         "en": "Start Address",
         "ja": "開始アドレス",
         "zh_tw": "起始位址",
-        "ko": "폼주소"
+        "ko": "시작 주소"
     },
     "host_range_end": {
         "zh": "结束地址",
@@ -1531,14 +1531,14 @@
         "en": "Valid",
         "ja": "有効",
         "zh_tw": "有效",
-        "ko": "하루 동안 머물러"
+        "ko": "유효"
     },
     "invalid": {
         "zh": "无效",
         "en": "Invalid",
         "ja": "無効",
         "zh_tw": "無效",
-        "ko": "유효없음"
+        "ko": "무효"
     },
     "none": {
         "zh": "无",
@@ -1852,7 +1852,7 @@
         "zh": "(站点本地多播)",
         "en": "(Site-Local Multicast)",
         "ja": "(サイトローカルマルチキャスト)",
-        "zh_tw": "(站点本地多播)",
+        "zh_tw": "(站點本地位播)",
         "ko": "(사이트 로컬 멀티캐스트)"
     },
     "global_multicast": {
@@ -2020,7 +2020,7 @@
         "zh": "用于同一链路内的设备通信，无需路由器",
         "en": "Used for communication between devices on the same link, no router needed",
         "ja": "同じリンク内のデバイス間通信に使用、ルーターは不要",
-        "zh_tw": "用于同一链路内的设备通信，无需路由器",
+        "zh_tw": "用於同一鏈路內的設備通信，無需路由器",
         "ko": "동일한 링크 내에서 장치 통신에 사용되며 라우터가 필요하지 않습니다"
     },
     "purpose_multicast_ipv6": {
@@ -2069,7 +2069,7 @@
         "zh": "用于ORCHID（Overlay Routable Cryptographic Hash Identifiers）系统",
         "en": "Used for ORCHID (Overlay Routable Cryptographic Hash Identifiers) system",
         "ja": "ORCHID（Overlay Routable Cryptographic Hash Identifiers）システムに使用",
-        "zh_tw": "用于ORCHID（Overlay Routable Cryptographic Hash Identifiers）系统",
+        "zh_tw": "用於ORCHID（Overlay Routable Cryptographic Hash Identifiers）系統",
         "ko": "Orchid (Overlay Routable Cryptographic Hash Identifier) 시스템용"
     },
     "purpose_unspecified": {
@@ -2104,7 +2104,7 @@
         "zh": "建议配置防火墙规则，限制不必要的入站访问",
         "en": "It is recommended to configure firewall rules to restrict unnecessary inbound access",
         "ja": "ファイアウォールルールを設定し、不要な受信アクセスを制限することを推奨",
-        "zh_tw": "建议配置防火墙规则，限制不必要的入站访问",
+        "zh_tw": "建議配置防火牆規則，限制不必要的入站訪問",
         "ko": "불필요한 인바운드 액세스를 제한하도록 방화벽 규칙을 구성하는 것이 좋습니다."
     },
     "advice_private_network": {
@@ -2125,7 +2125,7 @@
         "zh": "相关RFC",
         "en": "Related RFCs",
         "ja": "関連するRFC",
-        "zh_tw": "相关RFC",
+        "zh_tw": "相關RFC",
         "ko": "관련 RFC"
     },
     "network_prefix": {
@@ -2160,7 +2160,7 @@
         "zh": "请输入子网合并列表",
         "en": "Please enter subnet merge list",
         "ja": "サブネット統合リストを入力してください",
-        "zh_tw": "请输入子网合并列表",
+        "zh_tw": "請輸入子網合併列表",
         "ko": "서브넷 병합 목록을 입력하십시오"
     },
     "enter_ipv6_address": {
@@ -2251,14 +2251,14 @@
         "zh": "建议划分为多个子网，便于管理和减少广播域",
         "en": "It is recommended to divide into multiple subnets for easier management and reduced broadcast domains",
         "ja": "管理を容易にし、ブロードキャストドメインを減らすために、複数のサブネットに分割することを推奨",
-        "zh_tw": "建议划分为多个子网，便于管理和减少广播域",
+        "zh_tw": "建議劃分為多個子網，便於管理和減少廣播域",
         "ko": "브로드캐스트 도메인을 쉽게 관리하고 줄이기 위해 여러 서브넷으로 분할하는 것이 좋습니다."
     },
     "advice_public_network": {
         "zh": "建议配置静态路由和防火墙规则",
         "en": "It is recommended to configure static routes and firewall rules",
         "ja": "静的ルートとファイアウォールルールを設定することを推奨",
-        "zh_tw": "建议配置静态路由和防火墙规则",
+        "zh_tw": "建議配置靜態路由和防火牆規則",
         "ko": "정적 라우팅 및 방화벽 규칙 권장"
     },
     "attribute": {
@@ -2293,7 +2293,7 @@
         "zh": "成功导入",
         "en": "Successfully imported",
         "ja": "正常に取込されました",
-        "zh_tw": "成功导入",
+        "zh_tw": "成功導入",
         "ko": "성공적으로 가져왔습니다"
     },
     "records_to": {
@@ -2405,7 +2405,7 @@
         "zh": "研发部",
         "zh_tw": "研發部",
         "en": "R & D",
-        "ja": "R & D",
+        "ja": "研究開発部",
         "ko": "R&D 부서"
     },
     "production": {
@@ -2503,7 +2503,7 @@
         "zh": "实际为",
         "en": "got",
         "ja": "取得しました",
-        "zh_tw": "实际为",
+        "zh_tw": "實際為",
         "ko": "실제 값은 입니다."
     },
     "invalid_octet_in_ip": {
@@ -2517,7 +2517,7 @@
         "zh": "无效, 必须≤255（例如：192.168.1.1）",
         "en": "must be ≤ 255",
         "ja": "無効、255以下でなければなりません（例：192.168.1.1）",
-        "zh_tw": "无效, 必须≤255（例如：192.168.1.1）",
+        "zh_tw": "無效, 必須≤255（例如：192.168.1.1）",
         "ko": "유효하지 않음, 255 이하이어야 함 (예: 192.168.1.1)"
     },
     "invalid_ipv4_address_format": {
@@ -2580,7 +2580,7 @@
         "zh": "无效, 最多允许3个字符(0-255)",
         "en": "max 3 chars (0-255) allowed",
         "ja": "無効、最大3文字(0-255)が許可されています",
-        "zh_tw": "无效, 最多允许3个字符(0-255)",
+        "zh_tw": "無效, 最多允許3個字元(0-255)",
         "ko": "유효하지 않음, 최대 3자까지 허용됨 (0-255)"
     },
     "is_not_a_subnet_of": {
@@ -2601,7 +2601,7 @@
         "zh": "无法为 {name} 创建前缀为 {prefix} 的子网",
         "en": "Cannot create subnet for {name} with prefix {prefix}",
         "ja": "{name} のプレフィックス {prefix} のサブネットを作成できません",
-        "zh_tw": "无法为 {name} 建立前置码为 {prefix} 的子網",
+        "zh_tw": "無法為 {name} 建立前置碼為 {prefix} 的子網",
         "ko": "{name} 의 접두사 {prefix} 로 서브넷을 만들 수 없습니다"
     },
     "with_prefix_length": {
@@ -2615,7 +2615,7 @@
         "zh": "创建子网失败",
         "en": "Failed to create subnet",
         "ja": "サブネットの作成に失敗しました",
-        "zh_tw": "创建子网失败",
+        "zh_tw": "建立子網失敗",
         "ko": "서브넷을 생성하지 못했습니다"
     },
     "cannot_allocate_sufficiently_large_subnet_for": {
@@ -2629,7 +2629,7 @@
         "zh": "子网列表不能为空",
         "en": "Subnet list cannot be empty",
         "ja": "サブネットリストは空にできません",
-        "zh_tw": "子网列表不能为空",
+        "zh_tw": "子網列表不能為空",
         "ko": "서브넷 목록은 비워둘 수 없습니다"
     },
     "start_ip_must_be_less_than_or_equal_to_end_ip": {
@@ -2643,7 +2643,7 @@
         "zh": "至少需要两个子网来检查重叠",
         "en": "At least two subnets needed to check overlap",
         "ja": "重複をチェックするには少なくとも2つのサブネットが必要です",
-        "zh_tw": "至少需要两个子网来检查重叠",
+        "zh_tw": "至少需要兩個子網來檢查重疊",
         "ko": "겹침을 확인하려면 적어도 두 개의 서브넷이 필요합니다"
     },
     "pieces": {
@@ -2692,7 +2692,7 @@
         "zh": "网段",
         "en": "Segment",
         "ja": "セグメント",
-        "zh_tw": "网段",
+        "zh_tw": "網段",
         "ko": "네트워크 세그먼트"
     },
     "legend": {
@@ -2713,7 +2713,7 @@
         "zh": "暂无网段数据",
         "en": "No segment data",
         "ja": "セグメントデータはありません",
-        "zh_tw": "暂无网段数据",
+        "zh_tw": "暫無網段數據",
         "ko": "네트워크 세그먼트 데이터 없음"
     },
     "chart_drawing_failed": {
@@ -2879,7 +2879,7 @@
     },
     "db_language": {
         "zh": "简体中文",
-        "zh_tw": "繁体中文",
+        "zh_tw": "繁體中文",
         "en": "双字节字符",
         "ja": "日本語",
         "ko": "한국어"
