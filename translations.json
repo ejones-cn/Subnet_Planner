@@ -956,14 +956,14 @@
         "zh": "总主机数",
         "en": "Total Hosts",
         "ja": "総ホスト数",
-        "zh_tw": "总主机数",
+        "zh_tw": "總主機數",
         "ko": "총 호스트 수"
     },
     "usable_hosts": {
         "zh": "可用主机数",
         "en": "Usable Hosts",
         "ja": "利用可能数",
-        "zh_tw": "可用主机数",
+        "zh_tw": "可用主機數",
         "ko": "예약 가능한 호스트 수"
     },
     "address_format": {
@@ -977,14 +977,14 @@
         "zh": "压缩格式",
         "en": "Compressed Format",
         "ja": "圧縮形式",
-        "zh_tw": "压缩格式",
+        "zh_tw": "壓縮格式",
         "ko": "압축 형식"
     },
     "expanded_format": {
         "zh": "展开格式",
         "en": "Expanded Format",
         "ja": "展開形式",
-        "zh_tw": "展开格式",
+        "zh_tw": "展開格式",
         "ko": "형식 확장"
     },
     "reverse_dns_format": {
@@ -1005,63 +1005,63 @@
         "zh": "地址属性",
         "en": "Address Properties",
         "ja": "アドレスプロパティ",
-        "zh_tw": "地址属性",
+        "zh_tw": "地址屬性",
         "ko": "주소 속성"
     },
     "section_address_properties": {
         "zh": "地址属性",
         "en": "Address Properties",
         "ja": "アドレスプロパティ",
-        "zh_tw": "地址属性",
+        "zh_tw": "地址屬性",
         "ko": "주소 속성"
     },
     "section_address_range": {
         "zh": "地址范围",
         "en": "Address Range",
         "ja": "アドレス範囲",
-        "zh_tw": "地址范围",
+        "zh_tw": "地址範圍",
         "ko": "주소 범위"
     },
     "section_binary_representation": {
         "zh": "二进制表示",
         "en": "Binary Representation",
         "ja": "バイナリ表現",
-        "zh_tw": "二进制表示",
+        "zh_tw": "二進制表示",
         "ko": "이진 표현"
     },
     "section_hexadecimal_representation": {
         "zh": "十六进制表示",
         "en": "Hexadecimal Representation",
         "ja": "16進数表現",
-        "zh_tw": "十六进制表示",
+        "zh_tw": "十六進制表示",
         "ko": "16진수 표현"
     },
     "section_decimal_representation": {
         "zh": "十进制表示",
         "en": "Decimal Representation",
         "ja": "10進数表現",
-        "zh_tw": "十进制表示",
+        "zh_tw": "十進制表示",
         "ko": "소수점 표현"
     },
     "section_ip_properties": {
         "zh": "IP属性",
         "en": "IP Properties",
         "ja": "IPプロパティ",
-        "zh_tw": "IP属性",
+        "zh_tw": "IP屬性",
         "ko": "IP 속성"
     },
     "section_extended_info": {
         "zh": "扩展信息",
         "en": "Extended Info",
         "ja": "拡張情報",
-        "zh_tw": "扩展信息",
+        "zh_tw": "擴展信息",
         "ko": "확장 정보"
     },
     "row_number": {
         "zh": "行号",
         "en": "Row",
         "ja": "行番号",
-        "zh_tw": "行号",
+        "zh_tw": "行號",
         "ko": "줄 숫자"
     },
     "is_global_routable": {
@@ -1096,14 +1096,14 @@
         "zh": "是否回环地址",
         "en": "Is Loopback",
         "ja": "ループバック",
-        "zh_tw": "是否回环地址",
+        "zh_tw": "是否回環地址",
         "ko": "주소를 루프백할지 여부"
     },
     "is_multicast": {
         "zh": "是否组播地址",
         "en": "Is Multicast",
         "ja": "マルチキャスト",
-        "zh_tw": "是否组播地址",
+        "zh_tw": "是否組播地址",
         "ko": "주소 멀티캐스트 여부"
     },
     "is_global": {
@@ -1117,7 +1117,7 @@
         "zh": "是否链路本地地址",
         "en": "Is Link Local",
         "ja": "リンクローカル",
-        "zh_tw": "是否链路本地地址",
+        "zh_tw": "是否鏈路本地地址",
         "ko": "링크-로컬 주소 여부"
     },
     "is_unspecified": {
@@ -1138,21 +1138,21 @@
         "zh": "地址结构分析",
         "en": "Address Structure Analysis",
         "ja": "アドレス構造分析",
-        "zh_tw": "地址结构分析",
+        "zh_tw": "地址結構分析",
         "ko": "주소 구조 분석"
     },
     "prefix_analysis": {
         "zh": "前缀分析",
         "en": "Prefix Analysis",
         "ja": "プレフィックス分析",
-        "zh_tw": "前缀分析",
+        "zh_tw": "前綴分析",
         "ko": "접두사 분석"
     },
     "address_segment_count": {
         "zh": "地址段数量",
         "en": "Address Segment Count",
         "ja": "アドレスセグメント数",
-        "zh_tw": "地址段数量",
+        "zh_tw": "地址段數量",
         "ko": "주소 세그먼트 수"
     },
     "binary_representation": {
@@ -1173,28 +1173,28 @@
         "zh": "十进制值表示",
         "en": "Decimal Value Representation",
         "ja": "10進数値表現",
-        "zh_tw": "十进制值表示",
+        "zh_tw": "十進制值表示",
         "ko": "십진수 값 표현"
     },
     "address_segment_details": {
         "zh": "地址段详情",
         "en": "Address Segment Details",
         "ja": "アドレスセグメントの詳細",
-        "zh_tw": "地址段详情",
+        "zh_tw": "地址段詳情",
         "ko": "주소 세그먼트 세부 정보"
     },
     "network_scale_and_usage": {
         "zh": "网络规模与用途",
         "en": "Network Scale and Usage",
         "ja": "ネットワーク規模と使用法",
-        "zh_tw": "网络规模与用途",
+        "zh_tw": "網絡規模與用途",
         "ko": "네트워크 규모"
     },
     "subnet_size": {
         "zh": "子网规模",
         "en": "Subnet Size",
         "ja": "サブネットサイズ",
-        "zh_tw": "子网规模",
+        "zh_tw": "子網規模",
         "ko": "서브넷 크기"
     },
     "main_usage": {
@@ -1208,28 +1208,28 @@
         "zh": "配置建议",
         "en": "Configuration Advice",
         "ja": "設定アドバイス",
-        "zh_tw": "配置建议",
+        "zh_tw": "配置建議",
         "ko": "구성 제안"
     },
     "network_configuration": {
         "zh": "网络配置",
         "en": "Network Configuration",
         "ja": "ネットワーク設定",
-        "zh_tw": "网络配置",
+        "zh_tw": "網絡配置",
         "ko": "네트워크 설정"
     },
     "rfc_standards_reference": {
         "zh": "RFC标准参考",
         "en": "RFC Standards Reference",
         "ja": "RFC標準リファレンス",
-        "zh_tw": "RFC标准参考",
+        "zh_tw": "RFC標準參考",
         "ko": "RFC 표준 참조"
     },
     "extended_information": {
         "zh": "扩展信息",
         "en": "Extended Information",
         "ja": "拡張情報",
-        "zh_tw": "扩展信息",
+        "zh_tw": "擴展信息",
         "ko": "확장 정보"
     },
     "address_usage": {
@@ -1243,49 +1243,49 @@
         "zh": "RFC规范",
         "en": "RFC Specification",
         "ja": "RFC仕様",
-        "zh_tw": "RFC规范",
+        "zh_tw": "RFC規範",
         "ko": "RFC 사양"
     },
     "ipv4_query": {
         "zh": "IPv4查询",
         "en": "IPv4 Query",
         "ja": "IPv4クエリ",
-        "zh_tw": "IPv4查询",
+        "zh_tw": "IPv4查詢",
         "ko": "IPv4 쿼리"
     },
     "ipv6_query": {
         "zh": "IPv6查询",
         "en": "IPv6 Query",
         "ja": "IPv6クエリ",
-        "zh_tw": "IPv6查询",
+        "zh_tw": "IPv6查詢",
         "ko": "IPv6 쿼리"
     },
     "subnet_merge": {
         "zh": "子网合并",
         "en": "Subnet Merge",
         "ja": "サブネット統合",
-        "zh_tw": "子网合并",
+        "zh_tw": "子網合併",
         "ko": "서브넷 병합"
     },
     "overlap_detection": {
         "zh": "重叠检测",
         "en": "Overlap Detection",
         "ja": "重複検出",
-        "zh_tw": "重叠检测",
+        "zh_tw": "重疊檢測",
         "ko": "오버랩 감지"
     },
     "project": {
         "zh": "项目",
         "en": "Item",
         "ja": "項目",
-        "zh_tw": "项目",
+        "zh_tw": "項目",
         "ko": "항목"
     },
     "status": {
         "zh": "状态",
         "en": "Status",
         "ja": "ステータス",
-        "zh_tw": "状态",
+        "zh_tw": "狀態",
         "ko": "상태"
     },
     "description": {
@@ -1299,42 +1299,42 @@
         "zh": "主机数量",
         "en": "Hosts",
         "ja": "ホスト数",
-        "zh_tw": "主机数量",
+        "zh_tw": "主機數量",
         "ko": "호스트 수"
     },
     "netmask": {
         "zh": "子网掩码",
         "en": "Subnet Mask",
         "ja": "サブネットマスク",
-        "zh_tw": "子网掩码",
+        "zh_tw": "子網遮罩",
         "ko": "서브넷 마스크"
     },
     "network": {
         "zh": "网络地址",
         "en": "Network Address",
         "ja": "ネットワークアドレス",
-        "zh_tw": "网络地址",
+        "zh_tw": "網絡地址",
         "ko": "네트워크 주소"
     },
     "first_host": {
         "zh": "第一个可用主机",
         "en": "First Usable Host",
         "ja": "最初の利用可能なホスト",
-        "zh_tw": "第一个可用主机",
+        "zh_tw": "第一個可用主機",
         "ko": "예약 가능한 첫 번째 호스트"
     },
     "last_host": {
         "zh": "最后一个可用主机",
         "en": "Last Usable Host",
         "ja": "最後の利用可能なホスト",
-        "zh_tw": "最后一个可用主机",
+        "zh_tw": "最後一個可用主機",
         "ko": "예약 가능한 마지막 호스트"
     },
     "address_type": {
         "zh": "地址类型",
         "en": "Address Type",
         "ja": "アドレスタイプ",
-        "zh_tw": "地址类型",
+        "zh_tw": "地址類型",
         "ko": "주소 유형"
     },
     "compressed": {
@@ -1376,14 +1376,14 @@
         "zh": "地址结构分析",
         "en": "Address Structure Analysis",
         "ja": "アドレス構造分析",
-        "zh_tw": "地址结构分析",
+        "zh_tw": "地址結構分析",
         "ko": "주소 구조 분석"
     },
     "num_addresses": {
         "zh": "总地址数",
         "en": "Total Addresses",
         "ja": "総アドレス数",
-        "zh_tw": "总地址数",
+        "zh_tw": "總地址數",
         "ko": "총 주소"
     },
     "host_range_start": {
@@ -1397,70 +1397,70 @@
         "zh": "结束地址",
         "en": "End Address",
         "ja": "終了アドレス",
-        "zh_tw": "结束地址",
+        "zh_tw": "結束地址",
         "ko": "끝 주소"
     },
     "split_info": {
         "zh": "切分网段",
         "en": "Split Segment",
         "ja": "分割セグメント",
-        "zh_tw": "切分网段",
+        "zh_tw": "切分段",
         "ko": "네트워크 세그먼트 분할"
     },
     "save_requirement": {
         "zh": "保存需求",
         "en": "Save Requirement",
         "ja": "要件を保存",
-        "zh_tw": "保存需求",
+        "zh_tw": "儲存需求",
         "ko": "요건 저장"
     },
     "choose_import_method": {
         "zh": "请选择导入方式：",
         "en": "Please choose import method:",
         "ja": "取込方法を選択してください:",
-        "zh_tw": "请选择导入方式：",
+        "zh_tw": "請選擇導入方式：",
         "ko": "가져오기 방법을 선택하십시오:"
     },
     "download_excel_template": {
         "zh": "下载Excel模板",
         "en": "Excel Template",
         "ja": "Excelテンプレート",
-        "zh_tw": "下载Excel模板",
+        "zh_tw": "下載Excel模板",
         "ko": "Excel 템플릿 다운로드"
     },
     "download_csv_template": {
         "zh": "下载CSV模板",
         "en": "CSV Template",
         "ja": "CSVテンプレート",
-        "zh_tw": "下载CSV模板",
+        "zh_tw": "下載CSV模板",
         "ko": "CSV 템플릿 다운로드"
     },
     "address_class": {
         "zh": "网络类别",
         "en": "Network Class",
         "ja": "ネットワーククラス",
-        "zh_tw": "网络类别",
+        "zh_tw": "網絡類別",
         "ko": "네트워크 카테고리"
     },
     "default_netmask": {
         "zh": "默认子网掩码",
         "en": "Default Subnet Mask",
         "ja": "デフォルトサブネットマスク",
-        "zh_tw": "默认子网掩码",
+        "zh_tw": "預設子網遮罩",
         "ko": "기본 서브넷 마스크"
     },
     "integer_representation": {
         "zh": "整数表示",
         "en": "Integer Representation",
         "ja": "整数表現",
-        "zh_tw": "整数表示",
+        "zh_tw": "整數表示",
         "ko": "정수 표현"
     },
     "parent_info": {
         "zh": "父网段",
         "en": "Parent Network",
         "ja": "親ネットワーク",
-        "zh_tw": "父网段",
+        "zh_tw": "父網段",
         "ko": "상위 세그먼트"
     },
     "yes": {
@@ -1481,49 +1481,49 @@
         "zh": "请选择一条历史记录",
         "en": "Please select a history record",
         "ja": "履歴レコードを1つ選択してください",
-        "zh_tw": "请选择一条历史记录",
+        "zh_tw": "請選擇一條歷史記錄",
         "ko": "히스토리를 선택하십시오"
     },
     "please_select_record_to_delete": {
         "zh": "请先选择要删除的记录",
         "en": "Please select the record to delete",
         "ja": "削除するレコードを選択してください",
-        "zh_tw": "请先选择要删除的记录",
+        "zh_tw": "請先選擇要刪除的記錄",
         "ko": "먼저 삭제할 레코드를 선택하십시오"
     },
     "no_undoable_delete_operation": {
         "zh": "没有可撤销的删除操作",
         "en": "No undoable delete operation",
         "ja": "元に戻せる削除操作はありません",
-        "zh_tw": "没有可撤销的删除操作",
+        "zh_tw": "沒有可撤銷的刪除操作",
         "ko": "되돌릴 수 있는 삭제가 없습니다"
     },
     "no_undoable_operation": {
         "zh": "没有可撤销的操作",
         "en": "No undoable operation",
         "ja": "元に戻せる操作はありません",
-        "zh_tw": "没有可撤销的操作",
+        "zh_tw": "沒有可撤銷的操作",
         "ko": "실행 취소 작업 없음"
     },
     "please_select_record_to_move_or_swap": {
         "zh": "请选择要移动或交换的记录",
         "en": "Please select the record to move or swap",
         "ja": "移動または交換するレコードを選択してください",
-        "zh_tw": "请选择要移动或交换的记录",
+        "zh_tw": "請選擇要移動或交換的記錄",
         "ko": "이동하거나 교체할 레코드를 선택하십시오"
     },
     "import_data": {
         "zh": "导入数据",
         "en": "Import Data",
         "ja": "データを取込",
-        "zh_tw": "导入数据",
+        "zh_tw": "導入數據",
         "ko": "데이터 가져오기"
     },
     "data_import_summary": {
         "zh": "共 {total_count}, 条数据，{valid_count} 条有效，{error_count} 条无效",
         "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
         "ja": "合計 {total_count} 件のデータ、{valid_count} 件有効、{error_count} 件無効",
-        "zh_tw": "共 {total_count}, 条数据，{valid_count} 条有效，{error_count} 条无效",
+        "zh_tw": "共 {total_count}, 條數據，{valid_count} 條有效，{error_count} 條無效",
         "ko": "{total_count}/{valid_count} 유효, {error_count} 유효하지 않음"
     },
     "valid": {
@@ -1537,14 +1537,14 @@
         "zh": "无效",
         "en": "Invalid",
         "ja": "無効",
-        "zh_tw": "无效",
+        "zh_tw": "無效",
         "ko": "유효없음"
     },
     "none": {
         "zh": "无",
         "en": "None",
         "ja": "なし",
-        "zh_tw": "无",
+        "zh_tw": "無",
         "ko": "없음"
     },
     "msg_already_exists": {
@@ -1558,35 +1558,35 @@
         "zh": "文件中没有找到有效数据",
         "en": "No valid data found in the file",
         "ja": "ファイル内に有効なデータが見つかりません",
-        "zh_tw": "文件中没有找到有效数据",
+        "zh_tw": "文件中沒有找到有效數據",
         "ko": "파일에서 유효한 데이터를 찾을 수 없습니다"
     },
     "no_data_to_import": {
         "zh": "没有可导入的数据",
         "en": "No data to import",
         "ja": "取込するデータがありません",
-        "zh_tw": "没有可导入的数据",
+        "zh_tw": "沒有可導入的數據",
         "ko": "가져올 데이터 없음"
     },
     "confirm_delete": {
         "zh": "确认删除",
         "en": "Confirm Delete",
         "ja": "削除を確認",
-        "zh_tw": "确认删除",
+        "zh_tw": "確認刪除",
         "ko": "삭제 확인"
     },
     "delete_confirmation_message": {
         "zh": "确定要删除选中的记录吗？此操作可以通过撤销按钮恢复。",
         "en": "Are you sure you want to delete the selected records? This operation can be undone using the undo button.",
         "ja": "選択したレコードを削除してもよろしいですか？この操作は元に戻すボタンで元に戻せます。",
-        "zh_tw": "确定要删除选中的记录吗？此操作可以通过撤销按钮恢复。",
+        "zh_tw": "確定要刪除選中的記錄嗎？此操作可以通過撤銷按鈕恢復。",
         "ko": "정말로 선택한 레코드를 삭제하시겠습니까? 이 작업은 실행 취소 버튼으로 실행 취소할 수 있습니다."
     },
     "test_info_display_effect": {
         "zh": "点击下方按钮测试不同类型的信息栏显示效果：",
         "en": "Click the buttons below to test different information bar display effects:",
         "ja": "下のボタンをクリックして、さまざまなタイプの情報バー表示効果をテストしてください：",
-        "zh_tw": "点击下方按钮测试不同类型的信息栏显示效果：",
+        "zh_tw": "點擊下方按鈕測試不同類型的信息欄顯示效果：",
         "ko": "다양한 유형의 인포바 디스플레이를 테스트하려면 아래 버튼을 클릭하십시오."
     },
     "failed_to_register_font": {
@@ -1649,203 +1649,203 @@
         "zh": "测试正确信息",
         "en": "Test Success Message",
         "ja": "成功テスト",
-        "zh_tw": "测试正确信息",
+        "zh_tw": "測試正確信息",
         "ko": "올바른 정보 테스트"
     },
     "test_error_message": {
         "zh": "测试错误信息",
         "en": "Test Error Message",
         "ja": "エラーテスト",
-        "zh_tw": "测试错误信息",
+        "zh_tw": "測試錯誤信息",
         "ko": "테스트 오류 메시지"
     },
     "test_long_text_message": {
         "zh": "测试长文本信息",
         "en": "Test Long Message",
         "ja": "長文テスト",
-        "zh_tw": "测试长文本信息",
+        "zh_tw": "測試長文本信息",
         "ko": "긴 문자 메시지 테스트"
     },
     "test_mixed_language": {
         "zh": "测试中英文混排",
         "en": "Test Mixed Language",
         "ja": "混在言語のテスト",
-        "zh_tw": "测试中英文混排",
+        "zh_tw": "測試中英文混排",
         "ko": "시험에서 영어와 영어 섞기"
     },
     "hide_info_bar": {
         "zh": "隐藏信息栏",
         "en": "Hide Info Bar",
         "ja": "情報バー隠す",
-        "zh_tw": "隐藏信息栏",
+        "zh_tw": "隱藏信息欄",
         "ko": "정보 표시줄 숨기기"
     },
     "clear_subnet_split": {
         "zh": "清空子网切分",
         "en": "Clear Subnet Split",
         "ja": "サブネットクリア",
-        "zh_tw": "清空子网切分",
+        "zh_tw": "清空子網切分",
         "ko": "빈 서브넷 분할"
     },
     "function_debug": {
         "zh": "功能调试",
         "en": "Function Debug",
         "ja": "機能デバッグ",
-        "zh_tw": "功能调试",
+        "zh_tw": "功能調試",
         "ko": "기능 디버깅"
     },
     "test_success_content": {
         "zh": "测试正确信息：操作成功！",
         "en": "Test success message: Operation successful!",
         "ja": "成功メッセージのテスト：操作に成功しました！",
-        "zh_tw": "测试正确信息：操作成功！",
+        "zh_tw": "測試正確信息：操作成功！",
         "ko": "올바른 정보 테스트: 작동 성공!"
     },
     "test_error_content": {
         "zh": "测试错误信息：操作失败！",
         "en": "Test error message: Operation failed!",
         "ja": "エラーメッセージのテスト：操作に失敗しました！",
-        "zh_tw": "测试错误信息：操作失败！",
+        "zh_tw": "測試錯誤信息：操作失敗！",
         "ko": "테스트 오류 메시지: 작업이 실패했습니다!"
     },
     "test_long_text_content": {
         "zh": "测试长文本信息：这是一条非常长的测试信息，用于测试信息栏的文本截断功能。",
         "en": "Test long text message: This is a very long test message used to test the text truncation feature of the information bar.",
         "ja": "長いテキストメッセージのテスト：これは非常に長いテストメッセージで、情報バーのテキスト切り捨て機能をテストするために使用されます。",
-        "zh_tw": "测试长文本信息：这是一条非常长的测试信息，用于测试信息栏的文本截断功能。",
+        "zh_tw": "測試長文本信息：這是一條非常長的測試信息，用於測試信息欄的文本截斷功能。",
         "ko": "긴 텍스트 메시지 테스트: 이것은 인포바의 텍스트 잘라내기 기능을 테스트하기 위한 매우 긴 테스트 메시지입니다."
     },
     "test_mixed_text_content": {
         "zh": "中英文混排测试：",
         "en": "Mixed language test: ",
         "ja": "混在言語のテスト：",
-        "zh_tw": "中英文混排测试：",
+        "zh_tw": "中英文混排測試：",
         "ko": "중국어-영어 혼합 테스트:"
     },
     "enter_subnet_list": {
         "zh": "请输入子网列表",
         "en": "Please enter subnet list",
         "ja": "サブネットリストを入力してください",
-        "zh_tw": "请输入子网列表",
+        "zh_tw": "請輸入子網列表",
         "ko": "서브넷 목록을 입력하십시오"
     },
     "no_overlap": {
         "zh": "无",
         "en": "No",
         "ja": "なし",
-        "zh_tw": "无",
+        "zh_tw": "無",
         "ko": "없음"
     },
     "no_subnet_overlap_detected": {
         "zh": "未检测到子网重叠",
         "en": "No subnet overlap detected",
         "ja": "サブネットの重複は検出されませんでした",
-        "zh_tw": "未检测到子网重叠",
+        "zh_tw": "未檢測到子網重疊",
         "ko": "서브넷 겹침이 감지되지 않음"
     },
     "overlap": {
         "zh": "重叠",
         "en": "Overlap",
         "ja": "重複",
-        "zh_tw": "重叠",
+        "zh_tw": "重疊",
         "ko": "겹침"
     },
     "with": {
         "zh": "与",
         "en": "with",
         "ja": "と",
-        "zh_tw": "与",
+        "zh_tw": "與",
         "ko": "그리고"
     },
     "ip_address": {
         "zh": "IP地址",
         "en": "IP Address",
         "ja": "IPアドレス",
-        "zh_tw": "IP地址",
+        "zh_tw": "IP位址",
         "ko": "IP 주소"
     },
     "network_class": {
         "zh": "网络类别",
         "en": "Network Class",
         "ja": "ネットワーククラス",
-        "zh_tw": "网络类别",
+        "zh_tw": "網絡類別",
         "ko": "네트워크 카테고리"
     },
     "address_range": {
         "zh": "地址范围",
         "en": "Address Range",
         "ja": "アドレス範囲",
-        "zh_tw": "地址范围",
+        "zh_tw": "地址範圍",
         "ko": "주소 범위"
     },
     "first_usable_address": {
         "zh": "第一个可用地址",
         "en": "First Usable Address",
         "ja": "最初の利用可能なアドレス",
-        "zh_tw": "第一个可用地址",
+        "zh_tw": "第一個可用位址",
         "ko": "사용 가능한 첫 번째 주소"
     },
     "last_usable_address": {
         "zh": "最后一个可用地址",
         "en": "Last Usable Address",
         "ja": "最後の利用可能なアドレス",
-        "zh_tw": "最后一个可用地址",
+        "zh_tw": "最後一個可用位址",
         "ko": "사용 가능한 마지막 주소"
     },
     "cidr_prefix": {
         "zh": "CIDR前缀",
         "en": "CIDR Prefix",
         "ja": "CIDRプレフィックス",
-        "zh_tw": "CIDR前缀",
+        "zh_tw": "CIDR前綴",
         "ko": "CIDR 접두사"
     },
     "ip_properties": {
         "zh": "IP属性",
         "en": "IP Properties",
         "ja": "IPプロパティ",
-        "zh_tw": "IP属性",
+        "zh_tw": "IP屬性",
         "ko": "IP 속성"
     },
     "extended_info": {
         "zh": "扩展信息",
         "en": "Extended Info",
         "ja": "拡張情報",
-        "zh_tw": "扩展信息",
+        "zh_tw": "擴展信息",
         "ko": "확장 정보"
     },
     "first_usable_host": {
         "zh": "第一个可用主机",
         "en": "First Usable Host",
         "ja": "最初の利用可能なホスト",
-        "zh_tw": "第一个可用主机",
+        "zh_tw": "第一個可用主機",
         "ko": "예약 가능한 첫 번째 호스트"
     },
     "last_usable_host": {
         "zh": "最后一个可用主机",
         "en": "Last Usable Host",
         "ja": "最後の利用可能なホスト",
-        "zh_tw": "最后一个可用主机",
+        "zh_tw": "最後一個可用主機",
         "ko": "예약 가능한 마지막 호스트"
     },
     "multicast_prefix": {
         "zh": "多播地址前缀",
         "en": "Multicast Address Prefix",
         "ja": "マルチキャストアドレスプレフィックス",
-        "zh_tw": "多播地址前缀",
+        "zh_tw": "多播位址前綴",
         "ko": "멀티캐스트 주소 접두사"
     },
     "interface_local_multicast": {
         "zh": "(接口本地多播)",
         "en": "(Interface-Local Multicast)",
         "ja": "(インターフェースローカルマルチキャスト)",
-        "zh_tw": "(接口本地多播)",
+        "zh_tw": "(介面本地多播)",
         "ko": "(인터페이스 로컬 멀티캐스트)"
     },
     "link_local_multicast": {
         "zh": "(链路本地多播)",
         "en": "(Link-Local Multicast)",
         "ja": "(リンクローカルマルチキャスト)",
-        "zh_tw": "(链路本地多播)",
+        "zh_tw": "(鏈路本地多播)",
         "ko": "(로컬 멀티캐스트 링크)"
     },
     "site_local_multicast": {

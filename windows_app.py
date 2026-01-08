@@ -629,7 +629,7 @@ class IPSubnetSplitterApp:
 
         # 使用Text组件替代Label，以支持更灵活的文本布局
         self.info_label = tk.Text(
-            self.info_bar_frame, wrap="word", padx=3, pady=0, height=0,
+            self.info_bar_frame, wrap="none", padx=3, pady=0, height=0,
             borderwidth=0, relief="flat", state="disabled",
             font=(font_family, font_size),  # 使用与原Label相同的字体
             takefocus=False,  # 不接受焦点
@@ -3945,72 +3945,203 @@ class IPSubnetSplitterApp:
             # 获取当前信息栏宽度（保持不变）
             current_width = self.info_bar_frame.winfo_width()
             
-            # 实现智能换行，避免标点符号出现在行首
+            # 智能换行算法（符合中日英韩文字习惯）
             def smart_wrap_text(text, max_width):
-                """智能换行文本，避免标点符号出现在行首"""
-                # 定义中文标点符号，应该出现在行尾
-                chinese_end_punct = "，。；：！？、）】》”’}" 
-                # 定义英文标点符号，应该出现在行尾
-                english_end_punct = ",.;:!?)]}"
+                """智能文本换行算法，支持中日英韩文字的混合排版"""
+                if not text:
+                    return ""
                 
-                # 初始化结果行列表
+                import re
+                
                 lines = []
                 current_line = ""
+                current_word = ""
                 
-                # 遍历文本中的每个字符
-                for char in text:
-                    if char.isspace():
-                        if current_line:
-                            # 检查添加空格后的宽度
-                            test_line = current_line + char
-                            test_width = font.measure(test_line)
-                            if test_width <= max_width:
-                                current_line = test_line
-                            else:
-                                # 换行，确保行尾没有标点符号
-                                lines.append(current_line.rstrip())
-                                current_line = char  # 保留当前空格作为新行的开始
+                # 定义字符类型
+                def get_char_type(char):
+                    code = ord(char)
+                    # CJK统一表意文字（中日韩）
+                    if (0x4E00 <= code <= 0x9FFF or  # CJK统一表意文字
+                        0x3400 <= code <= 0x4DBF or  # CJK扩展A
+                        0x20000 <= code <= 0x2A6DF or  # CJK扩展B
+                        0x2A700 <= code <= 0x2B73F or  # CJK扩展C
+                        0x2B740 <= code <= 0x2B81F or  # CJK扩展D
+                        0x2B820 <= code <= 0x2CEAF or  # CJK扩展E
+                        0x2CEB0 <= code <= 0x2EBEF or  # CJK扩展F
+                        0x30000 <= code <= 0x3134F or  # CJK扩展G
+                        0x31350 <= code <= 0x323AF):  # CJK扩展H
+                        return 'cjk'
+                    # 日文假名
+                    elif (0x3040 <= code <= 0x309F or  # 平假名
+                          0x30A0 <= code <= 0x30FF):  # 片假名
+                        return 'cjk'
+                    # 韩文音节
+                    elif 0xAC00 <= code <= 0xD7AF:
+                        return 'cjk'
+                    # CJK标点符号
+                    elif (0x3000 <= code <= 0x303F or  # CJK标点
+                          0xFF00 <= code <= 0xFFEF):  # 全角字符
+                        return 'cjk_punct'
+                    # 英文字母
+                    elif char.isalpha():
+                        return 'alpha'
+                    # 数字
+                    elif char.isdigit():
+                        return 'digit'
+                    # 空格
+                    elif char.isspace():
+                        return 'space'
+                    # 其他标点符号
                     else:
-                        # 检查添加当前字符后的宽度
+                        return 'punct'
+                
+                # 判断是否可以在字符后换行
+                def can_break_after(char_type, char):
+                    if char_type == 'cjk':
+                        return True
+                    elif char_type == 'cjk_punct':
+                        return True
+                    elif char_type == 'space':
+                        return True
+                    elif char_type == 'punct':
+                        return True
+                    return False
+                
+                # 判断是否可以在字符前换行
+                def can_break_before(char_type, char):
+                    if char_type == 'cjk':
+                        return True
+                    elif char_type == 'cjk_punct':
+                        return True
+                    elif char_type == 'punct':
+                        return True
+                    return False
+                
+                i = 0
+                while i < len(text):
+                    char = text[i]
+                    char_type = get_char_type(char)
+                    
+                    if char_type in ['alpha', 'digit']:
+                        # 英文单词或数字，累积整个单词
+                        current_word += char
+                        i += 1
+                        # 检查下一个字符是否是单词的一部分
+                        while i < len(text):
+                            next_char = text[i]
+                            next_type = get_char_type(next_char)
+                            if next_type in ['alpha', 'digit']:
+                                current_word += next_char
+                                i += 1
+                            else:
+                                break
+                        
+                        # 尝试添加单词到当前行
+                        test_line = current_line + current_word
+                        test_width = font.measure(test_line)
+                        
+                        if test_width <= max_width:
+                            current_line = test_line
+                        else:
+                            # 如果当前行不为空，先换行
+                            if current_line:
+                                lines.append(current_line)
+                                current_line = current_word
+                            else:
+                                # 单词本身超过最大宽度，需要拆分
+                                word_chars = list(current_word)
+                                temp_line = ""
+                                for wc in word_chars:
+                                    test_w = temp_line + wc
+                                    if font.measure(test_w) <= max_width:
+                                        temp_line = test_w
+                                    else:
+                                        if temp_line:
+                                            lines.append(temp_line)
+                                        temp_line = wc
+                                current_line = temp_line
+                        current_word = ""
+                    
+                    elif char_type == 'cjk':
+                        # CJK字符，可以单独换行
                         test_line = current_line + char
                         test_width = font.measure(test_line)
                         
                         if test_width <= max_width:
                             current_line = test_line
                         else:
-                            # 检查当前行是否可以换行
                             if current_line:
-                                # 检查当前字符是否是标点符号
-                                if char in chinese_end_punct + english_end_punct:
-                                    # 标点符号应该留在当前行
-                                    current_line = test_line
-                                else:
-                                    # 检查当前行末尾是否有标点符号
-                                    if current_line and current_line[-1] in chinese_end_punct + english_end_punct:
-                                        # 如果有，将标点符号留在当前行
-                                        lines.append(current_line)
-                                        current_line = char
-                                    else:
-                                        # 检查当前行是否可以在空格处换行，避免英文单词分割
-                                        last_space = current_line.rfind(' ')
-                                        if last_space != -1:
-                                            # 回溯到最近的空格，将空格前的内容作为一行
-                                            lines.append(current_line[:last_space].rstrip())
-                                            # 空格后的内容（包括当前字符）作为新行的开始
-                                            current_line = current_line[last_space+1:] + char
-                                        else:
-                                            # 整个行就是一个很长的单词，无法避免分割
-                                            lines.append(current_line)
-                                            current_line = char
-                            else:
-                                # 空行直接添加
+                                lines.append(current_line)
+                            current_line = char
+                        i += 1
+                    
+                    elif char_type == 'cjk_punct':
+                        # CJK标点符号
+                        test_line = current_line + char
+                        test_width = font.measure(test_line)
+                        
+                        if test_width <= max_width:
+                            current_line = test_line
+                        else:
+                            # 标点符号不应该单独出现在行首
+                            # 如果当前行不为空且回退一个字符后仍有内容，则回退换行
+                            if current_line and len(current_line) > 0:
+                                # 回退到前一个字符位置换行
+                                lines.append(current_line[:-1])
+                                current_line = current_line[-1] + char
+                            elif current_line:
+                                # 当前行只有一个字符，直接换行
+                                lines.append(current_line)
                                 current_line = char
+                            else:
+                                # 如果当前行为空，标点符号单独成行
+                                lines.append(char)
+                                current_line = ""
+                        i += 1
+                    
+                    elif char_type == 'space':
+                        # 空格，尝试添加到当前行
+                        test_line = current_line + char
+                        test_width = font.measure(test_line)
+                        
+                        if test_width <= max_width:
+                            current_line = test_line
+                        else:
+                            # 空格会导致超出宽度，先换行
+                            if current_line:
+                                lines.append(current_line)
+                            current_line = ""
+                        i += 1
+                    
+                    elif char_type == 'punct':
+                        # 英文标点符号
+                        test_line = current_line + char
+                        test_width = font.measure(test_line)
+                        
+                        if test_width <= max_width:
+                            current_line = test_line
+                        else:
+                            # 标点符号不应该单独出现在行首
+                            # 如果当前行不为空且回退一个字符后仍有内容，则回退换行
+                            if current_line and len(current_line) > 0:
+                                # 回退到前一个字符位置换行
+                                lines.append(current_line[:-1])
+                                current_line = current_line[-1] + char
+                            elif current_line:
+                                # 当前行只有一个字符，直接换行
+                                lines.append(current_line)
+                                current_line = char
+                            else:
+                                # 如果当前行为空，标点符号单独成行
+                                lines.append(char)
+                                current_line = ""
+                        i += 1
                 
+                # 添加最后一行
                 if current_line:
                     lines.append(current_line)
                 
-                return "\n".join(lines)
-            
+                return '\n'.join(lines)
             # 显示完整文本，首行加上图标
             # 先将图标添加到文本开头
             text_with_icon = self._info_icon + self._full_info_text
@@ -6754,7 +6885,7 @@ class IPSubnetSplitterApp:
         
         # 重新创建信息标签（使用Text组件替代Label，以支持更灵活的文本布局）
         self.info_label = tk.Text(
-            self.info_bar_frame, wrap="word", padx=3, pady=2, height=1,
+            self.info_bar_frame, wrap="none", padx=3, pady=2, height=1,
             borderwidth=0, relief="flat", state="disabled",
             font=(font_family, font_size),
             takefocus=False,  # 不接受焦点
