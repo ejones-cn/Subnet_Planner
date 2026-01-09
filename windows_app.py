@@ -620,34 +620,47 @@ class IPSubnetSplitterApp:
             padding=(2, 0),
             foreground="#9E9E9E",
             font=(font_family, 8),
-            width=2,
+            width=0,
+            background=self.style.lookup("TFrame", "background"),
+            borderwidth=0,
+            highlightthickness=0,
         )
+        # 针对不同主题的具体元素配置无边框样式
+        self.style.map("InfoBarCloseButton.TButton",
+            background=[("active", self.style.lookup("TFrame", "background")),
+                       ("pressed", self.style.lookup("TFrame", "background"))])
+        # 配置边框元素（适用于clam、alt、default、winnative主题）
+        self.style.configure("InfoBarCloseButton.TButton.border",
+            borderwidth=0,
+            relief="flat")
+        # 配置button元素（适用于vista、xpnative主题）
+        self.style.configure("InfoBarCloseButton.TButton.button",
+            borderwidth=0,
+            relief="flat")
+        # 配置focus元素
+        self.style.configure("InfoBarCloseButton.TButton.focus",
+            borderwidth=0,
+            highlightthickness=0)
 
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
-        # 使用Text组件替代Label，以支持更灵活的文本布局
-        self.info_label = tk.Text(
-            self.info_bar_frame, wrap="none", padx=3, pady=0, height=0,
-            borderwidth=0, relief="flat", state="disabled",
-            font=(font_family, font_size),  # 使用与原Label相同的字体
+        # 获取当前主题的背景色
+        bg_color = self.style.lookup("TFrame", "background")
+
+        # 使用Label组件替代Text，以简化实现
+        self.info_label = tk.Label(
+            self.info_bar_frame,
+            padx=0, pady=0,  # 增加内边距以避免被边框遮挡，使用单一值而非元组
+            font=(font_family, font_size),  # 使用与原Text相同的字体
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
-            selectbackground="#f0f0f0",  # 选中背景与组件背景相同
-            selectforeground="#000000",  # 选中前景与普通文本相同
-            insertbackground="#f0f0f0",  # 插入光标颜色与背景相同
-            highlightthickness=0  # 移除焦点高亮边框
+            background=bg_color,  # 设置背景色跟随主题
+            anchor="nw",  # 文本左上对齐，支持多行文本左对齐
+            justify="left",  # 多行文本时左对齐
         )
-        # 设置左对齐
-        self.info_label.tag_configure("justify", justify="left")
-        self.info_label.grid(row=0, column=0, sticky="ew", padx=(0, 0), pady=2)
-        # 禁用文本选择
-        self.info_label.bind("<Button-1>", lambda e: "break")
-        self.info_label.bind("<Double-1>", lambda e: "break")
-        self.info_label.bind("<Triple-1>", lambda e: "break")
-        self.info_label.bind("<B1-Motion>", lambda e: "break")
-        self.info_label.bind("<Control-a>", lambda e: "break")
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)
 
         self.info_close_btn = ttk.Button(
             self.info_bar_frame,
@@ -655,8 +668,9 @@ class IPSubnetSplitterApp:
             command=self.hide_info_bar,
             style="InfoBarCloseButton.TButton",
             cursor="hand2",
+            takefocus=False,  # 确保按钮永远不会获得焦点
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1, sticky="se")
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=(0, 4), sticky="se")
 
         self.info_auto_hide_id = None
         self.info_auto_hide_scheduled_time = None  # 记录定时器设置的时间
@@ -4291,9 +4305,7 @@ class IPSubnetSplitterApp:
             # 强制将焦点从Text组件移开，避免渲染问题
             self.root.focus_set()
             
-            self.info_label.configure(state="normal")
-            self.info_label.delete(1.0, tk.END)
-            self.info_label.insert(tk.END, final_text)
+            self.info_label.config(text=final_text)
             
             # 根据消息类型设置文本颜色
             if "Error" in self._info_label_style:
@@ -4301,15 +4313,9 @@ class IPSubnetSplitterApp:
             else:
                 self.info_label.configure(fg="#424242")  # 正确信息显示灰色
             
-            self.info_label.configure(state="disabled")
-            
             # 强制将焦点从Text组件移开，避免渲染问题
             # 使用after延迟确保焦点转移在禁用状态之后生效
             self.root.after(1, lambda: self.root.focus_set())
-            
-            # 计算需要显示的行数
-            line_count = final_text.count('\n') + 1
-            self.info_label.configure(height=line_count)
             
             # 强制更新布局，让label计算出正确的高度
             self.root.update_idletasks()
@@ -4385,9 +4391,7 @@ class IPSubnetSplitterApp:
             # 强制将焦点从Text组件移开，避免渲染问题
             self.root.focus_set()
             
-            self.info_label.configure(state="normal")
-            self.info_label.delete(1.0, tk.END)
-            self.info_label.insert(tk.END, self._info_icon + truncated_text)
+            self.info_label.config(text=self._info_icon + truncated_text)
             
             # 根据消息类型设置文本颜色
             if "Error" in self._info_label_style:
@@ -4395,10 +4399,8 @@ class IPSubnetSplitterApp:
             else:
                 self.info_label.configure(fg="#424242")  # 正确信息显示灰色
             
-            self.info_label.configure(state="disabled")
-            
             # 恢复单行显示
-            self.info_label.configure(height=1)
+            # 对于Label组件，高度由内容决定，不需要特别设置
             
             # 恢复原始高度，宽度保持不变
             original_height = 30
@@ -6059,19 +6061,43 @@ class IPSubnetSplitterApp:
                         font=(font_family, 8),  # 使用统一的字体设置，大小为8
                         foreground="#9E9E9E",
                         width=2,  # 字符宽度，配合padding使用
-                        sticky="se",
+                        background=self.style.lookup("TFrame", "background"),
+                        borderwidth=0,
+                        highlightthickness=0,
+                        relief="flat",
                     )
+                    # 针对不同主题的具体元素配置无边框样式
+                    self.style.map("InfoBarCloseButton.TButton",
+                        background=[("active", self.style.lookup("TFrame", "background")),
+                                   ("pressed", self.style.lookup("TFrame", "background"))])
+                    # 配置边框元素（适用于clam、alt、default、winnative主题）
+                    self.style.configure("InfoBarCloseButton.TButton.border",
+                        borderwidth=0,
+                        relief="flat")
+                    # 配置button元素（适用于vista、xpnative主题）
+                    self.style.configure("InfoBarCloseButton.TButton.button",
+                        borderwidth=0,
+                        relief="flat")
+                    # 配置focus元素
+                    self.style.configure("InfoBarCloseButton.TButton.focus",
+                        borderwidth=0,
+                        highlightthickness=0)
 
                     # 重新配置信息栏标签样式，确保错误信息颜色正确
-                    base_info_label_style = {"font": (font_family, font_size), "relief": "flat"}
+                    base_info_label_style = {"borderwidth": 0, "font": (font_family, font_size), "relief": "flat"}
                     self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
                     self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
                     self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
 
                     # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
-                    info_bar_frame_style = {"borderwidth": 1, "relief": "solid", "bordercolor": "#F5F5F5"}
+                    info_bar_frame_style = {"borderwidth": 0, "relief": "flat"}
                     for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
                         self.style.configure(frame_style, **info_bar_frame_style)
+                    
+                    # 更新Text组件的背景色，确保跟随主题
+                    if hasattr(self, 'info_label'):
+                        bg_color = self.style.lookup("TFrame", "background")
+                        self.info_label.configure(background=bg_color)
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
@@ -6271,13 +6297,10 @@ class IPSubnetSplitterApp:
         self._info_currently_expanded = False
         
         # 显示截断文本（带有图标）
-        # 使用Text组件的方法设置文本
-        self.info_label.configure(state="normal")
-        self.info_label.delete(1.0, tk.END)
-        self.info_label.insert(tk.END, icon + truncated_text, "justify")
-        self.info_label.configure(state="disabled")
+        # 使用Label组件的方法设置文本
+        self.info_label.config(text=icon + truncated_text)
         # Text组件不支持style参数，通过直接设置样式属性来实现
-        self.info_label.configure(bg="#f0f0f0")  # 设置背景色
+        # self.info_label.configure(bg="#f0f0f0")  # 设置背景色
         
         # 根据消息类型设置文本颜色
         if error:
@@ -7035,30 +7058,22 @@ class IPSubnetSplitterApp:
             command=self.hide_info_bar,
             style="InfoBarCloseButton.TButton",
             cursor="hand2",
+            takefocus=False,  # 确保按钮永远不会获得焦点
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=1, sticky="se")
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=(0, 4), sticky="se")
         
-        # 重新创建信息标签（使用Text组件替代Label，以支持更灵活的文本布局）
-        self.info_label = tk.Text(
-            self.info_bar_frame, wrap="none", padx=3, pady=2, height=1,
-            borderwidth=0, relief="flat", state="disabled",
-            font=(font_family, font_size),
+        # 重新创建信息标签（使用Label组件替代Text，以简化实现）
+        self.info_label = tk.Label(
+            self.info_bar_frame,
+            padx=0, pady=0,  # 使用内边距控制间距，使用单一值而非元组
+            font=(font_family, font_size),  # 使用与原Text相同的字体
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
-            selectbackground="#f0f0f0",  # 选中背景与组件背景相同
-            selectforeground="#000000",  # 选中前景与普通文本相同
-            insertbackground="#f0f0f0",  # 插入光标颜色与背景相同
-            highlightthickness=0  # 移除焦点高亮边框
+            background=bg_color,  # 设置背景色跟随主题
+            anchor="w",  # 文本左对齐
         )
-        # 设置左对齐
-        self.info_label.tag_configure("justify", justify="left")
-        self.info_label.grid(row=0, column=0, sticky="ew", padx=(0, 0), pady=0)
+        self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)
         self.info_label.lift(self.info_close_btn)
-        # 禁用文本选择，但保留点击事件以支持展开/折叠
-        self.info_label.bind("<Double-1>", lambda e: "break")
-        self.info_label.bind("<Triple-1>", lambda e: "break")
-        self.info_label.bind("<B1-Motion>", lambda e: "break")
-        self.info_label.bind("<Control-a>", lambda e: "break")
         
         # 重新初始化图表数据
         self.chart_data = None
