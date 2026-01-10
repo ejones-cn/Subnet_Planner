@@ -21,14 +21,69 @@ SUBNET_COLORS = (
 )
 
 LEGEND_COLORS = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
-
 PARENT_COLOR = "#636e72"
 SPLIT_COLOR = "#4a7eb4"
 
 
+def _get_font_settings():
+    """获取当前语言的字体设置
+
+    Returns:
+        tuple: (字体名称, 字体大小)
+    """
+    return get_current_font_settings()
+
+
+def _calculate_bar_width(network_range: float, log_min: float, log_max: float, chart_width: float, min_bar_width: float) -> float:
+    """计算柱状图宽度
+
+    Args:
+        network_range: 网络范围
+        log_min: 最小对数
+        log_max: 最大对数
+        chart_width: 图表宽度
+        min_bar_width: 最小柱状图宽度
+
+    Returns:
+        float: 计算后的柱状图宽度
+    """
+    log_value = max(log_min, math.log10(network_range))
+    bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
+    return min(bar_width, chart_width)
+
+
+def _calculate_usable_addresses(network_range: int) -> int:
+    """计算可用地址数
+
+    Args:
+        network_range: 网络范围
+
+    Returns:
+        int: 可用地址数
+    """
+    return network_range - 2 if network_range > 2 else network_range
+
+
+def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple) -> None:
+    """绘制网段文本
+
+    Args:
+        canvas: Canvas对象
+        text: 要绘制的文本
+        x: x坐标
+        y: y坐标
+        font: 字体元组
+    """
+    draw_text_with_stroke(canvas, text, x, y, {
+        "font": font,
+        "anchor": tk.W,
+        "fill": "#ffffff"
+    })
+
+
 def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: Dict[str, Any]) -> None:
     """绘制带描边效果的文本
-    
+
     Args:
         canvas: tk.Canvas 对象
         text: 要绘制的文本
@@ -36,9 +91,8 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
         y: y坐标
         style: 样式字典，包含font、anchor、fill等参数
     """
-    # 获取当前语言的字体设置
-    font_family, __ = get_current_font_settings()
-    
+    font_family, __ = _get_font_settings()
+
     # 绘制描边
     for dx in (-1, 1):
         for dy in (-1, 1):
@@ -61,11 +115,11 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
 
 def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> Tuple[int, int, int, int, int, int]:
     """初始化画布并计算尺寸
-    
+
     Args:
         canvas: tk.Canvas 对象
         parent_frame: 父框架
-    
+
     Returns:
         tuple: (width, canvas_height, margin_left, margin_right, margin_top, chart_width)
     """
@@ -79,10 +133,10 @@ def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> Tuple[int, in
         canvas_height = 400
 
     margin_left = 50
-    margin_right = 40  # 减小右侧边距，从80改为40
+    margin_right = 40
     margin_top = 50
     chart_width = width - margin_left - margin_right
-    
+
     return width, canvas_height, margin_left, margin_right, margin_top, chart_width
 
 
@@ -99,7 +153,7 @@ def _draw_parent_segment(
     padding: float
 ) -> int:
     """绘制父网段
-    
+
     Args:
         canvas: tk.Canvas 对象
         parent_info: 父网段信息
@@ -111,42 +165,28 @@ def _draw_parent_segment(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
-    
+
     Returns:
         int: 新的y坐标
     """
     parent_range = parent_info.get("range", 1)
-    log_value = max(log_min, math.log10(parent_range))
-    bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
-    bar_width = min(bar_width, chart_width)
+    bar_width = _calculate_bar_width(parent_range, log_min, log_max, chart_width, min_bar_width)
+    font_family, __ = _get_font_settings()
 
-    # 获取当前语言的字体设置
-    font_family, __ = get_current_font_settings()
-    
     color = PARENT_COLOR
     canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
-    usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
+    usable_addresses = _calculate_usable_addresses(parent_range)
     parent_cidr = parent_info.get("name", "")
     segment_text = f"{_("parent_network")}: {parent_cidr}"
     text_x = x + 15
     text_y = y + bar_height / 2
     font = (font_family, 11, "bold")
-    draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
-        "font": font,
-        "anchor": tk.W,
-        "fill": "#ffffff"
-    })
+    _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-    # 父网段：可用地址数
     address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
-    # 计算合适的x坐标，将文本向左偏移50像素
-    text_x = min(x + 400, x + chart_width - 200)  # 向左偏移50像素
-    draw_text_with_stroke(canvas, address_text, text_x, text_y, {
-        "font": font,
-        "anchor": tk.W,
-        "fill": "#ffffff"
-    })
+    text_x = min(x + 400, x + chart_width - 200)
+    _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
     return y + bar_height + padding
 
@@ -165,7 +205,7 @@ def _draw_network_segments(
     padding: float
 ) -> int:
     """绘制网络网段
-    
+
     Args:
         canvas: tk.Canvas 对象
         split_networks: 切分网段列表
@@ -178,35 +218,32 @@ def _draw_network_segments(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
-    
+
     Returns:
         int: 新的y坐标
     """
-    # 获取当前语言的字体设置
-    font_family, __ = get_current_font_settings()
-    
+    font_family, __ = _get_font_settings()
+
     if chart_type == "plan":
         # 子网规划：需求网段
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
         y += 20
-        
+
         # 添加需求网段标题
         demand_count = len(split_networks)
         canvas.create_text(
             x,
             y,
-            text=f"{_("allocated_subnets")} ({demand_count} {_("pieces")}):",
+            text=f"{_("allocated_subnets")} ({demand_count} {_("pieces")}:",
             font=(font_family, 11),
             anchor=tk.W,
             fill="#ffffff",
         )
         y += 15
-        
+
         for i, network in enumerate(split_networks):
             network_range = network.get("range", 1)
-            log_value = max(log_min, math.log10(network_range))
-            bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
-            bar_width = min(bar_width, chart_width)
+            bar_width = _calculate_bar_width(network_range, log_min, log_max, chart_width, min_bar_width)
 
             # 为需求网段分配颜色
             color_index = i % len(SUBNET_COLORS)
@@ -214,75 +251,55 @@ def _draw_network_segments(
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
-            usable_addresses = network_range - 2 if network_range > 2 else network_range
+            usable_addresses = _calculate_usable_addresses(network_range)
 
             # 需求网段：添加序号和CIDR
             segment_text = f"{_("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 9, "bold")
-            draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
-                "font": font,
-                "anchor": tk.W,
-                "fill": "#ffffff"
-            })
+            _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
             # 需求网段：可用地址数
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
-            # 计算合适的x坐标，将文本向右移动更多
-            text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
-            draw_text_with_stroke(canvas, address_text, text_x, text_y, {
-                "font": font,
-                "anchor": tk.W,
-                "fill": "#ffffff"
-            })
+            text_x = min(x + 450, x + chart_width - 150)
+            _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
             y += bar_height + padding
     else:
         # 子网切分：切分网段
         for i, network in enumerate(split_networks):
             network_range = network.get("range", 1)
-            log_value = max(log_min, math.log10(network_range))
-            bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
-            bar_width = min(bar_width, chart_width)
+            bar_width = _calculate_bar_width(network_range, log_min, log_max, chart_width, min_bar_width)
 
             # 切分网段：使用蓝色
             color = SPLIT_COLOR
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
-            usable_addresses = network_range - 2 if network_range > 2 else network_range
+            usable_addresses = _calculate_usable_addresses(network_range)
 
             # 切分网段：不需要序号
             segment_text = f"{_("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 11, "bold")
-            draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
-                "font": font,
-                "anchor": tk.W,
-                "fill": "#ffffff"
-            })
+            _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
             # 切分网段：可用地址数
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
-            # 计算合适的x坐标，将文本向右移动更多
-            text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
-            draw_text_with_stroke(canvas, address_text, text_x, text_y, {
-                "font": font,
-                "anchor": tk.W,
-                "fill": "#ffffff"
-            })
+            text_x = min(x + 450, x + chart_width - 150)
+            _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
             y += bar_height + padding
 
             # 添加切分网段和剩余网段之间的虚线分割
             canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
-    
+
     # 需求网段与剩余网段之间添加虚线分割（仅在子网规划中需要）
     if chart_type == "plan":
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
-    
+
     return y
 
 
@@ -299,7 +316,7 @@ def _draw_remaining_segments(
     padding: float
 ) -> int:
     """绘制剩余网段
-    
+
     Args:
         canvas: tk.Canvas 对象
         networks: 所有网段列表
@@ -311,19 +328,19 @@ def _draw_remaining_segments(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
-    
+
     Returns:
         int: 新的y坐标
     """
-    # 获取当前语言的字体设置
-    font_family, __ = get_current_font_settings()
-    
+    font_family, __ = _get_font_settings()
+
     y += 20
     title_font = (font_family, 11)
     remaining_count = len([n for n in networks if n.get("type") != "split"])
     canvas.create_text(
-        x, y,
-        text=f"{_("remaining_subnets")} ({remaining_count} {_("pieces")}):",
+        x,
+        y,
+        text=f"{_("remaining_subnets")} ({remaining_count} {_("pieces")}:",
         font=title_font,
         anchor=tk.W,
         fill="#ffffff",
@@ -333,57 +350,42 @@ def _draw_remaining_segments(
     remaining_networks = [net for net in networks if net.get("type") != "split"]
     for i, network in enumerate(remaining_networks):
         network_range = network.get("range", 1)
-        log_value = max(log_min, math.log10(network_range))
-        bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
-        bar_width = min(bar_width, chart_width)
-
+        bar_width = _calculate_bar_width(network_range, log_min, log_max, chart_width, min_bar_width)
         color_index = i % len(SUBNET_COLORS)
         color = SUBNET_COLORS[color_index]
-
         canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
         name = network.get("name", "")
-        usable_addresses = network_range - 2 if network_range > 2 else network_range
+        usable_addresses = _calculate_usable_addresses(network_range)
 
         segment_text = f"{_("segment")} {i + 1}: {name}"
         text_x = x + 15
         text_y = y + bar_height / 2
         font = (font_family, 9, "bold")
-        draw_text_with_stroke(canvas, segment_text, text_x, text_y, {
-            "font": font,
-            "anchor": tk.W,
-            "fill": "#ffffff"
-        })
+        _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-        # 剩余网段：可用地址数
         address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
-        # 计算合适的x坐标，将文本向右移动更多
-        text_x = min(x + 450, x + chart_width - 150)  # 增加x坐标值，向右移动
-        draw_text_with_stroke(canvas, address_text, text_x, text_y, {
-            "font": font,
-            "anchor": tk.W,
-            "fill": "#ffffff"
-        })
+        text_x = min(x + 450, x + chart_width - 150)
+        _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
         y += bar_height + padding
-    
+
     canvas.create_line(x, y, x + chart_width, y, fill="#cccccc", dash=(5, 2), width=1)
-    
+
     return y
 
 
 def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float, y: float) -> None:
     """绘制图例
-    
+
     Args:
         canvas: tk.Canvas 对象
         chart_type: 图表类型
         x: x坐标
         y: y坐标
     """
-    # 获取当前语言的字体设置
-    font_family, __ = get_current_font_settings()
-    
+    font_family, __ = _get_font_settings()
+
     legend_y = y + 35
     canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
 
@@ -417,7 +419,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
             anchor=tk.W,
             fill="#ffffff",
         )
-        
+
         # 剩余网段图例排在需求网段后面，使用多色表达
         remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
@@ -447,7 +449,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
             anchor=tk.W,
             fill="#ffffff",
         )
-        
+
         # 剩余网段图例
         remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
@@ -487,21 +489,20 @@ def draw_distribution_chart(
 
     try:
         canvas.delete("all")
-        
+
         # 初始化画布和计算尺寸
         width, canvas_height, margin_left, _, margin_top, chart_width = _init_canvas(canvas, parent_frame)
-        
+
         # 获取数据
         parent_info = chart_data.get("parent", {})
         parent_range = parent_info.get("range", 1)
         networks = chart_data.get("networks", [])
-        
+
         if not networks:
-            # 获取当前语言的字体设置
             font_family, __ = get_current_font_settings()
             canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=(font_family, 12))
             return
-        
+
         # 计算对数参数
         log_max = math.log10(parent_range)
         log_min = 3
@@ -510,7 +511,7 @@ def draw_distribution_chart(
         padding = 10
         x = margin_left
         y = margin_top
-        
+
         # 计算所需高度
         required_height = (
             y
@@ -521,37 +522,36 @@ def draw_distribution_chart(
             + 80
         )
         background_height = max(required_height, canvas_height)
-        
+
         # 绘制背景
         canvas.create_rectangle(0, 0, width, background_height, fill="#333333", outline="", width=0)
-        
+
         # 配置画布滚动区域
         actual_width = canvas.winfo_width()
         if actual_width < 10:
             actual_width = width
         canvas.config(scrollregion=(0, 0, actual_width, background_height))
         canvas.config(xscrollcommand=None)
-        
+
         # 绘制父网段
         y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
-        
+
         # 绘制网络网段
         split_networks = [net for net in networks if net.get("type") == "split"]
         y = _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
-        
+
         # 绘制剩余网段
         y = _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
-        
+
         # 绘制图例
         _draw_legend(canvas, chart_type, x, y)
-        
+
         canvas.update_idletasks()
 
     except (tk.TclError, ValueError, TypeError) as e:
         canvas.delete("all")
         width = canvas.winfo_width() or 600
         height = canvas.winfo_height() or 400
-        # 获取当前语言的字体设置
         font_family, __ = get_current_font_settings()
         title_font = (font_family, 12, "bold")
         canvas.create_text(
