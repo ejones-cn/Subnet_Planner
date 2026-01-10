@@ -178,4 +178,4 @@ for key, fixed in fix_suggestions.items():
 with open('translations_fixed.json', 'w', encoding='utf-8') as f:
     json.dump(fixed_translations, f, ensure_ascii=False, indent=2)
 
-print(f"\n修复后的翻译已保存到 translations_fixed.json 文件")
+print("\n修复后的翻译已保存到 translations_fixed.json 文件")

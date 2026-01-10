@@ -46,7 +46,7 @@ def main():
                     print(f"✗ {key}: {ko_value} - {rule_name}: {error_msg}")
                     issues_found += 1
     
-    print(f'\n--- 检查结果 ---')
+    print('\n--- 检查结果 ---')
     if issues_found == 0:
         print("🎉 未发现任何问题！所有韩语翻译都符合规范。")
     else:

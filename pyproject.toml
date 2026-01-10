@@ -14,3 +14,9 @@ max-line-length = 120
 extend-ignore = ['E203', 'W503']
 exclude = ['__pycache__', '.git', '.venv', 'venv', 'build', 'dist']
 select = ['E', 'F', 'W', 'C901']
+
+[tool.pyright]
+# Pyright configuration
+ignore = [
+    "windows_app.py"  # windows_app.py 包含大量 tkinter 动态组件创建，类型检查器会产生大量误报
+]

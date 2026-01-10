@@ -200,7 +200,7 @@
     "zh": "导出结果",
     "zh_tw": "匯出結果",
     "en": "Export Result",
-    "ja": "結果エクスポート",
+    "ja": "エクスポート結果",
     "ko": "결과 내보내기"
   },
   "one_click_export": {
@@ -410,7 +410,7 @@
     "zh": "导出规划",
     "zh_tw": "匯出規劃",
     "en": "Export Planning",
-    "ja": "計画エクスポート",
+    "ja": "エクスポート計画",
     "ko": "계획 내보내기"
   },
   "execute_planning": {
@@ -670,7 +670,7 @@
     "zh_tw": "網段分佈圖",
     "en": "Distribution Chart",
     "ja": "セグメント分布図",
-    "ko": "네트워크 세그먼트 분포"
+    "ko": "서브넷 분포도"
   },
   "record_already_exists": {
     "zh": "中已存在名称为 '{name}' 的记录",
@@ -1664,14 +1664,14 @@
     "en": "Test Long Message",
     "ja": "長文テスト",
     "zh_tw": "測試長文本資訊",
-    "ko": "긴 문자 메시지 테스트"
+    "ko": "긴 메시지 테스트"
   },
   "test_mixed_language": {
     "zh": "测试中英文混排",
     "en": "Test Mixed Language",
     "ja": "混在言語のテスト",
     "zh_tw": "測試中英文混排",
-    "ko": "시험에서 영어와 영어 섞기"
+    "ko": "중영 혼합 테스트"
   },
   "hide_info_bar": {
     "zh": "隐藏信息栏",
@@ -2362,9 +2362,9 @@
   "party": {
     "zh": "党群部",
     "zh_tw": "黨群部",
-    "en": "Party",
-    "ja": "党群部",
-    "ko": "파티 및 미사 부서"
+    "en": "Party and Mass Affairs Department",
+    "ja": "党・大衆部",
+    "ko": "당·대중부"
   },
   "discipline": {
     "zh": "纪检部",

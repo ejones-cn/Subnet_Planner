@@ -46,6 +46,7 @@ from reportlab.pdfbase.ttfonts import TTFont  # type: ignore
 from reportlab.lib.enums import TA_CENTER, TA_LEFT  # type: ignore
 from openpyxl import Workbook  # type: ignore
 from openpyxl.styles import Font, Alignment  # type: ignore
+from font_config import FontConfig  # type: ignore
 
 MAIN_TABLE_COLORS = {
     "header_bg": "#3498db",
@@ -86,128 +87,134 @@ K2V_HEADERS = [translate("item"), translate("value")]
 class ExportUtils:
     """数据导出工具类"""
 
+    # 字体缓存（类变量）
+    _font_cache = {}
+    _font_path_cache = None
+    _font_path_lang = None
+
+    @classmethod
+    def clear_font_cache(cls):
+        """清除字体缓存，在语言切换时调用"""
+        cls._font_cache.clear()
+        cls._font_path_cache = None
+        cls._font_path_lang = None
+        
+        # 同时清除 ReportLab 的 PDF 字体注册
+        try:
+            from reportlab.pdfbase import pdfmetrics
+            if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
+                # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
+                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:
+                    del pdfmetrics._fonts["ChineseFont"]
+                    print("🧹 已清除 ReportLab PDF 字体注册")
+        except Exception as e:
+            print(f"⚠️ 清除 PDF 字体注册时出现警告: {e}")
+        
+        print("🧹 已清除字体缓存")
+
     def __init__(self):
         """初始化导出工具"""
         self.has_asian_font = False
         self._register_asian_fonts()
 
-    def _register_asian_fonts(self):
-        """注册亚洲字体（中文、韩语、日语）供PDF导出使用"""
-        font_path = None
+    def _get_prioritized_font_candidates(self, current_lang):
+        """根据当前语言获取优先级排序的字体候选列表
 
-        if sys.platform == "win32":
-            font_dir = r"C:\Windows\Fonts"
-            if os.path.exists(font_dir):
-                # 包含中文、韩语、日语的通用字体候选列表
-                font_candidates = [
-                    # 韩语专用字体（添加更多韩语字体选项）
-                    ("malgun.ttf", "Malgun Gothic"),  # 标准韩语无衬线字体
-                    ("malgunbd.ttf", "Malgun Gothic Bold"),  # 加粗版
-                    ("malgunsl.ttf", "Malgun Gothic Semilight"),  # 细体版
-                    ("gulim.ttc", "Gulim"),  # 标准韩语无衬线字体
-                    ("gulimbd.ttc", "Gulim Bold"),  # 加粗版
-                    ("dotum.ttc", "Dotum"),  # 标准韩语无衬线字体
-                    ("dotumbd.ttc", "Dotum Bold"),  # 加粗版
-                    ("batang.ttc", "Batang"),  # 标准韩语衬线字体
-                    ("batangbd.ttc", "Batang Bold"),  # 加粗版
-                    
-                    # 日语专用字体
-                    ("meiryo.ttc", "Meiryo"),  # 支持日语和英文
-                    ("msgothic.ttc", "MS Gothic"),
-                    ("msmincho.ttc", "MS Mincho"),
-                    ("meiryob.ttc", "Meiryo Bold"),
-                    
-                    # 中文常用字体
-                    ("msyh.ttf", "Microsoft YaHei"),  # 支持中文和英文
-                    ("simhei.ttf", "SimHei"),
-                    ("simsun.ttc", "SimSun"),
-                    ("msyhbd.ttf", "Microsoft YaHei Bold"),
-                    ("msyhui.ttf", "Microsoft YaHei UI"),
-                    ("stsong.ttf", "STSong"),
-                    ("stheiti.ttf", "STHeiti"),
-                    ("stkaiti.ttc", "STKaiti"),
-                ]
+        Args:
+            current_lang: 当前语言代码
 
-                # 根据当前语言优先选择对应字体
-                from i18n import get_language
-                current_lang = get_language()
-                print(f"🔍 当前语言: {current_lang}")
-                
-                # 优先选择适合当前语言的字体
-                prioritized_candidates = []
-                
-                # 确保正确识别韩语字体文件
-                korean_fonts = [
-                    "malgun.ttf", "malgunbd.ttf", "malgunsl.ttf",
-                    "batang.ttc", "batangbd.ttc", "batangche.ttc",
-                    "gulim.ttc", "gulimbd.ttc", "gulimche.ttc",
-                    "dotum.ttc", "dotumbd.ttc", "dotumche.ttc"
-                ]
-                
-                # 确保正确识别日语字体文件
-                japanese_fonts = [
-                    "meiryo.ttc", "meiryob.ttc", "meiryom.ttc",
-                    "msgothic.ttc", "msmincho.ttc", "msuigothic.ttc",
-                    "msuimincho.ttc"
-                ]
-                
-                # 确保正确识别中文字体文件
-                chinese_fonts = [
-                    "msyh.ttf", "msyhbd.ttf", "msyhl.ttf",
-                    "simhei.ttf", "simsun.ttc", "simfang.ttf",
-                    "simkai.ttf", "simli.ttf"
-                ]
-                
-                if current_lang == "ko":
-                    # 韩语优先选择韩语字体
-                    print("🔍 韩语环境，优先选择韩语字体")
-                    prioritized_candidates = [font for font in font_candidates if font[0] in korean_fonts]
-                elif current_lang == "ja":
-                    # 日语优先选择日语字体
-                    print("🔍 日语环境，优先选择日语字体")
-                    prioritized_candidates = [font for font in font_candidates if font[0] in japanese_fonts]
-                elif current_lang in ["zh", "zh_tw"]:
-                    # 中文优先选择中文字体
-                    print("🔍 中文环境，优先选择中文字体")
-                    prioritized_candidates = [font for font in font_candidates if font[0] in chinese_fonts]
-                else:
-                    # 其他语言优先选择多语言通用字体
-                    print("🔍 英文环境，优先选择多语言通用字体")
-                    prioritized_candidates = [font for font in font_candidates if font[0] in ["msyh.ttf", "meiryo.ttc", "malgun.ttf"]]
-                
-                # 添加所有候选字体作为备选
-                remaining_fonts = [font for font in font_candidates if font not in prioritized_candidates]
-                prioritized_candidates.extend(remaining_fonts)
-                
-                print(f"🔍 字体优先级列表: {[font[0] for font in prioritized_candidates]}")
+        Returns:
+            list: 优先级排序的字体候选列表
+        """
+        return FontConfig.get_font_candidates(current_lang)
 
-                # 遍历字体列表，查找可用的字体
-                for font_file, _ in prioritized_candidates:
-                    potential_path = os.path.join(font_dir, font_file)
-                    if os.path.exists(potential_path):
-                        font_path = potential_path
-                        print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
-                        break
+    def _calculate_text_width(self, text, ascii_width=8, non_ascii_width=12, padding=15):
+        """计算文本宽度
 
-        if font_path:
-            try:
-                # 先检查并删除旧的字体注册，确保新字体能被正确使用
-                if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                    # reportlab没有直接删除字体的方法，我们可以通过重新注册来覆盖
-                    print("🔍 已存在ChineseFont注册，将进行覆盖")
-                
-                # 始终使用"ChineseFont"作为注册的字体名称，确保所有样式都能正确使用
-                pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
-                self.has_asian_font = True
-                print(f"✅ 成功注册亚洲字体: {os.path.basename(font_path)} 作为 ChineseFont")
-                
+        Args:
+            text: 要计算的文本
+            ascii_width: ASCII字符宽度
+            non_ascii_width: 非ASCII字符宽度
+            padding: 额外边距
 
-            except (OSError, ValueError, ImportError) as e:
-                print(f"{translate('failed_to_register_font')}: {e}")
-                traceback.print_exc()
-                self.has_asian_font = False
+        Returns:
+            int: 文本宽度
+        """
+        text_width = 0
+        for char in text:
+            if ord(char) > 127:
+                text_width += non_ascii_width
+            else:
+                text_width += ascii_width
+        text_width += padding
+        return text_width
+
+    def _get_cell_text(self, cell):
+        """获取单元格的文本内容
+
+        Args:
+            cell: 单元格对象
+
+        Returns:
+            str: 文本内容
+        """
+        if hasattr(cell, 'getPlainText'):
+            return cell.getPlainText()
+        elif hasattr(cell, 'text'):
+            return cell.text
         else:
-            print(f"{translate('no_chinese_font_found')}")
+            return str(cell)
+
+    def _adjust_table_font_size(self, table_data, col_widths, table_text_style, min_font_size=8, style_prefix="CustomStyle"):
+        """调整表格字体大小以适应列宽
+
+        Args:
+            table_data: 表格数据
+            col_widths: 列宽列表
+            table_text_style: 基础文本样式
+            min_font_size: 最小字体大小
+            style_prefix: 样式名称前缀
+
+        Returns:
+            list: 调整后的表格数据
+        """
+        adjusted_data = []
+        for row_idx, row in enumerate(table_data):
+            adjusted_row = []
+            for col_idx, cell in enumerate(row):
+                text = self._get_cell_text(cell)
+                text_width = self._calculate_text_width(text, ascii_width=5, non_ascii_width=10, padding=8)
+
+                font_size = 11 if row_idx == 0 else 10
+                if text_width > col_widths[col_idx] * 0.9:
+                    scale_factor = (col_widths[col_idx] * 0.95) / text_width
+                    font_size = max(font_size * scale_factor, min_font_size)
+
+                custom_style = ParagraphStyle(
+                    f"{style_prefix}_{row_idx}_{col_idx}",
+                    parent=table_text_style,
+                    fontSize=font_size,
+                    wordWrap="None"
+                )
+                adjusted_cell = Paragraph(text, custom_style)
+                adjusted_row.append(adjusted_cell)
+            adjusted_data.append(adjusted_row)
+        return adjusted_data
+
+    def _register_asian_fonts(self):
+        """注册亚洲字体（中文、韩语、日语）供PDF导出使用，使用缓存避免重复注册"""
+        # 注意：字体注册已移至 _export_to_pdf 方法中，以支持语言切换
+        # 这里只初始化 has_asian_font 标志
+        from i18n import get_language
+        current_lang = get_language()
+        
+        # 检查是否已经注册过相同语言的字体
+        if ExportUtils._font_path_lang == current_lang and ExportUtils._font_path_cache:
+            print(f"🔍 [init] 使用已注册的字体缓存 (语言: {current_lang})")
+            self.has_asian_font = True
+        else:
+            # 语言不同或没有缓存，字体将在 _export_to_pdf 中注册
+            print(f"🔍 [init] 字体将在导出PDF时注册 (语言: {current_lang})")
             self.has_asian_font = False
 
     def _calculate_auto_col_widths(self, table_data, table_width):
@@ -221,30 +228,17 @@ class ExportUtils:
             list: 每列的自适应宽度
         """
         table_cols = len(table_data[0]) if table_data else 0
+        if table_cols == 0:
+            return []
+
         max_col_widths = [0] * table_cols
         min_col_width = 60  # 调整最小列宽
 
         # 计算每列的最大内容宽度
         for row in table_data:
             for col_idx, cell in enumerate(row):
-                if hasattr(cell, 'getPlainText'):
-                    text = cell.getPlainText()
-                elif hasattr(cell, 'text'):
-                    text = cell.text
-                else:
-                    text = str(cell)
-
-                # 更精确的字符宽度计算，确保足够容纳内容
-                text_width = 0
-                for char in text:
-                    if ord(char) > 127:
-                        # 中文、日文等非ASCII字符使用12宽度
-                        text_width += 12
-                    else:
-                        # ASCII字符使用8宽度，确保足够容纳英文字母和数字
-                        text_width += 8
-                text_width += 15  # 调整额外边距，确保有足够空间
-
+                text = self._get_cell_text(cell)
+                text_width = self._calculate_text_width(text, ascii_width=8, non_ascii_width=12, padding=15)
                 if text_width > max_col_widths[col_idx]:
                     max_col_widths[col_idx] = text_width
 
@@ -257,47 +251,33 @@ class ExportUtils:
         total_width = sum(max_col_widths)
         final_widths = []
 
-        # 收集所有数据行的内容宽度，不仅仅是表头
+        # 收集所有数据行的内容宽度
         data_col_widths = [0] * table_cols
         for row_idx, row in enumerate(table_data):
             if row_idx == 0:  # 跳过表头，只考虑数据行
                 continue
             for col_idx, cell in enumerate(row):
-                if hasattr(cell, 'getPlainText'):
-                    text = cell.getPlainText()
-                elif hasattr(cell, 'text'):
-                    text = cell.text
-                else:
-                    text = str(cell)
-                
-                # 计算数据行内容宽度
-                text_width = 0
-                for char in text:
-                    if ord(char) > 127:
-                        text_width += 12
-                    else:
-                        text_width += 8
-                text_width += 15
-                
+                text = self._get_cell_text(cell)
+                text_width = self._calculate_text_width(text, ascii_width=8, non_ascii_width=12, padding=15)
                 if text_width > data_col_widths[col_idx]:
                     data_col_widths[col_idx] = text_width
 
         if total_width > 0:
-            # 结合表头和数据行的宽度，计算最终列宽
+            # 结合表头和数据行的宽度
             combined_widths = [max(max_col_widths[i], data_col_widths[i]) for i in range(table_cols)]
-            
+
             # 先分配最小宽度
             remaining_width = table_width
             for i in range(table_cols):
                 final_widths.append(min_col_width)
                 remaining_width -= min_col_width
-            
-            # 计算每列可分配的额外宽度，基于实际内容（表头+数据行的最大值）
+
+            # 按比例分配额外宽度
             if remaining_width > 0:
                 # 计算各列超出最小宽度的部分
                 extra_widths = [max(0, combined_widths[i] - min_col_width) for i in range(table_cols)]
                 total_extra = sum(extra_widths)
-                
+
                 if total_extra > 0:
                     # 按比例分配额外宽度
                     for i in range(table_cols):
@@ -661,97 +641,90 @@ class ExportUtils:
         # 直接获取当前语言，不依赖于之前的注册
         current_lang = get_language()
         print(f"🔍 导出PDF时当前语言: {current_lang}")
-        
-        # 直接指定字体文件路径，确保在任何情况下都能使用正确的字体
-        # 使用双反斜杠或os.path.join避免转义序列问题
-        font_dir = r"C:\Windows\Fonts"
-        
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase.ttfonts import TTFont
-        
-        # 根据当前语言选择对应的字体列表
-        font_candidates = []
-        
-        # 扩展字体列表，确保能显示所有语言字符
-        if current_lang == "ko":
-            # 韩语字体优先列表 - 确保能显示所有韩语字符
-            font_candidates = [
-                "malgun.ttf", "malgunbd.ttf", "malgunsl.ttf",  # Malgun Gothic系列
-                "gulim.ttc", "gulimbd.ttc", "gulimche.ttc",  # Gulim系列
-                "dotum.ttc", "dotumbd.ttc", "dotumche.ttc",  # Dotum系列
-                "batang.ttc", "batangbd.ttc", "batangche.ttc"   # Batang系列
-            ]
-        elif current_lang == "ja":
-            # 日语字体优先列表
-            font_candidates = [
-                "meiryo.ttc", "meiryob.ttc", "meiryom.ttc",  # Meiryo系列
-                "msgothic.ttc", "msmincho.ttc", "msuigothic.ttc",  # MS系列
-                "msuimincho.ttc"
-            ]
-        elif current_lang in ["zh", "zh_tw"]:
-            # 中文字体优先列表
-            font_candidates = [
-                "msyh.ttf", "msyhbd.ttf", "msyhl.ttf",  # 微软雅黑系列
-                "simhei.ttf", "simsun.ttc", "simfang.ttf",  # 宋体黑体系列
-                "simkai.ttf", "simli.ttf", "simyou.ttf"  # 其他中文字体
-            ]
+
+        # 检查是否已经注册过相同语言的字体
+        if ExportUtils._font_path_lang == current_lang and ExportUtils._font_path_cache:
+            print(f"🔍 使用已注册的PDF字体缓存 (语言: {current_lang})")
+            self.has_asian_font = True
         else:
-            # 默认字体列表，包含多种语言支持
-            font_candidates = [
-                "msyh.ttf", "meiryo.ttc", "malgun.ttf",  # 多语言支持字体
-                "simhei.ttf", "simsun.ttc", "msgothic.ttc"
-            ]
-        
-        font_path = None
-        
-        # 查找可用字体
-        for font_file in font_candidates:
-            potential_path = os.path.join(font_dir, font_file)
-            if os.path.exists(potential_path):
-                font_path = potential_path
-                print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
-                break
-        
-        # 如果找到字体，直接注册
-        if font_path:
-            try:
-                print(f"🔍 尝试注册字体: {font_path}")
-                print(f"🔍 当前已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+            # 语言不同或没有缓存，需要重新注册字体
+            print(f"🔍 语言已切换或无缓存，需要重新注册字体 (旧语言: {ExportUtils._font_path_lang}, 新语言: {current_lang})")
+            
+            # 使用系统环境变量获取字体目录
+            font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
 
-                # 尝试注册字体,如果已存在则先清理
-                font_name = "ChineseFont"
-                if font_name in pdfmetrics.getRegisteredFontNames():
-                    # 字体已注册,尝试删除并重新注册
-                    print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
-                    try:
-                        # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
-                        if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:
-                            del pdfmetrics._fonts[font_name]
-                            print("🔍 已删除旧的字体注册")
-                    except Exception as del_error:
-                        print(f"⚠️ 删除旧字体时出现警告: {del_error}")
-
-                # 重新注册字体
-                pdfmetrics.registerFont(TTFont(font_name, font_path))
-                self.has_asian_font = True
-                print(f"✅ 成功注册字体: {os.path.basename(font_path)} 作为 {font_name}")
-                print(f"🔍 注册后已注册字体: {pdfmetrics.getRegisteredFontNames()}")
-
-            except Exception as e:
-                print(f"❌ 注册字体失败: {e}")
-                print(f"❌ 异常类型: {type(e).__name__}")
-                traceback.print_exc()
-
-                # 如果注册失败,检查是否有已注册的字体可以回退
-                if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                    print("🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
-                    self.has_asian_font = True
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            
+            # 从 font_config 获取字体文件名列表
+            font_candidates = FontConfig.get_font_filenames(current_lang)
+            
+            font_path = None
+            
+            # 查找可用字体
+            for font_file in font_candidates:
+                potential_path = os.path.join(font_dir, font_file)
+                if os.path.exists(potential_path):
+                    font_path = potential_path
+                    print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
+                    break
                 else:
-                    print("🔍 无可用字体,将使用默认字体(Helvetica)")
-                    self.has_asian_font = False
-        else:
-            print("🔍 未找到合适字体，将使用默认字体")
-            self.has_asian_font = False
+                    print(f"⚠️ 字体文件不存在: {potential_path}")
+            
+            # 如果找到字体，直接注册
+            if font_path:
+                try:
+                    print(f"🔍 尝试注册字体: {font_path}")
+                    print(f"🔍 当前已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+
+                    # 尝试注册字体,如果已存在则先清理
+                    font_name = "ChineseFont"
+                    if font_name in pdfmetrics.getRegisteredFontNames():
+                        # 字体已注册,尝试删除并重新注册
+                        print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
+                        try:
+                            # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
+                            if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:
+                                del pdfmetrics._fonts[font_name]
+                                print("🔍 已删除旧的字体注册")
+                        except Exception as del_error:
+                            print(f"⚠️ 删除旧字体时出现警告: {del_error}")
+
+                    # 重新注册字体
+                    pdfmetrics.registerFont(TTFont(font_name, font_path))
+                    self.has_asian_font = True
+                    
+                    # 缓存字体路径和语言
+                    ExportUtils._font_path_cache = font_path
+                    ExportUtils._font_path_lang = current_lang
+                    
+                    print(f"✅ 成功注册字体: {os.path.basename(font_path)} 作为 {font_name}")
+                    print(f"🔍 注册后已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+                    
+                    # 测试字体是否支持当前语言字符
+                    test_text = FontConfig.get_font_test_text(current_lang)
+                    try:
+                        from reportlab.pdfbase.pdfmetrics import stringWidth
+                        width = stringWidth(test_text, font_name, 10)
+                        print(f"✅ 字体测试通过: '{test_text}' 宽度={width}")
+                    except Exception as test_error:
+                        print(f"⚠️ 字体测试失败: {test_error}")
+
+                except Exception as e:
+                    print(f"❌ 注册字体失败: {e}")
+                    print(f"❌ 异常类型: {type(e).__name__}")
+                    traceback.print_exc()
+
+                    # 如果注册失败,检查是否有已注册的字体可以回退
+                    if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
+                        print("🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
+                        self.has_asian_font = True
+                    else:
+                        print("🔍 无可用字体,将使用默认字体(Helvetica)")
+                        self.has_asian_font = False
+            else:
+                print("🔍 未找到合适字体，将使用默认字体")
+                self.has_asian_font = False
 
         print(f"🔍 使用的主要字体: ChineseFont, has_asian_font={self.has_asian_font}")
         
@@ -773,7 +746,14 @@ class ExportUtils:
         # 根据当前语言获取日期格式
         def get_date_format():
             lang = get_language()
-            if lang in ["zh", "zh_tw", "ja", "ko"]:
+            if lang == "ko":
+                # 韩语日期格式：2025년01월11일 14:30:00
+                return "%Y년%m월%d일 %H:%M:%S"
+            elif lang in ["zh", "zh_tw"]:
+                # 中文日期格式：2025年01月11日 14:30:00
+                return "%Y年%m月%d日 %H:%M:%S"
+            elif lang == "ja":
+                # 日语日期格式：2025年01月11日 14:30:00
                 return "%Y年%m月%d日 %H:%M:%S"
             else:  # 英文
                 return "%Y-%m-%d %H:%M:%S"
@@ -1008,60 +988,7 @@ class ExportUtils:
             valid_col_widths = self._get_col_widths(main_table_data, table_width, col_widths, table_cols)
 
             # 动态调整表格单元格的字体大小
-            adjusted_table_data = []
-            for row_idx, row in enumerate(main_table_data):
-                adjusted_row = []
-                for col_idx, cell in enumerate(row):
-                    # 获取当前单元格的文本内容
-                    if hasattr(cell, 'getPlainText'):
-                        text = cell.getPlainText()
-                    elif hasattr(cell, 'text'):
-                        text = cell.text
-                    else:
-                        text = str(cell)
-
-                    # 计算文本宽度
-                    text_width = 0
-                    for char in text:
-                        if ord(char) > 127:
-                            text_width += 10
-                        else:
-                            text_width += 5
-                    text_width += 8
-
-                    # 初始字号
-                    font_size = 10
-                    if row_idx == 0:  # 表头使用稍大的字号
-                        font_size = 11
-                    min_font_size = 8
-
-                    # 根据列宽调整字号，确保内容不换行
-                    column_width = valid_col_widths[col_idx]
-                    # 使用更严格的判断条件，确保内容能够完全容纳
-                    if text_width > column_width * 0.9:  # 当文本宽度超过列宽的90%时，就缩小字号
-                        # 计算合适的字号，确保内容能够完全显示
-                        scale_factor = (column_width * 0.95) / text_width
-                        # 应用缩放因子，确保字号足够小以容纳内容
-                        font_size = font_size * scale_factor
-                        # 确保不小于最小字号
-                        font_size = max(font_size, min_font_size)
-
-                    # 创建自定义的ParagraphStyle，包含动态计算的字体大小和禁用自动换行
-                    custom_style = ParagraphStyle(
-                        f"CustomStyle_{row_idx}_{col_idx}",
-                        parent=table_text_style,
-                        fontSize=font_size,
-                        wordWrap="None"  # 明确禁用自动换行
-                    )
-
-                    # 使用自定义样式创建新的Paragraph对象
-                    if hasattr(cell, 'getPlainText'):
-                        adjusted_cell = Paragraph(text, custom_style)
-                    else:
-                        adjusted_cell = Paragraph(str(cell), custom_style)
-                    
-                    adjusted_row.append(adjusted_cell)
-                adjusted_table_data.append(adjusted_row)
+            adjusted_table_data = self._adjust_table_font_size(main_table_data, valid_col_widths, table_text_style, style_prefix="CustomStyle")
 
             main_table = Table(adjusted_table_data, colWidths=valid_col_widths, repeatRows=1)
             main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_asian_font))
@@ -1112,60 +1039,7 @@ class ExportUtils:
             valid_col_widths = self._get_col_widths(remaining_table_data, table_width, col_widths, table_cols)
 
             # 动态调整剩余网段表格单元格的字体大小
-            adjusted_remaining_data = []
-            for row_idx, row in enumerate(remaining_table_data):
-                adjusted_row = []
-                for col_idx, cell in enumerate(row):
-                    # 获取当前单元格的文本内容
-                    if hasattr(cell, 'getPlainText'):
-                        text = cell.getPlainText()
-                    elif hasattr(cell, 'text'):
-                        text = cell.text
-                    else:
-                        text = str(cell)
-
-                    # 计算文本宽度
-                    text_width = 0
-                    for char in text:
-                        if ord(char) > 127:
-                            text_width += 10
-                        else:
-                            text_width += 5
-                    text_width += 8
-
-                    # 初始字号
-                    font_size = 10
-                    if row_idx == 0:  # 表头使用稍大的字号
-                        font_size = 11
-                    min_font_size = 8
-
-                    # 根据列宽调整字号，确保内容不换行
-                    column_width = valid_col_widths[col_idx]
-                    # 使用更严格的判断条件，确保内容能够完全容纳
-                    if text_width > column_width * 0.9:  # 当文本宽度超过列宽的90%时，就缩小字号
-                        # 计算合适的字号，确保内容能够完全显示
-                        scale_factor = (column_width * 0.95) / text_width
-                        # 应用缩放因子，确保字号足够小以容纳内容
-                        font_size = font_size * scale_factor
-                        # 确保不小于最小字号
-                        font_size = max(font_size, min_font_size)
-
-                    # 创建自定义的ParagraphStyle，包含动态计算的字体大小和禁用自动换行
-                    custom_style = ParagraphStyle(
-                        f"CustomRemainingStyle_{row_idx}_{col_idx}",
-                        parent=table_text_style,
-                        fontSize=font_size,
-                        wordWrap="None"  # 明确禁用自动换行
-                    )
-
-                    # 使用自定义样式创建新的Paragraph对象
-                    if hasattr(cell, 'getPlainText'):
-                        adjusted_cell = Paragraph(text, custom_style)
-                    else:
-                        adjusted_cell = Paragraph(str(cell), custom_style)
-                    
-                    adjusted_row.append(adjusted_cell)
-                adjusted_remaining_data.append(adjusted_row)
+            adjusted_remaining_data = self._adjust_table_font_size(remaining_table_data, valid_col_widths, table_text_style, style_prefix="CustomRemainingStyle")
 
             remaining_table = Table(adjusted_remaining_data, colWidths=valid_col_widths, repeatRows=1)
             remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_asian_font))
@@ -1190,7 +1064,7 @@ class ExportUtils:
         doc.build(elements)
 
     def _load_system_font(self, font_size=36, bold_offset=4, verbose=False):
-        """加载系统字体（支持中文、韩语、日语）
+        """加载系统字体（支持中文、韩语、日语），使用缓存避免重复加载
 
         Args:
             font_size: 字体大小
@@ -1200,6 +1074,15 @@ class ExportUtils:
         Returns:
             tuple: (font, bold_font, font_loaded)
         """
+        # 生成缓存键
+        cache_key = (font_size, bold_offset)
+        
+        # 检查缓存
+        if cache_key in ExportUtils._font_cache:
+            if verbose:
+                print(f"使用缓存的字体 (size={font_size}, bold_offset={bold_offset})")
+            return ExportUtils._font_cache[cache_key]
+        
         font = None
         bold_font = None
         font_loaded = False
@@ -1209,32 +1092,10 @@ class ExportUtils:
             
             system_font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
             
-            # 根据当前语言设置字体候选列表
-            if current_lang == "ko":
-                # 韩语字体候选列表
-                font_candidates = [
-                    ('malgun.ttf', font_size, 'Malgun Gothic'),  # 标准韩语无衬线字体
-                    ('gulim.ttc', font_size, 'Gulim'),  # 标准韩语无衬线字体
-                    ('dotum.ttc', font_size, 'Dotum'),  # 标准韩语无衬线字体
-                    ('batang.ttc', font_size, 'Batang'),  # 标准韩语衬线字体
-                    ('msyh.ttc', font_size, '微软雅黑'),  # 备用中文字体
-                ]
-            elif current_lang == "ja":
-                # 日语字体候选列表
-                font_candidates = [
-                    ('meiryo.ttc', font_size, 'Meiryo'),  # 支持日语和英文
-                    ('msgothic.ttc', font_size, 'MS Gothic'),
-                    ('msmincho.ttc', font_size, 'MS Mincho'),
-                    ('msyh.ttc', font_size, '微软雅黑'),  # 备用中文字体
-                ]
-            else:
-                # 中文/英文字体候选列表
-                font_candidates = [
-                    ('msyh.ttc', font_size, '微软雅黑'),
-                    ('simhei.ttf', font_size, '黑体'),
-                    ('simsun.ttc', font_size - 2, '宋体'),
-                    ('simkai.ttf', font_size - 2, '楷体'),
-                ]
+            # 从 font_config 获取字体候选列表
+            font_candidates_tuples = FontConfig.get_font_candidates(current_lang)
+            font_candidates = [(font_file, font_size, font_name) for font_file, font_name in font_candidates_tuples]
+
 
             for font_file, size, font_name in font_candidates:
                 font_path = os.path.join(system_font_dir, font_file)
@@ -1261,7 +1122,12 @@ class ExportUtils:
                 print(f"加载系统字体失败: {e}")
             font = ImageFont.load_default()
             bold_font = ImageFont.load_default()
-        return font, bold_font, font_loaded
+        
+        # 缓存结果
+        result = (font, bold_font, font_loaded)
+        ExportUtils._font_cache[cache_key] = result
+        
+        return result
 
     def _calculate_chart_dimensions(self, networks):
         """计算图表所需的尺寸
@@ -1282,22 +1148,19 @@ class ExportUtils:
         required_height = base_height + total_networks * segment_height
         return segment_height, required_height
 
-    def _draw_title(self, draw, high_res_width, title=None):
+    def _draw_title(self, draw, high_res_width, title_font, title=None):
         """绘制图表标题
 
         Args:
             draw: ImageDraw对象
             high_res_width: 图像宽度
+            title_font: 标题字体对象
             title: 标题文字，默认使用国际化的"distribution_chart"
 
         Returns:
             tuple: (title_font, title_x, title_y)
         """
-        title_font_size = 76
-        # 正确获取字体对象
-        _, bold_font, _ = self._load_system_font(title_font_size, verbose=False)
-        title_font = bold_font
-
+        # 使用传入的字体对象，避免重复加载
         # 使用国际化标题，如果没有提供则使用默认翻译
         if not title:
             title = translate("distribution_chart")
@@ -1381,8 +1244,15 @@ class ExportUtils:
         pil_image = Image.new('RGB', (high_res_width, high_res_height), color='#333333')
         draw = ImageDraw.Draw(pil_image)
 
-        # 加载中文字体
-        font, bold_font, _ = self._load_system_font(font_size=36, verbose=True)
+        # 一次性加载所有需要的字体，避免重复加载
+        # 标题字体
+        title_font_size = 76
+        _, title_font, _ = self._load_system_font(title_font_size, verbose=False)
+        # 普通文本字体
+        font, bold_font, _ = self._load_system_font(font_size=36, verbose=False)
+        # 大号文本字体
+        text_font_size = 50
+        text_font, bold_text_font, _ = self._load_system_font(font_size=text_font_size, bold_offset=6, verbose=False)
 
         # 设置图表参数
         margin_left = 180
@@ -1442,7 +1312,7 @@ class ExportUtils:
         ]
 
         # 绘制标题
-        title_font, title_x, title_y = self._draw_title(draw, high_res_width)
+        title_font, title_x, title_y = self._draw_title(draw, high_res_width, title_font)
         draw_text_with_stroke(draw, (title_x, title_y), translate("distribution_chart"), title_font, "#ffffff")
 
         y = margin_top
@@ -1458,17 +1328,6 @@ class ExportUtils:
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
         segment_text = f"{translate('parent_network')}: {parent_cidr}"
         address_text = f"{translate('usable_addresses')}: {usable_addresses:,}"
-
-        text_font_size = 50
-        text_font = None
-        bold_text_font = None
-        try:
-            # 使用 _load_system_font 方法获取适合当前语言的字体，而不是硬编码微软雅黑
-            text_font, bold_text_font, _ = self._load_system_font(font_size=text_font_size, bold_offset=6, verbose=True)
-        except (IOError, OSError, ValueError, TypeError) as e:
-            print(f"加载系统字体失败，使用默认字体: {e}")
-            text_font = font
-            bold_text_font = bold_font
 
         def get_centered_y(box_y, box_height, _, _font):
             text_y = box_y + box_height // 2 - 38
@@ -1782,6 +1641,88 @@ class ExportUtils:
             traceback.print_exc()
             return False, f"{failure_msg}: {str(e)}", None
 
+    def _create_mock_tree(self, headers, data):
+        """创建模拟Treeview对象
+
+        Args:
+            headers: 表头列表
+            data: 数据列表
+
+        Returns:
+            MockTree对象
+        """
+        class MockTree:
+            """模拟Treeview对象"""
+            def __init__(self, headers, data):
+                self.headers = headers
+                self.data = data
+                self.columns = list(range(len(headers)))
+
+            def heading(self, col, _event):
+                """获取列标题
+
+                Args:
+                    col: 列索引或列名
+                    option: 选项名，通常是"text"
+
+                Returns:
+                    列标题字符串
+                """
+                if isinstance(col, str) and col.isdigit():
+                    col = int(col)
+                return self.headers[col] if isinstance(col, int) and 0 <= col < len(self.headers) else ""
+
+            def get_children(self):
+                """获取所有子项的ID列表"""
+                return range(len(self.data))
+
+            def item(self, item, option=None):
+                """获取项目的属性
+
+                Args:
+                    item: 项目ID
+                    option: 选项名，如果为None则返回所有选项的字典
+
+                Returns:
+                    如果option为None则返回字典，否则返回对应选项的值
+                """
+                values = self.data[item] if item < len(self.data) else []
+                if option is None:
+                    return {"values": values}
+                elif option == "values":
+                    return values
+                else:
+                    return None
+
+            def __getitem__(self, key):
+                """支持字典访问方式"""
+                if key == "columns":
+                    return self.columns
+                raise KeyError(key)
+
+        return MockTree(headers, data)
+
+    def _convert_remaining_data(self, remaining_data, remaining_headers):
+        """将字典列表转换为列表列表
+
+        Args:
+            remaining_data: 剩余数据（字典列表或列表列表）
+            remaining_headers: 剩余数据表头
+
+        Returns:
+            list: 转换后的数据列表
+        """
+        remaining_data_list = []
+        for item in remaining_data:
+            if isinstance(item, dict):
+                # 按照剩余表头的顺序提取值
+                row = [item.get(header, '') for header in remaining_headers]
+                remaining_data_list.append(row)
+            else:
+                # 如果已经是列表，直接添加
+                remaining_data_list.append(item)
+        return remaining_data_list
+
     def export_to_file(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         """将数据导出到指定文件
 
@@ -1804,111 +1745,14 @@ class ExportUtils:
             elif file_ext == ".txt":
                 self._export_to_txt(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)
             elif file_ext == ".csv":
-                # 对于CSV导出，需要创建一个模拟的tree对象
-                class MockTree:
-                    """模拟Treeview对象，用于CSV导出"""
-                    def __init__(self, headers, data):
-                        self.headers = headers
-                        self.data = data
-                        self.columns = list(range(len(headers)))
-                    
-                    def heading(self, col, _event):
-                        """获取列标题
-                        
-                        Args:
-                            col: 列索引或列名
-                            option: 选项名，通常是"text"
-                        
-                        Returns:
-                            列标题字符串
-                        """
-                        if isinstance(col, str) and col.isdigit():
-                            col = int(col)
-                        return self.headers[col] if isinstance(col, int) and 0 <= col < len(self.headers) else ""
-                    
-                    def get_children(self):
-                        """获取所有子项的ID列表"""
-                        return range(len(self.data))
-                    
-                    def item(self, item, option=None):
-                        """获取项目的属性
-                        
-                        Args:
-                            item: 项目ID
-                            option: 选项名，如果为None则返回所有选项的字典
-                        
-                        Returns:
-                            如果option为None则返回字典，否则返回对应选项的值
-                        """
-                        values = self.data[item] if item < len(self.data) else []
-                        if option is None:
-                            return {"values": values}
-                        elif option == "values":
-                            return values
-                        else:
-                            return None
-                    
-                    def __getitem__(self, key):
-                        """支持字典访问方式"""
-                        if key == "columns":
-                            return self.columns
-                        raise KeyError(key)
-                
-                # 将字典列表转换为列表列表，以便 MockTree 正确处理
-                remaining_data_list = []
-                for item in remaining_data:
-                    if isinstance(item, dict):
-                        # 按照剩余表头的顺序提取值
-                        row = [item.get(header, '') for header in remaining_headers]
-                        remaining_data_list.append(row)
-                    else:
-                        # 如果已经是列表，直接添加
-                        remaining_data_list.append(item)
-                
-                mock_tree = MockTree(remaining_headers, remaining_data_list)
+                # 转换剩余数据并创建模拟tree对象
+                remaining_data_list = self._convert_remaining_data(remaining_data, remaining_headers)
+                mock_tree = self._create_mock_tree(remaining_headers, remaining_data_list)
                 self._export_to_csv(file_path, main_data, main_headers, mock_tree, remaining_headers)
             elif file_ext == ".xlsx":
-                # 对于Excel导出，需要创建一个模拟的tree对象
-                class MockTree:
-                    """模拟Treeview对象，用于Excel导出"""
-                    def __init__(self, headers, data):
-                        self.headers = headers
-                        self.data = data
-                        self.columns = list(range(len(headers)))
-                    
-                    def heading(self, col, _):
-                        return self.headers[col]
-                    
-                    def get_children(self):
-                        return range(len(self.data))
-                    
-                    def item(self, item, option=None):
-                        values = self.data[item] if item < len(self.data) else []
-                        if option is None:
-                            return {"values": values}
-                        elif option == "values":
-                            return values
-                        else:
-                            return None
-                    
-                    def __getitem__(self, key):
-                        """支持字典访问方式"""
-                        if key == "columns":
-                            return self.columns
-                        raise KeyError(key)
-                
-                # 将字典列表转换为列表列表，以便 MockTree 正确处理
-                remaining_data_list = []
-                for item in remaining_data:
-                    if isinstance(item, dict):
-                        # 按照剩余表头的顺序提取值
-                        row = [item.get(header, '') for header in remaining_headers]
-                        remaining_data_list.append(row)
-                    else:
-                        # 如果已经是列表，直接添加
-                        remaining_data_list.append(item)
-                
-                mock_tree = MockTree(remaining_headers, remaining_data_list)
+                # 转换剩余数据并创建模拟tree对象
+                remaining_data_list = self._convert_remaining_data(remaining_data, remaining_headers)
+                mock_tree = self._create_mock_tree(remaining_headers, remaining_data_list)
                 self._export_to_excel(file_path, data_source, main_data, main_headers, mock_tree, remaining_headers)
             elif file_ext == ".pdf":
                 self._export_to_pdf(file_path, data_source, main_data, main_headers, remaining_data, remaining_headers)

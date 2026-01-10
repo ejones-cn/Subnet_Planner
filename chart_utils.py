@@ -5,8 +5,10 @@
 项目版本：v2.5.4
 """
 
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from i18n import _
 import tkinter as tk
+from tkinter import Canvas, Frame
 import math
 from style_manager import get_current_font_settings
 
@@ -24,7 +26,7 @@ PARENT_COLOR = "#636e72"
 SPLIT_COLOR = "#4a7eb4"
 
 
-def draw_text_with_stroke(canvas, text, x, y, style):
+def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: Dict[str, Any]) -> None:
     """绘制带描边效果的文本
     
     Args:
@@ -35,11 +37,11 @@ def draw_text_with_stroke(canvas, text, x, y, style):
         style: 样式字典，包含font、anchor、fill等参数
     """
     # 获取当前语言的字体设置
-    font_family, font_size = get_current_font_settings()
+    font_family, __ = get_current_font_settings()
     
     # 绘制描边
-    for dx in [-1, 1]:
-        for dy in [-1, 1]:
+    for dx in (-1, 1):
+        for dy in (-1, 1):
             canvas.create_text(
                 x + dx, y + dy,
                 text=text,
@@ -57,7 +59,7 @@ def draw_text_with_stroke(canvas, text, x, y, style):
     )
 
 
-def _init_canvas(canvas, parent_frame):
+def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> Tuple[int, int, int, int, int, int]:
     """初始化画布并计算尺寸
     
     Args:
@@ -84,7 +86,18 @@ def _init_canvas(canvas, parent_frame):
     return width, canvas_height, margin_left, margin_right, margin_top, chart_width
 
 
-def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding):
+def _draw_parent_segment(
+    canvas: Canvas,
+    parent_info: Dict[str, Any],
+    x: float,
+    y: float,
+    chart_width: float,
+    log_min: float,
+    log_max: float,
+    min_bar_width: float,
+    bar_height: float,
+    padding: float
+) -> int:
     """绘制父网段
     
     Args:
@@ -108,7 +121,7 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
     bar_width = min(bar_width, chart_width)
 
     # 获取当前语言的字体设置
-    font_family, font_size = get_current_font_settings()
+    font_family, __ = get_current_font_settings()
     
     color = PARENT_COLOR
     canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
@@ -138,7 +151,19 @@ def _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_ma
     return y + bar_height + padding
 
 
-def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding):
+def _draw_network_segments(
+    canvas: Canvas,
+    split_networks: List[Dict[str, Any]],
+    chart_type: Literal["split", "plan"],
+    x: float,
+    y: float,
+    chart_width: float,
+    log_min: float,
+    log_max: float,
+    min_bar_width: float,
+    bar_height: float,
+    padding: float
+) -> int:
     """绘制网络网段
     
     Args:
@@ -158,7 +183,7 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
         int: 新的y坐标
     """
     # 获取当前语言的字体设置
-    font_family, font_size = get_current_font_settings()
+    font_family, __ = get_current_font_settings()
     
     if chart_type == "plan":
         # 子网规划：需求网段
@@ -261,7 +286,18 @@ def _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width
     return y
 
 
-def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding):
+def _draw_remaining_segments(
+    canvas: Canvas,
+    networks: List[Dict[str, Any]],
+    x: float,
+    y: float,
+    chart_width: float,
+    log_min: float,
+    log_max: float,
+    min_bar_width: float,
+    bar_height: float,
+    padding: float
+) -> int:
     """绘制剩余网段
     
     Args:
@@ -280,7 +316,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
         int: 新的y坐标
     """
     # 获取当前语言的字体设置
-    font_family, font_size = get_current_font_settings()
+    font_family, __ = get_current_font_settings()
     
     y += 20
     title_font = (font_family, 11)
@@ -336,7 +372,7 @@ def _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_m
     return y
 
 
-def _draw_legend(canvas, chart_type, x, y):
+def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float, y: float) -> None:
     """绘制图例
     
     Args:
@@ -346,7 +382,7 @@ def _draw_legend(canvas, chart_type, x, y):
         y: y坐标
     """
     # 获取当前语言的字体设置
-    font_family, font_size = get_current_font_settings()
+    font_family, __ = get_current_font_settings()
     
     legend_y = y + 35
     canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
@@ -432,7 +468,12 @@ def _draw_legend(canvas, chart_type, x, y):
         )
 
 
-def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="split"):
+def draw_distribution_chart(
+    canvas: Canvas,
+    chart_data: Optional[Dict[str, Any]],
+    parent_frame: Optional[Frame] = None,
+    chart_type: Literal["split", "plan"] = "split"
+) -> None:
     """绘制网段分布柱状图
 
     Args:
@@ -457,7 +498,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         
         if not networks:
             # 获取当前语言的字体设置
-            font_family, font_size = get_current_font_settings()
+            font_family, __ = get_current_font_settings()
             canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=(font_family, 12))
             return
         
@@ -511,7 +552,7 @@ def draw_distribution_chart(canvas, chart_data, parent_frame=None, chart_type="s
         width = canvas.winfo_width() or 600
         height = canvas.winfo_height() or 400
         # 获取当前语言的字体设置
-        font_family, font_size = get_current_font_settings()
+        font_family, __ = get_current_font_settings()
         title_font = (font_family, 12, "bold")
         canvas.create_text(
             width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red")

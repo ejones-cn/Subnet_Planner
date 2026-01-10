@@ -170,7 +170,7 @@ class JapaneseTranslationChecker:
     
     def print_results(self):
         """打印检查结果"""
-        print(f"\n=== 检查结果 ===")
+        print("\n=== 检查结果 ===")
         print(f"总翻译条目: {self.results['total']}")
         print(f"没有日语字符的翻译: {len(self.results['no_japanese_chars'])}")
         print(f"术语不一致: {len(self.results['inconsistent_terms'])}")
@@ -188,7 +188,7 @@ class JapaneseTranslationChecker:
         if self.results["inconsistent_terms"]:
             print(f"\n2. 术语不一致 ({len(self.results['inconsistent_terms'])} 个):")
             for i, issue in enumerate(self.results["inconsistent_terms"][:10]):
-                print(f"   {i+1}. {issue['key']}: {issue['translation']}")
+                print(f"   {i + 1}. {issue['key']}: {issue['translation']}")
                 for prob in issue['issues']:
                     print(f"      - {prob}")
             if len(self.results["inconsistent_terms"]) > 10:
@@ -197,7 +197,7 @@ class JapaneseTranslationChecker:
         if self.results["punctuation_issues"]:
             print(f"\n3. 标点问题 ({len(self.results['punctuation_issues'])} 个):")
             for i, issue in enumerate(self.results["punctuation_issues"][:10]):
-                print(f"   {i+1}. {issue['key']}: {issue['translation']}")
+                print(f"   {i + 1}. {issue['key']}: {issue['translation']}")
                 for prob in issue['issues']:
                     print(f"      - {prob}")
             if len(self.results["punctuation_issues"]) > 10:
@@ -287,7 +287,7 @@ class JapaneseTranslationChecker:
         with open(self.file_path, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
         
-        print(f"\n=== 修复完成 ===")
+        print("\n=== 修复完成 ===")
         print(f"共修复了 {fix_count} 个翻译")
         return fix_count
 
@@ -303,8 +303,8 @@ results = checker2.check_translations()
 
 # 输出最终报告
 print("\n=== 最终报告 ===")
-print(f"修复前有效率: {(checker.results['valid_translations']/checker.results['total'])*100:.2f}%")
-print(f"修复后有效率: {(results['valid_translations']/results['total'])*100:.2f}%")
+print(f"修复前有效率: {(checker.results['valid_translations'] / checker.results['total']) * 100:.2f}%")
+print(f"修复后有效率: {(results['valid_translations'] / results['total']) * 100:.2f}%")
 print(f"修复的翻译数量: {checker.results['total'] - results['valid_translations']}")
 
 if results['valid_translations'] == results['total']:

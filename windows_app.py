@@ -5,6 +5,7 @@
 子网规划师应用程序 - 主窗口
 """
 
+
 # 标准库
 import base64
 import csv
@@ -15,6 +16,7 @@ import sys
 import traceback
 from collections import deque
 from io import BytesIO
+from typing import Any, Optional
 
 # 第三方库
 import ipaddress
@@ -52,7 +54,7 @@ from style_manager import (
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
-
+DPI_MODE = None  # DPI模式标记
 
 if sys.platform == 'win32':
     try:
@@ -65,14 +67,14 @@ if sys.platform == 'win32':
 
         try:
             ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE_V2)
-            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE_V2"
+            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE_V2"  # type: ignore
         except AttributeError:
             ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
-            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE"
+            DPI_MODE = "PROCESS_PER_MONITOR_DPI_AWARE"  # type: ignore
         except Exception:
             ctypes.windll.user32.SetProcessDPIAware()
-            DPI_MODE = "SetProcessDPIAware"
-        
+            DPI_MODE = "SetProcessDPIAware"  # type: ignore
+
         # 获取当前DPI和缩放因子
         hdc = ctypes.windll.user32.GetDC(None)
         LOGPIXELSX = 88  # 水平DPI
@@ -80,15 +82,16 @@ if sys.platform == 'win32':
         dpi_x = ctypes.windll.gdi32.GetDeviceCaps(hdc, LOGPIXELSX)
         dpi_y = ctypes.windll.gdi32.GetDeviceCaps(hdc, LOGPIXELSY)
         ctypes.windll.user32.ReleaseDC(None, hdc)
-        
+
         # 计算缩放因子
-        SCALE_FACTOR = dpi_x / 96.0
+        SCALE_FACTOR = dpi_x / 96.0  # type: ignore
         print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
-        
+
     except Exception as e:
         print(f"⚠️ 设置DPI感知失败: {e}")
-        # 定义默认缩放因子
-        SCALE_FACTOR = 1.0
+        # 使用默认缩放因子
+        SCALE_FACTOR = 1.0  # type: ignore
+        DPI_MODE = "Default"  # type: ignore
 
 
 # 自定义的ColoredNotebook类，支持每个标签不同颜色
@@ -246,7 +249,7 @@ class ColoredNotebook(ttk.Frame):
 
             # 如果还是无法获取背景色，使用默认的背景色
             if not bg_color or bg_color.startswith("system."):
-                bg_color = self.style.lookup("TFrame", "background")
+                bg_color = self.style.lookup("TFrame", "background") or "#f0f0f0"
 
             # 使用style来设置ttk.Frame的背景色，为每个实例创建唯一的样式名称
             temp_style_name = f"TempColoredNotebookStyle{self.unique_id}.TFrame"
@@ -270,6 +273,7 @@ class ColoredNotebook(ttk.Frame):
         font_family, font_size = get_current_font_settings()
         style_manager = get_style_manager()
         tab_width = style_manager.get_tab_width() if style_manager else 10
+        tab_pady = style_manager.get_tab_vertical_padding() if style_manager else 5
 
         button_params = {
             "text": label,
@@ -277,7 +281,7 @@ class ColoredNotebook(ttk.Frame):
             "relief": "flat",
             "borderwidth": 0,
             "padx": 5,
-            "pady": 5,
+            "pady": tab_pady,
             "font": (font_family, font_size, "normal"),
             "width": tab_width,  # 从样式管理器获取标签宽度
         }
@@ -295,10 +299,10 @@ class ColoredNotebook(ttk.Frame):
             button_params["activebackground"] = self.mouse_down_colors.get(color, "#e1bee7")
             button_params["activeforeground"] = "#333333"  # 深灰色文字
 
-        button = tk.Button(self.tab_bar, **button_params)
+        button = tk.Button(self.tab_bar, **button_params)  # type: ignore
 
         # 保存按钮对应的标签索引，以便在事件处理中使用
-        button.tab_index = len(self.tabs)
+        button.tab_index = len(self.tabs)  # type: ignore
 
         # 绑定标签页切换事件
         button.bind("<Button-1>", lambda e, t=len(self.tabs): self.select_tab(t))
@@ -359,6 +363,7 @@ class ColoredNotebook(ttk.Frame):
         self.active_tab = tab_index
 
         # 根据是否为顶级标签页应用不同的激活样式
+        selected_color = "#ff9800"  # 默认橙色背景
         if self.is_top_level:
             # 顶级标签页激活状态：橙底黑字并加粗
             selected_tab["button"].config(
@@ -457,6 +462,7 @@ class IPSubnetSplitterApp:
         self.execute_btn = None
         self.reexecute_btn = None
         self.history_tree = None
+        self.history_listbox = None
         self.export_btn = None
         self.notebook = None
         self.split_info_frame = None
@@ -545,7 +551,6 @@ class IPSubnetSplitterApp:
             # 使用PIL加载高分辨率图标
             icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Subnet_Planner.ico")
             if os.path.exists(icon_path):
-                from PIL import Image, ImageTk
                 # 打开图标文件
                 icon_image = Image.open(icon_path)
                 # 转换为PhotoImage对象
@@ -615,33 +620,6 @@ class IPSubnetSplitterApp:
         # 获取当前语言的字体设置
         font_family, font_size = get_current_font_settings()
 
-        self.style.configure(
-            "InfoBarCloseButton.TButton",
-            padding=(2, 0),
-            foreground="#9E9E9E",
-            font=(font_family, 8),
-            width=0,
-            background=self.style.lookup("TFrame", "background"),
-            borderwidth=0,
-            highlightthickness=0,
-        )
-        # 针对不同主题的具体元素配置无边框样式
-        self.style.map("InfoBarCloseButton.TButton",
-            background=[("active", self.style.lookup("TFrame", "background")),
-                       ("pressed", self.style.lookup("TFrame", "background"))])
-        # 配置边框元素（适用于clam、alt、default、winnative主题）
-        self.style.configure("InfoBarCloseButton.TButton.border",
-            borderwidth=0,
-            relief="flat")
-        # 配置button元素（适用于vista、xpnative主题）
-        self.style.configure("InfoBarCloseButton.TButton.button",
-            borderwidth=0,
-            relief="flat")
-        # 配置focus元素
-        self.style.configure("InfoBarCloseButton.TButton.focus",
-            borderwidth=0,
-            highlightthickness=0)
-
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
@@ -662,15 +640,22 @@ class IPSubnetSplitterApp:
         )
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)
 
-        self.info_close_btn = ttk.Button(
+        self.info_close_btn = tk.Button(
             self.info_bar_frame,
             text="✕",
             command=self.hide_info_bar,
-            style="InfoBarCloseButton.TButton",
             cursor="hand2",
-            takefocus=False,  # 确保按钮永远不会获得焦点
+            takefocus=False,
+            bg=bg_color,
+            fg="#9E9E9E",
+            font=("Arial", 8),  # 此处字体硬编码是程序需要，禁止修改
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            padx=0,
+            pady=0,
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=(0, 4), sticky="se")
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 0), pady=(0, 4), sticky="se")
 
         self.info_auto_hide_id = None
         self.info_auto_hide_scheduled_time = None  # 记录定时器设置的时间
@@ -678,7 +663,7 @@ class IPSubnetSplitterApp:
 
         # 初始化时获取并保存参考宽度
         self.root.update_idletasks()
-        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
+        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 10, 100)
 
         # 创建信息栏字体对象并保存，避免重复创建导致渲染不一致
         self._info_font = tkfont.Font(family=font_family, size=font_size)
@@ -2231,14 +2216,6 @@ class IPSubnetSplitterApp:
             action_type = "删除子网"
         self.save_current_state(action_type)
 
-    def update_requirements_tree_zebra_stripes(self):
-        """更新子网需求表的斑马条纹和序号"""
-        self.update_table_zebra_stripes(self.requirements_tree, update_index=True)
-
-    def update_pool_tree_zebra_stripes(self):
-        """更新需求池表的斑马条纹和序号"""
-        self.update_table_zebra_stripes(self.pool_tree, update_index=True)
-
     def import_requirements(self):
         """导入子网需求数据"""
         self._import_data()
@@ -2846,6 +2823,7 @@ class IPSubnetSplitterApp:
             dialog.destroy()
 
         # 根据对话框类型设置按钮
+        ok_btn = None  # 预声明
         if dialog_type in ["info", "error", "warning"]:
             # 只有确定按钮，使用默认样式
             ok_btn = ttk.Button(btn_frame, text=_("ok"), command=on_ok)
@@ -2863,7 +2841,8 @@ class IPSubnetSplitterApp:
         self._center_dialog(dialog)
 
         # 在对话框显示后强制设置焦点
-        self._set_dialog_focus(dialog, ok_btn)
+        if ok_btn:
+            self._set_dialog_focus(dialog, ok_btn)
 
         # 等待对话框关闭
         self.root.wait_window(dialog)
@@ -3968,7 +3947,7 @@ class IPSubnetSplitterApp:
                 if not text:
                     return ""
                 
-                import re
+
                 
                 lines = []
                 current_line = ""
@@ -3978,26 +3957,26 @@ class IPSubnetSplitterApp:
                 def get_char_type(char):
                     code = ord(char)
                     # CJK统一表意文字（中日韩）
-                    if (0x4E00 <= code <= 0x9FFF or  # CJK统一表意文字
-                        0x3400 <= code <= 0x4DBF or  # CJK扩展A
-                        0x20000 <= code <= 0x2A6DF or  # CJK扩展B
-                        0x2A700 <= code <= 0x2B73F or  # CJK扩展C
-                        0x2B740 <= code <= 0x2B81F or  # CJK扩展D
-                        0x2B820 <= code <= 0x2CEAF or  # CJK扩展E
-                        0x2CEB0 <= code <= 0x2EBEF or  # CJK扩展F
-                        0x30000 <= code <= 0x3134F or  # CJK扩展G
-                        0x31350 <= code <= 0x323AF):  # CJK扩展H
+                    if ((0x4E00 <= code <= 0x9FFF) or  # CJK统一表意文字
+                        (0x3400 <= code <= 0x4DBF) or  # CJK扩展A
+                        (0x20000 <= code <= 0x2A6DF) or  # CJK扩展B
+                        (0x2A700 <= code <= 0x2B73F) or  # CJK扩展C
+                        (0x2B740 <= code <= 0x2B81F) or  # CJK扩展D
+                        (0x2B820 <= code <= 0x2CEAF) or  # CJK扩展E
+                        (0x2CEB0 <= code <= 0x2EBEF) or  # CJK扩展F
+                        (0x30000 <= code <= 0x3134F) or  # CJK扩展G
+                        (0x31350 <= code <= 0x323AF)):  # CJK扩展H
                         return 'cjk'
                     # 日文假名
-                    elif (0x3040 <= code <= 0x309F or  # 平假名
-                          0x30A0 <= code <= 0x30FF):  # 片假名
+                    elif ((0x3040 <= code <= 0x309F) or  # 平假名
+                          (0x30A0 <= code <= 0x30FF)):  # 片假名
                         return 'cjk'
                     # 韩文音节
                     elif 0xAC00 <= code <= 0xD7AF:
                         return 'cjk'
                     # CJK标点符号
-                    elif (0x3000 <= code <= 0x303F or  # CJK标点
-                          0xFF00 <= code <= 0xFFEF):  # 全角字符
+                    elif ((0x3000 <= code <= 0x303F) or  # CJK标点
+                          (0xFF00 <= code <= 0xFFEF)):  # 全角字符
                         return 'cjk_punct'
                     # 英文字母
                     elif char.isalpha():
@@ -4204,7 +4183,7 @@ class IPSubnetSplitterApp:
                             result.append(char)
                             if char == ' ' and space_count < num_spaces - 1:
                                 # 增加额外的空格
-                                for _ in range(extra_spaces_per_gap):
+                                for i in range(extra_spaces_per_gap):
                                     result.append(' ')
                                 space_count += 1
                         
@@ -4219,7 +4198,7 @@ class IPSubnetSplitterApp:
                             for i, char in enumerate(line):
                                 result.append(char)
                                 if char == ' ' and space_count < num_spaces - 1:
-                                    for _ in range(extra_spaces_per_gap - 1):
+                                    for space in range(extra_spaces_per_gap - 1):
                                         result.append(' ')
                                     space_count += 1
                             justified_line = ''.join(result)
@@ -4257,7 +4236,7 @@ class IPSubnetSplitterApp:
                             result.append(char)
                             # 在汉字之间添加空格
                             if i in char_positions and gap_count < num_gaps:
-                                for _ in range(extra_spaces_per_gap):
+                                for space in range(extra_spaces_per_gap):
                                     result.append(' ')
                                 gap_count += 1
                         
@@ -4272,7 +4251,7 @@ class IPSubnetSplitterApp:
                             for i, char in enumerate(line):
                                 result.append(char)
                                 if i in char_positions and gap_count < num_gaps:
-                                    for _ in range(extra_spaces_per_gap - 1):
+                                    for space in range(extra_spaces_per_gap - 1):
                                         result.append(' ')
                                     gap_count += 1
                             justified_line = ''.join(result)
@@ -4296,7 +4275,7 @@ class IPSubnetSplitterApp:
             text_with_icon = self._info_icon + self._full_info_text
             
             # 计算最大行宽（不包括额外边距）
-            max_line_width = current_width - 34  # 减去左右内边距
+            max_line_width = current_width - 20  # 减去左右内边距
             
             # 对带图标的完整文本进行智能换行处理
             final_text = smart_wrap_text(text_with_icon, max_line_width)
@@ -4325,7 +4304,7 @@ class IPSubnetSplitterApp:
             
             # 计算新的信息栏高度，添加额外的上下边距以确保文本完整显示
             # 给最后一行文字留出足够空间，添加4px额外高度
-            new_height = label_height + 4  # 额外添加4px高度，确保最后一行完整显示
+            new_height = label_height + 0  # 额外添加0px高度，确保最后一行完整显示
             new_height = max(new_height, 30)  # 最小高度30px
             
             # 更新信息栏框架高度
@@ -6053,36 +6032,6 @@ class IPSubnetSplitterApp:
                         include_special = tree_name == 'split_tree'
                         self.configure_treeview_styles(tree, include_special)
 
-                # 重新配置信息栏关闭按钮样式，确保在新主题下大小设定仍然生效
-                if hasattr(self, 'style'):
-                    self.style.configure(
-                        "InfoBarCloseButton.TButton",
-                        padding=(2, 0),  # 按用户要求统一设置padding为(2, 0)
-                        font=(font_family, 8),  # 使用统一的字体设置，大小为8
-                        foreground="#9E9E9E",
-                        width=2,  # 字符宽度，配合padding使用
-                        background=self.style.lookup("TFrame", "background"),
-                        borderwidth=0,
-                        highlightthickness=0,
-                        relief="flat",
-                    )
-                    # 针对不同主题的具体元素配置无边框样式
-                    self.style.map("InfoBarCloseButton.TButton",
-                        background=[("active", self.style.lookup("TFrame", "background")),
-                                   ("pressed", self.style.lookup("TFrame", "background"))])
-                    # 配置边框元素（适用于clam、alt、default、winnative主题）
-                    self.style.configure("InfoBarCloseButton.TButton.border",
-                        borderwidth=0,
-                        relief="flat")
-                    # 配置button元素（适用于vista、xpnative主题）
-                    self.style.configure("InfoBarCloseButton.TButton.button",
-                        borderwidth=0,
-                        relief="flat")
-                    # 配置focus元素
-                    self.style.configure("InfoBarCloseButton.TButton.focus",
-                        borderwidth=0,
-                        highlightthickness=0)
-
                     # 重新配置信息栏标签样式，确保错误信息颜色正确
                     base_info_label_style = {"borderwidth": 0, "font": (font_family, font_size), "relief": "flat"}
                     self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
@@ -6098,6 +6047,10 @@ class IPSubnetSplitterApp:
                     if hasattr(self, 'info_label'):
                         bg_color = self.style.lookup("TFrame", "background")
                         self.info_label.configure(background=bg_color)
+                    # 更新信息栏关闭按钮的背景色，确保跟随主题
+                    if hasattr(self, 'info_close_btn'):
+                        bg_color = self.style.lookup("TFrame", "background")
+                        self.info_close_btn.configure(bg=bg_color)
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
@@ -6107,7 +6060,7 @@ class IPSubnetSplitterApp:
         theme_switch_btn = ttk.Button(
             theme_frame, text=_('apply_theme'), width=original_button_width, style=button_style, command=switch_theme
         )
-        theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
+        theme_switch_btn.grid(row=0, column=2, padx=(0, 0), pady=5)
 
         # 窗口横向锁定控制部分
         lock_frame = ttk.LabelFrame(content_frame, text=_("window_lock"), padding="10")
@@ -6215,7 +6168,7 @@ class IPSubnetSplitterApp:
         # 设置最大像素宽度（考虑信息栏的实际宽度、关闭按钮宽度和内边距）
         # 可用宽度 = 信息栏宽度 - 内边距 - 关闭按钮宽度
         # 增加内边距减去值，确保能显示更多字符
-        max_pixel_width = info_bar_width - 60 - self.close_btn_width  # 减去更小的内边距和关闭按钮宽度
+        max_pixel_width = info_bar_width - 40 - self.close_btn_width  # 减去更小的内边距和关闭按钮宽度
 
         # 确保最大像素宽度为正数
         max_pixel_width = max(max_pixel_width, self.min_pixel_width)
@@ -6224,8 +6177,8 @@ class IPSubnetSplitterApp:
         try:
             # 获取当前语言的字体设置
             from style_manager import get_current_font_settings
-            font_family, _ = get_current_font_settings()
-            font = tkfont.Font(family=font_family, size=10)
+            font_family, font_size = get_current_font_settings()
+            font = tkfont.Font(family=font_family, size=font_size)
         except tk.TclError:
             font = tkfont.Font(family="Arial", size=10)
 
@@ -6333,10 +6286,10 @@ class IPSubnetSplitterApp:
             bar_x = 10
             # 使用主窗口宽度的88%作为信息栏宽度，减去左右边距
             main_width = self.main_frame.winfo_width()
-            bar_width = int(main_width * 0.88) - 20
+            bar_width = int(main_width * 0.88) - 10
 
             bar_width = max(bar_width, 100)
-            bar_width = min(bar_width, main_width - 20)
+            bar_width = min(bar_width, main_width - 10)
 
             # 先强制更新布局，确保spacer已正确pack
             self.root.update_idletasks()
@@ -6431,25 +6384,44 @@ class IPSubnetSplitterApp:
             # 如果出现任何错误，就不绘制图表
             self.chart_data = None
 
+    def _on_chart_resize(self, canvas, chart_data, chart_frame, chart_type="split"):
+        """通用图表尺寸变化处理
+
+        Args:
+            canvas: Canvas对象
+            chart_data: 图表数据
+            chart_frame: 图表框架
+            chart_type: 图表类型（"split"或"plan"）
+        """
+        if chart_data:
+            draw_distribution_chart(canvas, chart_data, chart_frame, chart_type=chart_type)
+
     def on_chart_resize(self, event):
         """Canvas尺寸变化时重新绘制图表"""
-        # 当Canvas尺寸变化时重新绘制图表
-        self.draw_distribution_chart()
+        if hasattr(self, 'chart_data') and self.chart_data:
+            self._on_chart_resize(self.chart_canvas, self.chart_data, self.chart_frame, "split")
 
     def on_planning_chart_resize(self, event):
         """规划图表尺寸变化时重新绘制"""
-        # 检查是否有规划结果数据
         if hasattr(self, 'planning_chart_data') and self.planning_chart_data:
-            # 如果有当前图表数据，重新绘制
-            draw_distribution_chart(self.planning_chart_canvas, self.planning_chart_data, self.planning_chart_frame, chart_type="plan")
-        
+            self._on_chart_resize(self.planning_chart_canvas, self.planning_chart_data, self.planning_chart_frame, "plan")
+
+    def _on_chart_mousewheel(self, canvas, event):
+        """通用鼠标滚轮事件处理
+
+        Args:
+            canvas: Canvas对象
+            event: 事件对象
+        """
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
     def on_chart_mousewheel(self, event):
         """处理鼠标滚轮事件"""
-        self.chart_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self._on_chart_mousewheel(self.chart_canvas, event)
 
     def on_planning_chart_mousewheel(self, event):
         """处理规划图表的鼠标滚轮事件"""
-        self.planning_chart_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self._on_chart_mousewheel(self.planning_chart_canvas, event)
 
     def draw_text_with_stroke(
         self,
@@ -6975,6 +6947,9 @@ class IPSubnetSplitterApp:
         else:  # 한국어
             lang_code = "ko"
         
+        # 清除字体缓存，确保新语言使用正确的字体
+        ExportUtils.clear_font_cache()
+        
         # 设置当前语言
         set_language(lang_code)
         
@@ -7052,17 +7027,27 @@ class IPSubnetSplitterApp:
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
         
         # 重新创建信息栏关闭按钮
-        self.info_close_btn = ttk.Button(
+        bg_color = self.style.lookup("TFrame", "background")
+        self.info_close_btn = tk.Button(
             self.info_bar_frame,
             text="✕",
             command=self.hide_info_bar,
-            style="InfoBarCloseButton.TButton",
             cursor="hand2",
-            takefocus=False,  # 确保按钮永远不会获得焦点
+            takefocus=False,
+            bg=bg_color,
+            fg="#9E9E9E",
+            font=("Arial", 8),  # 此处字体硬编码是程序需要，禁止修改
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            padx=0,
+            pady=0,
         )
-        self.info_close_btn.grid(row=0, column=1, padx=(0, 3), pady=(0, 4), sticky="se")
+        self.info_close_btn.grid(row=0, column=1, padx=(0, 0), pady=(0, 4), sticky="se")
         
         # 重新创建信息标签（使用Label组件替代Text，以简化实现）
+        # 获取背景色
+        bg_color = self.style.lookup("TFrame", "background")
         self.info_label = tk.Label(
             self.info_bar_frame,
             padx=0, pady=0,  # 使用内边距控制间距，使用单一值而非元组
@@ -7071,6 +7056,7 @@ class IPSubnetSplitterApp:
             cursor="arrow",  # 显示普通箭头光标
             background=bg_color,  # 设置背景色跟随主题
             anchor="w",  # 文本左对齐
+            justify="left",  # 多行文本时左对齐，与第一次创建保持一致
         )
         self.info_label.grid(row=0, column=0, sticky="ew", padx=(5, 0), pady=0)
         self.info_label.lift(self.info_close_btn)
@@ -7082,7 +7068,7 @@ class IPSubnetSplitterApp:
         self.history_records = []
         
         self.root.update_idletasks()
-        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 20, 100)
+        self.info_bar_ref_width = max(self.main_frame.winfo_width() - 10, 100)
     
     def initialize_component_properties(self):
         """重新初始化所有必要的组件属性"""
