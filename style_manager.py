@@ -245,9 +245,9 @@ class StyleManager:
 
         # 按钮样式 - 默认按钮
         button_padding = self._get_setting(self.BUTTON_PADDING_SETTINGS, current_language)
-        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
         # 功能按钮样式 - 添加、删除、撤销、移动、导入等
-        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
         # 为默认按钮和功能按钮应用相同的映射配置
         for button_style in ["TButton", "Function.TButton"]:
             self.style.map(

@@ -4067,7 +4067,7 @@ class IPSubnetSplitterApp:
                         return 'cjk'
                     # 日文假名
                     elif ((0x3040 <= code <= 0x309F) or  # 平假名
-                        (0x30A0 <= code <= 0x30FF)):  # 片假名
+                    (0x30A0 <= code <= 0x30FF)):  # 片假名
                         return 'cjk'
                     # 韩文音节
                     elif 0xAC00 <= code <= 0xD7AF:

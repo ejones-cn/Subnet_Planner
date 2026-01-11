@@ -18,7 +18,7 @@ def get_resource_path(relative_path):
     """获取资源文件的绝对路径"""
     if hasattr(sys, '_MEIPASS'):
         # PyInstaller打包后的路径
-        return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(sys._MEIPASS, relative_path)  # type: ignore
     # 开发环境下的路径
     return os.path.join(os.path.dirname(__file__), relative_path)
 
@@ -57,6 +57,8 @@ _DEFAULT_TRANSLATIONS = {
 if TRANSLATIONS is None:
     TRANSLATIONS = _DEFAULT_TRANSLATIONS
 
+_loaded_translations = TRANSLATIONS
+
 _current_language = "zh"
 
 
@@ -82,9 +84,9 @@ def get_language():
     return _current_language
 
 
-def _(key, **kwargs):
+def translate(key, **kwargs):
     """
-    翻译函数
+    翻译文本
     
     Args:
         key: 翻译键名
@@ -93,13 +95,20 @@ def _(key, **kwargs):
     Returns:
         翻译后的文本
     """
-    translation = TRANSLATIONS.get(key, {})
-    text = translation.get(_current_language, key)
+    translation = TRANSLATIONS.get(key, {}) if TRANSLATIONS else {}
+    if isinstance(translation, dict):
+        text = translation.get(_current_language, key)
+    else:
+        text = key
     
-    if kwargs:
+    if kwargs and text:
         text = text.format(**kwargs)
     
-    return text
+    return text or key
+
+
+# 导出 _ 作为 translate 的别名，用于标准 gettext 风格导入
+_ = translate
 
 
 def get_supported_languages():

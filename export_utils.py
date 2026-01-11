@@ -22,7 +22,7 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from i18n import _ as translate, get_language  # _ 是翻译函数，这里重命名为 translate 以避免冲突
+from i18n import _ as translate, get_language  # type: ignore
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
@@ -100,9 +100,8 @@ class ExportUtils:
         try:
             from reportlab.pdfbase import pdfmetrics
             if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
-                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore
-                    del pdfmetrics._fonts["ChineseFont"]  # type: ignore
+                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore[attr-defined]
+                    del pdfmetrics._fonts["ChineseFont"]  # type: ignore[attr-defined]
                     print("🧹 已清除 ReportLab PDF 字体注册")
         except Exception as e:
             print(f"⚠️ 清除 PDF 字体注册时出现警告: {e}")
@@ -156,9 +155,9 @@ class ExportUtils:
             str: 文本内容
         """
         if hasattr(cell, 'getPlainText'):
-            return cell.getPlainText()  # type: ignore
+            return cell.getPlainText()  # type: ignore[attr-defined]
         elif hasattr(cell, 'text'):
-            return cell.text  # type: ignore
+            return cell.text  # type: ignore[attr-defined]
         else:
             return str(cell)
 

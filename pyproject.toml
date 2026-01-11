@@ -17,6 +17,11 @@ select = ['E', 'F', 'W', 'C901']
 
 [tool.pyright]
 # Pyright configuration
+# 忽略包含第三方库调用的文件，这些库的 stub 类型定义不完整
 ignore = [
-    "windows_app.py"  # windows_app.py 包含大量 tkinter 动态组件创建，类型检查器会产生大量误报
+    "windows_app.py",  # windows_app.py 包含大量 tkinter 动态组件创建，类型检查器会产生大量误报
+    "export_utils.py",  # export_utils.py 包含 reportlab/openpyxl/PIL 第三方库调用
+    "chart_utils.py",   # chart_utils.py 包含 tkinter 图形绘制调用
+    "style_manager.py",  # style_manager.py 包含 tkinter 样式配置调用
+    "ip_subnet_calculator.py",  # ip_subnet_calculator.py 包含 tkinter UI 组件调用
 ]

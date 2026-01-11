@@ -12,7 +12,7 @@ import math
 from style_manager import get_current_font_settings
 
 # 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
-from i18n import _ as translate
+from i18n import _ as translate  # type: ignore
 
 # 定义一个别名 _trans 用于翻译，避免与局部变量 _ 冲突
 _trans = translate

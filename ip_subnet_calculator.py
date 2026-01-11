@@ -81,31 +81,35 @@ def handle_ip_subnet_error(error):
                 try:
                     netmask_match = re.search(r"'([^']+)'", error_msg)
                     netmask = netmask_match.group(1) if netmask_match else error_msg.split()[0].strip("'")
-                    error_info = _(translation_key).format(netmask=netmask)
+                    translation = _(translation_key)
+                    error_info = translation.format(netmask=netmask) if translation else f"Invalid netmask: {netmask}"
                 except (AttributeError, IndexError):
-                    error_info = _(translation_key).format(netmask="invalid_netmask")
+                    error_info = _(translation_key).format(netmask="invalid_netmask") if _(translation_key) else f"Invalid netmask: invalid_netmask"
             elif translation_key == 'invalid_network_address_format':
                 # 从错误信息中提取网络地址
                 try:
                     network_match = re.search(r"'([^']+)'", error_msg)
                     network = network_match.group(1) if network_match else "invalid_network"
-                    error_info = _(translation_key).format(network=network)
+                    translation = _(translation_key)
+                    error_info = translation.format(network=network) if translation else f"Invalid network address: {network}"
                 except AttributeError:
-                    error_info = _(translation_key).format(network="invalid_network")
+                    error_info = _(translation_key).format(network="invalid_network") if _(translation_key) else "Invalid network address: invalid_network"
             elif translation_key == 'cidr_has_host_bits_set':
                 # 从错误信息中提取CIDR地址
                 try:
                     cidr_match = re.search(r"'([^']+)'", error_msg)
                     cidr = cidr_match.group(1) if cidr_match else error_msg.split()[0]
-                    error_info = _(translation_key).format(cidr=cidr)
+                    translation = _(translation_key)
+                    error_info = translation.format(cidr=cidr) if translation else f"Invalid CIDR: {cidr}"
                 except (AttributeError, IndexError):
-                    error_info = _(translation_key).format(cidr="invalid_cidr")
+                    error_info = _(translation_key).format(cidr="invalid_cidr") if _(translation_key) else "Invalid CIDR: invalid_cidr"
             elif translation_key == 'invalid_ipv6_group_too_long':
                 # 处理IPv6组过长错误
                 try:
                     group_match = re.search(r"'([^']+)'", error_msg)
                     group = group_match.group(1) if group_match else "invalid_group"
-                    error_info = _(translation_key).format(group=group)
+                    translation = _(translation_key)
+                    error_info = translation.format(group=group) if translation else f"Invalid IPv6 group: {group}"
                 except AttributeError:
                     # 如果没有找到引号，使用默认值
                     error_info = _(translation_key).format(group="invalid_group")
@@ -149,17 +153,19 @@ def handle_ip_subnet_error(error):
                                     'invalid_ipv6_characters_limit', 'invalid_ipv6_trailing_colon', 'invalid_ipv6_exactly_8_parts',
                                     'invalid_ipv6_format']:
                 # 这些错误不需要额外变量
-                error_info = _(translation_key)
+                error_info = _(translation_key) or f"Invalid format error ({translation_key})"
             elif translation_key == 'invalid_octet_in_ip':
                 octet_match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
                 if octet_match:
                     octet = octet_match.group(1)
-                    error_info = _(translation_key).format(octet=octet)
+                    translation = _(translation_key)
+                    error_info = translation.format(octet=octet) if translation else f"Invalid octet: {octet}"
             elif translation_key == 'invalid_ipv6_group_too_long':
                 group_match = re.search(r"'([^']+)'", error_msg)
                 if group_match:
                     group = group_match.group(1)
-                    error_info = _(translation_key).format(group=group)
+                    translation = _(translation_key)
+                    error_info = translation.format(group=group) if translation else f"Invalid IPv6 group: {group}"
             break
 
     # 检查octet长度错误(特殊处理)
@@ -167,11 +173,13 @@ def handle_ip_subnet_error(error):
         octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
         if octet_match:
             invalid_octet = octet_match.group(1)
-            error_info = _('invalid_octet_in_ip').format(octet=invalid_octet)
+            translation = _('invalid_octet_in_ip')
+            error_info = translation.format(octet=invalid_octet) if translation else f"Invalid octet: {invalid_octet}"
 
     # 使用默认错误信息
     if not error_info:
-        error_info = f"{error_type} {_('error')}: {error_msg}"
+        error_text = _('error') or "Error"
+        error_info = f"{error_type} {error_text}: {error_msg}"
 
     return {"error": error_info}
 
@@ -341,7 +349,8 @@ def _allocate_subnet(available_subnets, required):
                 new_subnet = next(subnets_gen, None)
                 if not new_subnet:
                     # 使用完整翻译键和变量占位符
-                    error_msg = _('cannot_create_subnet_for').format(name=required['name'], prefix=new_prefix)
+                    translation = _('cannot_create_subnet_for')
+                    error_msg = translation.format(name=required['name'], prefix=new_prefix) if translation else f"Cannot create subnet for {required['name']} with prefix {new_prefix}"
                     return False, None, None, error_msg
 
                 # 计算剩余子网
@@ -353,10 +362,12 @@ def _allocate_subnet(available_subnets, required):
 
                 return True, new_subnet, updated_available, None
             except ValueError as e:
-                return False, None, None, _('failed_to_create_subnet') + ": " + str(e)
+                translation = _('failed_to_create_subnet')
+                return False, None, None, (translation + ": " + str(e)) if translation else f"Failed to create subnet: {e}"
 
     # 使用完整翻译键和变量占位符
-    error_msg = _('cannot_allocate_sufficiently_large_subnet_for').format(name=required['name'])
+    translation = _('cannot_allocate_sufficiently_large_subnet_for')
+    error_msg = translation.format(name=required['name']) if translation else f"Cannot allocate sufficiently large subnet for {required['name']}"
     return False, None, None, error_msg
 
 
@@ -404,15 +415,17 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
                 return {"error": error}
 
             # 分配成功，更新状态
-            available_subnets = updated_available
-            subnet_info = get_subnet_info(str(new_subnet))
-            allocated_subnets.append({
-                "name": required["name"],
-                "cidr": str(new_subnet),
-                "required_hosts": required["hosts"],
-                "available_hosts": subnet_info["usable_addresses"],
-                "info": subnet_info,
-            })
+            if updated_available is not None:
+                available_subnets = updated_available
+            subnet_info = get_subnet_info(str(new_subnet)) if new_subnet else None
+            if subnet_info and new_subnet:
+                allocated_subnets.append({
+                    "name": required["name"],
+                    "cidr": str(new_subnet),
+                    "required_hosts": required["hosts"],
+                    "available_hosts": subnet_info["usable_addresses"],
+                    "info": subnet_info,
+                })
 
         # 生成剩余子网信息
         remaining_subnets = [str(subnet) for subnet in available_subnets]
