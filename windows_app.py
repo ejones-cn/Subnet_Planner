@@ -194,6 +194,14 @@ class ColoredNotebook(ttk.Frame):
         self.tabs = []
         self.active_tab = None
 
+    def _get_font_settings(self):
+        """获取当前字体设置
+
+        Returns:
+            tuple: (字体名称, 字体大小)
+        """
+        return get_current_font_settings()
+
     def on_configure(self, event):
         """当笔记本控件大小变化时调用，确保内容区域能正确调整大小"""
         if hasattr(self, 'content_area'):
@@ -269,8 +277,7 @@ class ColoredNotebook(ttk.Frame):
         """添加一个新标签"""
         tab = {"label": label, "content": content_frame, "color": color, "button": None}
 
-        # 从样式管理器获取当前字体设置
-        font_family, font_size = get_current_font_settings()
+        font_family, font_size = self._get_font_settings()
         style_manager = get_style_manager()
         tab_width = style_manager.get_tab_width() if style_manager else 10
         tab_pady = style_manager.get_tab_vertical_padding() if style_manager else 5
@@ -283,21 +290,15 @@ class ColoredNotebook(ttk.Frame):
             "padx": 5,
             "pady": tab_pady,
             "font": (font_family, font_size, "normal"),
-            "width": tab_width,  # 从样式管理器获取标签宽度
+            "width": tab_width,
+            "foreground": "#333333",
+            "activeforeground": "#333333",
         }
 
-        # 根据是否为顶级标签页设置不同的文字颜色和鼠标按下状态颜色
         if self.is_top_level:
-            # 顶级标签页：默认深灰色文字，鼠标按下时更亮的橙色背景和深灰色文字
-            button_params["foreground"] = "#333333"  # 默认深灰色文字
-            button_params["activebackground"] = "#ffb74d"  # 亮橙色背景（比激活状态#ff9800更亮）
-            button_params["activeforeground"] = "#333333"  # 深灰色文字
+            button_params["activebackground"] = "#ffb74d"
         else:
-            # 内部标签页：默认深灰色文字，鼠标按下时使用比选中状态更亮的颜色和深灰色文字
-            button_params["foreground"] = "#333333"  # 默认深灰色文字
-            # 为内部标签页设置鼠标按下状态颜色（现在使用之前的激活状态颜色，较暗）
             button_params["activebackground"] = self.mouse_down_colors.get(color, "#e1bee7")
-            button_params["activeforeground"] = "#333333"  # 深灰色文字
 
         button = tk.Button(self.tab_bar, **button_params)  # type: ignore
 
@@ -331,7 +332,7 @@ class ColoredNotebook(ttk.Frame):
         if tab_index < 0 or tab_index >= len(self.tabs):
             return
 
-        font_family, font_size = get_current_font_settings()
+        font_family, font_size = self._get_font_settings()
 
         # 隐藏所有内容
         for tab in self.tabs:
@@ -423,6 +424,93 @@ class IPSubnetSplitterApp:
         # 对于validatecommand，始终返回"1"，允许所有输入，只做视觉提示
         # 对于直接调用，返回布尔值表示验证结果
         return "1" if entry else is_valid
+
+    def _get_font(self):
+        """获取当前字体对象
+
+        Returns:
+            tkfont.Font: 字体对象
+        """
+        try:
+            font_family, font_size = get_current_font_settings()
+            return tkfont.Font(family=font_family, size=font_size)
+        except tk.TclError:
+            return tkfont.Font(family="Arial", size=10)
+
+    def _calculate_pixel_width(self, text, font=None):
+        """计算文本的像素宽度
+
+        Args:
+            text: 要计算的文本
+            font: 可选的字体对象，如果不提供则使用默认字体
+
+        Returns:
+            int: 文本的像素宽度
+        """
+        if font is None:
+            font = self._get_font()
+        return font.measure(text)
+
+    def _truncate_text_by_pixel(self, text, icon, max_pixel_width, font=None):
+        """基于像素宽度截断文本
+
+        Args:
+            text: 要截断的文本
+            icon: 图标文本
+            max_pixel_width: 最大像素宽度
+            font: 可选的字体对象
+
+        Returns:
+            str: 截断后的文本
+        """
+        if font is None:
+            font = self._get_font()
+
+        # 计算图标的宽度
+        icon_width = self._calculate_pixel_width(icon, font)
+
+        # 可用宽度：总宽度减去图标宽度
+        available_width = max_pixel_width - icon_width
+
+        # 先尝试显示完整文本（加上图标）
+        full_text_with_icon = icon + text
+        full_width = self._calculate_pixel_width(full_text_with_icon, font)
+
+        # 如果完整文本可以显示，直接返回
+        if full_width <= max_pixel_width:
+            return text
+
+        # 计算省略号的宽度
+        ellipsis_width = self._calculate_pixel_width("...", font)
+
+        # 二分查找合适的截断位置，考虑省略号宽度
+        low = 0
+        high = len(text)
+        best_length = 0
+
+        while low <= high:
+            mid = (low + high) // 2
+            current_text = text[:mid]
+            current_width = self._calculate_pixel_width(current_text, font)
+
+            if current_width <= available_width - ellipsis_width:
+                best_length = mid
+                low = mid + 1
+            else:
+                high = mid - 1
+
+        # 确保截断后的文本不会过长
+        truncated = text[:best_length]
+
+        # 调整截断位置，确保加上省略号和图标后不会超过最大宽度
+        while best_length > 0:
+            truncated = text[:best_length]
+            truncated_width = self._calculate_pixel_width(truncated, font) + ellipsis_width + icon_width
+            if truncated_width <= max_pixel_width:
+                return truncated + "..."
+            best_length -= 1
+
+        return "..."
 
     def __init__(self, main_window):
         # 应用程序信息
@@ -3933,8 +4021,6 @@ class IPSubnetSplitterApp:
         self._info_currently_expanded = not self._info_currently_expanded
         
         if self._info_currently_expanded:
-            # 获取当前字体设置
-            from style_manager import get_current_font_settings
             font_family, font_size = get_current_font_settings()
             font = tkfont.Font(family=font_family, size=font_size)
             
@@ -4322,50 +4408,8 @@ class IPSubnetSplitterApp:
             self.root.focus_set()
         else:
             # 显示截断文本
-            # 重新计算截断文本
-            def calculate_pixel_width(text):
-                from style_manager import get_current_font_settings
-                font_family, font_size = get_current_font_settings()
-                font = tkfont.Font(family=font_family, size=font_size)
-                return font.measure(text)
-            
-            def truncate_text_by_pixel(text, icon, max_pixel_width):
-                icon_width = calculate_pixel_width(icon)
-                available_width = max_pixel_width - icon_width
-                full_text_with_icon = icon + text
-                full_width = calculate_pixel_width(full_text_with_icon)
-                
-                if full_width <= max_pixel_width:
-                    return text
-                
-                ellipsis_width = calculate_pixel_width("...")
-                low = 0
-                high = len(text)
-                best_length = 0
-                
-                while low <= high:
-                    mid = (low + high) // 2
-                    current_text = text[:mid]
-                    current_width = calculate_pixel_width(current_text)
-                    
-                    if current_width <= available_width - ellipsis_width:
-                        best_length = mid
-                        low = mid + 1
-                    else:
-                        high = mid - 1
-                
-                truncated = text[:best_length]
-                while best_length > 0:
-                    truncated = text[:best_length]
-                    truncated_width = calculate_pixel_width(truncated) + ellipsis_width + icon_width
-                    if truncated_width <= max_pixel_width:
-                        return truncated + "..."
-                    best_length -= 1
-                
-                return "..."
-            
-            truncated_text = truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
-            
+            truncated_text = self._truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
+
             # 使用Text组件的方法设置文本
             # 强制将焦点从Text组件移开，避免渲染问题
             self.root.focus_set()
@@ -6173,72 +6217,11 @@ class IPSubnetSplitterApp:
         # 确保最大像素宽度为正数
         max_pixel_width = max(max_pixel_width, self.min_pixel_width)
 
-        # 创建字体对象，用于测量文本宽度
-        try:
-            # 获取当前语言的字体设置
-            from style_manager import get_current_font_settings
-            font_family, font_size = get_current_font_settings()
-            font = tkfont.Font(family=font_family, size=font_size)
-        except tk.TclError:
-            font = tkfont.Font(family="Arial", size=10)
-
-        # 计算字符串的实际像素宽度
-        def calculate_pixel_width(text):
-            return font.measure(text)
-
-        # 基于像素宽度的截断函数
-        def truncate_text_by_pixel(text, icon, max_pixel_width):
-            # 计算图标的宽度
-            icon_width = calculate_pixel_width(icon)
-
-            # 可用宽度：总宽度减去图标宽度
-            available_width = max_pixel_width - icon_width
-
-            # 先尝试显示完整文本（加上图标）
-            full_text_with_icon = icon + text
-            full_width = calculate_pixel_width(full_text_with_icon)
-
-            # 如果完整文本可以显示，直接返回
-            if full_width <= max_pixel_width:
-                return text
-
-            # 计算省略号的宽度
-            ellipsis_width = calculate_pixel_width("...")
-
-            # 二分查找合适的截断位置，考虑省略号宽度
-            low = 0
-            high = len(text)
-            best_length = 0
-
-            while low <= high:
-                mid = (low + high) // 2
-                current_text = text[:mid]
-                current_width = calculate_pixel_width(current_text)
-
-                if current_width <= available_width - ellipsis_width:
-                    best_length = mid
-                    low = mid + 1
-                else:
-                    high = mid - 1
-
-            # 确保截断后的文本不会过长
-            truncated = text[:best_length]
-
-            # 调整截断位置，确保加上省略号和图标后不会超过最大宽度
-            while best_length > 0:
-                truncated = text[:best_length]
-                truncated_width = calculate_pixel_width(truncated) + ellipsis_width + icon_width
-                if truncated_width <= max_pixel_width:
-                    return truncated + "..."
-                best_length -= 1
-
-            return "..."
-
         # 移除文本中的换行符，确保在信息框中单行显示
         text = text.replace('\n', ' ')
 
         # 调用截断函数
-        truncated_text = truncate_text_by_pixel(text, icon, max_pixel_width)
+        truncated_text = self._truncate_text_by_pixel(text, icon, max_pixel_width)
 
         # 保存完整文本和相关信息到实例变量
         self._full_info_text = text
@@ -6829,10 +6812,8 @@ class IPSubnetSplitterApp:
         self.language_combobox.bind("<<ComboboxSelected>>", self.on_language_change)
 
         # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与信息框一致
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
-        
+
         self.about_label = tk.Label(
             self.root,
             text=_('about') + '…',
@@ -7244,9 +7225,8 @@ class IPSubnetSplitterApp:
             pass  # 样式已配置或配置失败，忽略错误
 
         # 获取当前字体设置，确保与应用程序其他部分一致
-        from style_manager import get_current_font_settings
         font_family, __ = get_current_font_settings()
-        
+
         # 标题区域
         title_frame = ttk.Frame(inner_frame)
         title_frame.pack(pady=(10, 8))
