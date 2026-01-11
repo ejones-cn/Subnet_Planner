@@ -4061,27 +4061,23 @@ class IPSubnetSplitterApp:
                 # 定义字符类型
                 def get_char_type(char):
                     code = ord(char)
-                    # CJK统一表意文字（中日韩）
-                    if ((0x4E00 <= code <= 0x9FFF) or  # noqa: E501
-                        (0x3400 <= code <= 0x4DBF) or
-                        (0x20000 <= code <= 0x2A6DF) or
-                        (0x2A700 <= code <= 0x2B73F) or
-                        (0x2B740 <= code <= 0x2B81F) or
-                        (0x2B820 <= code <= 0x2CEAF) or
-                        (0x2CEB0 <= code <= 0x2EBEF) or
-                        (0x30000 <= code <= 0x3134F) or
-                        (0x31350 <= code <= 0x323AF)):
+                    if ((0x4E00 <= code <= 0x9FFF
+                            or 0x3400 <= code <= 0x4DBF
+                            or 0x20000 <= code <= 0x2A6DF
+                            or 0x2A700 <= code <= 0x2B73F
+                            or 0x2B740 <= code <= 0x2B81F
+                            or 0x2B820 <= code <= 0x2CEAF
+                            or 0x2CEB0 <= code <= 0x2EBEF
+                            or 0x30000 <= code <= 0x3134F
+                            or 0x31350 <= code <= 0x323AF)):
                         return 'cjk'
-                    # 日文假名
-                    elif ((0x3040 <= code <= 0x309F) or  # 平假名
-                          (0x30A0 <= code <= 0x30FF)):  # 片假名
+                    elif ((0x3040 <= code <= 0x309F  # 平假名
+                            or 0x30A0 <= code <= 0x30FF)):  # 片假名
                         return 'cjk'
-                    # 韩文音节
                     elif 0xAC00 <= code <= 0xD7AF:
                         return 'cjk'
-                    # CJK标点符号
-                    elif ((0x3000 <= code <= 0x303F) or  # CJK标点
-                          (0xFF00 <= code <= 0xFFEF)):  # 全角字符
+                    elif ((0x3000 <= code <= 0x303F  # CJK标点
+                            or 0xFF00 <= code <= 0xFFEF)):  # 全角字符
                         return 'cjk_punct'
                     # 英文字母
                     elif char.isalpha():

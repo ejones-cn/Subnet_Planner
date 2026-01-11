@@ -14,10 +14,10 @@ import sys
 
 
 # 处理PyInstaller打包后的文件路径
-def get_resource_path(relative_path):
+def get_resource_path(relative_path: str) -> str:
     """获取资源文件的绝对路径"""
     if hasattr(sys, '_MEIPASS'):
-        meipass: str = sys._MEIPASS  # type: ignore
+        meipass = sys._MEIPASS  # type: ignore[attr-defined]
         return os.path.join(meipass, relative_path)
     return os.path.join(os.path.dirname(__file__), relative_path)
 
@@ -52,7 +52,7 @@ _DEFAULT_TRANSLATIONS = {
 }
 
 if _loaded_translations is None:
-    _translations_dict: dict = _DEFAULT_TRANSLATIONS
+    _translations_dict: dict[str, dict[str, str]] = _DEFAULT_TRANSLATIONS
 else:
     _translations_dict = _loaded_translations
     for key, value in _DEFAULT_TRANSLATIONS.items():
@@ -86,7 +86,7 @@ def get_language():
     return _current_language
 
 
-def translate(key, **kwargs):
+def translate(key: str, **kwargs: str) -> str:
     """
     翻译文本
     

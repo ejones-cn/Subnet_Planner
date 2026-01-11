@@ -5,16 +5,11 @@
 项目版本：v2.5.4
 """
 
-from typing import List, Tuple
-
 
 class FontConfig:
     """字体配置类，集中管理所有语言的字体候选列表"""
 
-    # 语言字体映射（合并后的统一数据结构）
-    # 注意：Windows 11 中某些字体可能是 .ttc 格式而非 .ttf
-    # 因此为这些字体同时提供 .ttf 和 .ttc 两种格式
-    LANGUAGE_FONT_MAP = {
+    LANGUAGE_FONT_MAP: dict[str, list[tuple[str, str]]] = {
         "ko": [
             ("malgun.ttf", "Malgun Gothic"),
             ("malgun.ttc", "Malgun Gothic (TTC)"),
@@ -95,8 +90,7 @@ class FontConfig:
         ],
     }
 
-    # UI字体设置映射表（微软官方推荐）
-    UI_FONT_SETTINGS = {
+    UI_FONT_SETTINGS: dict[str, tuple[str, int]] = {
         "zh": ("微软雅黑", 11),
         "zh_tw": ("Microsoft JhengHei", 11),
         "ja": ("MS Gothic", 11),
@@ -104,8 +98,7 @@ class FontConfig:
         "default": ("Segoe UI", 10)
     }
     
-    # 钉住按钮字体大小设置映射表
-    PIN_BUTTON_FONT_SIZE_SETTINGS = {
+    PIN_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
         "zh": 10,
         "zh_tw": 10,
         "ja": 10,
@@ -113,8 +106,7 @@ class FontConfig:
         "default": 10
     }
     
-    # 功能按钮字体大小设置映射表（添加、删除、撤销、移动、导入等）
-    FUNCTION_BUTTON_FONT_SIZE_SETTINGS = {
+    FUNCTION_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
         "zh": 10,
         "zh_tw": 11,
         "ja": 10,
@@ -122,8 +114,7 @@ class FontConfig:
         "default": 9
     }
     
-    # 信息栏字体大小设置映射表
-    INFO_BAR_FONT_SIZE_SETTINGS = {
+    INFO_BAR_FONT_SIZE_SETTINGS: dict[str, int] = {
         "zh": 10,
         "zh_tw": 10,
         "ja": 10,
@@ -131,8 +122,7 @@ class FontConfig:
         "default": 9
     }
 
-    # PDF字体测试文本
-    FONT_TEST_TEXTS = {
+    FONT_TEST_TEXTS: dict[str, str] = {
         "ko": "한글테스트",
         "ja": "テスト日本語",
         "zh": "测试简体中文",
@@ -141,120 +131,53 @@ class FontConfig:
     }
 
     @classmethod
-    def get_font_candidates(cls, language: str) -> List[Tuple[str, str]]:
-        """根据语言获取字体候选列表（完整信息）
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            list: 字体候选列表 [(字体文件, 字体名称), ...]
-        """
+    def get_font_candidates(cls, language: str) -> list[tuple[str, str]]:
+        """根据语言获取字体候选列表（完整信息）"""
         return cls.LANGUAGE_FONT_MAP.get(language, cls.LANGUAGE_FONT_MAP.get("en", []))
 
     @classmethod
-    def get_font_filenames(cls, language: str) -> List[str]:
-        """根据语言获取字体文件名列表
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            list: 字体文件名列表
-        """
+    def get_font_filenames(cls, language: str) -> list[str]:
+        """根据语言获取字体文件名列表"""
         candidates = cls.LANGUAGE_FONT_MAP.get(language, cls.LANGUAGE_FONT_MAP.get("en", []))
         return [font[0] for font in candidates]
 
     @classmethod
-    def get_font_names(cls, language: str) -> List[str]:
-        """根据语言获取字体名称列表
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            list: 字体名称列表
-        """
+    def get_font_names(cls, language: str) -> list[str]:
+        """根据语言获取字体名称列表"""
         candidates = cls.LANGUAGE_FONT_MAP.get(language, cls.LANGUAGE_FONT_MAP.get("en", []))
         return [font[1] for font in candidates]
 
     @classmethod
-    def get_ui_font_settings(cls, language: str) -> Tuple[str, int]:
-        """获取UI字体设置
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            tuple: (字体名称, 字体大小)
-        """
+    def get_ui_font_settings(cls, language: str) -> tuple[str, int]:
+        """获取UI字体设置"""
         return cls.UI_FONT_SETTINGS.get(language, cls.UI_FONT_SETTINGS["default"])
 
     @classmethod
     def get_font_test_text(cls, language: str) -> str:
-        """获取字体测试文本
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            str: 测试文本
-        """
+        """获取字体测试文本"""
         return cls.FONT_TEST_TEXTS.get(language, "测试")
 
     @classmethod
-    def get_all_supported_languages(cls) -> List[str]:
-        """获取所有支持的语言列表
-
-        Returns:
-            list: 语言代码列表
-        """
+    def get_all_supported_languages(cls) -> list[str]:
+        """获取所有支持的语言列表"""
         return list(cls.LANGUAGE_FONT_MAP.keys())
 
     @classmethod
     def is_language_supported(cls, language: str) -> bool:
-        """检查语言是否支持
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            bool: 是否支持
-        """
+        """检查语言是否支持"""
         return language in cls.LANGUAGE_FONT_MAP
     
     @classmethod
     def get_pin_button_font_size(cls, language: str) -> int:
-        """获取钉住按钮的字体大小设置
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            int: 钉住按钮字体大小
-        """
+        """获取钉住按钮的字体大小设置"""
         return cls.PIN_BUTTON_FONT_SIZE_SETTINGS.get(language, cls.PIN_BUTTON_FONT_SIZE_SETTINGS["default"])
     
     @classmethod
     def get_function_button_font_size(cls, language: str) -> int:
-        """获取功能按钮的字体大小设置（添加、删除、撤销、移动、导入等）
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            int: 功能按钮字体大小
-        """
+        """获取功能按钮的字体大小设置（添加、删除、撤销、移动、导入等）"""
         return cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS.get(language, cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS["default"])
     
     @classmethod
     def get_info_bar_font_size(cls, language: str) -> int:
-        """获取信息栏的字体大小设置
-
-        Args:
-            language: 语言代码
-
-        Returns:
-            int: 信息栏字体大小
-        """
+        """获取信息栏的字体大小设置"""
         return cls.INFO_BAR_FONT_SIZE_SETTINGS.get(language, cls.INFO_BAR_FONT_SIZE_SETTINGS["default"])
