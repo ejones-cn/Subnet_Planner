@@ -85,12 +85,12 @@ class ExportUtils:
     """数据导出工具类"""
 
     # 字体缓存（类变量）
-    _font_cache = {}
-    _font_path_cache = None
-    _font_path_lang = None
+    _font_cache: dict[str, str] = {}
+    _font_path_cache: str | None = None
+    _font_path_lang: str | None = None
 
     @classmethod
-    def clear_font_cache(cls):
+    def clear_font_cache(cls) -> None:
         """清除字体缓存，在语言切换时调用"""
         cls._font_cache.clear()
         cls._font_path_cache = None
@@ -101,20 +101,20 @@ class ExportUtils:
             from reportlab.pdfbase import pdfmetrics
             if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
                 # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
-                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:
-                    del pdfmetrics._fonts["ChineseFont"]
+                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore
+                    del pdfmetrics._fonts["ChineseFont"]  # type: ignore
                     print("🧹 已清除 ReportLab PDF 字体注册")
         except Exception as e:
             print(f"⚠️ 清除 PDF 字体注册时出现警告: {e}")
-        
+
         print("🧹 已清除字体缓存")
 
-    def __init__(self):
+    def __init__(self) -> None:
         """初始化导出工具"""
-        self.has_asian_font = False
+        self.has_asian_font: bool = False
         self._register_asian_fonts()
 
-    def _get_prioritized_font_candidates(self, current_lang):
+    def _get_prioritized_font_candidates(self, current_lang: str) -> list[str]:
         """根据当前语言获取优先级排序的字体候选列表
 
         Args:
@@ -125,7 +125,7 @@ class ExportUtils:
         """
         return FontConfig.get_font_candidates(current_lang)
 
-    def _calculate_text_width(self, text, ascii_width=8, non_ascii_width=12, padding=15):
+    def _calculate_text_width(self, text: str, ascii_width: int = 8, non_ascii_width: int = 12, padding: int = 15) -> int:
         """计算文本宽度
 
         Args:
@@ -146,7 +146,7 @@ class ExportUtils:
         text_width += padding
         return text_width
 
-    def _get_cell_text(self, cell):
+    def _get_cell_text(self, cell: object) -> str:
         """获取单元格的文本内容
 
         Args:
@@ -156,13 +156,13 @@ class ExportUtils:
             str: 文本内容
         """
         if hasattr(cell, 'getPlainText'):
-            return cell.getPlainText()
+            return cell.getPlainText()  # type: ignore
         elif hasattr(cell, 'text'):
-            return cell.text
+            return cell.text  # type: ignore
         else:
             return str(cell)
 
-    def _adjust_table_font_size(self, table_data, col_widths, table_text_style, min_font_size=8, style_prefix="CustomStyle"):
+    def _adjust_table_font_size(self, table_data: list[list[object]], col_widths: list[float], table_text_style: ParagraphStyle, min_font_size: int = 8, style_prefix: str = "CustomStyle") -> list[list[object]]:
         """调整表格字体大小以适应列宽
 
         Args:

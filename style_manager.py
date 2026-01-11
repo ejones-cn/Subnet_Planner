@@ -28,19 +28,19 @@ class StyleManager:
     # 按钮内边距设置映射表
     BUTTON_PADDING_SETTINGS = {
         "zh": (0, 1),
-        "zh_tw": (0, 1),
-        "ja": (2, 3),
+        "zh_tw": (0, 2),
+        "ja": (2, 5),
         "ko": (2, 3),
         "default": (3, 3)
     }
 
-    # 标签页内边距设置映射表
+    #  标签页内边距设置映射表
     TAB_PADDING_SETTINGS = {
         "zh": (15, 3),
         "zh_tw": (15, 3),
-        "ja": (15, 6),
-        "ko": (15, 6),
-        "default": (15, 6)
+        "ja": (15, 3),
+        "ko": (15, 3),
+        "default": (15, 3)
     }
 
     # 标签页垂直内边距设置映射表（用于 ColoredNotebook）

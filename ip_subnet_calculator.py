@@ -353,7 +353,7 @@ def _allocate_subnet(available_subnets, required):
 
                 return True, new_subnet, updated_available, None
             except ValueError as e:
-                return False, None, None, f"{_('failed_to_create_subnet')}: {str(e)}"
+                return False, None, None, _('failed_to_create_subnet') + ": " + str(e)
 
     # 使用完整翻译键和变量占位符
     error_msg = _('cannot_allocate_sufficiently_large_subnet_for').format(name=required['name'])
@@ -443,7 +443,7 @@ def merge_subnets(subnets):
     try:
         # 验证输入是否为空
         if not subnets or len(subnets) == 0:
-            return {"error": f"{_('subnet_list_cannot_be_empty')}"}
+            return {"error": _('subnet_list_cannot_be_empty')}
 
         # 验证输入并转换为IPv4Network对象
         ipv4_subnets = []
@@ -745,7 +745,7 @@ def range_to_cidr(start_ip, end_ip):
 
         # 确保起始IP小于等于结束IP
         if start > end:
-            return {"error": f"{_('start_ip_must_be_less_than_or_equal_to_end_ip')}"}
+            return {"error": _('start_ip_must_be_less_than_or_equal_to_end_ip')}
 
         # 智能扩展范围，尝试找到包含当前范围的最小子网
         # 将起始IP向左扩展到网络地址，结束IP向右扩展到广播地址
@@ -806,7 +806,7 @@ def check_subnet_overlap(subnets):
                 return handle_ip_subnet_error(e)
 
         if len(ipv4_subnets) < 2:
-            return {"error": f"{_('at_least_two_subnets_needed_to_check_overlap')}"}
+            return {"error": _('at_least_two_subnets_needed_to_check_overlap')}
 
         overlaps = []
 

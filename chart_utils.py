@@ -5,12 +5,17 @@
 项目版本：v2.5.4
 """
 
-from typing import Any, Dict, List, Literal, Optional
-from i18n import _
+from typing import Any, Literal
 import tkinter as tk
 from tkinter import Canvas, Frame
 import math
 from style_manager import get_current_font_settings
+
+# 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
+from i18n import _ as translate
+
+# 定义一个别名 _trans 用于翻译，避免与局部变量 _ 冲突
+_trans = translate
 
 SUBNET_COLORS = (
     "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",
@@ -95,14 +100,14 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
 
     for dx in (-1, 1):
         for dy in (-1, 1):
-            canvas.create_text(
+            canvas_id = canvas.create_text(
                 x + dx, y + dy,
                 text=text,
                 font=style.get("font", (font_family, 12)),
                 anchor=style.get("anchor", tk.CENTER),
                 fill="#000000"
             )
-    canvas.create_text(
+    canvas_id = canvas.create_text(
         x, y,
         text=text,
         font=style.get("font", (font_family, 12)),
@@ -111,7 +116,7 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
     )
 
 
-def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> tuple[int, int, int, int, int, int]:
+def _init_canvas(canvas: Canvas, parent_frame: Frame | None) -> tuple[int, int, int, int, int, int]:
     """初始化画布并计算尺寸
 
     Args:
@@ -176,13 +181,13 @@ def _draw_parent_segment(
 
     usable_addresses = _calculate_usable_addresses(parent_range)
     parent_cidr = parent_info.get("name", "")
-    segment_text = f"{_("parent_network")}: {parent_cidr}"
+    segment_text = f"{translate("parent_network")}: {parent_cidr}"
     text_x = x + 15
     text_y = y + bar_height / 2
     font = (font_family, 11, "bold")
     _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-    address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+    address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
     text_x = min(x + 400, x + chart_width - 200)
     _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -230,7 +235,7 @@ def _draw_network_segments(
         canvas.create_text(
             x,
             y,
-            text=f"{_("allocated_subnets")} ({demand_count} {_("pieces")}:",
+            text=f"{translate("allocated_subnets")} ({demand_count} {translate("pieces")}:",
             font=(font_family, 11),
             anchor=tk.W,
             fill="#ffffff",
@@ -248,13 +253,13 @@ def _draw_network_segments(
             name = network.get("name", "")
             usable_addresses = _calculate_usable_addresses(network_range)
 
-            segment_text = f"{_("segment")} {i + 1}: {name} {network.get('cidr', '')}"
+            segment_text = f"{translate("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 9, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -270,13 +275,13 @@ def _draw_network_segments(
             name = network.get("name", "")
             usable_addresses = _calculate_usable_addresses(network_range)
 
-            segment_text = f"{_("split_segment")}: {name}"
+            segment_text = f"{translate("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 11, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -327,7 +332,7 @@ def _draw_remaining_segments(
     canvas.create_text(
         x,
         y,
-        text=f"{_("remaining_subnets")} ({remaining_count} {_("pieces")}:",
+        text=f"{translate("remaining_subnets")} ({remaining_count} {translate("pieces")}:",
         font=title_font,
         anchor=tk.W,
         fill="#ffffff",
@@ -345,13 +350,13 @@ def _draw_remaining_segments(
         name = network.get("name", "")
         usable_addresses = _calculate_usable_addresses(network_range)
 
-        segment_text = f"{_("segment")} {i + 1}: {name}"
+        segment_text = f"{translate("segment")} {i + 1}: {name}"
         text_x = x + 15
         text_y = y + bar_height / 2
         font = (font_family, 9, "bold")
         _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-        address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
+        address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
         text_x = min(x + 450, x + chart_width - 150)
         _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -374,7 +379,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
     font_family = _get_font_settings()[0]
 
     legend_y = y + 35
-    canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
+    canvas.create_text(x, legend_y, text=f"{translate("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
 
     legend_items_y = legend_y + 20
 
@@ -382,7 +387,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
     canvas.create_text(
         x + 31,
         legend_items_y + 6,
-        text=f"{_("parent_network")}",
+        text=f"{translate("parent_network")}",
         font=(font_family, 9),
         anchor=tk.W,
         fill="#ffffff",
@@ -400,7 +405,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
         canvas.create_text(
             x + 233,
             legend_items_y + 6,
-            text=f"{_("allocated_subnets")}",
+            text=f"{translate("allocated_subnets")}",
             font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -418,7 +423,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
         canvas.create_text(
             remaining_start_x + 94,
             legend_items_y + 6,
-            text=f"{_("remaining_subnets")}",
+            text=f"{translate("remaining_subnets")}",
             font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -428,7 +433,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
         canvas.create_text(
             x + 210,
             legend_items_y + 6,
-            text=f"{_("split_segment")}",
+            text=f"{translate("split_segment")}",
             font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -443,10 +448,10 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
                 legend_items_y + 12,
                 fill=color,
             )
-        canvas.create_text(
+        _ = canvas.create_text(
             remaining_start_x + 94,
             legend_items_y + 6,
-            text=f"{_("remaining_subnets")}",
+            text=f"{translate("remaining_subnets")}",
             font=(font_family, 9),
             anchor=tk.W,
             fill="#ffffff",
@@ -455,8 +460,8 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
 
 def draw_distribution_chart(
     canvas: Canvas,
-    chart_data: Optional[dict[str, Any]],
-    parent_frame: Optional[Frame] = None,
+    chart_data: dict[str, Any] | None,
+    parent_frame: Frame | None = None,
     chart_type: Literal["split", "plan"] = "split"
 ) -> None:
     """绘制网段分布柱状图
@@ -481,7 +486,7 @@ def draw_distribution_chart(
 
         if not networks:
             font_family = _get_font_settings()[0]
-            canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=(font_family, 12))
+            canvas.create_text(width / 2, canvas_height / 2, text=translate("no_segment_data"), font=(font_family, 12))
             return
 
         log_max = math.log10(parent_range)
@@ -508,7 +513,6 @@ def draw_distribution_chart(
         if actual_width < 10:
             actual_width = width
         canvas.config(scrollregion=(0, 0, actual_width, background_height))
-        canvas.config(xscrollcommand=None)
 
         y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
 
@@ -527,5 +531,5 @@ def draw_distribution_chart(
         height = canvas.winfo_height() or 400
         font_family = _get_font_settings()[0]
         title_font = (font_family, 12, "bold")
-        canvas.create_text(
-            width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red")
+        _ = canvas.create_text(
+            width / 2, height / 2, text=translate("chart_drawing_failed") + ": " + str(e), font=title_font, fill="red")

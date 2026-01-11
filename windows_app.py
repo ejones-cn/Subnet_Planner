@@ -3942,7 +3942,7 @@ class IPSubnetSplitterApp:
         # 动画参数配置
         animation_config = {
             'show': {
-                'current_y': 30,
+                'current_y': 20,
                 'target_y': 0,
                 'step': 1,
                 'delay': 15,
@@ -4449,25 +4449,25 @@ class IPSubnetSplitterApp:
 
         # 1. IPv4地址信息查询功能 - 浅蓝色
         self.ipv4_info_frame = ttk.Frame(
-            self.advanced_notebook.content_area, padding="10", style=self.advanced_notebook.light_blue_style
+            self.advanced_notebook.content_area, padding="5", style=self.advanced_notebook.light_blue_style
         )
         self.create_ipv4_info_section()
 
         # 2. IPv6地址信息查询功能 - 浅绿色
         self.ipv6_info_frame = ttk.Frame(
-            self.advanced_notebook.content_area, padding="10", style=self.advanced_notebook.light_green_style
+            self.advanced_notebook.content_area, padding="5", style=self.advanced_notebook.light_green_style
         )
         self.create_ipv6_info_section()
 
         # 3. 子网合并与范围转CIDR功能 - 浅紫色
         self.merge_frame = ttk.Frame(
-            self.advanced_notebook.content_area, padding="10", style=self.advanced_notebook.light_purple_style
+            self.advanced_notebook.content_area, padding="5", style=self.advanced_notebook.light_purple_style
         )
         self.create_merged_subnets_and_cidr_section()
 
         # 5. 子网重叠检测功能 - 淡粉色
         self.overlap_frame = ttk.Frame(
-            self.advanced_notebook.content_area, padding="10", style=self.advanced_notebook.light_pink_style
+            self.advanced_notebook.content_area, padding="5", style=self.advanced_notebook.light_pink_style
         )
         self.create_subnet_overlap_section()
 
