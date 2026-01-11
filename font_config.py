@@ -97,11 +97,29 @@ class FontConfig:
 
     # UI字体设置映射表（微软官方推荐）
     UI_FONT_SETTINGS = {
-        "zh": ("微软雅黑", 10),
-        "zh_tw": ("Microsoft JhengHei", 10),
-        "ja": ("MS Gothic", 10),
-        "ko": ("Malgun Gothic", 10),
+        "zh": ("微软雅黑", 11),
+        "zh_tw": ("Microsoft JhengHei", 11),
+        "ja": ("MS Gothic", 11),
+        "ko": ("Malgun Gothic", 11),
         "default": ("Segoe UI", 10)
+    }
+    
+    # 钉住按钮字体大小设置映射表
+    PIN_BUTTON_FONT_SIZE_SETTINGS = {
+        "zh": 10,
+        "zh_tw": 10,
+        "ja": 10,
+        "ko": 10,
+        "default": 10
+    }
+    
+    # 功能按钮字体大小设置映射表（添加、删除、撤销、移动、导入等）
+    FUNCTION_BUTTON_FONT_SIZE_SETTINGS = {
+        "zh": 11,
+        "zh_tw": 11,
+        "ja": 11,
+        "ko": 9,
+        "default": 10
     }
 
     # PDF字体测试文本
@@ -195,3 +213,27 @@ class FontConfig:
             bool: 是否支持
         """
         return language in cls.LANGUAGE_FONT_MAP
+    
+    @classmethod
+    def get_pin_button_font_size(cls, language: str) -> int:
+        """获取钉住按钮的字体大小设置
+
+        Args:
+            language: 语言代码
+
+        Returns:
+            int: 钉住按钮字体大小
+        """
+        return cls.PIN_BUTTON_FONT_SIZE_SETTINGS.get(language, cls.PIN_BUTTON_FONT_SIZE_SETTINGS["default"])
+    
+    @classmethod
+    def get_function_button_font_size(cls, language: str) -> int:
+        """获取功能按钮的字体大小设置（添加、删除、撤销、移动、导入等）
+
+        Args:
+            language: 语言代码
+
+        Returns:
+            int: 功能按钮字体大小
+        """
+        return cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS.get(language, cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS["default"])

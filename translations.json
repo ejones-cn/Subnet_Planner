@@ -68,14 +68,14 @@
     "zh_tw": "復原",
     "en": "Undo",
     "ja": "戻す",
-    "ko": "실행 취소"
+    "ko": "되돌리기"
   },
   "import": {
     "zh": "导入",
     "zh_tw": "匯入",
     "en": "Import",
-    "ja": "インポート",
-    "ko": "가져오기"
+    "ja": "取込",
+    "ko": "임포트"
   },
   "save": {
     "zh": "保存",
@@ -284,8 +284,8 @@
     "zh": "导入",
     "zh_tw": "匯入",
     "en": "Import",
-    "ja": "インポート",
-    "ko": "가져오기"
+    "ja": "取込",
+    "ko": "임포트"
   },
   "planning_result": {
     "zh": "规划结果",
@@ -361,14 +361,14 @@
     "zh": "从文件导入",
     "zh_tw": "從檔案匯入",
     "en": "Import from File",
-    "ja": "ファイルからインポート",
+    "ja": "ファイルから取込",
     "ko": "파일에서 가져오기"
   },
   "select_file_to_import": {
     "zh": "选择要导入的文件",
     "zh_tw": "選擇要匯入的檔案",
     "en": "Select File to Import",
-    "ja": "インポートファイルを選択",
+    "ja": "取込ファイルを選択",
     "ko": "가져오려는 파일 선택"
   },
   "file_parse_failed": {
@@ -382,15 +382,15 @@
     "zh": "导入需求池",
     "zh_tw": "匯入需求池",
     "en": "Import Pool",
-    "ja": "プールインポート",
-    "ko": "요구 사항 풀 가져오기"
+    "ja": "プール取込",
+    "ko": "풀 가져오기"
   },
   "import_subnet_requirements": {
     "zh": "导入子网需求",
     "zh_tw": "匯入子網需求",
     "en": "Import Subnet",
-    "ja": "サブネットインポート",
-    "ko": "서브넷 요구 사항 가져오기"
+    "ja": "サブネット取込",
+    "ko": "서브넷 가져오기"
   },
   "save_template": {
     "zh": "保存模板",
@@ -1417,7 +1417,7 @@
   "choose_import_method": {
     "zh": "请选择导入方式：",
     "en": "Please choose import method:",
-    "ja": "インポート方法を選択してください：",
+    "ja": "取込方法を選択してください：",
     "zh_tw": "請選擇匯入方式：",
     "ko": "가져오기 방법을 선택하십시오:"
   },
@@ -1503,7 +1503,7 @@
     "en": "No undoable operation",
     "ja": "元に戻せる操作はありません",
     "zh_tw": "沒有可撤銷的操作",
-    "ko": "실행 취소 작업 없음"
+    "ko": "되돌리기 작업 없음"
   },
   "please_select_record_to_move_or_swap": {
     "zh": "请选择要移动或交换的记录",
@@ -1515,7 +1515,7 @@
   "import_data": {
     "zh": "导入数据",
     "en": "Import Data",
-    "ja": "データをインポート",
+    "ja": "データを取込",
     "zh_tw": "匯入數據",
     "ko": "데이터 가져오기"
   },
@@ -1564,7 +1564,7 @@
   "no_data_to_import": {
     "zh": "没有可导入的数据",
     "en": "No data to import",
-    "ja": "インポートするデータがありません",
+    "ja": "取込するデータがありません",
     "zh_tw": "沒有可匯入的數據",
     "ko": "가져올 데이터 없음"
   },
@@ -1580,7 +1580,7 @@
     "en": "Are you sure you want to delete the selected records? This operation can be undone using the undo button.",
     "ja": "選択した記録を削除してもよろしいですか？この操作は元に戻すボタンで元に戻せます。",
     "zh_tw": "確定要刪除選中的記錄嗎？此操作可以通過撤銷按鈕恢復。",
-    "ko": "정말로 선택한 레코드를 삭제하시겠습니까? 이 작업은 실행 취소 버튼으로 실행 취소할 수 있습니다."
+    "ko": "정말로 선택한 레코드를 삭제하시겠습니까? 이 작업은 되돌리기 버튼으로 되돌릴 수 있습니다."
   },
   "test_info_display_effect": {
     "zh": "点击下方按钮测试不同类型的信息栏显示效果：",
@@ -2292,7 +2292,7 @@
   "successfully_imported": {
     "zh": "成功导入",
     "en": "Successfully imported",
-    "ja": "正常にインポートされました",
+    "ja": "正常に取込されました",
     "zh_tw": "成功匯入",
     "ko": "성공적으로 가져왔습니다"
   },
@@ -2314,7 +2314,7 @@
     "zh": "子网需求导入模板",
     "zh_tw": "子網需求匯入範本",
     "en": "Subnet Requirement Import Template",
-    "ja": "サブネット要件インポートテンプレート",
+    "ja": "サブネット要件取込テンプレート",
     "ko": "서브넷 요구 사항 가져오기 템플릿"
   },
   "office": {

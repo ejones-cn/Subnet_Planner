@@ -21,7 +21,7 @@ class StyleManager:
         "zh": 10,
         "zh_tw": 10,
         "ja": 18,
-        "ko": 14,
+        "ko": 11,
         "default": 16
     }
 
@@ -29,8 +29,8 @@ class StyleManager:
     BUTTON_PADDING_SETTINGS = {
         "zh": (0, 1),
         "zh_tw": (0, 2),
-        "ja": (2, 5),
-        "ko": (2, 3),
+        "ja": (2, 4),
+        "ko": (2, 2),
         "default": (3, 3)
     }
 
@@ -47,8 +47,8 @@ class StyleManager:
     TAB_VERTICAL_PADDING_SETTINGS = {
         "zh": 2,
         "zh_tw": 4,
-        "ja": 7,
-        "ko": 4,
+        "ja": 6,
+        "ko": 2,
         "default": 4
     }
 
@@ -110,6 +110,24 @@ class StyleManager:
         """
         current_language = get_language()
         return FontConfig.get_ui_font_settings(current_language)
+    
+    def get_pin_button_font_size(self):
+        """获取当前语言的钉住按钮字体大小设置
+
+        Returns:
+            int: 钉住按钮字体大小
+        """
+        current_language = get_language()
+        return FontConfig.get_pin_button_font_size(current_language)
+    
+    def get_function_button_font_size(self):
+        """获取当前语言的功能按钮字体大小设置（添加、删除、撤销、移动、导入等）
+
+        Returns:
+            int: 功能按钮字体大小
+        """
+        current_language = get_language()
+        return FontConfig.get_function_button_font_size(current_language)
 
     def get_tab_width(self):
         """获取当前语言的标签宽度设置
@@ -198,8 +216,12 @@ class StyleManager:
 
         current_language = get_language()
         font_family, font_size = self.get_current_font_settings()
+        # 获取功能按钮的独立字体大小配置
+        function_button_font_size = self.get_function_button_font_size()
 
         base_font_style = {"font": (font_family, font_size)}
+        # 创建功能按钮的样式配置，使用独立的字体大小
+        function_button_font_style = {"font": (font_family, function_button_font_size)}
 
         print(f"[StyleManager] {translate('updating_styles')}, {translate('current_language')}: {current_language}, {translate('font')}: {font_family}, {translate('size')}: {font_size}")
 
@@ -209,14 +231,18 @@ class StyleManager:
         self.style.configure("Error.TLabel", **base_font_style, foreground="red")
         self.style.configure("Success.TLabel", **base_font_style, foreground="#5E5E5E")
 
-        # 按钮样式
+        # 按钮样式 - 默认按钮
         button_padding = self._get_setting(self.BUTTON_PADDING_SETTINGS, current_language)
         self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
-        self.style.map(
-            "TButton",
-            focuscolor=[("focus", "#888888"), ("!focus", "#888888")],
-            focuswidth=[("focus", 1), ("!focus", 1)],
-        )
+        # 功能按钮样式 - 添加、删除、撤销、移动、导入等
+        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        # 为默认按钮和功能按钮应用相同的映射配置
+        for button_style in ["TButton", "Function.TButton"]:
+            self.style.map(
+                button_style,
+                focuscolor=[("focus", "#888888"), ("!focus", "#888888")],
+                focuswidth=[("focus", 1), ("!focus", 1)],
+            )
 
         # 滚动条样式
         scrollbar_style = {"width": 3}
@@ -325,3 +351,23 @@ def get_current_font_settings():
         return style_manager.get_current_font_settings()
     current_language = get_language()
     return FontConfig.get_ui_font_settings(current_language)
+
+
+def get_pin_button_font_size():
+    """获取当前语言的钉住按钮字体大小设置
+
+    Returns:
+        int: 钉住按钮字体大小
+    """
+    current_language = get_language()
+    return FontConfig.get_pin_button_font_size(current_language)
+
+
+def get_function_button_font_size():
+    """获取当前语言的功能按钮字体大小设置（添加、删除、撤销、移动、导入等）
+
+    Returns:
+        int: 功能按钮字体大小
+    """
+    current_language = get_language()
+    return FontConfig.get_function_button_font_size(current_language)

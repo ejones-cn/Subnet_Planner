@@ -49,6 +49,8 @@ from style_manager import (
     init_style_manager,
     update_styles,
     get_current_font_settings,
+    get_pin_button_font_size,
+    get_function_button_font_size,
     get_style_manager,
 )
 
@@ -1655,24 +1657,24 @@ class IPSubnetSplitterApp:
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
-        add_btn = ttk.Button(button_frame, text=_("add"), command=self.add_subnet_requirement, width=7)
+        add_btn = ttk.Button(button_frame, text=_('add'), command=self.add_subnet_requirement, width=7, style="Function.TButton")
         add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
         # 删除按钮
-        delete_btn = ttk.Button(button_frame, text=_("delete"), command=self.delete_subnet_requirement, width=7)
+        delete_btn = ttk.Button(button_frame, text=_('delete'), command=self.delete_subnet_requirement, width=7, style="Function.TButton")
         delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
 
         # 撤销按钮
-        self.undo_delete_btn = ttk.Button(button_frame, text=_('undo'), command=self.undo, width=7)
+        self.undo_delete_btn = ttk.Button(button_frame, text=_('undo'), command=self.undo, width=7, style="Function.TButton")
         self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
 
         # 移动/交换按钮（根据选中情况自动判断操作）
         # 交换记录按钮 - 使用交换图标
-        self.swap_btn = ttk.Button(button_frame, text=_("move_records"), command=self.move_records, width=7)
+        self.swap_btn = ttk.Button(button_frame, text=_('move_records'), command=self.move_records, width=7, style="Function.TButton")
         self.swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
 
         # 导入按钮
-        import_btn = ttk.Button(button_frame, text=_("import"), command=self.import_requirements, width=7)
+        import_btn = ttk.Button(button_frame, text=_('import'), command=self.import_requirements, width=7, style="Function.TButton")
         import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
 
 
@@ -2646,17 +2648,17 @@ class IPSubnetSplitterApp:
         # 导入到需求池表按钮
         import_pool_btn = ttk.Button(button_frame, text=_("import_requirements_pool"),
                                      command=lambda: self._import_valid_data(valid_data, "pool", dialog),
-                                     width=15)
+                                     width=18)
         import_pool_btn.pack(side=tk.LEFT, padx=5)
 
         # 导入到子网需求表按钮
         import_req_btn = ttk.Button(button_frame, text=_("import_subnet_requirements"),
                                     command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
-                                    width=15)
+                                    width=18)
         import_req_btn.pack(side=tk.LEFT, padx=5)
 
         # 取消按钮 - 靠右显示，与其他按钮并排
-        cancel_btn = ttk.Button(button_frame, text=_("cancel"), command=dialog.destroy, width=10)
+        cancel_btn = ttk.Button(button_frame, text=_("cancel"), command=dialog.destroy, width=12)
         cancel_btn.pack(side=tk.RIGHT, padx=5)
 
     def _import_valid_data(self, valid_data, target_table, dialog=None):
@@ -4612,7 +4614,7 @@ class IPSubnetSplitterApp:
         self.range_start_entry = ttk.Combobox(
             start_frame, values=self.range_start_history, width=13, font=(font_family, font_size)
         )
-        self.range_start_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_start_entry.pack(side=tk.RIGHT, pady=(0, 5))
         self.range_start_entry.insert(0, "192.168.0.1")
         self.range_start_entry.config(state="normal")  # 允许手动输入
 
@@ -4639,7 +4641,7 @@ class IPSubnetSplitterApp:
 
         ttk.Label(end_frame, text=_("end")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=(font_family, font_size))
-        self.range_end_entry.pack(side=tk.LEFT, pady=(0, 5))
+        self.range_end_entry.pack(side=tk.RIGHT, pady=(0, 5))
         self.range_end_entry.insert(0, "192.168.30.254")
         self.range_end_entry.config(state="normal")  # 允许手动输入
 
@@ -6813,6 +6815,8 @@ class IPSubnetSplitterApp:
 
         # 使用普通tk.Label创建关于标签，直接设置所有样式属性，高度与信息框一致
         font_family, font_size = get_current_font_settings()
+        # 获取钉住按钮的单独字体大小配置
+        pin_font_size = get_pin_button_font_size()
 
         self.about_label = tk.Label(
             self.root,
@@ -6848,7 +6852,7 @@ class IPSubnetSplitterApp:
         self.pin_label = tk.Label(
             self.root,
             text="📌",
-            font=(font_family, font_size, 'bold'),  # 使用统一的字体设置，加粗
+            font=(font_family, pin_font_size, 'bold'),  # 使用单独的钉住按钮字体大小配置，加粗
             fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
             bg=self.bg_color,  # 背景色与窗口完全一致
             padx=4.4,  # 适当的水平内边距
