@@ -17,9 +17,8 @@ import sys
 def get_resource_path(relative_path):
     """获取资源文件的绝对路径"""
     if hasattr(sys, '_MEIPASS'):
-        # PyInstaller打包后的路径
-        return os.path.join(sys._MEIPASS, relative_path)  # type: ignore
-    # 开发环境下的路径
+        meipass: str = sys._MEIPASS  # type: ignore
+        return os.path.join(meipass, relative_path)
     return os.path.join(os.path.dirname(__file__), relative_path)
 
 
@@ -40,9 +39,7 @@ def _load_translations():
         return None
 
 
-TRANSLATIONS = _load_translations()
-
-
+_loaded_translations = _load_translations()
 
 _DEFAULT_TRANSLATIONS = {
     "error": {"zh": "错误", "zh_tw": "錯誤", "en": "Error", "ja": "エラー", "ko": "오류"},
@@ -54,10 +51,15 @@ _DEFAULT_TRANSLATIONS = {
     "close": {"zh": "关闭", "zh_tw": "關閉", "en": "Close", "ja": "閉じる", "ko": "닫기"}
 }
 
-if TRANSLATIONS is None:
-    TRANSLATIONS = _DEFAULT_TRANSLATIONS
+if _loaded_translations is None:
+    _translations_dict: dict = _DEFAULT_TRANSLATIONS
+else:
+    _translations_dict = _loaded_translations
+    for key, value in _DEFAULT_TRANSLATIONS.items():
+        if key not in _translations_dict:
+            _translations_dict[key] = value
 
-_loaded_translations = TRANSLATIONS
+TRANSLATIONS = _translations_dict
 
 _current_language = "zh"
 

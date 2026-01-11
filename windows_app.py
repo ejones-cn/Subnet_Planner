@@ -896,8 +896,13 @@ class IPSubnetSplitterApp:
 
         # 如果当前不是最新状态，截断历史记录
         if self.current_history_index < len(self.history_states) - 1:
-            self.history_states = self.history_states[: self.current_history_index + 1]
-            self.planning_history_records = self.planning_history_records[: self.current_history_index + 1]
+            history_list = list(self.history_states)
+            history_list = history_list[: self.current_history_index + 1]
+            self.history_states = deque(history_list, maxlen=20)
+            
+            records_list = list(self.planning_history_records)
+            records_list = records_list[: self.current_history_index + 1]
+            self.planning_history_records = deque(records_list, maxlen=20)
 
         # 添加新状态(deque会自动管理大小,无需手动pop)
         self.history_states.append(history_record)
@@ -3109,10 +3114,11 @@ class IPSubnetSplitterApp:
         self.update_requirements_tree_zebra_stripes()
         self.update_pool_tree_zebra_stripes()
 
-        # 显示成功提示
+        # 显示成功提示 - 使用信息栏而不是对话框
         # 获取当前状态的 action_type，即被撤销的操作类型
         current_state = self.history_states[self.current_history_index + 1] if self.current_history_index + 1 < len(self.history_states) else {"action_type": "未知操作"}
-        self.show_info(_("success"), f"{_("successfully_undone")} {current_state['action_type']}")
+        success_message = f"{_("successfully_undone")} {current_state['action_type']}"
+        self.show_result(success_message, error=False)
 
     def undo_delete(self):
         """撤销最近的删除操作，支持多次撤销"""
@@ -3153,8 +3159,9 @@ class IPSubnetSplitterApp:
             action_type = "撤销删除"
         self.save_current_state(action_type)
 
-        # 显示成功提示
-        self.show_info(_("success"), f"{_("successfully_restored")} {len(deleted_records)} {_("records")}")
+        # 显示成功提示 - 使用信息栏而不是对话框
+        success_message = f"{_("successfully_restored")} {len(deleted_records)} {_("records")}"
+        self.show_result(success_message, error=False)
 
     def _on_treeview_double_click(self, tree, tree_name, event):
         """通用的双击Treeview单元格编辑处理函数
@@ -4055,19 +4062,19 @@ class IPSubnetSplitterApp:
                 def get_char_type(char):
                     code = ord(char)
                     # CJK统一表意文字（中日韩）
-                    if ((0x4E00 <= code <= 0x9FFF) or  # CJK统一表意文字
-                        (0x3400 <= code <= 0x4DBF) or  # CJK扩展A
-                        (0x20000 <= code <= 0x2A6DF) or  # CJK扩展B
-                        (0x2A700 <= code <= 0x2B73F) or  # CJK扩展C
-                        (0x2B740 <= code <= 0x2B81F) or  # CJK扩展D
-                        (0x2B820 <= code <= 0x2CEAF) or  # CJK扩展E
-                        (0x2CEB0 <= code <= 0x2EBEF) or  # CJK扩展F
-                        (0x30000 <= code <= 0x3134F) or  # CJK扩展G
-                        (0x31350 <= code <= 0x323AF)):  # CJK扩展H
+                    if ((0x4E00 <= code <= 0x9FFF) or  # noqa: E501
+                        (0x3400 <= code <= 0x4DBF) or
+                        (0x20000 <= code <= 0x2A6DF) or
+                        (0x2A700 <= code <= 0x2B73F) or
+                        (0x2B740 <= code <= 0x2B81F) or
+                        (0x2B820 <= code <= 0x2CEAF) or
+                        (0x2CEB0 <= code <= 0x2EBEF) or
+                        (0x30000 <= code <= 0x3134F) or
+                        (0x31350 <= code <= 0x323AF)):
                         return 'cjk'
                     # 日文假名
                     elif ((0x3040 <= code <= 0x309F) or  # 平假名
-                    (0x30A0 <= code <= 0x30FF)):  # 片假名
+                          (0x30A0 <= code <= 0x30FF)):  # 片假名
                         return 'cjk'
                     # 韩文音节
                     elif 0xAC00 <= code <= 0xD7AF:
@@ -7067,8 +7074,11 @@ class IPSubnetSplitterApp:
         # 重新初始化图表数据
         self.chart_data = None
         
-        # 重新初始化历史记录
+        # 重新初始化历史记录 - 语言切换不应保留撤销历史
         self.history_records = []
+        self.history_states = deque(maxlen=20)
+        self.current_history_index = -1
+        self.deleted_history = []
         
         self.root.update_idletasks()
         self.info_bar_ref_width = max(self.main_frame.winfo_width() - 10, 100)

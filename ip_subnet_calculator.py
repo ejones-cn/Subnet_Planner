@@ -84,7 +84,7 @@ def handle_ip_subnet_error(error):
                     translation = _(translation_key)
                     error_info = translation.format(netmask=netmask) if translation else f"Invalid netmask: {netmask}"
                 except (AttributeError, IndexError):
-                    error_info = _(translation_key).format(netmask="invalid_netmask") if _(translation_key) else f"Invalid netmask: invalid_netmask"
+                    error_info = _(translation_key).format(netmask="invalid_netmask") if _(translation_key) else "Invalid netmask: invalid_netmask"
             elif translation_key == 'invalid_network_address_format':
                 # 从错误信息中提取网络地址
                 try:
