@@ -86,7 +86,7 @@ def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tupl
     })
 
 
-def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: dict[str, Any]) -> None:
+def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: dict[str, str | int]) -> None:
     """绘制带描边效果的文本
 
     Args:
@@ -100,14 +100,14 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
 
     for dx in (-1, 1):
         for dy in (-1, 1):
-            canvas_id = canvas.create_text(
+            canvas.create_text(
                 x + dx, y + dy,
                 text=text,
                 font=style.get("font", (font_family, 12)),
                 anchor=style.get("anchor", tk.CENTER),
                 fill="#000000"
             )
-    canvas_id = canvas.create_text(
+    canvas.create_text(
         x, y,
         text=text,
         font=style.get("font", (font_family, 12)),
@@ -188,7 +188,7 @@ def _draw_parent_segment(
     _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
     address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
-    text_x = min(x + 400, x + chart_width - 200)
+    text_x = min(x + 450, x + chart_width - 150)
     _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
     return int(y + bar_height + padding)
@@ -235,7 +235,7 @@ def _draw_network_segments(
         canvas.create_text(
             x,
             y,
-            text=f"{translate("allocated_subnets")} ({demand_count} {translate("pieces")}:",
+            text=f"{translate('allocated_subnets')} ({demand_count} {translate('pieces')}):",
             font=(font_family, 11),
             anchor=tk.W,
             fill="#ffffff",
@@ -332,7 +332,7 @@ def _draw_remaining_segments(
     canvas.create_text(
         x,
         y,
-        text=f"{translate("remaining_subnets")} ({remaining_count} {translate("pieces")}:",
+        text=f"{translate('remaining_subnets')} ({remaining_count} {translate('pieces')}):",
         font=title_font,
         anchor=tk.W,
         fill="#ffffff",
@@ -486,7 +486,8 @@ def draw_distribution_chart(
 
         if not networks:
             font_family = _get_font_settings()[0]
-            canvas.create_text(width / 2, canvas_height / 2, text=translate("no_segment_data"), font=(font_family, 12))
+            no_data_text = translate("no_segment_data") or "无网段数据"
+            canvas.create_text(width / 2, canvas_height / 2, text=no_data_text, font=(font_family, 12))
             return
 
         log_max = math.log10(parent_range)
@@ -531,5 +532,6 @@ def draw_distribution_chart(
         height = canvas.winfo_height() or 400
         font_family = _get_font_settings()[0]
         title_font = (font_family, 12, "bold")
-        _ = canvas.create_text(
-            width / 2, height / 2, text=translate("chart_drawing_failed") + ": " + str(e), font=title_font, fill="red")
+        error_text = translate("chart_drawing_failed") or "图表绘制失败"
+        canvas.create_text(
+            width / 2, height / 2, text=error_text + ": " + str(e), font=title_font, fill="red")

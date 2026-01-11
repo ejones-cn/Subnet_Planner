@@ -114,7 +114,7 @@ class ExportUtils:
         self.has_asian_font: bool = False
         self._register_asian_fonts()
 
-    def _get_prioritized_font_candidates(self, current_lang: str) -> list[str]:
+    def _get_prioritized_font_candidates(self, current_lang: str) -> list[tuple[str, str]]:
         """根据当前语言获取优先级排序的字体候选列表
 
         Args:
@@ -1340,7 +1340,7 @@ class ExportUtils:
         address_x = chart_right - ADDRESS_OFFSET - address_width
 
         draw_text_with_stroke(draw, (chart_x
-            + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+                + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
         draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
 
         y += bar_height + padding
@@ -1368,37 +1368,53 @@ class ExportUtils:
             bar_width = max(min_bar_width, ((log_value - log_min) / (log_max - log_min)) * chart_width)
             
             if chart_type == "split":
-                # 子网切分
+                # 子网切分 - 使用加粗字体
                 split_color = "#4a7eb4"
                 name = network.get("name", "")
                 segment_text = f"{translate('split_segment')}: {name}"
+                
+                usable_addresses = network_range - 2 if network_range > 2 else network_range
+                address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+                
+                segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
+                segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
+                address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
+                address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
+                
+                # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
+                address_width = address_bbox[2] - address_bbox[0]
+                address_x = chart_right - ADDRESS_OFFSET - address_width
+                
+                draw_text_with_stroke(draw, (chart_x
+                    + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
+                draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
             else:
-                # 子网规划 - 使用多彩样式
+                # 子网规划 - 已分配子网，使用普通字体
                 color_index = i % len(subnet_colors)
                 split_color = subnet_colors[color_index]
                 name = network.get("name", "")
                 cidr = network.get("cidr", "")
                 segment_text = f"{translate('segment')} {i + 1}: {name}    {cidr}"
-            
-            draw.rectangle([chart_x, y, chart_x
-                + bar_width, y
-                + bar_height], fill=split_color, outline=None, width=0)
+                
+                draw.rectangle([chart_x, y, chart_x
+                    + bar_width, y
+                    + bar_height], fill=split_color, outline=None, width=0)
 
-            usable_addresses = network_range - 2 if network_range > 2 else network_range
-            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+                usable_addresses = network_range - 2 if network_range > 2 else network_range
+                address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
 
-            segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
-            segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
-            address_bbox = draw.textbbox((0, 0), address_text, font=bold_text_font)
-            address_text_y = get_centered_y(y, bar_height, address_bbox, bold_text_font)
-            
-            # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
-            address_width = address_bbox[2] - address_bbox[0]
-            address_x = chart_right - ADDRESS_OFFSET - address_width
+                segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
+                segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)
+                address_bbox = draw.textbbox((0, 0), address_text, font=text_font)
+                address_text_y = get_centered_y(y, bar_height, address_bbox, text_font)
+                
+                # 计算地址文本的右对齐位置：图表右边缘 - 左偏移 - 文本宽度
+                address_width = address_bbox[2] - address_bbox[0]
+                address_x = chart_right - ADDRESS_OFFSET - address_width
 
-            draw_text_with_stroke(draw, (chart_x
-                + 30, segment_text_y), segment_text, bold_text_font, "#ffffff")
-            draw_text_with_stroke(draw, (address_x, address_text_y), address_text, bold_text_font, "#ffffff")
+                draw_text_with_stroke(draw, (chart_x
+                    + 30, segment_text_y), segment_text, text_font, "#ffffff")
+                draw_text_with_stroke(draw, (address_x, address_text_y), address_text, text_font, "#ffffff")
 
             y += bar_height + padding
 
