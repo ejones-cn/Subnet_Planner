@@ -11,12 +11,13 @@
 import json
 import os
 import sys
+from typing import cast
 
 
 # 处理PyInstaller打包后的文件路径
 def get_resource_path(relative_path: str) -> str:
     """获取资源文件的绝对路径"""
-    meipass = getattr(sys, '_MEIPASS', None)  # type: ignore[attr-defined]
+    meipass: str | None = getattr(sys, '_MEIPASS', None)  # type: ignore[attr-defined]
     if meipass is not None:
         return os.path.join(meipass, relative_path)
     return os.path.join(os.path.dirname(__file__), relative_path)
@@ -25,12 +26,11 @@ def get_resource_path(relative_path: str) -> str:
 _translations_file = get_resource_path('translations.json')
 
 
-
-def _load_translations():
+def _load_translations() -> dict[str, dict[str, str]] | None:
     """从JSON文件加载翻译数据"""
     try:
         with open(_translations_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            return cast(dict[str, dict[str, str]], json.load(f))
     except FileNotFoundError:
         print(f"翻译文件未找到: {_translations_file}")
         return None
@@ -41,7 +41,7 @@ def _load_translations():
 
 _loaded_translations = _load_translations()
 
-_DEFAULT_TRANSLATIONS = {
+_DEFAULT_TRANSLATIONS: dict[str, dict[str, str]] = {
     "error": {"zh": "错误", "zh_tw": "錯誤", "en": "Error", "ja": "エラー", "ko": "오류"},
     "ok": {"zh": "确定", "zh_tw": "確定", "en": "OK", "ja": "OK", "ko": "확인"},
     "cancel": {"zh": "取消", "zh_tw": "取消", "en": "Cancel", "ja": "キャンセル", "ko": "취소"},
@@ -51,20 +51,22 @@ _DEFAULT_TRANSLATIONS = {
     "close": {"zh": "关闭", "zh_tw": "關閉", "en": "Close", "ja": "閉じる", "ko": "닫기"}
 }
 
+_translations_dict: dict[str, dict[str, str]]
+
 if _loaded_translations is None:
-    _translations_dict: dict[str, dict[str, str]] = _DEFAULT_TRANSLATIONS
+    _translations_dict = _DEFAULT_TRANSLATIONS
 else:
     _translations_dict = _loaded_translations
     for key, value in _DEFAULT_TRANSLATIONS.items():
         if key not in _translations_dict:
             _translations_dict[key] = value
 
-TRANSLATIONS = _translations_dict
+TRANSLATIONS: dict[str, dict[str, str]] = _translations_dict
 
-_current_language = "zh"
+_current_language: str = "zh"
 
 
-def set_language(lang):
+def set_language(lang: str) -> None:
     """
     设置当前语言
     
@@ -76,7 +78,7 @@ def set_language(lang):
         _current_language = lang
 
 
-def get_language():
+def get_language() -> str:
     """
     获取当前语言
     
@@ -97,8 +99,8 @@ def translate(key: str, **kwargs: str) -> str:
     Returns:
         翻译后的文本
     """
-    translation = TRANSLATIONS.get(key, {}) if TRANSLATIONS else {}
-    if isinstance(translation, dict):
+    translation: dict[str, str] | None = TRANSLATIONS.get(key, {}) if TRANSLATIONS else {}
+    if translation:
         text = translation.get(_current_language, key)
     else:
         text = key
@@ -113,7 +115,7 @@ def translate(key: str, **kwargs: str) -> str:
 _ = translate
 
 
-def get_supported_languages():
+def get_supported_languages() -> list[tuple[str, str]]:
     """
     获取支持的语言列表
     
