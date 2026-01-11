@@ -603,28 +603,26 @@ class ExportUtils:
 
         main_sheet = wb.active
         # 根据数据类型设置不同的sheet名称
-        if data_source["main_name"] == translate("split_segment_info"):
-            # 子网切分结果
-            main_sheet.title = translate("split_segment_info")
-        else:
-            # 子网规划结果
-            main_sheet.title = translate("subnet_requirements")
+        main_title = translate("split_segment_info") if data_source["main_name"] == translate("split_segment_info") else translate("subnet_requirements")
+        main_sheet.title = str(main_title) if main_title else "Sheet"
 
         for col_idx, header in enumerate(main_headers, 1):
             cell = main_sheet.cell(row=1, column=col_idx, value=header)
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal="center")
+            if cell:
+                cell.font = Font(bold=True)  # type: ignore
+                cell.alignment = Alignment(horizontal="center")  # type: ignore
 
         for row_idx, values in enumerate(main_data, 2):
             for col_idx, value in enumerate(values, 1):
                 main_sheet.cell(row=row_idx, column=col_idx, value=value)
 
-        remaining_sheet = wb.create_sheet(title=translate("remaining_subnets"))
+        remaining_sheet = wb.create_sheet(title=str(translate("remaining_subnets")) if translate("remaining_subnets") else "Remaining")
 
         for col_idx, header in enumerate(remaining_headers, 1):
             cell = remaining_sheet.cell(row=1, column=col_idx, value=header)
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal="center")
+            if cell:
+                cell.font = Font(bold=True)  # type: ignore
+                cell.alignment = Alignment(horizontal="center")  # type: ignore
 
         for row_idx, item in enumerate(remaining_tree.get_children(), 2):
             values = remaining_tree.item(item, "values")
@@ -681,8 +679,8 @@ class ExportUtils:
                         print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
                         try:
                             # ReportLab没有直接的删除方法,但我们可以从内部字典中删除
-                            if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:
-                                del pdfmetrics._fonts[font_name]
+                            if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:  # type: ignore
+                                del pdfmetrics._fonts[font_name]  # type: ignore
                                 print("🔍 已删除旧的字体注册")
                         except Exception as del_error:
                             print(f"⚠️ 删除旧字体时出现警告: {del_error}")
@@ -848,7 +846,7 @@ class ExportUtils:
         # 在切分段信息/已分配子网信息前添加父网段信息
         if data_source["main_name"] in [translate("split_segment_info"), translate("allocated_subnets")]:
             # 显示父网段信息
-            elements.append(Paragraph(translate("parent_network_info"), heading2_style))
+            elements.append(Paragraph(str(translate("parent_network_info")), heading2_style))
             
             # 从chart_data获取父网段信息
             chart_data = data_source.get("chart_data")
@@ -866,21 +864,21 @@ class ExportUtils:
                 
                 # 第一行：标题行
                 parent_table_data.append([
-                    Paragraph(translate("parent_cidr"), table_text_style),
-                    Paragraph(translate("network_address"), table_text_style),
-                    Paragraph(translate("subnet_mask"), table_text_style),
-                    Paragraph(translate("broadcast_address"), table_text_style),
-                    Paragraph(translate("prefix_length"), table_text_style),
-                    Paragraph(translate("available_addresses"), table_text_style),
-                    Paragraph(translate("host_address_range"), table_text_style)
+                    Paragraph(str(translate("parent_cidr")), table_text_style),
+                    Paragraph(str(translate("network_address")), table_text_style),
+                    Paragraph(str(translate("subnet_mask")), table_text_style),
+                    Paragraph(str(translate("broadcast_address")), table_text_style),
+                    Paragraph(str(translate("prefix_length")), table_text_style),
+                    Paragraph(str(translate("available_addresses")), table_text_style),
+                    Paragraph(str(translate("host_address_range")), table_text_style)
                 ])
                 
                 # 第二行：数据行
                 parent_table_data.append([
-                    Paragraph(full_parent_info.get("cidr", parent_cidr), table_text_style),
-                    Paragraph(full_parent_info.get("network", ""), table_text_style),
-                    Paragraph(full_parent_info.get("netmask", ""), table_text_style),
-                    Paragraph(full_parent_info.get("broadcast", ""), table_text_style),
+                    Paragraph(str(full_parent_info.get("cidr", parent_cidr)), table_text_style),
+                    Paragraph(str(full_parent_info.get("network", "")), table_text_style),
+                    Paragraph(str(full_parent_info.get("netmask", "")), table_text_style),
+                    Paragraph(str(full_parent_info.get("broadcast", "")), table_text_style),
                     Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
                     Paragraph(f"{full_parent_info.get('usable_addresses', 0):,}", table_text_style),
                     Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
@@ -991,19 +989,20 @@ class ExportUtils:
             main_table.setStyle(self._get_table_style(MAIN_TABLE_COLORS, self.has_asian_font))
             keep_together_main.append(main_table)
         else:
-            keep_together_main.append(Paragraph(f"{translate('no')}{data_source['main_name']}", normal_style))
+            main_name_text = str(translate('no')) if translate('no') else "无"
+            keep_together_main.append(Paragraph(f"{main_name_text}{str(data_source['main_name'])}", normal_style))
         
         # 将标题和表格包装在KeepTogether中
         elements.append(KeepTogether(keep_together_main))
         elements.append(Spacer(1, 20))
 
         # 显示剩余网段信息
-        remaining_heading = Paragraph(data_source["remaining_name"], heading2_style)
+        remaining_heading = Paragraph(str(data_source["remaining_name"]), heading2_style)
         # 准备KeepTogether的内容列表
         keep_together_remaining = [remaining_heading]
         
         # 使用传入的remaining_data和remaining_headers，而不是直接从Treeview获取
-        remaining_table_data = [[Paragraph(h, table_text_style) for h in remaining_headers]]
+        remaining_table_data = [[Paragraph(str(h), table_text_style) for h in remaining_headers]]
         
         # 将remaining_data转换为表格数据
         for item in _remaining_data:
@@ -1042,7 +1041,9 @@ class ExportUtils:
             remaining_table.setStyle(self._get_table_style(REMAINING_TABLE_COLORS, self.has_asian_font))
             keep_together_remaining.append(remaining_table)
         else:
-            keep_together_remaining.append(Paragraph(f"{translate('no')}{data_source['remaining_name']}", normal_style))
+            no_text = str(translate('no')) if translate('no') else "无"
+            remaining_name_text = str(data_source['remaining_name'])
+            keep_together_remaining.append(Paragraph(f"{no_text}{remaining_name_text}", normal_style))
         
         # 将标题和表格包装在KeepTogether中
         elements.append(KeepTogether(keep_together_remaining))

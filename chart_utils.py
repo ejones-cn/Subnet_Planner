@@ -86,7 +86,7 @@ def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tupl
     })
 
 
-def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: dict[str, str | int]) -> None:
+def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: dict[str, Any]) -> None:
     """绘制带描边效果的文本
 
     Args:
@@ -448,7 +448,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
                 legend_items_y + 12,
                 fill=color,
             )
-        _ = canvas.create_text(
+        canvas.create_text(
             remaining_start_x + 94,
             legend_items_y + 6,
             text=f"{translate("remaining_subnets")}",

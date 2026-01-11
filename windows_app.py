@@ -51,6 +51,7 @@ from style_manager import (
     get_current_font_settings,
     get_pin_button_font_size,
     get_function_button_font_size,
+    get_info_bar_font_size,
     get_style_manager,
 )
 
@@ -427,17 +428,22 @@ class IPSubnetSplitterApp:
         # 对于直接调用，返回布尔值表示验证结果
         return "1" if entry else is_valid
 
-    def _get_font(self):
+    def _get_font(self, font_size=None):
         """获取当前字体对象
+
+        Args:
+            font_size: 可选的字体大小，如果不提供则使用默认字体大小
 
         Returns:
             tkfont.Font: 字体对象
         """
         try:
-            font_family, font_size = get_current_font_settings()
-            return tkfont.Font(family=font_family, size=font_size)
+            font_family, default_font_size = get_current_font_settings()
+            # 如果提供了字体大小，则使用提供的值，否则使用默认值
+            current_font_size = font_size if font_size is not None else default_font_size
+            return tkfont.Font(family=font_family, size=current_font_size)
         except tk.TclError:
-            return tkfont.Font(family="Arial", size=10)
+            return tkfont.Font(family="Arial", size=10 if font_size is None else font_size)
 
     def _calculate_pixel_width(self, text, font=None):
         """计算文本的像素宽度
@@ -709,6 +715,8 @@ class IPSubnetSplitterApp:
 
         # 获取当前语言的字体设置
         font_family, font_size = get_current_font_settings()
+        # 获取信息栏的独立字体大小配置
+        info_bar_font_size = get_info_bar_font_size()
 
         self.info_bar_frame.grid_rowconfigure(0, weight=1)
         self.info_bar_frame.grid_columnconfigure(0, weight=1)
@@ -721,7 +729,7 @@ class IPSubnetSplitterApp:
         self.info_label = tk.Label(
             self.info_bar_frame,
             padx=0, pady=0,  # 增加内边距以避免被边框遮挡，使用单一值而非元组
-            font=(font_family, font_size),  # 使用与原Text相同的字体
+            font=(font_family, info_bar_font_size),  # 使用信息栏独立的字体大小配置
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
             background=bg_color,  # 设置背景色跟随主题
@@ -3944,7 +3952,7 @@ class IPSubnetSplitterApp:
         # 动画参数配置
         animation_config = {
             'show': {
-                'current_y': 20,
+                'current_y': 30,
                 'target_y': 0,
                 'step': 1,
                 'delay': 15,
@@ -4023,8 +4031,10 @@ class IPSubnetSplitterApp:
         self._info_currently_expanded = not self._info_currently_expanded
         
         if self._info_currently_expanded:
-            font_family, font_size = get_current_font_settings()
-            font = tkfont.Font(family=font_family, size=font_size)
+            font_family, default_font_size = get_current_font_settings()
+            # 使用信息栏的独立字体大小配置
+            info_bar_font_size = get_info_bar_font_size()
+            font = tkfont.Font(family=font_family, size=info_bar_font_size)
             
             # 获取当前信息栏宽度（保持不变）
             current_width = self.info_bar_frame.winfo_width()
@@ -4057,7 +4067,7 @@ class IPSubnetSplitterApp:
                         return 'cjk'
                     # 日文假名
                     elif ((0x3040 <= code <= 0x309F) or  # 平假名
-                          (0x30A0 <= code <= 0x30FF)):  # 片假名
+                        (0x30A0 <= code <= 0x30FF)):  # 片假名
                         return 'cjk'
                     # 韩文音节
                     elif 0xAC00 <= code <= 0xD7AF:
@@ -4409,8 +4419,10 @@ class IPSubnetSplitterApp:
             # 强制将焦点从Text组件移开，避免渲染问题
             self.root.focus_set()
         else:
-            # 显示截断文本
-            truncated_text = self._truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width)
+            # 显示截断文本，使用信息栏的字体大小
+            info_bar_font_size = get_info_bar_font_size()
+            font = self._get_font(info_bar_font_size)
+            truncated_text = self._truncate_text_by_pixel(self._full_info_text, self._info_icon, self._info_max_pixel_width, font)
 
             # 使用Text组件的方法设置文本
             # 强制将焦点从Text组件移开，避免渲染问题
@@ -6079,7 +6091,8 @@ class IPSubnetSplitterApp:
                         self.configure_treeview_styles(tree, include_special)
 
                     # 重新配置信息栏标签样式，确保错误信息颜色正确
-                    base_info_label_style = {"borderwidth": 0, "font": (font_family, font_size), "relief": "flat"}
+                    info_bar_font_size = get_info_bar_font_size()
+                    base_info_label_style = {"borderwidth": 0, "font": (font_family, info_bar_font_size), "relief": "flat"}
                     self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
                     self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
                     self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
@@ -6222,8 +6235,11 @@ class IPSubnetSplitterApp:
         # 移除文本中的换行符，确保在信息框中单行显示
         text = text.replace('\n', ' ')
 
-        # 调用截断函数
-        truncated_text = self._truncate_text_by_pixel(text, icon, max_pixel_width)
+        # 调用截断函数，传递信息栏的字体大小
+        font_family, default_font_size = get_current_font_settings()
+        info_bar_font_size = get_info_bar_font_size()
+        font = self._get_font(info_bar_font_size)
+        truncated_text = self._truncate_text_by_pixel(text, icon, max_pixel_width, font)
 
         # 保存完整文本和相关信息到实例变量
         self._full_info_text = text
@@ -6986,6 +7002,8 @@ class IPSubnetSplitterApp:
         
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
+        # 获取信息栏的独立字体大小配置
+        info_bar_font_size = get_info_bar_font_size()
         
         # 重新创建主框架
         self.main_frame = ttk.Frame(self.root, padding="15")
@@ -7036,7 +7054,7 @@ class IPSubnetSplitterApp:
         self.info_label = tk.Label(
             self.info_bar_frame,
             padx=0, pady=0,  # 使用内边距控制间距，使用单一值而非元组
-            font=(font_family, font_size),  # 使用与原Text相同的字体
+            font=(font_family, info_bar_font_size),  # 使用信息栏独立的字体大小配置
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
             background=bg_color,  # 设置背景色跟随主题

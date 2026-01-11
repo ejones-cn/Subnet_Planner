@@ -100,7 +100,7 @@ class StyleManager:
         Returns:
             对应的设置值
         """
-        return settings_dict.get(language, settings_dict.get("default"))
+        return settings_dict.get(language, settings_dict.get("default", (0, 0))) or (0, 0)
 
     def get_current_font_settings(self):
         """获取当前语言的字体设置
@@ -128,6 +128,15 @@ class StyleManager:
         """
         current_language = get_language()
         return FontConfig.get_function_button_font_size(current_language)
+    
+    def get_info_bar_font_size(self):
+        """获取当前语言的信息栏字体大小设置
+
+        Returns:
+            int: 信息栏字体大小
+        """
+        current_language = get_language()
+        return FontConfig.get_info_bar_font_size(current_language)
 
     def get_tab_width(self):
         """获取当前语言的标签宽度设置
@@ -179,6 +188,9 @@ class StyleManager:
             font_family: 字体名称
             font_size: 字体大小
         """
+        if not self.style:
+            return
+            
         current_language = get_language()
         tab_padding = self._get_setting(self.TAB_PADDING_SETTINGS, current_language)
         style_config = self.TAB_STYLES[color_name]
@@ -371,3 +383,13 @@ def get_function_button_font_size():
     """
     current_language = get_language()
     return FontConfig.get_function_button_font_size(current_language)
+
+
+def get_info_bar_font_size():
+    """获取当前语言的信息栏字体大小设置
+
+    Returns:
+        int: 信息栏字体大小
+    """
+    current_language = get_language()
+    return FontConfig.get_info_bar_font_size(current_language)
