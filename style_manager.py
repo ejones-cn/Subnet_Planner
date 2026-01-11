@@ -4,7 +4,7 @@
 样式管理器模块
 负责集中管理应用程序的所有样式设置
 支持根据当前语言动态调整样式
-项目版本：v2.5.4
+项目版本：v2.5.5
 """
 
 import tkinter as tk
@@ -137,6 +137,15 @@ class StyleManager:
         """
         current_language = get_language()
         return FontConfig.get_info_bar_font_size(current_language)
+    
+    def get_move_button_font(self):
+        """获取当前语言的移动按钮字体设置
+
+        Returns:
+            str: 移动按钮字体
+        """
+        current_language = get_language()
+        return FontConfig.get_move_button_font(current_language)
 
     def get_tab_width(self):
         """获取当前语言的标签宽度设置
@@ -245,11 +254,15 @@ class StyleManager:
 
         # 按钮样式 - 默认按钮
         button_padding = self._get_setting(self.BUTTON_PADDING_SETTINGS, current_language)
-        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
+        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
         # 功能按钮样式 - 添加、删除、撤销、移动、导入等
-        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
-        # 为默认按钮和功能按钮应用相同的映射配置
-        for button_style in ["TButton", "Function.TButton"]:
+        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        # 移动按钮样式 - 使用独立的字体配置，大小继承自功能按钮
+        move_button_font = FontConfig.get_move_button_font(current_language)
+        move_button_style = {"font": (move_button_font, function_button_font_size)}
+        self.style.configure("Move.TButton", **move_button_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
+        # 为默认按钮、功能按钮和移动按钮应用相同的映射配置
+        for button_style in ["TButton", "Function.TButton", "Move.TButton"]:
             self.style.map(
                 button_style,
                 focuscolor=[("focus", "#888888"), ("!focus", "#888888")],
@@ -393,3 +406,13 @@ def get_info_bar_font_size():
     """
     current_language = get_language()
     return FontConfig.get_info_bar_font_size(current_language)
+
+
+def get_move_button_font():
+    """获取当前语言的移动按钮字体设置
+
+    Returns:
+        str: 移动按钮字体名称
+    """
+    current_language = get_language()
+    return FontConfig.get_move_button_font(current_language)

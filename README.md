@@ -1,4 +1,4 @@
-# 子网规划师 v2.5.4
+# 子网规划师 v2.5.5
 
 **子网规划师** - 让网络管理变得简单高效！
 
@@ -111,7 +111,7 @@ python windows_app.py
 ## 📁 文件结构
 
 ```
-Netsub tools/
+Subnet_Planner/
 ├── windows_app.py           # Windows GUI界面主程序
 ├── web_app.py               # Web界面主程序
 ├── ip_subnet_calculator.py  # IP子网计算核心模块
@@ -282,6 +282,10 @@ Netsub tools/
 
 ## 📝 更新日志
 
+### v2.5.5 (2026-01-12)
+
+- 增强：更新了版本号到v2.5.5
+
 ### v2.5.4 (2026-01-07)
 
 - 增强：更新了版本号到v2.5.4
@@ -450,8 +454,8 @@ Netsub tools/
 如果您有任何问题或建议，请通过以下方式联系我：
 
 - 邮箱：[ejones.cn@hotmail.com](mailto:ejones.cn@hotmail.com)
-- GitCode：https://gitcode.com/ejones-cn/Netsub-tools
-- Gitee：https://gitee.com/ejones-cn/netsub-tools
+- GitCode：https://gitcode.com/ejones-cn/Subnet_Planner
+- Gitee：https://gitee.com/ejones-cn/Subnet_Planner
 
 ---
 

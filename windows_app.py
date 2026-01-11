@@ -52,6 +52,7 @@ from style_manager import (
     get_pin_button_font_size,
     get_function_button_font_size,
     get_info_bar_font_size,
+    get_move_button_font,
     get_style_manager,
 )
 
@@ -757,6 +758,7 @@ class IPSubnetSplitterApp:
 
         self.info_auto_hide_id = None
         self.info_auto_hide_scheduled_time = None  # 记录定时器设置的时间
+        self.info_auto_hide_paused = False  # 信息栏自动隐藏暂停标志
         self.info_bar_animating = False
 
         # 初始化时获取并保存参考宽度
@@ -1683,7 +1685,7 @@ class IPSubnetSplitterApp:
 
         # 移动/交换按钮（根据选中情况自动判断操作）
         # 交换记录按钮 - 使用交换图标
-        self.swap_btn = ttk.Button(button_frame, text=_('move_records'), command=self.move_records, width=7, style="Function.TButton")
+        self.swap_btn = ttk.Button(button_frame, text=_('move_records'), command=self.move_records, width=7, style="Move.TButton")
         self.swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
 
         # 导入按钮
@@ -4007,15 +4009,34 @@ class IPSubnetSplitterApp:
         import time
         self.info_bar_frame.place(x=bar_x, y=0, width=bar_width, height=30)
         self.info_bar_animating = False
-        # 设置5秒后自动隐藏
-        self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
-        self.info_auto_hide_scheduled_time = time.time()
+        # 设置5秒后自动隐藏（仅当未暂停时）
+        if not self.info_auto_hide_paused:
+            self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
+            self.info_auto_hide_scheduled_time = time.time()
 
     def _on_hide_animation_complete(self, _bar_x, _bar_width):
         """隐藏动画完成后的回调"""
         self.info_bar_frame.place_forget()
         self.info_spacer.pack_forget()
         self.info_bar_animating = False
+        # 重置暂停状态
+        self.info_auto_hide_paused = False
+
+    def _on_info_bar_click(self, event=None):
+        """点击信息栏时暂停自动消失"""
+        import time
+        # 如果已经暂停，恢复自动消失
+        if self.info_auto_hide_paused:
+            self.info_auto_hide_paused = False
+            # 设置新的5秒定时器
+            self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
+            self.info_auto_hide_scheduled_time = time.time()
+        else:
+            # 暂停自动消失
+            if self.info_auto_hide_id:
+                self.root.after_cancel(self.info_auto_hide_id)
+                self.info_auto_hide_id = None
+            self.info_auto_hide_paused = True
 
     def hide_info_bar(self, from_timer=False):
         """隐藏信息栏"""
@@ -4451,8 +4472,8 @@ class IPSubnetSplitterApp:
             # 使用after延迟确保焦点转移在禁用状态之后生效
             self.root.after(1, lambda: self.root.focus_set())
             
-            # 收起时重新开始自动消失计时
-            if hasattr(self, 'root'):
+            # 收起时重新开始自动消失计时（仅当未暂停时）
+            if hasattr(self, 'root') and not self.info_auto_hide_paused:
                 self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
             
             # 强制将焦点从Text组件移开，避免渲染问题
@@ -6182,6 +6203,9 @@ class IPSubnetSplitterApp:
             error: 是否为错误信息
             keep_data: 是否保留数据
         """
+        # 重置暂停状态，新消息来时恢复自动消失
+        self.info_auto_hide_paused = False
+        
         # 立即取消所有可能的自动隐藏定时器
         if self.info_auto_hide_id:
             self.root.after_cancel(self.info_auto_hide_id)
@@ -6190,11 +6214,6 @@ class IPSubnetSplitterApp:
         # 只有在不保留数据且显示错误信息时才清空表格
         if not keep_data and error:
             self.clear_result()
-
-        # 显示在信息栏中
-        if self.info_auto_hide_id:
-            self.root.after_cancel(self.info_auto_hide_id)
-            self.info_auto_hide_id = None
 
         # 根据信息类型设置样式和图标，使用带框风格，保持一致
         if error:
@@ -6269,8 +6288,13 @@ class IPSubnetSplitterApp:
         # 确保点击事件能够正常触发展开/折叠功能
         # 先解绑可能存在的冲突绑定
         self.info_label.unbind("<Button-1>")
-        # 重新绑定点击事件
-        self.info_label.bind("<Button-1>", self.toggle_info_bar_expand)
+        # 重新绑定点击事件（先暂停自动消失，再触发展开）
+        self.info_label.bind("<Button-1>", self._on_info_bar_click)
+        self.info_label.bind("<Button-1>", self.toggle_info_bar_expand, add=True)
+        
+        # 绑定信息栏框架的点击事件，点击时暂停自动消失
+        self.info_bar_frame.unbind("<Button-1>")
+        self.info_bar_frame.bind("<Button-1>", self._on_info_bar_click)
 
         # 显示信息栏 - 使用高度动画实现滑入效果
 
@@ -6826,7 +6850,7 @@ class IPSubnetSplitterApp:
             textvariable=self.language_var,
             values=["简体中文", "繁體中文", "English", "日本語", "한국어"],
             state="readonly",
-            width=14
+            width=10
         )
         
         # 绑定语言切换事件

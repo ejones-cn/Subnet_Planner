@@ -2,7 +2,7 @@
 """
 字体配置模块
 集中管理所有语言的字体候选列表
-项目版本：v2.5.4
+项目版本：v2.5.5
 """
 
 
@@ -121,6 +121,15 @@ class FontConfig:
         "ko": 10,
         "default": 9
     }
+    
+    # 移动按钮字体设置映射表（仅设置字体，不设置大小）
+    MOVE_BUTTON_FONT_SETTINGS: dict[str, str] = {
+        "zh": "Segoe UI",
+        "zh_tw": "Segoe UI",
+        "ja": "Segoe UI",
+        "ko": "Segoe UI",
+        "default": "Segoe UI"
+    }
 
     FONT_TEST_TEXTS: dict[str, str] = {
         "ko": "한글테스트",
@@ -181,3 +190,8 @@ class FontConfig:
     def get_info_bar_font_size(cls, language: str) -> int:
         """获取信息栏的字体大小设置"""
         return cls.INFO_BAR_FONT_SIZE_SETTINGS.get(language, cls.INFO_BAR_FONT_SIZE_SETTINGS["default"])
+    
+    @classmethod
+    def get_move_button_font(cls, language: str) -> str:
+        """获取移动按钮的字体设置（仅字体，不包含大小）"""
+        return cls.MOVE_BUTTON_FONT_SETTINGS.get(language, cls.MOVE_BUTTON_FONT_SETTINGS["default"])
