@@ -5,7 +5,7 @@
 项目版本：v2.5.4
 """
 
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional
 from i18n import _
 import tkinter as tk
 from tkinter import Canvas, Frame
@@ -25,7 +25,7 @@ PARENT_COLOR = "#636e72"
 SPLIT_COLOR = "#4a7eb4"
 
 
-def _get_font_settings():
+def _get_font_settings() -> tuple[str, int]:
     """获取当前语言的字体设置
 
     Returns:
@@ -64,7 +64,7 @@ def _calculate_usable_addresses(network_range: int) -> int:
     return network_range - 2 if network_range > 2 else network_range
 
 
-def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple) -> None:
+def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple[str, int, str]) -> None:
     """绘制网段文本
 
     Args:
@@ -81,7 +81,7 @@ def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tupl
     })
 
 
-def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: Dict[str, Any]) -> None:
+def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: dict[str, Any]) -> None:
     """绘制带描边效果的文本
 
     Args:
@@ -91,9 +91,8 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
         y: y坐标
         style: 样式字典，包含font、anchor、fill等参数
     """
-    font_family, __ = _get_font_settings()
+    font_family = _get_font_settings()[0]
 
-    # 绘制描边
     for dx in (-1, 1):
         for dy in (-1, 1):
             canvas.create_text(
@@ -103,7 +102,6 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
                 anchor=style.get("anchor", tk.CENTER),
                 fill="#000000"
             )
-    # 绘制主文本
     canvas.create_text(
         x, y,
         text=text,
@@ -113,7 +111,7 @@ def draw_text_with_stroke(canvas: Canvas, text: str, x: float, y: float, style: 
     )
 
 
-def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> Tuple[int, int, int, int, int, int]:
+def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> tuple[int, int, int, int, int, int]:
     """初始化画布并计算尺寸
 
     Args:
@@ -142,7 +140,7 @@ def _init_canvas(canvas: Canvas, parent_frame: Optional[Frame]) -> Tuple[int, in
 
 def _draw_parent_segment(
     canvas: Canvas,
-    parent_info: Dict[str, Any],
+    parent_info: dict[str, Any],
     x: float,
     y: float,
     chart_width: float,
@@ -171,7 +169,7 @@ def _draw_parent_segment(
     """
     parent_range = parent_info.get("range", 1)
     bar_width = _calculate_bar_width(parent_range, log_min, log_max, chart_width, min_bar_width)
-    font_family, __ = _get_font_settings()
+    font_family = _get_font_settings()[0]
 
     color = PARENT_COLOR
     canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
@@ -188,12 +186,12 @@ def _draw_parent_segment(
     text_x = min(x + 400, x + chart_width - 200)
     _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
-    return y + bar_height + padding
+    return int(y + bar_height + padding)
 
 
 def _draw_network_segments(
     canvas: Canvas,
-    split_networks: List[Dict[str, Any]],
+    split_networks: list[dict[str, Any]],
     chart_type: Literal["split", "plan"],
     x: float,
     y: float,
@@ -222,14 +220,12 @@ def _draw_network_segments(
     Returns:
         int: 新的y坐标
     """
-    font_family, __ = _get_font_settings()
+    font_family = _get_font_settings()[0]
 
     if chart_type == "plan":
-        # 子网规划：需求网段
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
         y += 20
 
-        # 添加需求网段标题
         demand_count = len(split_networks)
         canvas.create_text(
             x,
@@ -245,7 +241,6 @@ def _draw_network_segments(
             network_range = network.get("range", 1)
             bar_width = _calculate_bar_width(network_range, log_min, log_max, chart_width, min_bar_width)
 
-            # 为需求网段分配颜色
             color_index = i % len(SUBNET_COLORS)
             color = SUBNET_COLORS[color_index]
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
@@ -253,59 +248,51 @@ def _draw_network_segments(
             name = network.get("name", "")
             usable_addresses = _calculate_usable_addresses(network_range)
 
-            # 需求网段：添加序号和CIDR
             segment_text = f"{_("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 9, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            # 需求网段：可用地址数
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
             y += bar_height + padding
     else:
-        # 子网切分：切分网段
         for i, network in enumerate(split_networks):
             network_range = network.get("range", 1)
             bar_width = _calculate_bar_width(network_range, log_min, log_max, chart_width, min_bar_width)
 
-            # 切分网段：使用蓝色
             color = SPLIT_COLOR
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
             usable_addresses = _calculate_usable_addresses(network_range)
 
-            # 切分网段：不需要序号
             segment_text = f"{_("split_segment")}: {name}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 11, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            # 切分网段：可用地址数
             address_text = f"{_("usable_addresses")}: {usable_addresses:,}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
             y += bar_height + padding
 
-            # 添加切分网段和剩余网段之间的虚线分割
             canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
 
-    # 需求网段与剩余网段之间添加虚线分割（仅在子网规划中需要）
     if chart_type == "plan":
         canvas.create_line(x, y + 5, x + chart_width, y + 5, fill="#cccccc", dash=(5, 2), width=1)
 
-    return y
+    return int(y)
 
 
 def _draw_remaining_segments(
     canvas: Canvas,
-    networks: List[Dict[str, Any]],
+    networks: list[dict[str, Any]],
     x: float,
     y: float,
     chart_width: float,
@@ -332,7 +319,7 @@ def _draw_remaining_segments(
     Returns:
         int: 新的y坐标
     """
-    font_family, __ = _get_font_settings()
+    font_family = _get_font_settings()[0]
 
     y += 20
     title_font = (font_family, 11)
@@ -372,7 +359,7 @@ def _draw_remaining_segments(
 
     canvas.create_line(x, y, x + chart_width, y, fill="#cccccc", dash=(5, 2), width=1)
 
-    return y
+    return int(y)
 
 
 def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float, y: float) -> None:
@@ -384,7 +371,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
         x: x坐标
         y: y坐标
     """
-    font_family, __ = _get_font_settings()
+    font_family = _get_font_settings()[0]
 
     legend_y = y + 35
     canvas.create_text(x, legend_y, text=f"{_("legend")}:", font=(font_family, 11), anchor=tk.W, fill="#ffffff")
@@ -402,7 +389,6 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
     )
 
     if chart_type == "plan":
-        # 子网规划：需求网段（多色）
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
                 x + 140 + j * 20,
@@ -420,7 +406,6 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
             fill="#ffffff",
         )
 
-        # 剩余网段图例排在需求网段后面，使用多色表达
         remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
@@ -439,7 +424,6 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
             fill="#ffffff",
         )
     else:
-        # 子网切分：切分网段（蓝色）
         canvas.create_rectangle(x + 180, legend_items_y, x + 200, legend_items_y + 12, fill=SPLIT_COLOR)
         canvas.create_text(
             x + 210,
@@ -450,7 +434,6 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
             fill="#ffffff",
         )
 
-        # 剩余网段图例
         remaining_start_x = x + 370
         for j, color in enumerate(LEGEND_COLORS):
             canvas.create_rectangle(
@@ -472,7 +455,7 @@ def _draw_legend(canvas: Canvas, chart_type: Literal["split", "plan"], x: float,
 
 def draw_distribution_chart(
     canvas: Canvas,
-    chart_data: Optional[Dict[str, Any]],
+    chart_data: Optional[dict[str, Any]],
     parent_frame: Optional[Frame] = None,
     chart_type: Literal["split", "plan"] = "split"
 ) -> None:
@@ -490,20 +473,17 @@ def draw_distribution_chart(
     try:
         canvas.delete("all")
 
-        # 初始化画布和计算尺寸
         width, canvas_height, margin_left, _, margin_top, chart_width = _init_canvas(canvas, parent_frame)
 
-        # 获取数据
         parent_info = chart_data.get("parent", {})
         parent_range = parent_info.get("range", 1)
         networks = chart_data.get("networks", [])
 
         if not networks:
-            font_family, __ = get_current_font_settings()
+            font_family = _get_font_settings()[0]
             canvas.create_text(width / 2, canvas_height / 2, text=f"{_("no_segment_data")}", font=(font_family, 12))
             return
 
-        # 计算对数参数
         log_max = math.log10(parent_range)
         log_min = 3
         min_bar_width = 50
@@ -512,7 +492,6 @@ def draw_distribution_chart(
         x = margin_left
         y = margin_top
 
-        # 计算所需高度
         required_height = (
             y
             + (bar_height + padding)
@@ -523,27 +502,21 @@ def draw_distribution_chart(
         )
         background_height = max(required_height, canvas_height)
 
-        # 绘制背景
         canvas.create_rectangle(0, 0, width, background_height, fill="#333333", outline="", width=0)
 
-        # 配置画布滚动区域
         actual_width = canvas.winfo_width()
         if actual_width < 10:
             actual_width = width
         canvas.config(scrollregion=(0, 0, actual_width, background_height))
         canvas.config(xscrollcommand=None)
 
-        # 绘制父网段
         y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
 
-        # 绘制网络网段
         split_networks = [net for net in networks if net.get("type") == "split"]
         y = _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
 
-        # 绘制剩余网段
         y = _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
 
-        # 绘制图例
         _draw_legend(canvas, chart_type, x, y)
 
         canvas.update_idletasks()
@@ -552,7 +525,7 @@ def draw_distribution_chart(
         canvas.delete("all")
         width = canvas.winfo_width() or 600
         height = canvas.winfo_height() or 400
-        font_family, __ = get_current_font_settings()
+        font_family = _get_font_settings()[0]
         title_font = (font_family, 12, "bold")
         canvas.create_text(
             width / 2, height / 2, text=f"{_("chart_drawing_failed")}: {str(e)}", font=title_font, fill="red")

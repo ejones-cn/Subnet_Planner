@@ -15,7 +15,6 @@
 """
 
 import os
-import sys
 import json
 import csv
 import time
@@ -41,8 +40,6 @@ from reportlab.platypus import (  # type: ignore
     KeepTogether,
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
-from reportlab.pdfbase import pdfmetrics  # type: ignore
-from reportlab.pdfbase.ttfonts import TTFont  # type: ignore
 from reportlab.lib.enums import TA_CENTER, TA_LEFT  # type: ignore
 from openpyxl import Workbook  # type: ignore
 from openpyxl.styles import Font, Alignment  # type: ignore
@@ -98,7 +95,7 @@ class ExportUtils:
         cls._font_cache.clear()
         cls._font_path_cache = None
         cls._font_path_lang = None
-        
+
         # 同时清除 ReportLab 的 PDF 字体注册
         try:
             from reportlab.pdfbase import pdfmetrics

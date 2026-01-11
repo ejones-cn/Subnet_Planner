@@ -21,8 +21,8 @@ class StyleManager:
         "zh": 10,
         "zh_tw": 10,
         "ja": 18,
-        "ko": 16,
-        "default": 14
+        "ko": 14,
+        "default": 16
     }
 
     # 按钮内边距设置映射表
@@ -46,10 +46,10 @@ class StyleManager:
     # 标签页垂直内边距设置映射表（用于 ColoredNotebook）
     TAB_VERTICAL_PADDING_SETTINGS = {
         "zh": 2,
-        "zh_tw": 6,
-        "ja": 6,
-        "ko": 3,
-        "default": 5
+        "zh_tw": 4,
+        "ja": 7,
+        "ko": 4,
+        "default": 4
     }
 
     # 彩色标签页样式配置

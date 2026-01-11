@@ -98,7 +98,7 @@ class FontConfig:
     # UI字体设置映射表（微软官方推荐）
     UI_FONT_SETTINGS = {
         "zh": ("微软雅黑", 10),
-        "zh_tw": ("Microsoft JhengHei", 11),
+        "zh_tw": ("Microsoft JhengHei", 10),
         "ja": ("MS Gothic", 10),
         "ko": ("Malgun Gothic", 10),
         "default": ("Segoe UI", 10)
