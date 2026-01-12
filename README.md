@@ -29,7 +29,6 @@ pip install -r requirements.txt
 
 ### 运行应用
 
-#### Web界面
 
 **方式一：直接运行Python脚本**
 
@@ -153,20 +152,18 @@ Subnet_Planner/
 
 ## 🖼️ 界面预览
 
-### Web界面
-
-- **简洁直观**：清晰的输入区域和结果展示区域
-- **响应式设计**：适配不同屏幕尺寸
-- **实时计算**：输入后立即显示计算结果
-
 ### Windows GUI界面
 
 - **现代化界面**：使用Tkinter构建的友好图形界面
+![QQ_1767061337034.png](https://raw.gitcode.com/user-images/assets/8673649/6e6e46af-a645-4514-8f76-96c151837638/QQ_1767061337034.png 'QQ_1767061337034.png')
 - **多标签页**：分别展示输入、结果、需求池和帮助信息
+![QQ_1767061337034.png](https://raw.gitcode.com/user-images/assets/8673649/367a303e-56e4-41e1-85e5-14303a50ff38/QQ_1767061337034.png 'QQ_1767061337034.png')
 - **图表可视化**：网段分布图表展示
+![QQ截图20251230102547.jpg](https://raw.gitcode.com/user-images/assets/8673649/b4fb24b3-0ba4-4108-997d-f2680d17ea6f/QQ截图20251230102547.jpg 'QQ截图20251230102547.jpg')
 - **导出功能**：支持将结果导出为文本文件和PDF文件
+![QQ_1767061337034.png](https://raw.gitcode.com/user-images/assets/8673649/3d1ab405-da22-40b4-b295-cf2a5d8991e8/QQ_1767061337034.png 'QQ_1767061337034.png')
 - **需求池**：支持记录管理、撤销/重做功能
-
+![QQ20251230-102118.png](https://raw.gitcode.com/user-images/assets/8673649/b9851c43-0cbc-4819-bf22-342511a4df56/QQ20251230-102118.png 'QQ20251230-102118.png')
 ## 🔧 技术特点
 
 - **跨平台**：支持Windows、Linux和macOS
