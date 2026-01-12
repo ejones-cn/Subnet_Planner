@@ -10,7 +10,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['winreg', '_winreg', 'win32service', 'win32timezone', 'xmlrpc', 'sqlite3'],
+    excludes=['winreg', '_winreg', 'win32service', 'win32timezone', 'xmlrpc', 'sqlite3', 'ssl', 'cryptography', 'hmac', 'winsound', 'win32api', 'win32con', 'win32gui', 'win32process', 'win32com', 'win32com.client', 'win32com.server', 'win32event', 'win32evtlog', 'win32evtlogutil', 'win32file', 'win32pipe', 'win32security', 'win32trace', 'win32wnet', 'asyncio', 'concurrent', 'multiprocessing', 'queue'],
     noarchive=False,
     optimize=0,
 )
