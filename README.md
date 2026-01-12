@@ -21,29 +21,6 @@
 
 ## 🚀 快速开始
 
-### 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 运行应用
-
-
-**方式一：直接运行Python脚本**
-
-```bash
-python web_app.py
-```
-
-然后在浏览器中访问 `http://localhost:5000`
-
-**方式二：使用批处理脚本**
-
-```bash
-.run_web_app.bat
-```
-
 #### Windows GUI界面
 
 **方式一：直接运行Python脚本**
