@@ -48,8 +48,15 @@ def get_version_tuple():
     return VERSION_TUPLE
 
 
-def get_release_date(version=None):
-    """获取指定版本的发布日期，默认为当前版本"""
+def get_release_date(version: str | None = None) -> str:
+    """获取指定版本的发布日期，默认为当前版本
+    
+    Args:
+        version: 版本号字符串，默认为当前版本
+        
+    Returns:
+        发布日期字符串
+    """
     if version is None:
         version = __version__
     return RELEASE_DATES.get(version, "未知")

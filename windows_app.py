@@ -1289,7 +1289,7 @@ class IPSubnetSplitterApp:
         """调整剩余网段表表格的宽度，使其自适应窗口大小"""
         self.remaining_tree.update_idletasks()
         frame_width = self.remaining_frame.winfo_width()
-        self.remaining_tree.column("index", width=40)
+        self.remaining_tree.column("index", width=35)
 
         items = self.remaining_tree.get_children()
         columns = ["cidr", "network", "netmask", "wildcard", "broadcast", "usable"]
@@ -1345,7 +1345,7 @@ class IPSubnetSplitterApp:
         tree.heading("hosts", text=_("host_count"))
 
         # 设置列宽
-        tree.column("index", width=40, minwidth=20, stretch=False, anchor="e")
+        tree.column("index", width=35, minwidth=35, stretch=False, anchor="e")
         tree.column("name", width=80, minwidth=80, stretch=True)
         tree.column("hosts", width=80, minwidth=40, stretch=False)
 
@@ -1439,12 +1439,12 @@ class IPSubnetSplitterApp:
         self.remaining_tree.heading("usable", text=_("usable_address_count"))
 
         # 设置列宽，使用minwidth替代width，让列可以自适应
-        self.remaining_tree.column("index", minwidth=40, width=40, stretch=False, anchor="e")
+        self.remaining_tree.column("index", minwidth=35, width=35, stretch=False, anchor="e")
         self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("broadcast", minwidth=100, width=130, stretch=True)
+        self.remaining_tree.column("broadcast", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
 
         # 配置斑马条纹样式
@@ -1774,7 +1774,7 @@ class IPSubnetSplitterApp:
         )
         self.allocated_tree = ttk.Treeview(
             self.allocated_frame,
-            columns=("index", "name", "cidr", "required", "available", "network", "netmask", "broadcast"),
+            columns=("index", "name", "cidr", "required", "available", "network", "netmask", "wildcard", "broadcast"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -1789,17 +1789,19 @@ class IPSubnetSplitterApp:
         self.allocated_tree.heading("available", text=_("available_count"))
         self.allocated_tree.heading("network", text=_("network_address"))
         self.allocated_tree.heading("netmask", text=_("subnet_mask"))
+        self.allocated_tree.heading("wildcard", text=_("wildcard_mask"))
         self.allocated_tree.heading("broadcast", text=_("broadcast_address"))
 
         # 设置列宽为自动，根据内容自动调整宽度
-        self.allocated_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")  # 序号列固定宽度40
-        self.allocated_tree.column("name", width=0, minwidth=100, stretch=True)  # 子网名称列自动宽度
+        self.allocated_tree.column("index", width=35, minwidth=35, stretch=False, anchor="e")  # 序号列固定宽度40
+        self.allocated_tree.column("name", width=0, minwidth=90, stretch=True)  # 子网名称列自动宽度
         self.allocated_tree.column("cidr", width=0, minwidth=90, stretch=True)  # CIDR列自动宽度
-        self.allocated_tree.column("required", width=0, minwidth=30, stretch=True)  # 需求数列自动宽度
-        self.allocated_tree.column("available", width=0, minwidth=40, stretch=True)  # 可用数列自动宽度
-        self.allocated_tree.column("network", width=0, minwidth=70, stretch=True)  # 网络地址列自动宽度
-        self.allocated_tree.column("netmask", width=0, minwidth=100, stretch=True)  # 子网掩码列自动宽度
-        self.allocated_tree.column("broadcast", width=0, minwidth=100, stretch=True)  # 广播地址列自动宽度
+        self.allocated_tree.column("required", width=0, minwidth=35, stretch=True)  # 需求数列自动宽度
+        self.allocated_tree.column("available", width=0, minwidth=35, stretch=True)  # 可用数列自动宽度
+        self.allocated_tree.column("network", width=0, minwidth=80, stretch=True)  # 网络地址列自动宽度
+        self.allocated_tree.column("netmask", width=0, minwidth=80, stretch=True)  # 子网掩码列自动宽度
+        self.allocated_tree.column("wildcard", width=0, minwidth=80, stretch=True)  # 通配符掩码列自动宽度
+        self.allocated_tree.column("broadcast", width=0, minwidth=80, stretch=True)  # 广播地址列自动宽度
 
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL
@@ -1820,7 +1822,7 @@ class IPSubnetSplitterApp:
         )
         self.planning_remaining_tree = ttk.Treeview(
             self.planning_remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "broadcast", "usable"),
+            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -1831,16 +1833,18 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.heading("cidr", text=_("cidr"))
         self.planning_remaining_tree.heading("network", text=_("network_address"))
         self.planning_remaining_tree.heading("netmask", text=_("subnet_mask"))
+        self.planning_remaining_tree.heading("wildcard", text=_("wildcard_mask"))
         self.planning_remaining_tree.heading("broadcast", text=_("broadcast_address"))
         self.planning_remaining_tree.heading("usable", text=_("usable_address_count"))
 
         # 设置列宽，所有列都启用拉伸以实现自适应
-        self.planning_remaining_tree.column("index", width=40, minwidth=40, stretch=False, anchor="e")
+        self.planning_remaining_tree.column("index", width=35, minwidth=35, stretch=False, anchor="e")
         self.planning_remaining_tree.column("cidr", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column(
             "network", width=80, minwidth=70, stretch=True
         )  # 调小网络地址列宽并启用拉伸
         self.planning_remaining_tree.column("netmask", width=120, minwidth=100, stretch=True)
+        self.planning_remaining_tree.column("wildcard", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
 
@@ -3517,6 +3521,7 @@ class IPSubnetSplitterApp:
                         subnet["available_hosts"],
                         subnet["info"]["network"],
                         subnet["info"]["netmask"],
+                        subnet["info"]["wildcard"],
                         subnet["info"]["broadcast"],
                     ),
                     tags=tags,
@@ -3537,6 +3542,7 @@ class IPSubnetSplitterApp:
                         plan_result['remaining_subnets'][i - 1],
                         subnet["network"],
                         subnet["netmask"],
+                        subnet["wildcard"],
                         subnet["broadcast"],
                         subnet["usable_addresses"],  # 修正为正确的字段名
                     ),
@@ -7349,14 +7355,165 @@ class IPSubnetSplitterApp:
             webbrowser.open("mailto:ejones.cn@hotmail.com")
         email_label.bind("<Button-1>", lambda e: open_email_client())
 
-        # 直接在内容框架中添加确定按钮和版权信息，不使用额外的底部框架
+        # 按钮区域
+        button_frame = ttk.Frame(inner_frame)
+        button_frame.pack(anchor=tk.CENTER, pady=(10, 5))
+
+        # 添加扫码捐赠按钮
+        def show_donate_qr():
+            # 创建二维码捐赠对话框
+            qr_window = tk.Toplevel(about_window)
+            qr_window.title(_("donate"))
+            qr_window.resizable(False, False)
+            qr_window.configure(bg="#ffffff")
+            qr_window.transient(about_window)
+            qr_window.grab_set()
+            
+            # 设置对话框大小和位置
+            qr_width = 400
+            qr_height = 450
+            qr_x = dialog_x + (dialog_width // 2) - (qr_width // 2)
+            qr_y = dialog_y + (dialog_height // 2) - (qr_height // 2)
+            qr_window.geometry(f"{qr_width}x{qr_height}+{qr_x}+{qr_y}")
+            
+            # 创建内容框架
+            qr_content = ttk.Frame(qr_window, padding=(20, 20, 20, 15))
+            qr_content.pack(fill=tk.BOTH, expand=True)
+            
+            # 添加标题
+            qr_title = ttk.Label(qr_content, 
+                               text=_("scan_qr_donate"), 
+                               font=(font_family, 14, "bold"),
+                               style="About.TLabel")
+            qr_title.pack(pady=(0, 15))
+            
+            # 二维码容器
+            qr_container = ttk.Frame(qr_content)
+            qr_container.pack(fill=tk.BOTH, expand=True)
+            
+            # 添加微信二维码
+            wechat_frame = ttk.Frame(qr_container)
+            wechat_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+            
+            wechat_label = ttk.Label(wechat_frame, 
+                                   text=_("wechat"), 
+                                   font=(font_family, 12, "bold"),
+                                   style="About.TLabel")
+            wechat_label.pack(pady=(0, 10))
+            
+            # 加载并显示微信二维码
+            try:
+                from PIL import Image, ImageTk
+                import os
+                
+                # 微信二维码图片路径（如果存在）
+                wechat_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "wechat_qr.png")
+                
+                if os.path.exists(wechat_qr_path):
+                    # 加载图片
+                    wechat_img = Image.open(wechat_qr_path)
+                    wechat_img = wechat_img.resize((150, 150), Image.Resampling.LANCZOS)
+                    wechat_photo = ImageTk.PhotoImage(wechat_img)
+                    
+                    # 创建标签显示图片
+                    wechat_qr_label = ttk.Label(wechat_frame, image=wechat_photo, style="About.TLabel")
+                    wechat_qr_label.image = wechat_photo  # 保存引用，防止被GC回收
+                    wechat_qr_label.pack(pady=(20, 10))
+                else:
+                    # 微信二维码占位符
+                    wechat_qr_placeholder = ttk.Label(wechat_frame, 
+                                                    text=_("wechat_qr"), 
+                                                    font=(font_family, 10),
+                                                    style="About.TLabel",
+                                                    foreground="#999999")
+                    wechat_qr_placeholder.pack(pady=(20, 10))
+            except Exception as e:
+                # 加载图片失败时显示占位符
+                print(f"加载微信二维码失败: {e}")
+                wechat_qr_placeholder = ttk.Label(wechat_frame, 
+                                                text=_("wechat_qr"), 
+                                                font=(font_family, 10),
+                                                style="About.TLabel",
+                                                foreground="#999999")
+                wechat_qr_placeholder.pack(pady=(20, 10))
+            
+            # 添加支付宝二维码
+            alipay_frame = ttk.Frame(qr_container)
+            alipay_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+            
+            alipay_label = ttk.Label(alipay_frame, 
+                                   text=_("alipay"), 
+                                   font=(font_family, 12, "bold"),
+                                   style="About.TLabel")
+            alipay_label.pack(pady=(0, 10))
+            
+            # 加载并显示支付宝二维码
+            try:
+                from PIL import Image, ImageTk
+                import os
+                
+                # 支付宝二维码图片路径（如果存在）
+                alipay_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "alipay_qr.png")
+                
+                if os.path.exists(alipay_qr_path):
+                    # 加载图片
+                    alipay_img = Image.open(alipay_qr_path)
+                    alipay_img = alipay_img.resize((150, 150), Image.Resampling.LANCZOS)
+                    alipay_photo = ImageTk.PhotoImage(alipay_img)
+                    
+                    # 创建标签显示图片
+                    alipay_qr_label = ttk.Label(alipay_frame, image=alipay_photo, style="About.TLabel")
+                    alipay_qr_label.image = alipay_photo  # 保存引用，防止被GC回收
+                    alipay_qr_label.pack(pady=(20, 10))
+                else:
+                    # 支付宝二维码占位符
+                    alipay_qr_placeholder = ttk.Label(alipay_frame, 
+                                                    text=_("alipay_qr"), 
+                                                    font=(font_family, 10),
+                                                    style="About.TLabel",
+                                                    foreground="#999999")
+                    alipay_qr_placeholder.pack(pady=(20, 10))
+            except Exception as e:
+                # 加载图片失败时显示占位符
+                print(f"加载支付宝二维码失败: {e}")
+                alipay_qr_placeholder = ttk.Label(alipay_frame, 
+                                                text=_("alipay_qr"), 
+                                                font=(font_family, 10),
+                                                style="About.TLabel",
+                                                foreground="#999999")
+                alipay_qr_placeholder.pack(pady=(20, 10))
+            
+            # 添加提示信息
+            tip_label = ttk.Label(qr_content, 
+                               text=_("donate_tip"), 
+                               font=(font_family, 10),
+                               style="About.TLabel",
+                               foreground="#666666")
+            tip_label.pack(pady=(15, 10))
+            
+            # 关闭按钮
+            close_button = ttk.Button(qr_content, 
+                                    text=_('close'), 
+                                    command=qr_window.destroy, 
+                                    width=10,
+                                    style="About.TButton")
+            close_button.pack()
+        
+        # 添加扫码捐赠按钮
+        qr_button = ttk.Button(button_frame, 
+                            text=_('scan_qr_donate'), 
+                            command=show_donate_qr, 
+                            width=12,
+                            style="About.TButton")
+        qr_button.pack(side=tk.LEFT, padx=(0, 10))
+
         # 添加确定按钮，使用更大的宽度和更好的居中效果
-        ok_button = ttk.Button(inner_frame, 
+        ok_button = ttk.Button(button_frame, 
                              text=_("ok"), 
                              command=about_window.destroy, 
                              width=10,
                              style="About.TButton")
-        ok_button.pack(anchor=tk.CENTER, pady=(2, 1))
+        ok_button.pack(side=tk.LEFT)
 
         # 将焦点聚焦到确定按钮上，使用更可靠的方式
         about_window.after_idle(ok_button.focus_set)

@@ -613,7 +613,7 @@
     "zh": "网络地址",
     "zh_tw": "網路位址",
     "en": "Network Addrs",
-    "ja": "ネットワークアドレス",
+    "ja": "ネットアド",
     "ko": "네트워크 주소"
   },
   "wildcard_mask": {
@@ -1312,7 +1312,7 @@
   "network": {
     "zh": "网络地址",
     "en": "Network Address",
-    "ja": "ネットワークアドレス",
+    "ja": "ネットアド",
     "zh_tw": "網路位址",
     "ko": "네트워크 주소"
   },
@@ -1721,6 +1721,55 @@
     "ja": "混在言語のテスト：",
     "zh_tw": "中英文混排測試：",
     "ko": "중국어-영어 혼합 테스트:"
+  },
+  "donate": {
+    "zh": "捐助",
+    "zh_tw": "捐助",
+    "en": "Donate",
+    "ja": "寄付",
+    "ko": "기부"
+  },
+  "scan_qr_donate": {
+    "zh": "扫码捐赠",
+    "zh_tw": "掃碼捐贈",
+    "en": "Scan QR to Donate",
+    "ja": "QRコードをスキャンして寄付",
+    "ko": "QR 코드 스캔 후 기부"
+  },
+  "donate_tip": {
+    "zh": "感谢您的支持！\n您的捐赠将帮助我们继续改进软件。",
+    "zh_tw": "感謝您的支持！\n您的捐贈將幫助我們繼續改進軟體。",
+    "en": "Thank you for your support!\nYour donation will help us continue to improve the software.",
+    "ja": "ご支援ありがとうございます！\nあなたの寄付は、私たちがソフトウェアを改善し続けるのを助けます。",
+    "ko": "지원해 주셔서 감사합니다!\n귀하의 기부는 소프트웨어 개선을 계속하는 데 도움이 될 것입니다."
+  },
+  "wechat": {
+    "zh": "微信",
+    "zh_tw": "微信",
+    "en": "WeChat",
+    "ja": "WeChat",
+    "ko": "WeChat"
+  },
+  "alipay": {
+    "zh": "支付宝",
+    "zh_tw": "支付寶",
+    "en": "Alipay",
+    "ja": "Alipay",
+    "ko": "Alipay"
+  },
+  "wechat_qr": {
+    "zh": "微信二维码",
+    "zh_tw": "微信二維碼",
+    "en": "WeChat QR Code",
+    "ja": "WeChat QRコード",
+    "ko": "WeChat QR 코드"
+  },
+  "alipay_qr": {
+    "zh": "支付宝二维码",
+    "zh_tw": "支付寶二維碼",
+    "en": "Alipay QR Code",
+    "ja": "Alipay QRコード",
+    "ko": "Alipay QR 코드"
   },
   "enter_subnet_list": {
     "zh": "请输入子网列表",

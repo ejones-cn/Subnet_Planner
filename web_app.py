@@ -1369,6 +1369,7 @@ HTML_TEMPLATE = '''
                                 <th>起始IP</th>
                                 <th>结束IP</th>
                                 <th>子网掩码</th>
+                                <th>通配符掩码</th>
                             </tr>
                             {% for subnet in plan_result.allocated_subnets %}
                                 <tr>
@@ -1382,6 +1383,7 @@ HTML_TEMPLATE = '''
                                     <td>{{ subnet.info.host_range_start }}</td>
                                     <td>{{ subnet.info.host_range_end }}</td>
                                     <td>{{ subnet.info.netmask }}</td>
+                                    <td>{{ subnet.info.wildcard }}</td>
                                 </tr>
                             {% endfor %}
                         </table>
@@ -1393,7 +1395,11 @@ HTML_TEMPLATE = '''
                             <table class="subnet-table">
                                 <tr>
                                     <th>序号</th>
-                                    <th>网段</th>
+                                    <th>CIDR</th>
+                                    <th>网络地址</th>
+                                    <th>子网掩码</th>
+                                    <th>通配符掩码</th>
+                                    <th>广播地址</th>
                                     <th>可用地址</th>
                                 </tr>
                                 {% for subnet in plan_result.remaining_subnets %}
@@ -1401,6 +1407,10 @@ HTML_TEMPLATE = '''
                                     <tr>
                                         <td>{{ loop.index }}</td>
                                         <td>{{ subnet }}</td>
+                                        <td>{{ info.network }}</td>
+                                        <td>{{ info.netmask }}</td>
+                                        <td>{{ info.wildcard }}</td>
+                                        <td>{{ info.broadcast }}</td>
                                         <td>{{ info.usable_addresses }}</td>
                                     </tr>
                                 {% endfor %}
