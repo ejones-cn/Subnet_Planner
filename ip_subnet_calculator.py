@@ -647,6 +647,22 @@ def get_ip_info(ip_str):
             elif ip_class == 'C':
                 default_netmask = '255.255.255.0'
 
+            # 计算地址段详细信息
+            segments = str(ip).split(".")
+            segment_details = []
+            for i, segment in enumerate(segments):
+                if segment:
+                    dec_value = int(segment)
+                    bin_value = f"{dec_value:08b}"
+                    hex_value = f"{dec_value:02x}"
+                    segment_details.append({
+                        "index": i + 1,
+                        "segment": segment,
+                        "decimal": dec_value,
+                        "binary": bin_value,
+                        "hexadecimal": hex_value
+                    })
+
             return {
                 "ip_address": str(ip),
                 "version": ip_version,
@@ -671,6 +687,7 @@ def get_ip_info(ip_str):
                 "first_host": first_host,
                 "last_host": last_host,
                 "default_netmask": default_netmask,
+                "segment_details": segment_details
             }
         except ValueError:
             # 尝试解析为IPv6网络或地址
@@ -735,6 +752,92 @@ def get_ip_info(ip_str):
             elif ip_address_str.startswith("fec0:"):
                 rfc_ref = "RFC 3879"
 
+            # 计算地址类型
+            address_type = "unknown"
+            if ip.is_loopback:
+                address_type = "loopback_address"
+            elif ip.is_unspecified:
+                address_type = "unspecified_address"
+            elif ip.is_multicast:
+                address_type = "multicast_address"
+            elif ip.is_link_local:
+                address_type = "link_local_unicast_address"
+            elif ip_address_str.startswith("fc00:") or ip_address_str.startswith("fd00:"):
+                address_type = "unique_local_unicast_address"
+            elif ip_address_str.startswith("2001:0db8:"):
+                address_type = "documentation_test_address"
+            elif ip_address_str.startswith("2000:"):
+                address_type = "global_unicast_address"
+            elif "::ffff:" in ip_address_str:
+                address_type = "ipv4_mapped_ipv6_address"
+
+            # 计算前缀分析
+            prefix_analysis = ""
+            if ip.is_multicast:
+                prefix_analysis = "multicast_prefix"
+                if ip_address_str.startswith("ff01:"):
+                    prefix_analysis += " interface_local_multicast"
+                elif ip_address_str.startswith("ff02:"):
+                    prefix_analysis += " link_local_multicast"
+                elif ip_address_str.startswith("ff05:"):
+                    prefix_analysis += " site_local_multicast"
+                elif ip_address_str.startswith("ff0e:"):
+                    prefix_analysis += " global_multicast"
+                else:
+                    prefix_analysis += " other_multicast_type"
+            elif ip_address_str.startswith("fe80:"):
+                prefix_analysis = "link_local_prefix"
+            elif ip_address_str.startswith("fc00:") or ip_address_str.startswith("fd00:"):
+                prefix_analysis = "unique_local_prefix"
+            elif ip_address_str.startswith("2000:") or ip_address_str.startswith("2001:") or ip_address_str.startswith("2002:"):
+                prefix_analysis = "global_unicast_prefix"
+            elif ip_address_str.startswith("::ffff:"):
+                prefix_analysis = "ipv4_mapped_prefix"
+            elif ip_address_str.startswith("64:ff9b::"):
+                prefix_analysis = "ipv4_ipv6_translation_prefix"
+            elif ip_address_str.startswith("2001:db8::"):
+                prefix_analysis = "documentation_prefix"
+            elif ip_address_str == "::1":
+                prefix_analysis = "loopback_address"
+            elif ip_address_str == "::":
+                prefix_analysis = "unspecified_address"
+            elif ip_address_str.startswith("100::"):
+                prefix_analysis = "blackhole_prefix"
+            elif ip_address_str.startswith("2001:10::"):
+                prefix_analysis = "orchid_prefix"
+            elif ip_address_str.startswith("fec0:"):
+                prefix_analysis = "deprecated_site_local_prefix"
+            else:
+                if ip.is_global:
+                    prefix_analysis = "global_unicast_prefix_generic"
+                elif ip.is_private:
+                    prefix_analysis = "private_prefix"
+                elif ip.is_link_local:
+                    prefix_analysis = "link_local_prefix_generic"
+                else:
+                    prefix_analysis = "unknown_prefix"
+
+            # 计算地址段详细信息
+            segments = ip.exploded.split(":")
+            segment_details = []
+            for i, segment in enumerate(segments):
+                if segment:
+                    dec_value = int(segment, 16)
+                    bin_value = f"{dec_value:016b}"
+                    segment_details.append({
+                        "index": i + 1,
+                        "segment": segment,
+                        "decimal": dec_value,
+                        "binary": bin_value
+                    })
+                else:
+                    segment_details.append({
+                        "index": i + 1,
+                        "segment": "",
+                        "decimal": 0,
+                        "binary": "0000000000000000"
+                    })
+
             return {
                 "ip_address": str(ip),
                 "version": ip_version,
@@ -760,7 +863,10 @@ def get_ip_info(ip_str):
                 "compressed": ip.compressed,
                 "exploded": ip.exploded,
                 "reverse_dns": '.'.join(reversed(ip.exploded.replace(':', ''))),
-                "rfc_reference": rfc_ref
+                "rfc_reference": rfc_ref,
+                "address_type": address_type,
+                "prefix_analysis": prefix_analysis,
+                "segment_details": segment_details
             }
 
     except ValueError as e:

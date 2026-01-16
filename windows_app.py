@@ -5189,24 +5189,10 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info.get("ip_address", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("version"), ipv6_info.get("version", "")))
             ip_address = ipv6_info.get("ip_address", "")
-            address_type = _("unknown")
-            if ipv6_info.get("is_loopback"):
-                address_type = _("loopback_address")
-            elif ipv6_info.get("is_unspecified"):
-                address_type = _("unspecified_address")
-            elif ipv6_info.get("is_multicast"):
-                address_type = _("multicast_address")
-            elif ipv6_info.get("is_link_local"):
-                address_type = _("link_local_unicast_address")
-            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
-                address_type = _("unique_local_unicast_address")
-            elif ip_address.startswith("2001:0db8:"):
-                address_type = _("documentation_test_address")
-            elif ip_address.startswith("2000:"):
-                address_type = _("global_unicast_address")
-            elif "::ffff:" in ip_address:
-                address_type = _("ipv4_mapped_ipv6_address")
-            self.ipv6_info_tree.insert("", tk.END, values=(_("address_type"), address_type))
+            
+            # 直接从ipv6_info获取地址类型
+            address_type = ipv6_info.get("address_type", "unknown")
+            self.ipv6_info_tree.insert("", tk.END, values=(_("address_type"), _(address_type)))
             self.ipv6_info_tree.insert("", tk.END, values=(_("cidr_prefix"), ipv6_info.get("cidr", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("prefix_length"), ipv6_info.get("prefix_length", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), ipv6_info.get("network_address", "")))
@@ -5255,53 +5241,11 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_structure_analysis"), ""), tags=("section",))
 
-            prefix_analysis = ""
-            if ipv6_info.get("is_multicast"):
-                prefix_analysis = _("multicast_prefix")
-                if ip_address.startswith("ff01:"):
-                    prefix_analysis += _("interface_local_multicast")
-                elif ip_address.startswith("ff02:"):
-                    prefix_analysis += _("link_local_multicast")
-                elif ip_address.startswith("ff05:"):
-                    prefix_analysis += _("site_local_multicast")
-                elif ip_address.startswith("ff0e:"):
-                    prefix_analysis += _("global_multicast")
-                else:
-                    prefix_analysis += _("other_multicast_type")
-            elif ip_address.startswith("fe80:"):
-                prefix_analysis = _("link_local_prefix")
-            elif ip_address.startswith("fc00:") or ip_address.startswith("fd00:"):
-                prefix_analysis = _("unique_local_prefix")
-            elif ip_address.startswith("2000:") or ip_address.startswith("2001:") or ip_address.startswith("2002:"):
-                prefix_analysis = _("global_unicast_prefix")
-            elif ip_address.startswith("::ffff:"):
-                prefix_analysis = _("ipv4_mapped_prefix")
-            elif ip_address.startswith("64:ff9b::"):
-                prefix_analysis = _("ipv4_ipv6_translation_prefix")
-            elif ip_address.startswith("2001:db8::"):
-                prefix_analysis = _("documentation_prefix")
-            elif ip_address == "::1":
-                prefix_analysis = _("loopback_address")
-            elif ip_address == "::":
-                prefix_analysis = _("unspecified_address")
-            elif ip_address.startswith("100::"):
-                prefix_analysis = _("blackhole_prefix")
-            elif ip_address.startswith("2001:10::"):
-                prefix_analysis = _("orchid_prefix")
-            elif ip_address.startswith("fec0:"):
-                prefix_analysis = _("deprecated_site_local_prefix")
-            else:
-                if ipv6_info.get("is_global"):
-                    prefix_analysis = _("global_unicast_prefix_generic")
-                elif ipv6_info.get("is_private"):
-                    prefix_analysis = _("private_prefix")
-                elif ipv6_info.get("is_link_local"):
-                    prefix_analysis = _("link_local_prefix_generic")
-                else:
-                    prefix_analysis = _("unknown_prefix")
+            # 直接从ipv6_info获取前缀分析
+            prefix_analysis = ipv6_info.get("prefix_analysis", "unknown_prefix")
             user_cidr = ipv6_info.get("prefix_length", ipv6_info.get("cidr", 128))
 
-            full_prefix_analysis = f"{prefix_analysis} {_('network_prefix')}：/{user_cidr}"
+            full_prefix_analysis = f"{_(prefix_analysis)} {_('network_prefix')}：/{user_cidr}"
             self.ipv6_info_tree.insert("", tk.END, values=(_("prefix_analysis"), full_prefix_analysis))
 
             # 使用原始IP地址的展开格式计算段数（总是8段）
@@ -5360,24 +5304,23 @@ class IPSubnetSplitterApp:
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_segment_details"), ""), tags=("section",))
-            exploded = original_ip_info.get("exploded", "")
-            if exploded:
-                segments = exploded.split(":")
-            else:
-                segments = ["0000"] * 8
-
-            for i, segment in enumerate(segments):
+            
+            # 直接从original_ip_info获取段详情
+            segment_details = original_ip_info.get("segment_details", [])
+            
+            for detail in segment_details:
+                segment = detail["segment"]
                 if segment:
-                    dec_value = int(segment, 16)
-                    bin_value = f"{dec_value:016b}"
+                    dec_value = detail["decimal"]
+                    bin_value = detail["binary"]
                     self.ipv6_info_tree.insert(
                         "",
                         tk.END,
-                        values=(_("segment_index").format(i + 1), _("segment_value").format(segment, dec_value, bin_value)),
+                        values=(_("segment_index").format(detail["index"]), _("segment_value").format(segment, dec_value, bin_value)),
                     )
                 else:
                     self.ipv6_info_tree.insert(
-                        "", tk.END, values=(_("segment_index").format(i + 1), _("segment_value_zero"))
+                        "", tk.END, values=(_("segment_index").format(detail["index"]), _("segment_value_zero"))
                     )
 
             self.ipv6_info_tree.insert("", tk.END, values=())
