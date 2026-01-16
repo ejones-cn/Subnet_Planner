@@ -7407,7 +7407,7 @@ class IPSubnetSplitterApp:
                 import os
                 
                 # 微信二维码图片路径（如果存在）
-                wechat_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "wechat_qr.png")
+                wechat_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "33144271b0126dc527a3697193132c8f.jpg")
                 
                 if os.path.exists(wechat_qr_path):
                     # 加载图片
@@ -7453,7 +7453,7 @@ class IPSubnetSplitterApp:
                 import os
                 
                 # 支付宝二维码图片路径（如果存在）
-                alipay_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "alipay_qr.png")
+                alipay_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "df981e51d905be6bfc2eda8666621d93.jpg")
                 
                 if os.path.exists(alipay_qr_path):
                     # 加载图片
