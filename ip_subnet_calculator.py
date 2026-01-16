@@ -709,6 +709,32 @@ def get_ip_info(ip_str):
             # 每4位分组，便于阅读
             binary_grouped = ' '.join([binary[i:i + 4] for i in range(0, 32, 4)])
 
+            # 计算RFC参考信息
+            ip_address_str = str(ip)
+            rfc_ref = ""
+            if ip.is_multicast:
+                rfc_ref = "RFC 4291, RFC 3306"
+            elif ip_address_str.startswith("fe80:"):
+                rfc_ref = "RFC 4291"
+            elif ip_address_str.startswith("fc00:") or ip_address_str.startswith("fd00:"):
+                rfc_ref = "RFC 4193"
+            elif ip_address_str.startswith("2000:") or ip_address_str.startswith("2001:") or ip_address_str.startswith("2002:"):
+                rfc_ref = "RFC 4291, RFC 7454"
+            elif "::ffff:" in ip_address_str:
+                rfc_ref = "RFC 4291"
+            elif ip_address_str.startswith("64:ff9b::"):
+                rfc_ref = "RFC 6052"
+            elif ip_address_str.startswith("2001:0db8::"):
+                rfc_ref = "RFC 3849"
+            elif ip_address_str.startswith("100::"):
+                rfc_ref = "RFC 6666"
+            elif ip_address_str.startswith("2001:10::"):
+                rfc_ref = "RFC 4843, RFC 7343"
+            elif ip.is_loopback or ip.is_unspecified:
+                rfc_ref = "RFC 4291"
+            elif ip_address_str.startswith("fec0:"):
+                rfc_ref = "RFC 3879"
+
             return {
                 "ip_address": str(ip),
                 "version": ip_version,
@@ -734,6 +760,7 @@ def get_ip_info(ip_str):
                 "compressed": ip.compressed,
                 "exploded": ip.exploded,
                 "reverse_dns": '.'.join(reversed(ip.exploded.replace(':', ''))),
+                "rfc_reference": rfc_ref
             }
 
     except ValueError as e:

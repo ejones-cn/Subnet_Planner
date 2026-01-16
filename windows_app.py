@@ -5448,18 +5448,8 @@ class IPSubnetSplitterApp:
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("rfc_standards_reference"), ""), tags=("section",))
-
-            rfc_ref = ""
-            if ipv6_info.get("is_multicast"):
-                rfc_ref = "RFC 4291, RFC 3306"
-            elif ip_address.startswith("fe80:"):
-                rfc_ref = "RFC 4291"
-            elif ip_address.startswith("fc00:"):
-                rfc_ref = "RFC 4193"
-            elif ip_address.startswith("2000:"):
-                rfc_ref = "RFC 4291, RFC 7454"
-            elif "::ffff:" in ip_address:
-                rfc_ref = "RFC 4291"
+            # 直接从ipv6_info字典中获取RFC参考信息
+            rfc_ref = ipv6_info.get("rfc_reference", "")
             self.ipv6_info_tree.insert("", tk.END, values=(_("related_rfc"), rfc_ref))
 
             if ip_address.startswith("::ffff:"):
