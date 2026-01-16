@@ -7370,14 +7370,14 @@ class IPSubnetSplitterApp:
             qr_window.grab_set()
             
             # 设置对话框大小和位置
-            qr_width = 400
-            qr_height = 450
+            qr_width = 450
+            qr_height = 380
             qr_x = dialog_x + (dialog_width // 2) - (qr_width // 2)
             qr_y = dialog_y + (dialog_height // 2) - (qr_height // 2)
             qr_window.geometry(f"{qr_width}x{qr_height}+{qr_x}+{qr_y}")
             
             # 创建内容框架
-            qr_content = ttk.Frame(qr_window, padding=(20, 20, 20, 15))
+            qr_content = ttk.Frame(qr_window, padding=(20, 20, 20, 10))
             qr_content.pack(fill=tk.BOTH, expand=True)
             
             # 添加标题
@@ -7389,17 +7389,17 @@ class IPSubnetSplitterApp:
             
             # 二维码容器
             qr_container = ttk.Frame(qr_content)
-            qr_container.pack(fill=tk.BOTH, expand=True)
+            qr_container.pack()
             
             # 添加微信二维码
             wechat_frame = ttk.Frame(qr_container)
-            wechat_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+            wechat_frame.pack(side=tk.LEFT, padx=(0, 10))
             
             wechat_label = ttk.Label(wechat_frame, 
                                    text=_("wechat"), 
                                    font=(font_family, 12, "bold"),
                                    style="About.TLabel")
-            wechat_label.pack(pady=(0, 10))
+            wechat_label.pack(pady=(0, 5))
             
             # 加载并显示微信二维码
             try:
@@ -7418,7 +7418,7 @@ class IPSubnetSplitterApp:
                     # 创建标签显示图片
                     wechat_qr_label = ttk.Label(wechat_frame, image=wechat_photo, style="About.TLabel")
                     wechat_qr_label.image = wechat_photo  # 保存引用，防止被GC回收
-                    wechat_qr_label.pack(pady=(20, 10))
+                    wechat_qr_label.pack(pady=(5, 5))
                 else:
                     # 微信二维码占位符
                     wechat_qr_placeholder = ttk.Label(wechat_frame, 
@@ -7426,7 +7426,7 @@ class IPSubnetSplitterApp:
                                                     font=(font_family, 10),
                                                     style="About.TLabel",
                                                     foreground="#999999")
-                    wechat_qr_placeholder.pack(pady=(20, 10))
+                    wechat_qr_placeholder.pack(pady=(5, 5))
             except Exception as e:
                 # 加载图片失败时显示占位符
                 print(f"加载微信二维码失败: {e}")
@@ -7435,17 +7435,17 @@ class IPSubnetSplitterApp:
                                                 font=(font_family, 10),
                                                 style="About.TLabel",
                                                 foreground="#999999")
-                wechat_qr_placeholder.pack(pady=(20, 10))
+                wechat_qr_placeholder.pack(pady=(5, 5))
             
             # 添加支付宝二维码
             alipay_frame = ttk.Frame(qr_container)
-            alipay_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+            alipay_frame.pack(side=tk.LEFT, padx=(5, 0))
             
             alipay_label = ttk.Label(alipay_frame, 
                                    text=_("alipay"), 
                                    font=(font_family, 12, "bold"),
                                    style="About.TLabel")
-            alipay_label.pack(pady=(0, 10))
+            alipay_label.pack(pady=(0, 5))
             
             # 加载并显示支付宝二维码
             try:
@@ -7464,7 +7464,7 @@ class IPSubnetSplitterApp:
                     # 创建标签显示图片
                     alipay_qr_label = ttk.Label(alipay_frame, image=alipay_photo, style="About.TLabel")
                     alipay_qr_label.image = alipay_photo  # 保存引用，防止被GC回收
-                    alipay_qr_label.pack(pady=(20, 10))
+                    alipay_qr_label.pack(pady=(5, 5))
                 else:
                     # 支付宝二维码占位符
                     alipay_qr_placeholder = ttk.Label(alipay_frame, 
@@ -7472,7 +7472,7 @@ class IPSubnetSplitterApp:
                                                     font=(font_family, 10),
                                                     style="About.TLabel",
                                                     foreground="#999999")
-                    alipay_qr_placeholder.pack(pady=(20, 10))
+                    alipay_qr_placeholder.pack(pady=(5, 5))
             except Exception as e:
                 # 加载图片失败时显示占位符
                 print(f"加载支付宝二维码失败: {e}")
@@ -7481,7 +7481,7 @@ class IPSubnetSplitterApp:
                                                 font=(font_family, 10),
                                                 style="About.TLabel",
                                                 foreground="#999999")
-                alipay_qr_placeholder.pack(pady=(20, 10))
+                alipay_qr_placeholder.pack(pady=(5, 5))
             
             # 添加提示信息
             tip_label = ttk.Label(qr_content, 
@@ -7489,7 +7489,7 @@ class IPSubnetSplitterApp:
                                font=(font_family, 10),
                                style="About.TLabel",
                                foreground="#666666")
-            tip_label.pack(pady=(15, 10))
+            tip_label.pack(pady=(5, 5))
             
             # 关闭按钮
             close_button = ttk.Button(qr_content, 
@@ -7505,7 +7505,7 @@ class IPSubnetSplitterApp:
                             command=show_donate_qr, 
                             width=12,
                             style="About.TButton")
-        qr_button.pack(side=tk.LEFT, padx=(0, 10))
+        qr_button.pack(side=tk.LEFT, padx=(0, 5))
 
         # 添加确定按钮，使用更大的宽度和更好的居中效果
         ok_button = ttk.Button(button_frame, 
@@ -7531,7 +7531,7 @@ class IPSubnetSplitterApp:
             style="About.TLabel",
             foreground="#888888"
         )
-        copyright_label.pack(anchor=tk.CENTER, pady=(5, 10))
+        copyright_label.pack(anchor=tk.CENTER, pady=(5, 5))
 
 
 

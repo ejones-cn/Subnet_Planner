@@ -5,7 +5,9 @@ a = Analysis(
     ['windows_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.'), ('icon.ico', '.')],
+    datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.'), ('icon.ico', '.'), 
+           ('Picture/33144271b0126dc527a3697193132c8f.jpg', 'Picture'),  # 微信二维码
+           ('Picture/df981e51d905be6bfc2eda8666621d93.jpg', 'Picture')],  # 支付宝二维码
     hiddenimports=['tkinter', 'reportlab', 'charset_normalizer', 'openpyxl', 'urllib', 'urllib3'],
     hookspath=[],
     hooksconfig={},
