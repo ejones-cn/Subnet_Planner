@@ -66,7 +66,15 @@ def _calculate_usable_addresses(network_range: int) -> int:
     Returns:
         int: 可用地址数
     """
-    return network_range - 2 if network_range > 2 else network_range
+    if network_range == 1:
+        # /32子网，只有一个地址，可用地址数为1
+        return 1
+    elif network_range == 2:
+        # /31子网，只有网络地址和广播地址，没有可用主机地址
+        return 0
+    else:
+        # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
+        return network_range - 2
 
 
 def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple[str, int, str]) -> None:

@@ -265,7 +265,15 @@ def get_subnet_info(network_str):
         host_range_end = str(network.broadcast_address - 1) if network.num_addresses > 2 else str(network.broadcast_address)
 
         # 获取可用主机数量
-        usable_addresses = network.num_addresses - 2 if network.num_addresses > 2 else network.num_addresses
+        if network.num_addresses == 1:
+            # /32子网，只有一个地址，可用地址数为1
+            usable_addresses = 1
+        elif network.num_addresses == 2:
+            # /31子网，只有网络地址和广播地址，没有可用主机地址
+            usable_addresses = 0
+        else:
+            # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
+            usable_addresses = network.num_addresses - 2
 
         return {
             "network": str(network.network_address),
@@ -597,9 +605,23 @@ def get_ip_info(ip_str):
                 subnet_mask = str(network.netmask)
                 cidr = network.prefixlen
                 total_hosts = network.num_addresses
-                usable_hosts = total_hosts - 2 if total_hosts > 2 else total_hosts
-                first_host = str(network.network_address + 1) if total_hosts > 2 else str(network.network_address)
-                last_host = str(network.broadcast_address - 1) if total_hosts > 2 else str(network.broadcast_address)
+                
+                # 计算可用主机数量
+                if total_hosts == 1:
+                    # /32子网，只有一个地址，可用地址数为1
+                    usable_hosts = 1
+                    first_host = str(network.network_address)
+                    last_host = str(network.network_address)
+                elif total_hosts == 2:
+                    # /31子网，只有网络地址和广播地址，没有可用主机地址
+                    usable_hosts = 0
+                    first_host = str(network.network_address)
+                    last_host = str(network.broadcast_address)
+                else:
+                    # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
+                    usable_hosts = total_hosts - 2
+                    first_host = str(network.network_address + 1)
+                    last_host = str(network.broadcast_address - 1)
             else:
                 # 解析为IPv4地址
                 ip = ipaddress.IPv4Address(ip_str)
@@ -703,9 +725,23 @@ def get_ip_info(ip_str):
                 subnet_mask = str(network.netmask)
                 cidr = network.prefixlen
                 total_hosts = network.num_addresses
-                usable_hosts = total_hosts - 2 if total_hosts > 2 else total_hosts
-                first_host = str(network.network_address + 1) if total_hosts > 2 else str(network.network_address)
-                last_host = str(network.broadcast_address - 1) if total_hosts > 2 else str(network.broadcast_address)
+                
+                # 计算可用主机数量（IPv6规则）
+                if total_hosts == 1:
+                    # /128子网，只有一个地址，可用地址数为1
+                    usable_hosts = 1
+                    first_host = str(network.network_address)
+                    last_host = str(network.network_address)
+                elif total_hosts == 2:
+                    # /127子网，有2个地址，IPv6没有广播地址，所以可用地址数为2
+                    usable_hosts = 2
+                    first_host = str(network.network_address)
+                    last_host = str(network.broadcast_address)
+                else:
+                    # 其他情况，可用地址数 = 总地址数 - 1（只减去网络地址，IPv6没有广播地址）
+                    usable_hosts = total_hosts - 1
+                    first_host = str(network.network_address + 1)
+                    last_host = str(network.broadcast_address)
             else:
                 # 解析为IPv6地址
                 ip = ipaddress.IPv6Address(ip_str)
