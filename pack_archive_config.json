@@ -1,0 +1,14 @@
+{
+    "source_path": "F:\\trae_projects\\Subnet_Planner",
+    "destination_dir": "F:\\trae_projects",
+    "exclude_items": [
+        ".venv",
+        ".git",
+        "build",
+        "__pycache__",
+        "Picture.egg-info"
+    ],
+    "version_file": "version.py",
+    "timestamp_format": "yyyyMMddHHmmss",
+    "filename_prefix": "Subnet_Planner"
+}
