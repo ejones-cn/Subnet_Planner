@@ -27,7 +27,7 @@ class Translator:
     """翻译类，提供简洁高效的翻译功能"""
     
     def __init__(self):
-        self._current_language: str = "zh"
+        self._current_language: str = self._detect_system_language()
         self._translations_file: str = get_resource_path('translations.json')
         # 默认翻译字典 - 只保留最基本的翻译键作为最后的回退
         # 完整的翻译内容已经移到了 translations.json 文件中
@@ -39,6 +39,53 @@ class Translator:
             "close": {"zh": "关闭", "en": "Close", "zh_tw": "關閉", "ja": "閉じる", "ko": "닫기"}
         }
         self._translations: dict[str, dict[str, str]] = self._load_translations()
+    
+    def _detect_system_language(self) -> str:
+        """检测系统语言
+        
+        Returns:
+            检测到的语言代码，如果无法检测则返回默认语言 "zh"
+        """
+        try:
+            # 尝试使用 locale 模块检测系统语言
+            import locale
+            lang_code, _ = locale.getdefaultlocale()
+            if lang_code:
+                # 处理语言代码映射
+                lang_code = lang_code.lower()
+                if 'zh' in lang_code:
+                    if 'tw' in lang_code or 'hk' in lang_code or 'mo' in lang_code:
+                        return 'zh_tw'
+                    return 'zh'
+                elif 'en' in lang_code:
+                    return 'en'
+                elif 'ja' in lang_code:
+                    return 'ja'
+                elif 'ko' in lang_code:
+                    return 'ko'
+            
+            # 尝试使用 ctypes 检测 Windows 系统语言
+            try:
+                import ctypes
+                lcid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+                # LCID 映射
+                lcid_map = {
+                    0x804: 'zh',      # 中文简体
+                    0x404: 'zh_tw',   # 中文繁体
+                    0x409: 'en',      # 英文
+                    0x411: 'ja',      # 日语
+                    0x412: 'ko'       # 韩语
+                }
+                if lcid in lcid_map:
+                    return lcid_map[lcid]
+            except (ImportError, AttributeError):
+                # 非 Windows 系统或无法使用 ctypes
+                pass
+        except Exception:
+            # 任何异常都返回默认语言
+            pass
+        
+        return 'zh'
     
     def _load_translations(self) -> dict[str, dict[str, str]]:
         """从JSON文件加载翻译数据"""
