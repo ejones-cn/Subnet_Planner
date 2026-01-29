@@ -476,6 +476,13 @@
     "ja": "サブネット統合リスト",
     "ko": "서브넷 병합 목록"
   },
+  "overlap_subnets": {
+    "zh": "重叠检测列表",
+    "zh_tw": "重疊檢測列表",
+    "en": "Overlap Detection List",
+    "ja": "重複検出リスト",
+    "ko": "오버랩 감지 목록"
+  },
   "merge_subnet": {
     "zh": "合并子网",
     "zh_tw": "合併子網",

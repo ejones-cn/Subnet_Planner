@@ -5026,7 +5026,7 @@ class IPSubnetSplitterApp:
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 左侧：子网列表
-        input_frame = ttk.LabelFrame(left_frame, text=_("merge_subnets"), padding=(10, 10, 0, 10))
+        input_frame = ttk.LabelFrame(left_frame, text=_("overlap_subnets"), padding=(10, 10, 0, 10))
         input_frame.pack(fill=tk.BOTH, expand=True)
 
         # 子网输入文本框和滚动条
