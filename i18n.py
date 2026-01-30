@@ -13,6 +13,13 @@ import os
 import sys
 from typing import cast
 
+# 提前导入ctypes，以便类型检查器能识别其类型
+try:
+    import ctypes
+except ImportError:
+    # 在非Windows系统上，ctypes可能不可用
+    ctypes = None
+
 
 # 处理PyInstaller打包后的文件路径
 def get_resource_path(relative_path: str) -> str:
@@ -66,18 +73,18 @@ class Translator:
             
             # 尝试使用 ctypes 检测 Windows 系统语言
             try:
-                import ctypes
-                lcid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
-                # LCID 映射
-                lcid_map = {
-                    0x804: 'zh',      # 中文简体
-                    0x404: 'zh_tw',   # 中文繁体
-                    0x409: 'en',      # 英文
-                    0x411: 'ja',      # 日语
-                    0x412: 'ko'       # 韩语
-                }
-                if lcid in lcid_map:
-                    return lcid_map[lcid]
+                if ctypes is not None:
+                    lcid = cast(int, ctypes.windll.kernel32.GetUserDefaultUILanguage())
+                    # LCID 映射
+                    lcid_map = {
+                        0x804: 'zh',      # 中文简体
+                        0x404: 'zh_tw',   # 中文繁体
+                        0x409: 'en',      # 英文
+                        0x411: 'ja',      # 日语
+                        0x412: 'ko'       # 韩语
+                    }
+                    if lcid in lcid_map:
+                        return lcid_map[lcid]
             except (ImportError, AttributeError):
                 # 非 Windows 系统或无法使用 ctypes
                 pass
