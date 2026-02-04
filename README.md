@@ -13,7 +13,7 @@
 - **剩余网段自动计算**：切分后自动生成剩余可用的网段列表
 - **全面的参数计算**：自动计算网络地址、广播地址、可用IP范围、子网掩码、通配符掩码等
 - **清晰的结果展示**：直观展示切分网段和剩余网段的详细信息
-- **多种界面支持**：提供Web界面和Windows GUI界面，满足不同使用场景
+- **友好界面**：提供Windows GUI界面，操作简单直观
 - **多国语言支持**：支持中文、英文和日语三种语言，可实时切换
 - **图表可视化**：提供网段分布的图表可视化
 - **结果导出功能**：支持将计算结果导出为文本文件和PDF文件
@@ -89,35 +89,24 @@ python windows_app.py
 ```
 Subnet_Planner/
 ├── windows_app.py           # Windows GUI界面主程序
-├── web_app.py               # Web界面主程序
 ├── ip_subnet_calculator.py  # IP子网计算核心模块
 ├── chart_utils.py           # 图表可视化工具模块
 ├── export_utils.py          # 结果导出工具模块
-├── version.py               # Windows版版本号管理模块
-├── web_version.py           # Web版版本号管理模块
-├── requirements.txt         # 项目依赖
+├── version.py               # 版本号管理模块
 ├── README.md                # 项目说明文档
 ├── run_app.bat              # Windows GUI界面快速启动脚本
-├── run_web_app.bat          # Web界面快速启动脚本
 ├── refresh_icon_cache.bat   # 刷新图标缓存脚本
 ├── bump_version.py          # 自动版本号更新脚本
 ├── verify_versions.py       # 版本号一致性验证工具
 ├── simple_pack.py           # 打包脚本
-├── update_web_app_version.py # 更新Web应用版本脚本
 ├── install_deps.bat         # 安装依赖脚本
-├── create_self_signed_cert.bat # 创建自签名证书脚本
 ├── 子网规划师.spec          # PyInstaller打包配置文件
 ├── dist/                    # 打包后的可执行文件目录
-│   ├── 子网规划师.exe      # Windows可执行文件
-│   └── icon.ico             # 应用程序图标
+│   ├── SubnetPlannerV2.5.4.exe      # Windows可执行文件
+│   └── SubnetPlannerV2.5.5.exe      # Windows可执行文件
 ├── icon.ico                 # 应用程序图标
-├── icon.svg                 # 应用程序图标SVG源文件
-├── icon_16.png              # 16x16图标
-├── icon_32.png              # 32x32图标
-├── icon_48.png              # 48x48图标
-├── icon_64.png              # 64x64图标
-├── icon_128.png             # 128x128图标
-├── icon_256.png             # 256x256图标
+├── icon.png                 # 应用程序图标
+├── icon-O.ico               # 应用程序图标
 ├── IMPLEMENTATION_SUMMARY.md # 实现摘要文档
 ├── OPTIMIZATION_REPORT.md    # 优化报告文档
 ├── ENHANCEMENT_PLAN.md       # 增强计划文档
@@ -246,13 +235,12 @@ Subnet_Planner/
 
 1. 确保输入的IP地址和CIDR前缀长度格式正确
 2. 子网切分时，确保切分网段必须是父网段的子集，否则会导致计算错误
-3. Web界面需要Python环境和Flask框架支持，运行前请确保已安装所有依赖
-4. Windows GUI界面需要Python环境和Tkinter库支持，Tkinter通常随Python一起安装
-5. 如果遇到防火墙问题，请确保允许Python或生成的可执行文件通过防火墙
-6. 工具目前主要支持IPv4地址，不支持IPv6地址
-7. 在使用批量处理功能时，确保输入文件格式正确（每行一个网段）
-8. 结果导出功能仅在Windows GUI版本中可用
-9. PDF导出功能需要安装reportlab库
+3. Windows GUI界面需要Python环境和Tkinter库支持，Tkinter通常随Python一起安装
+4. 如果遇到防火墙问题，请确保允许Python或生成的可执行文件通过防火墙
+5. 工具目前主要支持IPv4地址，不支持IPv6地址
+6. 在使用批量处理功能时，确保输入文件格式正确（每行一个网段）
+7. 结果导出功能仅在Windows GUI版本中可用
+8. PDF导出功能需要安装reportlab库
 
 ## 📝 更新日志
 
@@ -325,7 +313,6 @@ Subnet_Planner/
 - 功能增强：添加国际化支持，支持多语言切换
 - 架构优化：模块化重构，将图表和导出功能分离为独立模块
 - 代码质量：优化代码结构和类型注解
-- 版本管理：分离Web版和Windows版版本号管理
 
 ### v1.4.5 (2025-12-22)
 
@@ -379,8 +366,6 @@ Subnet_Planner/
 - 代码质量：移除未使用的代码和冗余变量
 - 构建更新：更新代码检查工具配置
 - 功能增强：添加脚本修复未使用参数和检查未使用函数
-- 版本管理：分离Web版和Windows版版本号管理
-- 文档更新：更新分离版本号的计划文档
 - 布局优化：统一界面元素样式，优化输入框和按钮布局
 
 ### v1.2.1 (2025-12-11)
@@ -394,7 +379,6 @@ Subnet_Planner/
 
 ### v1.2.0 (2025-12-10)
 
-- 添加了`run_web_app.bat`批处理脚本，支持快速启动Web界面
 - 更新了文档结构，优化了使用说明
 - 新增了`dist`目录说明，包含打包后的可执行文件
 - 添加了`refresh_icon_cache.bat`脚本，用于刷新Windows图标缓存
@@ -403,7 +387,6 @@ Subnet_Planner/
 
 ### v1.1.0 (2025-12-05)
 
-- 新增了Web界面支持
 - 优化了子网计算算法
 - 改进了结果展示格式
 - 修复了已知bug
