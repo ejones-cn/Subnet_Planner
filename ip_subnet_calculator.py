@@ -19,10 +19,63 @@
 # 导入标准库模块
 import re
 import ipaddress
+import math
 
 # 导入本地模块
 from version import get_version
 from i18n import _
+
+
+def format_large_number(num, use_scientific=True):
+    """格式化大数值，可选择使用科学计数法或千位分隔符
+    
+    参数:
+        num: 要格式化的数值
+        use_scientific: 是否使用科学计数法，默认为True
+        
+    返回:
+        str: 格式化后的字符串
+    """
+    try:
+        # 转换为整数
+        num = int(num)
+        
+        # 根据参数决定格式化方式
+        if use_scientific and num >= 1000000:  # 10^6
+            # 计算科学计数法的实际值，保留2位小数但不四舍五入
+            # 使用math模块进行精确计算，避免浮点精度问题
+            
+            # 计算指数（10的幂次），使用更可靠的方式
+            if num == 0:
+                exp_int = 0
+            else:
+                # 使用字符串转换来避免浮点精度问题
+                exp_int = len(str(abs(num))) - 1
+            
+            # 计算系数（保留2位小数的截断值）
+            coeff = num / (10 ** exp_int)
+            coeff_trunc = math.floor(coeff * 100) / 100
+            
+            # 计算精确值用于比较
+            exact_value = int(coeff_trunc * (10 ** exp_int))
+            
+            # 使用整数运算计算truncated_num，避免浮点精度误差
+            truncated_num = int(coeff_trunc * 100) * (10 ** (exp_int - 2))
+            
+            # 比较原始数值和精确值，决定符号
+            if num == exact_value:
+                symbol = "="
+            else:
+                symbol = "≈"
+            
+            # 使用截断后的系数和原始指数重新组合科学计数法字符串
+            return f"{symbol}{coeff_trunc:.2f}e{exp_int:+d}"
+        else:
+            return f"{num:,}"
+    except (ValueError, TypeError):
+        # 如果转换失败，返回原始值的字符串形式
+        return str(num)
+
 
 # 模块版本号
 __version__ = get_version()
@@ -72,7 +125,7 @@ def handle_ip_subnet_error(error):
         (lambda msg: "At most 3 characters permitted" in msg, 'invalid_ipv4_octet_too_long'),
         (lambda msg: "At most 4 characters permitted" in msg, 'invalid_ipv6_group_too_long'),
         (lambda msg: "At most" in msg and "characters permitted" in msg, 'invalid_ipv6_characters_limit'),
-        ]
+    ]
 
     # 检查错误模式
     for match_func, translation_key in error_patterns:

@@ -28,9 +28,11 @@ from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
 # 本地模块
+from ip_subnet_calculator import format_large_number
 from ip_subnet_calculator import (
     split_subnet,
     ip_to_int,
+    int_to_ip,
     get_subnet_info,
     suggest_subnet_planning,
     merge_subnets,
@@ -1217,7 +1219,7 @@ class IPSubnetSplitterApp:
         )
         # 初始化子网切分的历史记录列表
         self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
-        self.split_networks = ["10.21.50.0/23", "192.168.1.0/24", "2001:0db8::/64", "fe80::1/128"]  # 提供IPv4和IPv6初始记录
+        self.split_networks = ["10.21.50.0/23", "172.20.180.0/24", "2001:0db8::/64", "fe80::1/128"]  # 提供IPv4和IPv6初始记录
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
@@ -1329,6 +1331,8 @@ class IPSubnetSplitterApp:
         col_width = tree.column(col, "width")
         col_stretch = tree.column(col, "stretch")
         return col_width == 0 and not col_stretch
+    
+
     
     def adjust_allocated_tree_width(self):
         """调整已分配子网表表格的宽度，使其根据内容自动调整"""
@@ -1552,26 +1556,18 @@ class IPSubnetSplitterApp:
 
         # 垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
-            self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
+            self.remaining_frame, orient=tk.VERTICAL
         )
         # 水平滚动条
         self.remaining_scroll_h = ttk.Scrollbar(
-            self.remaining_frame, orient=tk.HORIZONTAL, command=self.remaining_tree.xview
+            self.remaining_frame, orient=tk.HORIZONTAL
         )
 
-        # 直接配置表格的滚动命令，不使用通用函数
-        self.remaining_tree.configure(
-            yscrollcommand=self.remaining_scroll_v.set,
-            xscrollcommand=self.remaining_scroll_h.set
-        )
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.remaining_frame, self.remaining_tree, self.remaining_scroll_v, no_scrollbar_padx=(0, 0))
         
-        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
-        self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
-        self.remaining_scroll_h.grid(row=1, column=0, sticky=tk.EW)
-        
-        # 配置remaining_frame的grid布局，确保水平滚动条有空间显示
-        self.remaining_frame.grid_rowconfigure(1, weight=0)
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.remaining_frame, self.remaining_tree, self.remaining_scroll_h)
         
         # 配置remaining_frame的列布局
         self.remaining_frame.grid_columnconfigure(0, weight=1)
@@ -1894,22 +1890,15 @@ class IPSubnetSplitterApp:
             self.allocated_frame, orient=tk.HORIZONTAL
         )
 
-        # 直接配置滚动条，不使用通用函数
-        allocated_v_scrollbar.config(command=self.allocated_tree.yview)
-        allocated_h_scrollbar.config(command=self.allocated_tree.xview)
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.allocated_frame, self.allocated_tree, allocated_v_scrollbar, no_scrollbar_padx=(0, 0))
         
-        # 配置表格的滚动命令
-        self.allocated_tree.configure(yscrollcommand=allocated_v_scrollbar.set, xscrollcommand=allocated_h_scrollbar.set)
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.allocated_frame, self.allocated_tree, allocated_h_scrollbar)
         
         # 配置allocated_frame的grid布局
         self.allocated_frame.grid_rowconfigure(0, weight=1)
         self.allocated_frame.grid_columnconfigure(0, weight=1)
-        self.allocated_frame.grid_rowconfigure(1, weight=0)
-        
-        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
-        self.allocated_tree.grid(row=0, column=0, sticky="nsew")
-        allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
-        allocated_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.allocated_tree)
         
@@ -1959,22 +1948,15 @@ class IPSubnetSplitterApp:
             orient=tk.HORIZONTAL,
         )
 
-        # 直接配置滚动条，不使用通用函数
-        remaining_v_scrollbar.config(command=self.planning_remaining_tree.yview)
-        remaining_h_scrollbar.config(command=self.planning_remaining_tree.xview)
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.planning_remaining_frame, self.planning_remaining_tree, remaining_v_scrollbar, no_scrollbar_padx=(0, 0))
         
-        # 配置表格的滚动命令
-        self.planning_remaining_tree.configure(yscrollcommand=remaining_v_scrollbar.set, xscrollcommand=remaining_h_scrollbar.set)
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.planning_remaining_frame, self.planning_remaining_tree, remaining_h_scrollbar)
         
         # 配置planning_remaining_frame的grid布局
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
         self.planning_remaining_frame.grid_columnconfigure(0, weight=1)
-        self.planning_remaining_frame.grid_rowconfigure(1, weight=0)
-        
-        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
-        self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
-        remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
-        remaining_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.planning_remaining_tree)
         
@@ -3634,6 +3616,16 @@ class IPSubnetSplitterApp:
             return
 
         try:
+            # 自动修正CIDR格式（将IP地址转换为正确的网络地址）
+            parent_network = ipaddress.ip_network(parent, strict=False)
+            corrected_parent = str(parent_network)
+            
+            # 如果修正后的地址与原始地址不同，更新输入框
+            if corrected_parent != parent:
+                self.planning_parent_entry.delete(0, tk.END)
+                self.planning_parent_entry.insert(0, corrected_parent)
+                parent = corrected_parent
+            
             # 执行子网规划
             # 转换子网需求格式以匹配函数参数要求
             formatted_requirements = [{'name': name, 'hosts': hosts} for name, hosts in subnet_requirements]
@@ -3653,13 +3645,15 @@ class IPSubnetSplitterApp:
             # 检测IP版本
             is_ipv6 = ipaddress.ip_network(parent).version == 6
             
-            # 根据IP版本显示或隐藏通配符掩码列
+            # 根据IP版本显示或隐藏通配符掩码列和子网掩码列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列
+                # IPv6隐藏通配符掩码列和子网掩码列
                 self.allocated_tree.column("wildcard", width=0, stretch=False)
+                self.allocated_tree.column("netmask", width=0, stretch=False)
             else:
-                # IPv4显示通配符掩码列
+                # IPv4显示通配符掩码列和子网掩码列
                 self.allocated_tree.column("wildcard", width=100, stretch=True)
+                self.allocated_tree.column("netmask", width=100, stretch=True)
             
             # 显示已分配子网
             for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
@@ -3672,8 +3666,8 @@ class IPSubnetSplitterApp:
                         i,
                         subnet["name"],
                         subnet["cidr"],
-                        subnet["required_hosts"],
-                        subnet["available_hosts"],
+                        format_large_number(subnet["required_hosts"]),
+                        format_large_number(subnet["available_hosts"]),
                         subnet["info"]["network"],
                         subnet["info"]["netmask"],
                         subnet["info"]["wildcard"],
@@ -3686,13 +3680,15 @@ class IPSubnetSplitterApp:
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
 
-            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列
+            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列和子网掩码列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列
+                # IPv6隐藏通配符掩码列和子网掩码列
                 self.planning_remaining_tree.column("wildcard", width=0, stretch=False)
+                self.planning_remaining_tree.column("netmask", width=0, stretch=False)
             else:
-                # IPv4显示通配符掩码列
+                # IPv4显示通配符掩码列和子网掩码列
                 self.planning_remaining_tree.column("wildcard", width=100, stretch=True)
+                self.planning_remaining_tree.column("netmask", width=100, stretch=True)
             
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
@@ -3707,7 +3703,7 @@ class IPSubnetSplitterApp:
                         subnet["netmask"],
                         subnet["wildcard"],
                         subnet["broadcast"],
-                        subnet["usable_addresses"],  # 修正为正确的字段名
+                        format_large_number(subnet["usable_addresses"]),  # 修正为正确的字段名
                     ),
                     tags=tags,
                 )
@@ -3975,11 +3971,30 @@ class IPSubnetSplitterApp:
             # 清空表格并显示错误信息
             self.clear_result()
             self.clear_tree_items(self.split_tree)
-            self.split_tree.insert("", tk.END, values=(_("error"), validation_result['error']), tags=("error",))
             self.show_error(_("input_error"), validation_result['error'])
             return
 
         try:
+            # 自动修正CIDR格式（将IP地址转换为正确的网络地址）
+            parent_network = ipaddress.ip_network(parent, strict=False)
+            corrected_parent = str(parent_network)
+            
+            # 如果修正后的地址与原始地址不同，更新输入框
+            if corrected_parent != parent:
+                self.parent_entry.delete(0, tk.END)
+                self.parent_entry.insert(0, corrected_parent)
+                parent = corrected_parent
+            
+            # 自动修正切分段CIDR格式
+            split_network = ipaddress.ip_network(split, strict=False)
+            corrected_split = str(split_network)
+            
+            # 如果修正后的地址与原始地址不同，更新输入框
+            if corrected_split != split:
+                self.split_entry.delete(0, tk.END)
+                self.split_entry.insert(0, corrected_split)
+                split = corrected_split
+            
             # 调用切分函数
             result = split_subnet(parent, split)
 
@@ -3989,7 +4004,7 @@ class IPSubnetSplitterApp:
 
             if "error" in result:
                 # 显示错误信息
-                self.split_tree.insert("", tk.END, values=(_("error"), result["error"]), tags=("error",))
+                self.show_error(_("error"), result["error"])
                 return
 
             # 添加切分段信息，同时设置斑马条纹标签
@@ -4017,9 +4032,9 @@ class IPSubnetSplitterApp:
             row_index += 1
             self.split_tree.insert("", tk.END, values=(_("end_address"), split_info["host_range_end"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("total_addresses"), split_info["num_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            self.split_tree.insert("", tk.END, values=(_("total_addresses"), format_large_number(split_info["num_addresses"], use_scientific=False)), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("usable_addresses"), split_info["usable_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            self.split_tree.insert("", tk.END, values=(_("usable_addresses"), format_large_number(split_info["usable_addresses"], use_scientific=False)), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
             self.split_tree.insert("", tk.END, values=(_("prefix_length"), split_info["prefixlen"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
@@ -4028,13 +4043,15 @@ class IPSubnetSplitterApp:
             # 检测IP版本
             is_ipv6 = ipaddress.ip_network(parent).version == 6
             
-            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列
+            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列和子网掩码列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列
+                # IPv6隐藏通配符掩码列和子网掩码列
                 self.remaining_tree.column("wildcard", width=0, stretch=False)
+                self.remaining_tree.column("netmask", width=0, stretch=False)
             else:
-                # IPv4显示通配符掩码列
+                # IPv4显示通配符掩码列和子网掩码列
                 self.remaining_tree.column("wildcard", width=100, stretch=True)
+                self.remaining_tree.column("netmask", width=100, stretch=True)
             
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
@@ -4050,7 +4067,7 @@ class IPSubnetSplitterApp:
                             network["netmask"],
                             network.get("wildcard", ""),
                             network["broadcast"],
-                            network["usable_addresses"],
+                            format_large_number(network["usable_addresses"]),
                         ),
                         tags=tags,
                     )
@@ -4968,6 +4985,41 @@ class IPSubnetSplitterApp:
         # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
 
+    def create_horizontal_scrollbar(self, parent_frame, treeview, scrollbar):
+        """
+        创建带自动隐藏功能的水平滚动条
+
+        参数:
+            parent_frame: Treeview和滚动条的父容器
+            treeview: 要添加滚动条的Treeview组件
+            scrollbar: 水平滚动条组件
+        """
+        # 创建滚动条回调函数，实现自动隐藏
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+            
+            # 检查是否需要滚动条
+            xview = treeview.xview()
+            need_scrollbar = not (float(xview[0]) <= 0.0 and float(xview[1]) >= 1.0)
+            
+            if need_scrollbar:
+                # 显示水平滚动条
+                scrollbar.grid(row=1, column=0, sticky=tk.EW)
+            else:
+                # 隐藏水平滚动条
+                scrollbar.grid_remove()
+        
+        # 配置水平滚动条
+        scrollbar.config(command=treeview.xview)
+        treeview.configure(xscrollcommand=scrollbar_callback)
+        
+        # 配置父容器的grid布局
+        parent_frame.grid_rowconfigure(1, weight=0)
+        
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
+
     def create_scrollable_treeview_with_grid(self, parent_frame, treeview, scrollbar,
                                            tree_row=0, tree_column=0, scrollbar_row=0, scrollbar_column=1,
                                            tree_padx=(0, 0), scrollbar_padx=(0, 0), no_scrollbar_padx=(0, 10)):
@@ -5650,17 +5702,25 @@ class IPSubnetSplitterApp:
             cidr = self.ip_cidr_var.get()
 
             network_str = None
-            if cidr:
+            # 优先使用子网掩码计算网络地址
+            if subnet_mask:
                 try:
-                    network_str = f"{ip}/{cidr}"
+                    # 使用IP地址和子网掩码计算网络地址
+                    ip_int = ip_to_int(ip)
+                    mask_int = ip_to_int(subnet_mask)
+                    network_int = ip_int & mask_int
+                    network_address = int_to_ip(network_int)
+                    prefix_len = bin(mask_int).count('1')
+                    network_str = f"{network_address}/{prefix_len}"
                 except (ValueError, TypeError):
                     pass
 
-            if not network_str and subnet_mask:
+            # 如果子网掩码计算失败，再尝试使用CIDR
+            if not network_str and cidr:
                 try:
-                    mask_int = ip_to_int(subnet_mask)
-                    prefix_len = bin(mask_int).count('1')
-                    network_str = f"{ip}/{prefix_len}"
+                    # 使用CIDR直接构建网络地址
+                    temp_network = ipaddress.ip_network(f"{ip}/{cidr}", strict=False)
+                    network_str = str(temp_network)
                 except (ValueError, TypeError):
                     pass
 
@@ -5669,7 +5729,10 @@ class IPSubnetSplitterApp:
 
             if network_str:
                 try:
-                    subnet_info = get_subnet_info(network_str)
+                    # 自动修正CIDR格式（将IP地址转换为正确的网络地址）
+                    corrected_network = ipaddress.ip_network(network_str, strict=False)
+                    corrected_network_str = str(corrected_network)
+                    subnet_info = get_subnet_info(corrected_network_str)
                     basic_info = False
                 except (ValueError, TypeError):
                     pass

@@ -319,8 +319,8 @@ class StyleManager:
         self.style.configure("TCombobox", **base_font_style)
         self.style.map(
             "TCombobox",
-            selectbackground=[("focus", "#4A6984"), ("!focus", "#4A6984")],
-            selectforeground=[("focus", "white"), ("!focus", "white")],
+            selectbackground=[("focus", "#4A6984"), ("!focus", "#ffffff")],
+            selectforeground=[("focus", "white"), ("!focus", "black")],
         )
 
     def get_colored_notebook_font_settings(self):

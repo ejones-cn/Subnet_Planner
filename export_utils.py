@@ -88,6 +88,20 @@ class ExportUtils:
     _font_cache: dict[str, str] = {}
     _font_path_cache: str | None = None
     _font_path_lang: str | None = None
+    
+    def format_large_number(self, num, use_scientific=True):
+        """格式化大数值，可选择使用科学计数法或千位分隔符
+        
+        Args:
+            num: 要格式化的数值
+            use_scientific: 是否使用科学计数法，默认为True
+            
+        Returns:
+            str: 格式化后的字符串
+        """
+        # 导入ip_subnet_calculator中的format_large_number函数，统一使用一个实现
+        from ip_subnet_calculator import format_large_number
+        return format_large_number(num, use_scientific)
 
     @classmethod
     def clear_font_cache(cls) -> None:
@@ -881,7 +895,7 @@ class ExportUtils:
                     Paragraph(str(full_parent_info.get("wildcard", "")), table_text_style),
                     Paragraph(str(full_parent_info.get("broadcast", "")), table_text_style),
                     Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
-                    Paragraph(f"{full_parent_info.get('usable_addresses', 0):,}", table_text_style),
+                    Paragraph(self.format_large_number(full_parent_info.get('usable_addresses', 0)), table_text_style),
                     Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
                 ])
                 
@@ -1326,7 +1340,7 @@ class ExportUtils:
 
         usable_addresses = parent_range - 2 if parent_range > 2 else parent_range
         segment_text = f"{translate('parent_network')}: {parent_cidr}"
-        address_text = f"{translate('usable_addresses')}: {usable_addresses:,}"
+        address_text = f"{translate('usable_addresses')}: {self.format_large_number(usable_addresses)}"
 
         def get_centered_y(box_y, box_height, _, _font):
             text_y = box_y + box_height // 2 - 38
@@ -1376,7 +1390,7 @@ class ExportUtils:
                 segment_text = f"{translate('split_segment')}: {name}"
                 
                 usable_addresses = network_range - 2 if network_range > 2 else network_range
-                address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+                address_text = f"{translate("usable_addresses")}: {self.format_large_number(usable_addresses)}"
                 
                 segment_bbox = draw.textbbox((0, 0), segment_text, font=bold_text_font)
                 segment_text_y = get_centered_y(y, bar_height, segment_bbox, bold_text_font)
@@ -1403,7 +1417,7 @@ class ExportUtils:
                     + bar_height], fill=split_color, outline=None, width=0)
 
                 usable_addresses = network_range - 2 if network_range > 2 else network_range
-                address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+                address_text = f"{translate("usable_addresses")}: {self.format_large_number(usable_addresses)}"
 
                 segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
                 segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)
@@ -1452,7 +1466,7 @@ class ExportUtils:
             else:
                 segment_text = f"{translate('segment')} {i + 1}: {name}"
                 
-            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {self.format_large_number(usable_addresses)}"
 
             segment_bbox = draw.textbbox((0, 0), segment_text, font=text_font)
             segment_text_y = get_centered_y(y, bar_height, segment_bbox, text_font)

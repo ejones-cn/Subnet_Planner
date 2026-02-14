@@ -14,6 +14,7 @@ from style_manager import get_current_font_settings
 
 # 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
 from i18n import _ as translate  # type: ignore
+from ip_subnet_calculator import format_large_number
 
 # 定义一个别名 _trans 用于翻译，避免与局部变量 _ 冲突
 _trans = translate
@@ -90,6 +91,9 @@ def _calculate_usable_addresses(network_range: int, is_ipv6: bool = False) -> in
         else:
             # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
             return network_range - 2
+
+
+
 
 
 def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple[str, int, str]) -> None:
@@ -212,7 +216,7 @@ def _draw_parent_segment(
     font = (font_family, 11, "bold")
     _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-    address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+    address_text = f"{translate("usable_addresses")}: {format_large_number(usable_addresses)}"
     text_x = min(x + 450, x + chart_width - 150)
     _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -286,7 +290,7 @@ def _draw_network_segments(
             font = (font_family, 9, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {format_large_number(usable_addresses)}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -308,7 +312,7 @@ def _draw_network_segments(
             font = (font_family, 11, "bold")
             _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-            address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+            address_text = f"{translate("usable_addresses")}: {format_large_number(usable_addresses)}"
             text_x = min(x + 450, x + chart_width - 150)
             _draw_segment_text(canvas, address_text, text_x, text_y, font)
 
@@ -385,7 +389,7 @@ def _draw_remaining_segments(
         font = (font_family, 9, "bold")
         _draw_segment_text(canvas, segment_text, text_x, text_y, font)
 
-        address_text = f"{translate("usable_addresses")}: {usable_addresses:,}"
+        address_text = f"{translate("usable_addresses")}: {format_large_number(usable_addresses)}"
         text_x = min(x + 450, x + chart_width - 150)
         _draw_segment_text(canvas, address_text, text_x, text_y, font)
 

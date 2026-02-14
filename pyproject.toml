@@ -25,4 +25,5 @@ ignore = [
     "style_manager.py",  # style_manager.py 包含 tkinter 样式配置调用
     "ip_subnet_calculator.py",  # ip_subnet_calculator.py 包含 tkinter UI 组件调用
     "version_info.py",  # version_info.py 只包含 PyInstaller 版本配置，导入其内部模块
+    "test_column_width.py",  # test_column_width.py 依赖 windows_app.py，会产生大量误报
 ]
