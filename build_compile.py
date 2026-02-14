@@ -72,20 +72,23 @@ def check_and_install_dependencies(compile_type: str) -> None:
 
 def get_version_info() -> str:
     """从version.py获取版本信息"""
-    # 读取version.py文件获取版本号
-    version_file = os.path.join(os.getcwd(), "version.py")
-    if os.path.exists(version_file):
-        try:
-            with open(version_file, "r", encoding="utf-8") as f:
-                content = f.read()
-            # 提取版本号
-            import re
-            version_match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
-            if version_match:
-                return version_match.group(1)
-        except Exception as e:
-            print(f"⚠️  读取版本信息失败: {e}")
-    return "2.5.5"  # 默认版本
+    # 1. 尝试从环境变量获取版本号
+    try:
+        env_version = os.environ.get("SUBNET_PLANNER_VERSION")
+        if env_version and env_version.strip():
+            print(f"📌 从环境变量获取版本号: {env_version}")
+            return env_version
+    except Exception as e:
+        print(f"⚠️  从环境变量获取版本号失败: {e}")
+    
+    # 2. 直接导入version模块获取版本号
+    try:
+        sys.path.insert(0, os.getcwd())
+        from version import get_version
+        return get_version()
+    except Exception as e:
+        print(f"❌ 导入version模块失败: {e}")
+        raise
 
 
 def compile_with_nuitka(output_dir: str = ".") -> bool:
@@ -146,8 +149,11 @@ def compile_with_pyinstaller(output_dir: str = ".") -> bool:
     """使用PyInstaller编译"""
     print("\n🚀 使用 PyInstaller 编译...")
     
+    # 获取版本信息
+    version = get_version_info()
+    
     # 检查spec文件是否存在
-    spec_file = "SubnetPlannerV2.5.5.spec"
+    spec_file = "SubnetPlanner.spec"
     if not os.path.exists(spec_file):
         print(f"❌ 错误: 找不到 spec 文件 {spec_file}")
         return False
@@ -166,7 +172,7 @@ def compile_with_pyinstaller(output_dir: str = ".") -> bool:
         
         # 检查输出文件
         dist_dir = os.path.join(os.getcwd(), "dist")
-        output_file = os.path.join(dist_dir, "SubnetPlannerV2.5.5.exe")
+        output_file = os.path.join(dist_dir, f"SubnetPlannerV{version}.exe")
         
         if os.path.exists(output_file):
             size = os.path.getsize(output_file) / (1024 * 1024)  # MB
@@ -177,7 +183,7 @@ def compile_with_pyinstaller(output_dir: str = ".") -> bool:
             # 如果指定了输出目录，复制文件
             if output_dir != "." and output_dir != os.getcwd():
                 os.makedirs(output_dir, exist_ok=True)
-                dest_file = os.path.join(output_dir, "SubnetPlanner_PyInstaller.exe")
+                dest_file = os.path.join(output_dir, f"SubnetPlannerV{version}.exe")
                 _ = shutil.copy2(output_file, dest_file)
                 print(f"📋 已复制到: {dest_file}")
         
