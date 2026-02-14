@@ -1300,15 +1300,36 @@ class IPSubnetSplitterApp:
             available_width = frame_width - 70
             column_width = max(100, available_width // total_columns)
             for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.remaining_tree, col):
+                    continue
                 self.remaining_tree.column(col, width=column_width)
         elif items:
             # 表格有数据时自适应内容
             for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.remaining_tree, col):
+                    continue
                 self.remaining_tree.column(col, width="0")
                 self.remaining_tree.update_idletasks()
                 auto_width = self.remaining_tree.column(col, "width")
                 self.remaining_tree.column(col, width=max(100, auto_width))
 
+    def is_column_hidden(self, tree, col):
+        """检查表格列是否被隐藏
+        
+        Args:
+            tree: Treeview对象
+            col: 列名
+            
+        Returns:
+            bool: 如果列被隐藏返回True，否则返回False
+        """
+        # 检查列是否被隐藏（宽度为0且stretch为False）
+        col_width = tree.column(col, "width")
+        col_stretch = tree.column(col, "stretch")
+        return col_width == 0 and not col_stretch
+    
     def adjust_allocated_tree_width(self):
         """调整已分配子网表表格的宽度，使其根据内容自动调整"""
         self.allocated_tree.update_idletasks()
@@ -1319,6 +1340,10 @@ class IPSubnetSplitterApp:
         if items:
             # 表格有数据时，根据内容自适应列宽
             for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.allocated_tree, col):
+                    continue
+                    
                 # 将列宽设为0，触发自动计算
                 self.allocated_tree.column(col, width="0")
                 self.allocated_tree.update_idletasks()
@@ -2004,9 +2029,10 @@ class IPSubnetSplitterApp:
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
         
-        # 在数据删除后，再次调整列宽，确保根据表头自适应
-        self.auto_resize_columns(self.allocated_tree)
-        self.auto_resize_columns(self.planning_remaining_tree)
+        # 在主循环启动后，再调整列宽，确保表格完全渲染
+        # 使用after(100)确保表格完全渲染后再调整列宽
+        self.root.after(100, self.auto_resize_columns, self.allocated_tree)
+        self.root.after(100, self.auto_resize_columns, self.planning_remaining_tree)
 
     def setup_table_zebra_styles(self):
         """在窗口完全渲染后初始化表格斑马纹样式"""
@@ -2136,19 +2162,23 @@ class IPSubnetSplitterApp:
         default_min_widths = {
             'index': 60,
             'name': 100,  # 减小默认宽度，让name列能自适应
-            'cidr': 120,
+            'cidr': 140,  # 增加CIDR列的默认宽度，确保能显示完整的CIDR
             'required': 70,
             'available': 70,
             'network': 150,
             'netmask': 150,
             'broadcast': 150,
-            'wildcard': 150,
+            'wildcard': 100,  # 减小通配符掩码列的默认宽度
             'usable': 100,
             'size': 80,
         }
 
         # 调整列宽以适应表头
         for col in tree['columns']:
+            # 跳过已经隐藏的列
+            if self.is_column_hidden(tree, col):
+                continue
+                
             # 获取表头文本
             header = tree.heading(col, 'text') or ''  # 确保header不是None
 
@@ -2174,13 +2204,17 @@ class IPSubnetSplitterApp:
                     # 确保cell_width和max_width都是有效的数值
                     max_width = max(max_width, cell_width)
 
-            # 只有当表格有数据时，才应用默认最小宽度
-            # 当表格没有数据时，只根据表头宽度调整，避免使用过大的默认值
-            if tree.get_children() and col in default_min_widths:
-                # 确保最小宽度，允许自动缩小到内容宽度但不小于最小值
+            # 应用默认最小宽度，确保列宽合理
+            if col in default_min_widths:
+                # 使用更合理的最小宽度，确保能显示完整内容
                 min_width = default_min_widths[col]
+                # 总是应用最小宽度，确保表格列宽一致
                 if max_width < min_width:
                     max_width = min_width
+            
+            # 当表格没有数据时，确保使用默认最小宽度
+            if not tree.get_children() and col in default_min_widths:
+                max_width = default_min_widths[col]
             
             # 无论当前宽度如何，都根据内容调整列宽，允许缩小
             tree.column(col, width=max_width, stretch=True)
@@ -3616,6 +3650,17 @@ class IPSubnetSplitterApp:
             self.clear_tree_items(self.allocated_tree)
             self.clear_tree_items(self.planning_remaining_tree)
 
+            # 检测IP版本
+            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            
+            # 根据IP版本显示或隐藏通配符掩码列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列
+                self.allocated_tree.column("wildcard", width=0, stretch=False)
+            else:
+                # IPv4显示通配符掩码列
+                self.allocated_tree.column("wildcard", width=100, stretch=True)
+            
             # 显示已分配子网
             for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
                 # 设置斑马条纹标签
@@ -3641,6 +3686,14 @@ class IPSubnetSplitterApp:
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
 
+            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列
+                self.planning_remaining_tree.column("wildcard", width=0, stretch=False)
+            else:
+                # IPv4显示通配符掩码列
+                self.planning_remaining_tree.column("wildcard", width=100, stretch=True)
+            
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
                 tags = ("even",) if i % 2 == 0 else ("odd",)
@@ -3972,6 +4025,17 @@ class IPSubnetSplitterApp:
             row_index += 1
             self.split_tree.insert("", tk.END, values=(_("cidr"), split_info["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
 
+            # 检测IP版本
+            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            
+            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列
+                self.remaining_tree.column("wildcard", width=0, stretch=False)
+            else:
+                # IPv4显示通配符掩码列
+                self.remaining_tree.column("wildcard", width=100, stretch=True)
+            
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
                 for i, network in enumerate(result["remaining_subnets_info"], 1):
