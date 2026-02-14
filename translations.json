@@ -715,11 +715,11 @@
     "ko": "상위 네트워크를 입력하십시오"
   },
   "invalid_parent_network_format": {
-    "zh": "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）",
-    "zh_tw": "父網段格式不正確，請輸入有效的CIDR格式（例如：192.168.1.0/24）",
-    "en": "Invalid parent network format, please enter a valid CIDR format (e.g., 192.168.1.0/24)",
-    "ja": "無効な親ネットワーク形式です。有効なCIDR形式を入力してください（例：192.168.1.0/24）",
-    "ko": "상위 네트워크 형식이 잘못되었습니다. 유효한 CIDR 형식을 입력하십시오 (예: 192.168.1.0/24)."
+    "zh": "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式不正確，請輸入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "en": "Invalid parent network format, please enter a valid CIDR format (e.g., 192.168.1.0/24 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワーク形式です。有効なCIDR形式を入力してください（例：192.168.1.0/24 または 2001:0db8::/64）",
+    "ko": "상위 네트워크 형식이 잘못되었습니다. 유효한 CIDR 형식을 입력하십시오 (예: 192.168.1.0/24 또는 2001:0db8::/64)."
   },
   "please_add_at_least_one_requirement": {
     "zh": "请添加至少一个子网需求",
@@ -743,18 +743,25 @@
     "ko": "알 수 없는 오류가 발생했습니다"
   },
   "invalid_parent_network_cidr": {
-    "zh": "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）",
-    "zh_tw": "父網段格式無效，請輸入有效的CIDR格式（如：10.0.0.0/8）",
-    "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8)",
-    "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8）",
-    "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8) 을 입력하십시오."
+    "zh": "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式無效，請輸入有效的CIDR格式（如：10.0.0.0/8 或 2001:0db8::/64）",
+    "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8 または 2001:0db8::/64）",
+    "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8 또는 2001:0db8::/64) 을 입력하십시오."
   },
   "invalid_split_segment_cidr": {
-    "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23）",
-    "zh_tw": "切分網段格式無效，請輸入有效的CIDR格式（如：10.21.50.0/23）",
-    "en": "Invalid split segment CIDR format, please enter a valid CIDR (e.g., 10.21.50.0/23)",
-    "ja": "無効な分割セグメントCIDR形式です。有効なCIDRを入力してください（例：10.21.50.0/23）",
-    "ko": "유효하지 않은 세분화 형식입니다. 유효한 CIDR 형식을 입력하십시오 (예: 10.21.50.0/23)."
+    "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23 或 2001:0db8::/64）",
+    "zh_tw": "切分網段格式無效，請輸入有效的CIDR格式（如：10.21.50.0/23 或 2001:0db8::/64）",
+    "en": "Invalid split segment CIDR format, please enter a valid CIDR (e.g., 10.21.50.0/23 or 2001:0db8::/64)",
+    "ja": "無効な分割セグメントCIDR形式です。有効なCIDRを入力してください（例：10.21.50.0/23 または 2001:0db8::/64）",
+    "ko": "유효하지 않은 세분화 형식입니다. 유효한 CIDR 형식을 입력하십시오 (예: 10.21.50.0/23 또는 2001:0db8::/64)."
+  },
+  "ip_versions_not_compatible": {
+    "zh": "IP版本不兼容：父网段和切分网段必须是相同的IP版本（IPv4或IPv6）",
+    "zh_tw": "IP版本不兼容：父網段和切分段網段必須是相同的IP版本（IPv4或IPv6）",
+    "en": "IP versions not compatible: Parent network and split segment must be the same IP version (IPv4 or IPv6)",
+    "ja": "IPバージョンが互換性がありません：親ネットワークと分割セグメントは同じIPバージョン（IPv4またはIPv6）でなければなりません",
+    "ko": "IP 버전이 호환되지 않습니다. 상위 네트워크와 분할 세그먼트는 동일한 IP 버전 (IPv4 또는 IPv6) 이어야 합니다."
   },
   "parent_and_split_cidr_cannot_be_empty": {
     "zh": "父网段和切分网段都不能为空！",

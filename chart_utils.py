@@ -9,6 +9,7 @@ from typing import Any, Literal
 import tkinter as tk
 from tkinter import Canvas, Frame
 import math
+import ipaddress
 from style_manager import get_current_font_settings
 
 # 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
@@ -57,24 +58,38 @@ def _calculate_bar_width(network_range: float, log_min: float, log_max: float, c
     return min(bar_width, chart_width)
 
 
-def _calculate_usable_addresses(network_range: int) -> int:
+def _calculate_usable_addresses(network_range: int, is_ipv6: bool = False) -> int:
     """计算可用地址数
 
     Args:
         network_range: 网络范围
+        is_ipv6: 是否为IPv6地址
 
     Returns:
         int: 可用地址数
     """
-    if network_range == 1:
-        # /32子网，只有一个地址，可用地址数为1
-        return 1
-    elif network_range == 2:
-        # /31子网，只有网络地址和广播地址，没有可用主机地址
-        return 0
+    if is_ipv6:
+        # IPv6没有广播地址
+        if network_range == 1:
+            # /128子网，只有一个地址，可用地址数为1
+            return 1
+        elif network_range == 2:
+            # /127子网，有2个地址，都可用
+            return 2
+        else:
+            # 其他IPv6子网，可用地址数 = 总地址数 - 1（仅减去网络地址）
+            return network_range - 1
     else:
-        # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
-        return network_range - 2
+        # IPv4计算方式
+        if network_range == 1:
+            # /32子网，只有一个地址，可用地址数为1
+            return 1
+        elif network_range == 2:
+            # /31子网，只有网络地址和广播地址，没有可用主机地址
+            return 0
+        else:
+            # 其他情况，可用地址数 = 总地址数 - 2（网络地址和广播地址）
+            return network_range - 2
 
 
 def _draw_segment_text(canvas: Canvas, text: str, x: float, y: float, font: tuple[str, int, str]) -> None:
@@ -161,7 +176,8 @@ def _draw_parent_segment(
     log_max: float,
     min_bar_width: float,
     bar_height: float,
-    padding: float
+    padding: float,
+    is_ipv6: bool = False
 ) -> int:
     """绘制父网段
 
@@ -176,6 +192,7 @@ def _draw_parent_segment(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
+        is_ipv6: 是否为IPv6地址
 
     Returns:
         int: 新的y坐标
@@ -187,7 +204,7 @@ def _draw_parent_segment(
     color = PARENT_COLOR
     canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
-    usable_addresses = _calculate_usable_addresses(parent_range)
+    usable_addresses = _calculate_usable_addresses(parent_range, is_ipv6)
     parent_cidr = parent_info.get("name", "")
     segment_text = f"{translate("parent_network")}: {parent_cidr}"
     text_x = x + 15
@@ -213,7 +230,8 @@ def _draw_network_segments(
     log_max: float,
     min_bar_width: float,
     bar_height: float,
-    padding: float
+    padding: float,
+    is_ipv6: bool = False
 ) -> int:
     """绘制网络网段
 
@@ -229,6 +247,7 @@ def _draw_network_segments(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
+        is_ipv6: 是否为IPv6地址
 
     Returns:
         int: 新的y坐标
@@ -259,7 +278,7 @@ def _draw_network_segments(
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
-            usable_addresses = _calculate_usable_addresses(network_range)
+            usable_addresses = _calculate_usable_addresses(network_range, is_ipv6)
 
             segment_text = f"{translate("segment")} {i + 1}: {name} {network.get('cidr', '')}"
             text_x = x + 15
@@ -281,7 +300,7 @@ def _draw_network_segments(
             canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
             name = network.get("name", "")
-            usable_addresses = _calculate_usable_addresses(network_range)
+            usable_addresses = _calculate_usable_addresses(network_range, is_ipv6)
 
             segment_text = f"{translate("split_segment")}: {name}"
             text_x = x + 15
@@ -313,7 +332,8 @@ def _draw_remaining_segments(
     log_max: float,
     min_bar_width: float,
     bar_height: float,
-    padding: float
+    padding: float,
+    is_ipv6: bool = False
 ) -> int:
     """绘制剩余网段
 
@@ -328,6 +348,7 @@ def _draw_remaining_segments(
         min_bar_width: 最小柱状图宽度
         bar_height: 柱状图高度
         padding: 内边距
+        is_ipv6: 是否为IPv6地址
 
     Returns:
         int: 新的y坐标
@@ -356,7 +377,7 @@ def _draw_remaining_segments(
         canvas.create_rectangle(x, y, x + bar_width, y + bar_height, fill=color, outline="", width=0)
 
         name = network.get("name", "")
-        usable_addresses = _calculate_usable_addresses(network_range)
+        usable_addresses = _calculate_usable_addresses(network_range, is_ipv6)
 
         segment_text = f"{translate("segment")} {i + 1}: {name}"
         text_x = x + 15
@@ -498,6 +519,21 @@ def draw_distribution_chart(
             canvas.create_text(width / 2, canvas_height / 2, text=no_data_text, font=(font_family, 12))
             return
 
+        # 判断是否为IPv6
+        parent_cidr = parent_info.get("name", "")
+        is_ipv6 = False
+        try:
+            network = ipaddress.ip_network(parent_cidr)
+            is_ipv6 = network.version == 6
+        except ValueError:
+            # 如果无法解析为网络地址，尝试解析为IP地址
+            try:
+                address = ipaddress.ip_address(parent_cidr)
+                is_ipv6 = address.version == 6
+            except ValueError:
+                # 无法解析，默认为IPv4
+                is_ipv6 = False
+
         log_max = math.log10(parent_range)
         log_min = 3
         min_bar_width = 50
@@ -523,12 +559,12 @@ def draw_distribution_chart(
             actual_width = width
         canvas.config(scrollregion=(0, 0, actual_width, background_height))
 
-        y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
+        y = _draw_parent_segment(canvas, parent_info, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding, is_ipv6)
 
         split_networks = [net for net in networks if net.get("type") == "split"]
-        y = _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
+        y = _draw_network_segments(canvas, split_networks, chart_type, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding, is_ipv6)
 
-        y = _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding)
+        y = _draw_remaining_segments(canvas, networks, x, y, chart_width, log_min, log_max, min_bar_width, bar_height, padding, is_ipv6)
 
         _draw_legend(canvas, chart_type, x, y)
 

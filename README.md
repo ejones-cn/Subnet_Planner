@@ -74,7 +74,7 @@ python windows_app.py
 
 ## 🛠️ 工具原理
 
-本工具基于IPv4地址的子网划分原理，利用Python的`ipaddress`模块实现了以下核心功能：
+本工具基于IPv4和IPv6地址的子网划分原理，利用Python的`ipaddress`模块实现了以下核心功能：
 
 1. **IP地址解析与转换**：将输入的IP地址字符串转换为整数格式，便于进行网络计算
 2. **子网掩码计算**：根据CIDR前缀长度自动计算子网掩码
@@ -237,7 +237,7 @@ Subnet_Planner/
 2. 子网切分时，确保切分网段必须是父网段的子集，否则会导致计算错误
 3. Windows GUI界面需要Python环境和Tkinter库支持，Tkinter通常随Python一起安装
 4. 如果遇到防火墙问题，请确保允许Python或生成的可执行文件通过防火墙
-5. 工具目前主要支持IPv4地址，不支持IPv6地址
+5. 同时支持IPv4和IPv6地址
 6. 在使用批量处理功能时，确保输入文件格式正确（每行一个网段）
 7. 结果导出功能仅在Windows GUI版本中可用
 8. PDF导出功能需要安装reportlab库

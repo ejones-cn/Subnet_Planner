@@ -417,7 +417,13 @@ class IPSubnetSplitterApp:
             验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
         """
         text = text.strip()
-        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
+        is_valid = True
+        if text:
+            try:
+                ipaddress.ip_network(text, strict=False)
+                is_valid = True
+            except ValueError:
+                is_valid = False
 
         if entry:
             if style_based:
@@ -526,13 +532,7 @@ class IPSubnetSplitterApp:
         self.app_name = _("app_name")
         self.app_version = get_version()
 
-        # CIDR格式验证正则表达式
-        self.cidr_pattern = (
-            r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
-            + r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/'
-            + r'([0-9]|[1-2][0-9]|3[0-2])$'
-        )
-
+        # CIDR验证已简化，不再使用复杂正则表达式，直接使用ipaddress.ip_network()进行实际解析
         # 存储删除记录历史，支持多次撤销
         self.deleted_history = []
 
@@ -1216,8 +1216,8 @@ class IPSubnetSplitterApp:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
-        self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]  # 提供两条初始记录，改善宽度计算
-        self.split_networks = ["10.21.50.0/23", "192.168.1.0/24"]  # 提供两条初始记录，改善宽度计算
+        self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
+        self.split_networks = ["10.21.50.0/23", "192.168.1.0/24", "2001:0db8::/64", "fe80::1/128"]  # 提供IPv4和IPv6初始记录
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
@@ -1486,14 +1486,32 @@ class IPSubnetSplitterApp:
         self.remaining_frame.grid_columnconfigure(0, weight=1)
         self.remaining_frame.grid_columnconfigure(1, weight=0)
 
+        # 垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
             self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
         )
+        # 水平滚动条
+        self.remaining_scroll_h = ttk.Scrollbar(
+            self.remaining_frame, orient=tk.HORIZONTAL, command=self.remaining_tree.xview
+        )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(self.remaining_scroll_v, self.remaining_tree, initial_hidden=False)
+        # 直接配置表格的滚动命令，不使用通用函数
+        self.remaining_tree.configure(
+            yscrollcommand=self.remaining_scroll_v.set,
+            xscrollcommand=self.remaining_scroll_h.set
+        )
+        
+        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
         self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
         self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        self.remaining_scroll_h.grid(row=1, column=0, sticky=tk.EW)
+        
+        # 配置remaining_frame的grid布局，确保水平滚动条有空间显示
+        self.remaining_frame.grid_rowconfigure(1, weight=0)
+        
+        # 配置remaining_frame的列布局
+        self.remaining_frame.grid_columnconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(1, weight=0)
 
         # 绑定窗口大小变化事件，实现表格自适应
         self.root.bind("<Configure>", self.on_window_resize, add='+')
@@ -1570,7 +1588,7 @@ class IPSubnetSplitterApp:
         parent_frame.configure(width=250)
 
         # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
-        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]  # 提供两条初始记录，改善宽度计算
+        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
 
         # 父网段下拉文本框
         ttk.Label(parent_frame, text="").pack(side=tk.LEFT, padx=(0, 0))
@@ -1803,16 +1821,31 @@ class IPSubnetSplitterApp:
         self.allocated_tree.column("wildcard", width=0, minwidth=80, stretch=True)  # 通配符掩码列自动宽度
         self.allocated_tree.column("broadcast", width=0, minwidth=80, stretch=True)  # 广播地址列自动宽度
 
+        # 垂直滚动条
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL
         )
+        # 水平滚动条
+        allocated_h_scrollbar = ttk.Scrollbar(
+            self.allocated_frame, orient=tk.HORIZONTAL
+        )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(allocated_v_scrollbar, self.allocated_tree, initial_hidden=False)
+        # 直接配置滚动条，不使用通用函数
+        allocated_v_scrollbar.config(command=self.allocated_tree.yview)
+        allocated_h_scrollbar.config(command=self.allocated_tree.xview)
+        
+        # 配置表格的滚动命令
+        self.allocated_tree.configure(yscrollcommand=allocated_v_scrollbar.set, xscrollcommand=allocated_h_scrollbar.set)
+        
+        # 配置allocated_frame的grid布局
         self.allocated_frame.grid_rowconfigure(0, weight=1)
         self.allocated_frame.grid_columnconfigure(0, weight=1)
+        self.allocated_frame.grid_rowconfigure(1, weight=0)
+        
+        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
         self.allocated_tree.grid(row=0, column=0, sticky="nsew")
         allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        allocated_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.allocated_tree)
 
@@ -1848,17 +1881,33 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
 
+        # 垂直滚动条
         remaining_v_scrollbar = ttk.Scrollbar(
             self.planning_remaining_frame,
             orient=tk.VERTICAL,
         )
+        # 水平滚动条
+        remaining_h_scrollbar = ttk.Scrollbar(
+            self.planning_remaining_frame,
+            orient=tk.HORIZONTAL,
+        )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(remaining_v_scrollbar, self.planning_remaining_tree, initial_hidden=False)
+        # 直接配置滚动条，不使用通用函数
+        remaining_v_scrollbar.config(command=self.planning_remaining_tree.yview)
+        remaining_h_scrollbar.config(command=self.planning_remaining_tree.xview)
+        
+        # 配置表格的滚动命令
+        self.planning_remaining_tree.configure(yscrollcommand=remaining_v_scrollbar.set, xscrollcommand=remaining_h_scrollbar.set)
+        
+        # 配置planning_remaining_frame的grid布局
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
         self.planning_remaining_frame.grid_columnconfigure(0, weight=1)
+        self.planning_remaining_frame.grid_rowconfigure(1, weight=0)
+        
+        # 配置表格的拉伸属性，确保内容超出时显示横向滚动条
         self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
         remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        remaining_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.planning_remaining_tree)
 
@@ -2032,14 +2081,14 @@ class IPSubnetSplitterApp:
         # 为每列设置一个合理的默认最小宽度（基于列类型）
         default_min_widths = {
             'index': 60,
-            'name': 120,
-            'cidr': 80,
+            'name': 150,
+            'cidr': 120,
             'required': 70,
             'available': 70,
-            'network': 100,
-            'netmask': 100,
-            'broadcast': 100,
-            'wildcard': 100,
+            'network': 150,
+            'netmask': 150,
+            'broadcast': 150,
+            'wildcard': 150,
             'usable': 100,
             'size': 80,
         }
@@ -2052,7 +2101,14 @@ class IPSubnetSplitterApp:
             # 跳过序号列，保持固定宽度
             if col == 'index':
                 continue
+            
+            # 跳过name列，允许用户手动调整
+            if col == 'name':
+                continue
 
+            # 获取当前列宽
+            current_width = tree.column(col, 'width')
+            
             # 设置临时标签文本并测量宽度
             self._temp_label.config(text=header)
             header_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
@@ -2069,11 +2125,12 @@ class IPSubnetSplitterApp:
                     max_width = max(max_width, cell_width)
 
             # 应用默认最小宽度，如果计算出的宽度小于默认值
-            if header in default_min_widths and max_width < default_min_widths[header]:
-                max_width = default_min_widths[header]
-
-            # 设置列宽
-            tree.column(col, width=max_width, stretch=True)
+            if col in default_min_widths and max_width < default_min_widths[col]:
+                max_width = default_min_widths[col]
+            
+            # 只有当计算出的宽度大于当前宽度时才调整，尊重用户手动调整
+            if max_width > current_width:
+                tree.column(col, width=max_width, stretch=True)
 
     def resize_tables(self):
         """调整表格列宽以适应容器大小并更新空行数"""
@@ -3630,6 +3687,8 @@ class IPSubnetSplitterApp:
             function: 滚动条回调函数
         """
         def scrollbar_callback(*args):
+            # 获取滚动条方向
+            scrollbar_orient = scrollbar.cget('orient')
             scrollbar.set(*args)
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
                 scrollbar.grid_remove()
@@ -3639,7 +3698,11 @@ class IPSubnetSplitterApp:
                     except (tk.TclError, AttributeError):
                         pass
             else:
-                scrollbar.grid()
+                # 根据滚动条方向设置正确的网格位置
+                if scrollbar_orient == 'horizontal':
+                    scrollbar.grid(row=1, column=0, sticky=tk.EW)
+                else:  # vertical
+                    scrollbar.grid(row=0, column=1, sticky=tk.NS)
                 if treeview and padx_adjust:
                     try:
                         treeview.grid_configure(padx=0)
@@ -3737,11 +3800,25 @@ class IPSubnetSplitterApp:
         # 设置滚动条的命令
         if widget_command:
             scrollbar.config(command=widget_command)
-        widget.configure(yscrollcommand=scrollbar.set)
-
-        # 创建滚动条回调
-        scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
-        widget.configure(yscrollcommand=scrollbar_callback)
+        
+        # 获取滚动条方向
+        scrollbar_orient = scrollbar.cget('orient')
+        
+        # 根据滚动条方向设置相应的滚动命令
+        if scrollbar_orient == 'horizontal':
+            # 水平滚动条
+            widget.configure(xscrollcommand=scrollbar.set)
+            
+            # 创建滚动条回调
+            scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
+            widget.configure(xscrollcommand=scrollbar_callback)
+        else:
+            # 垂直滚动条
+            widget.configure(yscrollcommand=scrollbar.set)
+            
+            # 创建滚动条回调
+            scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
+            widget.configure(yscrollcommand=scrollbar_callback)
 
         # 初始隐藏或显示滚动条
         if initial_hidden:
