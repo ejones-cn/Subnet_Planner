@@ -1309,10 +1309,49 @@ class IPSubnetSplitterApp:
                 auto_width = self.remaining_tree.column(col, "width")
                 self.remaining_tree.column(col, width=max(100, auto_width))
 
+    def adjust_allocated_tree_width(self):
+        """调整已分配子网表表格的宽度，使其根据内容自动调整"""
+        self.allocated_tree.update_idletasks()
+        
+        items = self.allocated_tree.get_children()
+        columns = ["name", "cidr", "required", "available", "network", "netmask", "wildcard", "broadcast"]
+        
+        if items:
+            # 表格有数据时，根据内容自适应列宽
+            for col in columns:
+                # 将列宽设为0，触发自动计算
+                self.allocated_tree.column(col, width="0")
+                self.allocated_tree.update_idletasks()
+                # 获取自动计算的宽度
+                auto_width = self.allocated_tree.column(col, "width")
+                # 设置列宽为基于内容的宽度
+                self.allocated_tree.column(col, width=auto_width)
+
     def on_tab_change(self, tab_index):
         """标签页切换时的处理函数"""
         if tab_index == 2 and hasattr(self, 'chart_canvas'):
             self.draw_distribution_chart()
+            
+    def on_planning_tab_change(self, tab_index):
+        """规划结果标签页切换时的处理函数"""
+        # 确保UI更新完成
+        self.root.update_idletasks()
+        
+        # 检查 _temp_label 是否存在，如果不存在则创建
+        if not hasattr(self, '_temp_label'):
+            self._temp_label = tk.Label(self.root)
+            self._temp_label.pack_forget()
+        
+        if tab_index == 0:  # 已分配子网标签页
+            # 调整已分配子网表的列宽
+            self.auto_resize_columns(self.allocated_tree)
+        elif tab_index == 1:  # 剩余网段标签页
+            # 调整剩余网段表的列宽
+            self.auto_resize_columns(self.planning_remaining_tree)
+        elif tab_index == 2:  # 网段分布图标签页
+            # 重新绘制图表
+            if hasattr(self, 'chart_canvas'):
+                self.draw_distribution_chart()
 
     def on_top_level_tab_change(self, tab_index):
         """顶级标签页切换时的处理函数"""
@@ -1751,7 +1790,7 @@ class IPSubnetSplitterApp:
         result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 0))
 
         # 创建笔记本控件显示规划结果
-        self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
+        self.planning_notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_planning_tab_change)
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 保存初始状态到历史记录
@@ -1848,6 +1887,9 @@ class IPSubnetSplitterApp:
         allocated_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.allocated_tree)
+        
+        # 初始化时根据表头自动调整列宽
+        self.auto_resize_columns(self.allocated_tree)
 
         # 剩余网段页面
         self.planning_remaining_frame = ttk.Frame(
@@ -1910,6 +1952,9 @@ class IPSubnetSplitterApp:
         remaining_h_scrollbar.grid(row=1, column=0, sticky="ew")
 
         self.configure_treeview_styles(self.planning_remaining_tree)
+        
+        # 初始化时根据表头自动调整列宽
+        self.auto_resize_columns(self.planning_remaining_tree)
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab(_("allocated_subnets"), self.allocated_frame, "#e3f2fd")  # 浅蓝色
@@ -1958,6 +2003,10 @@ class IPSubnetSplitterApp:
             self.allocated_tree.delete(item)
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
+        
+        # 在数据删除后，再次调整列宽，确保根据表头自适应
+        self.auto_resize_columns(self.allocated_tree)
+        self.auto_resize_columns(self.planning_remaining_tree)
 
     def setup_table_zebra_styles(self):
         """在窗口完全渲染后初始化表格斑马纹样式"""
@@ -2077,11 +2126,16 @@ class IPSubnetSplitterApp:
         Args:
             tree: 要调整列宽的Treeview对象
         """
+        
+        # 检查 _temp_label 是否存在，如果不存在则创建
+        if not hasattr(self, '_temp_label'):
+            self._temp_label = tk.Label(self.root)
+            self._temp_label.pack_forget()
 
         # 为每列设置一个合理的默认最小宽度（基于列类型）
         default_min_widths = {
             'index': 60,
-            'name': 150,
+            'name': 100,  # 减小默认宽度，让name列能自适应
             'cidr': 120,
             'required': 70,
             'available': 70,
@@ -2102,10 +2156,6 @@ class IPSubnetSplitterApp:
             if col == 'index':
                 continue
             
-            # 跳过name列，允许用户手动调整
-            if col == 'name':
-                continue
-
             # 获取当前列宽
             current_width = tree.column(col, 'width')
             
@@ -2124,13 +2174,16 @@ class IPSubnetSplitterApp:
                     # 确保cell_width和max_width都是有效的数值
                     max_width = max(max_width, cell_width)
 
-            # 应用默认最小宽度，如果计算出的宽度小于默认值
-            if col in default_min_widths and max_width < default_min_widths[col]:
-                max_width = default_min_widths[col]
+            # 只有当表格有数据时，才应用默认最小宽度
+            # 当表格没有数据时，只根据表头宽度调整，避免使用过大的默认值
+            if tree.get_children() and col in default_min_widths:
+                # 确保最小宽度，允许自动缩小到内容宽度但不小于最小值
+                min_width = default_min_widths[col]
+                if max_width < min_width:
+                    max_width = min_width
             
-            # 只有当计算出的宽度大于当前宽度时才调整，尊重用户手动调整
-            if max_width > current_width:
-                tree.column(col, width=max_width, stretch=True)
+            # 无论当前宽度如何，都根据内容调整列宽，允许缩小
+            tree.column(col, width=max_width, stretch=True)
 
     def resize_tables(self):
         """调整表格列宽以适应容器大小并更新空行数"""
