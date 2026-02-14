@@ -26,4 +26,6 @@ ignore = [
     "ip_subnet_calculator.py",  # ip_subnet_calculator.py 包含 tkinter UI 组件调用
     "version_info.py",  # version_info.py 只包含 PyInstaller 版本配置，导入其内部模块
     "test_column_width.py",  # test_column_width.py 依赖 windows_app.py，会产生大量误报
+    "manage_version.py",  # manage_version.py 包含动态JSON处理，类型检查器会产生误报
+    "verify_versions.py",  # verify_versions.py 包含动态导入，类型检查器会产生误报
 ]

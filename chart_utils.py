@@ -2,7 +2,6 @@
 """通用图表工具模块
 
 提供网段分布图等图表的绘制功能，支持子网切分和子网规划两种场景
-项目版本：v2.5.5
 """
 
 from typing import Any, Literal
@@ -11,6 +10,7 @@ from tkinter import Canvas, Frame
 import math
 import ipaddress
 from style_manager import get_current_font_settings
+from version import get_version
 
 # 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
 from i18n import _ as translate  # type: ignore
@@ -18,6 +18,9 @@ from ip_subnet_calculator import format_large_number
 
 # 定义一个别名 _trans 用于翻译，避免与局部变量 _ 冲突
 _trans = translate
+
+# 模块版本号
+__version__ = get_version()
 
 SUBNET_COLORS = (
     "#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8",

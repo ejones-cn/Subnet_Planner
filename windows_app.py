@@ -28,6 +28,9 @@ from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
 # 本地模块
+from version import get_version
+
+__version__ = get_version()
 from ip_subnet_calculator import format_large_number
 from ip_subnet_calculator import (
     split_subnet,
@@ -91,10 +94,14 @@ if sys.platform == 'win32':
 
         # 计算缩放因子
         SCALE_FACTOR = dpi_x / 96.0  # type: ignore
-        print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
+        # 只在直接运行应用程序时打印DPI信息，不在模块导入时打印
+        if __name__ == "__main__":
+            print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
 
     except Exception as e:
-        print(f"⚠️ 设置DPI感知失败: {e}")
+        # 只在直接运行应用程序时打印错误信息，不在模块导入时打印
+        if __name__ == "__main__":
+            print(f"⚠️ 设置DPI感知失败: {e}")
         # 使用默认缩放因子
         SCALE_FACTOR = 1.0  # type: ignore
         DPI_MODE = "Default"  # type: ignore

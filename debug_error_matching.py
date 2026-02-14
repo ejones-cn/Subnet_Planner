@@ -1,10 +1,15 @@
 # 调试IP版本不兼容错误匹配的脚本
+import re
 
 # 模拟错误信息
 error_msg = "10.21.50.0/23 and 2001:db8::/32 are not of the same version"
 
 # 测试我们的匹配函数
-match_func = lambda msg: "are not of the same version" in msg
+
+
+def match_func(msg: str) -> bool:
+    return "are not of the same version" in msg
+
 print(f"错误信息: {error_msg}")
 print(f"匹配结果: {match_func(error_msg)}")
 print(f"'are not of the same version' in error_msg: {'are not of the same version' in error_msg}")
@@ -18,13 +23,12 @@ print(f"错误信息长度: {len(error_msg)}")
 
 # 测试其他可能的匹配方式
 print(f"\n使用字符串包含: {'version' in error_msg}")
-print(f"使用正则表达式: {bool(re.search(r"are not of the same version", error_msg))}")
-
-# 导入正则表达式模块
-import re
+print(f"使用正则表达式: {bool(re.search(r'are not of the same version', error_msg))}")
 
 # 测试我们在代码中使用的完整错误模式列表
 print("\n\n测试完整的错误模式列表:")
+
+# 使用简单的类型注解，避免使用复杂的callable语法
 error_patterns = [
     # ... 其他错误模式 ...
     (lambda msg: "are not of the same version" in msg, 'ip_versions_not_compatible'),

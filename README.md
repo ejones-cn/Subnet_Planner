@@ -1,4 +1,4 @@
-# 子网规划师 v2.5.5
+# 子网规划师 v2.6.0
 
 **子网规划师** - 让网络管理变得简单高效！
 
@@ -96,14 +96,13 @@ Subnet_Planner/
 ├── README.md                # 项目说明文档
 ├── run_app.bat              # Windows GUI界面快速启动脚本
 ├── refresh_icon_cache.bat   # 刷新图标缓存脚本
-├── bump_version.py          # 自动版本号更新脚本
+├── manage_version.py        # 版本号管理工具
 ├── verify_versions.py       # 版本号一致性验证工具
 ├── simple_pack.py           # 打包脚本
 ├── install_deps.bat         # 安装依赖脚本
-├── 子网规划师.spec          # PyInstaller打包配置文件
+├── SubnetPlanner.spec          # PyInstaller打包配置文件
 ├── dist/                    # 打包后的可执行文件目录
-│   ├── SubnetPlannerV2.5.4.exe      # Windows可执行文件
-│   └── SubnetPlannerV2.5.5.exe      # Windows可执行文件
+│   └── SubnetPlannerV2.6.0.exe      # Windows可执行文件
 ├── icon.ico                 # 应用程序图标
 ├── icon.png                 # 应用程序图标
 ├── icon-O.ico               # 应用程序图标
@@ -244,6 +243,14 @@ Subnet_Planner/
 
 ## 📝 更新日志
 
+### v2.6.0 (2026-02-15)
+
+- 增强：更新了版本号到v2.6.0
+- 修复：解决了科学计数法符号逻辑问题
+- 重构：移除了重复的函数定义
+- 优化：提取了通用的滚动条回调方法
+- 改进：统一了格式化函数的实现
+
 ### v2.5.5 (2026-01-12)
 
 - 增强：更新了版本号到v2.5.5
@@ -371,7 +378,7 @@ Subnet_Planner/
 ### v1.2.1 (2025-12-11)
 
 - 实现了自动生成版本号功能
-- 添加了`bump_version.py`脚本，支持自动递增版本号
+- 添加了`manage_version.py`脚本，支持自动递增和同步版本号
 - 添加了`verify_versions.py`脚本，用于验证所有文件版本号一致性
 - 添加了`version.py`模块，集中管理版本号
 - 更新了文档，修复了Windows GUI界面运行命令错误

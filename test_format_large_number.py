@@ -34,13 +34,13 @@ def test_format_large_number():
     for i, (input_val, expected_contains) in enumerate(test_cases):
         result = format_large_number(input_val)
         if expected_contains in result:
-            print(f"✓ 测试 {i+1}: 输入 {input_val} → 输出 {result} (预期包含 {expected_contains})")
+            print(f"✓ 测试 {i + 1}: 输入 {input_val} → 输出 {result} (预期包含 {expected_contains})")
             passed += 1
         else:
-            print(f"✗ 测试 {i+1}: 输入 {input_val} → 输出 {result} (预期包含 {expected_contains})")
+            print(f"✗ 测试 {i + 1}: 输入 {input_val} → 输出 {result} (预期包含 {expected_contains})")
             failed += 1
     
-    print(f"\n=== 测试结果 ===")
+    print("\n=== 测试结果 ===")
     print(f"通过: {passed}")
     print(f"失败: {failed}")
     print(f"总测试用例: {len(test_cases)}")

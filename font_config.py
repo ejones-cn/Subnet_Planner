@@ -2,8 +2,11 @@
 """
 字体配置模块
 集中管理所有语言的字体候选列表
-项目版本：v2.5.5
 """
+
+from version import get_version
+
+__version__ = get_version()
 
 
 class FontConfig:

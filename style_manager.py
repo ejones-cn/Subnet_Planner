@@ -4,13 +4,15 @@
 样式管理器模块
 负责集中管理应用程序的所有样式设置
 支持根据当前语言动态调整样式
-项目版本：v2.5.5
 """
 
 import tkinter as tk
 from tkinter import ttk
+from version import get_version
 from i18n import get_language, _ as translate
 from font_config import FontConfig
+
+__version__ = get_version()
 
 
 class StyleManager:

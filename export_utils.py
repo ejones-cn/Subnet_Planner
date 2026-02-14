@@ -11,7 +11,6 @@
 5. Excel格式导出
 
 所有导出功能均正确处理中文编码问题。
-项目版本：v2.5.5
 """
 
 import os
@@ -22,7 +21,10 @@ import traceback
 import math
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
+from version import get_version
 from i18n import _ as translate, get_language  # type: ignore
+
+__version__ = get_version()
 from reportlab.lib.pagesizes import A4, landscape  # type: ignore
 from reportlab.lib.units import cm  # type: ignore
 from reportlab.lib import colors  # type: ignore
