@@ -4,6 +4,8 @@
 压缩打包脚本
 用于将项目阶段性成果压缩到父目录，支持从配置文件读取排除规则
 """
+# pyright: reportUnknownMemberType=false
+# pyright: reportAny=false
 
 import os
 import json
@@ -38,15 +40,15 @@ def main() -> int:
         return 1
     
     with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+        config = json.load(f)  # type: ignore
     
     # 获取配置参数
-    source_path: str = config['source_path']
-    destination_dir: str = config['destination_dir']
-    exclude_items = config['exclude_items']
-    version_file: str = os.path.join(source_path, config['version_file'])
-    timestamp_format: str = config['timestamp_format'].replace('yyyy', '%Y').replace('MM', '%m').replace('dd', '%d').replace('HH', '%H').replace('mm', '%M').replace('ss', '%S')
-    filename_prefix: str = config['filename_prefix']
+    source_path: str = config['source_path']  # type: ignore
+    destination_dir: str = config['destination_dir']  # type: ignore
+    exclude_items = list(config['exclude_items'])  # type: ignore
+    version_file: str = os.path.join(source_path, config['version_file'])  # type: ignore
+    timestamp_format: str = config['timestamp_format'].replace('yyyy', '%Y').replace('MM', '%m').replace('dd', '%d').replace('HH', '%H').replace('mm', '%M').replace('ss', '%S')  # type: ignore
+    filename_prefix: str = config['filename_prefix']  # type: ignore
     
     # 生成版本号和时间戳
     version: str = read_version(version_file)
