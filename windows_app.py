@@ -2051,13 +2051,22 @@ class IPSubnetSplitterApp:
 
             tree.tag_configure("section", background="#d8d8d8", foreground="#000000")
 
-            tree.tag_configure("current", font=tree.cget("font") + ("bold",), foreground="#0066cc")
-
-            if include_special_tags:
-                tree.tag_configure("error", foreground="red")
-                tree.tag_configure("info", foreground="blue")
-        except (tk.TclError, AttributeError):
-            pass
+            # 配置当前选中行样式，避免字体类型错误
+            try:
+                tree.tag_configure("current", font=("TkDefaultFont", 11, "bold"), foreground="#0066cc")
+            except tk.TclError:
+                # 如果自定义字体失败，只设置前景色
+                tree.tag_configure("current", foreground="#0066cc")
+            
+            # 配置错误行样式
+            tree.tag_configure("error_row", foreground="red")
+            
+            # 配置错误和信息标签
+            tree.tag_configure("error", foreground="red")
+            tree.tag_configure("info", foreground="blue")
+        except (tk.TclError, AttributeError) as e:
+            # 只捕获与Tkinter配置相关的错误，避免隐藏其他重要错误
+            print(f"配置Treeview样式时出错: {str(e)}")
 
     def update_table_zebra_stripes(self, tree, update_index=False):
         """更新表格的斑马条纹标签
@@ -2072,22 +2081,37 @@ class IPSubnetSplitterApp:
             for index, item in enumerate(children, start=1):
                 tag = "even" if index % 2 == 0 else "odd"
 
+                # 获取当前行的标签，保留原有标签
+                current_tags = list(tree.item(item, "tags"))
+                
+                # 如果没有当前标签，创建空列表
+                if not current_tags:
+                    current_tags = []
+                
+                # 如果当前标签是字符串而不是列表，转换为列表
+                if isinstance(current_tags, str):
+                    current_tags = [current_tags]
+                
+                # 保存特殊标签
+                special_tags = [t for t in current_tags if t not in ["even", "odd"]]
+                
+                # 重新构建标签列表，特殊标签在前，斑马条纹标签在后
+                new_tags = special_tags.copy()
+                if tag not in new_tags:
+                    new_tags.append(tag)
+
                 if update_index:
                     # 更新序号列
                     values = list(tree.item(item, "values"))
                     if values and values[0] != index:  # 只有当序号不一致时才更新
                         values[0] = index
-                        tree.item(item, values=values, tags=(tag,))
+                        tree.item(item, values=values, tags=tuple(new_tags))
                     else:
                         # 只更新斑马条纹标签，减少不必要的UI更新
-                        current_tags = tree.item(item, "tags")
-                        if tag not in current_tags:
-                            tree.item(item, tags=(tag,))
+                        tree.item(item, tags=tuple(new_tags))
                 else:
                     # 只更新斑马条纹标签
-                    current_tags = tree.item(item, "tags")
-                    if tag not in current_tags:  # 只有当标签不一致时才更新
-                        tree.item(item, tags=(tag,))
+                    tree.item(item, tags=tuple(new_tags))
         except AttributeError:
             # 忽略属性不存在的错误
             pass
@@ -4809,7 +4833,7 @@ class IPSubnetSplitterApp:
         right_frame = ttk.Frame(input_container)
 
         # 使用grid布局，固定左侧宽度，右侧自适应
-        input_container.grid_columnconfigure(0, minsize=140, weight=0)  # 固定左侧宽度
+        input_container.grid_columnconfigure(0, minsize=210, weight=0)  # 固定左侧宽度，与重叠检测面板左侧列宽度一致
         input_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         input_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
 
@@ -4830,7 +4854,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
 
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size - 1))
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
@@ -5409,7 +5433,7 @@ class IPSubnetSplitterApp:
         left_frame = ttk.Frame(content_container)
         right_frame = ttk.Frame(content_container)
 
-        content_container.grid_columnconfigure(0, minsize=191, weight=0)  # 固定左侧宽度，参考子网合并页面
+        content_container.grid_columnconfigure(0, minsize=210, weight=0)  # 固定左侧宽度，与子网合并页面保持一致
         content_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         content_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
 
@@ -5417,6 +5441,9 @@ class IPSubnetSplitterApp:
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 左侧：子网列表
+        left_frame.grid_columnconfigure(0, weight=1)  # 确保左侧框架第一列占满宽度
+        left_frame.grid_rowconfigure(0, weight=1)  # 确保左侧框架第一行撑满高度
+        
         input_frame = ttk.LabelFrame(left_frame, text=_('overlap_subnets'), padding=(10, 10, 0, 10))
         input_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -5424,8 +5451,8 @@ class IPSubnetSplitterApp:
         text_frame = ttk.Frame(input_frame)
         text_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size))
-        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23")
+        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1))
+        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
 
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
         overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
@@ -5452,7 +5479,7 @@ class IPSubnetSplitterApp:
 
         self.create_scrollable_treeview(result_frame, self.overlap_result_tree, overlap_result_scrollbar)
 
-        self.configure_treeview_styles(self.overlap_result_tree)
+        self.configure_treeview_styles(self.overlap_result_tree, include_special_tags=True)
 
     def execute_merge_subnets(self):
         """执行子网合并操作"""
@@ -5523,9 +5550,46 @@ class IPSubnetSplitterApp:
             # 执行合并
             result = merge_subnets(subnets)
 
+            # 清空结果表格
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+
             if isinstance(result, dict) and "error" in result:
-                self.show_info(_("error"), result["error"])
-                return
+                # 获取无效子网列表
+                invalid_subnets = result.get("invalid_subnets", [])
+                
+                # 在结果表格中显示每条错误信息
+                if invalid_subnets:
+                    # 为无效子网添加红色高亮
+                    self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
+                    self.subnet_merge_text.tag_configure("invalid", foreground="red", underline=True)
+                    
+                    # 遍历文本内容，为无效子网添加高亮
+                    lines = subnets_text.splitlines()
+                    # 使用集合优化查找，将时间复杂度从O(n*m)降低到O(n)
+                    invalid_set = {invalid["subnet"] for invalid in invalid_subnets}
+                    for i, line in enumerate(lines, 1):
+                        subnet = line.strip()
+                        if subnet in invalid_set:
+                            start = f"{i}.0"
+                            end = f"{i}.end"
+                            self.subnet_merge_text.tag_add("invalid", start, end)
+                    
+                    # 显示每条错误信息
+                    row_index = 0
+                    for invalid in invalid_subnets:
+                        tag = "error_row"
+                        # 精简错误信息，只显示"无效格式"
+                        simplified_error = _("invalid_format")
+                        # 在CIDR字段直接显示错误的子网，在网络地址字段显示精简后的错误描述
+                        self.ipv4_result_tree.insert("", tk.END, values=(invalid["subnet"], simplified_error, "", "", ""), tags=(tag,))
+                        row_index += 1
+                    # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
+                    self.update_table_zebra_stripes(self.ipv4_result_tree)
+                    return
+            else:
+                # 清除无效子网高亮
+                self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
 
             # 分离IPv4和IPv6结果
             merged_subnets = result.get("merged_subnets", [])
@@ -5553,10 +5617,6 @@ class IPSubnetSplitterApp:
                 self.ipv4_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
             
-            # 如果没有IPv4结果，直接清空表格即可
-            if not ipv4_results:
-                self.clear_tree_items(self.ipv4_result_tree)
-
             # 填充IPv6结果表格
             row_index = 0
             for subnet, info in ipv6_results:
@@ -5569,14 +5629,38 @@ class IPSubnetSplitterApp:
                 self.ipv6_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
+            # 更新斑马条纹
+            self.update_table_zebra_stripes(self.ipv4_result_tree)
+            self.update_table_zebra_stripes(self.ipv6_result_tree)
+
             # 操作成功完成，添加到历史记录
             self.update_range_start_history()
             self.update_range_end_history()
 
         except ValueError as e:
-            self.show_info(_("error"), f"{_("merge_subnet")}{_("failed")}: {str(e)}")
+            # 在结果表格中显示错误信息
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+            
+            # 尝试获取无效子网列表
+            error_msg = f"{_("merge_subnet")}{_("failed")}: {str(e)}"
+            tag = "error_row"
+            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            
+            # 清除无效子网高亮
+            self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
+            # 在结果表格中显示错误信息
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+            
+            # 尝试获取无效子网列表
+            error_msg = f"{_("operation_failed")}: {str(e)}"
+            tag = "error_row"
+            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            
+            # 清除无效子网高亮
+            self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
 
     def execute_ipv6_info(self):
         """执行IPv6地址信息查询"""
@@ -6394,8 +6478,41 @@ class IPSubnetSplitterApp:
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
 
+    def _process_overlap_detection(self, subnets, ip_version_label, row_index):
+        """
+        处理子网重叠检测结果并更新UI
+        
+        参数:
+        subnets: 子网列表
+        ip_version_label: IP版本标签
+        row_index: 当前行索引
+        
+        返回:
+        更新后的行索引
+        """
+        result = check_subnet_overlap(subnets)
+        if isinstance(result, dict) and "error" in result:
+            tag = "error_row"
+            self.overlap_result_tree.insert("", tk.END, values=(_("error"), result["error"]), tags=(tag,))
+            row_index += 1
+        else:
+            overlaps = result.get("overlaps", [])
+            if not overlaps:
+                tag = "odd" if row_index % 2 == 0 else "even"
+                self.overlap_result_tree.insert("", tk.END, values=(_("no_overlap"), f"{ip_version_label}: {_('no_subnet_overlap_detected')}"), tags=(tag,))
+                row_index += 1
+            else:
+                for overlap in overlaps:
+                    tag = "odd" if row_index % 2 == 0 else "even"
+                    status = _("overlap")
+                    # 直接使用overlap['type']作为描述，因为它已经是完整的重叠关系描述
+                    description = overlap['type']
+                    self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
+                    row_index += 1
+        return row_index
+
     def execute_check_overlap(self):
-        """执行子网重叠检测操作"""
+        """执行子网重叠检测操作，支持同时检测IPv4和IPv6子网"""
         try:
             for item in self.overlap_result_tree.get_children():
                 self.overlap_result_tree.delete(item)
@@ -6409,34 +6526,64 @@ class IPSubnetSplitterApp:
             # 解析子网列表
             subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
 
-            # 执行重叠检测
-            result = check_subnet_overlap(subnets)
+            # 按IP版本分类子网，用于分别检测IPv4和IPv6子网重叠
+            ipv4_subnets = []
+            ipv6_subnets = []
+            invalid_subnets = []
+            
+            # 验证子网格式并分类
+            for subnet in subnets:
+                try:
+                    network = ipaddress.ip_network(subnet, strict=False)
+                    if isinstance(network, ipaddress.IPv4Network):
+                        ipv4_subnets.append(subnet)
+                    else:
+                        ipv6_subnets.append(subnet)
+                except ValueError:
+                    invalid_subnets.append(subnet)
 
-            if isinstance(result, dict) and "error" in result:
-                self.show_info(_("error"), result["error"])
-                return
-
-            overlaps = result.get("overlaps", [])
+            # 显示无效子网信息
             row_index = 0
+            if invalid_subnets:
+                for subnet in invalid_subnets:
+                    tag = "error_row"
+                    self.overlap_result_tree.insert("", tk.END, values=(_("error"), f"{subnet}: {_('invalid_cidr_format')}"), tags=(tag,))
+                    row_index += 1
 
-            # 如果没有重叠，显示无重叠信息
-            if not overlaps:
+            # 检测IPv4子网重叠
+            if ipv4_subnets:
+                row_index = self._process_overlap_detection(ipv4_subnets, _("ipv4"), row_index)
+
+            # 检测IPv6子网重叠
+            if ipv6_subnets:
+                row_index = self._process_overlap_detection(ipv6_subnets, _("ipv6"), row_index)
+
+            # 如果没有任何子网（除了无效的），显示提示信息
+            if not ipv4_subnets and not ipv6_subnets and not invalid_subnets:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.overlap_result_tree.insert("", tk.END, values=(_("no_overlap"), _("no_subnet_overlap_detected")), tags=(tag,))
-            else:
-                # 显示所有重叠信息
-                for overlap in overlaps:
-                    status = _("overlap")
-                    overlap_type = _(overlap['type'])
-                    description = f"{overlap['subnet1']} {_('with')} {overlap['subnet2']} ({overlap_type})"
-                    tag = "odd" if row_index % 2 == 0 else "even"
-                    self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
-                    row_index += 1
+            
+            # 为无效子网添加红色高亮
+            self.overlap_text.tag_remove("invalid", "1.0", tk.END)
+            self.overlap_text.tag_configure("invalid", foreground="red", underline=True)
+            
+            # 遍历文本内容，为无效子网添加高亮
+            lines = subnets_text.splitlines()
+            # 使用集合优化查找，将时间复杂度从O(n^2)降低到O(n)
+            invalid_set = set(invalid_subnets)
+            for i, line in enumerate(lines, 1):
+                subnet = line.strip()
+                if subnet in invalid_set:
+                    start = f"{i}.0"
+                    end = f"{i}.end"
+                    self.overlap_text.tag_add("invalid", start, end)
             
             self.auto_resize_columns(self.overlap_result_tree)
+            # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
+            self.update_table_zebra_stripes(self.overlap_result_tree)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("execute_subnet_overlap_detection_failed")}: {str(e)}")
+            self.show_info(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
 
     def _update_history(self, entry, history_list, value=None, max_items=10):
         """通用的历史记录更新方法
@@ -7801,9 +7948,9 @@ class IPSubnetSplitterApp:
         main_width = self.root.winfo_width()
         main_height = self.root.winfo_height()
 
-        # 设置对话框尺寸，适当增大以容纳更丰富的内容，确保所有语言下都能完整显示
+        # 设置对话框尺寸，进一步增大高度以确保所有内容（包括开源地址链接和版权信息）完整显示
         dialog_width = 400
-        dialog_height = 300
+        dialog_height = 330
 
         # 计算对话框在主窗口中心的位置
         dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
@@ -7928,9 +8075,9 @@ class IPSubnetSplitterApp:
             qr_window.transient(about_window)
             qr_window.grab_set()
             
-            # 设置对话框大小和位置
+            # 设置对话框大小和位置，增加高度以容纳开源地址链接
             qr_width = 450
-            qr_height = 380
+            qr_height = 400
             qr_x = dialog_x + (dialog_width // 2) - (qr_width // 2)
             qr_y = dialog_y + (dialog_height // 2) - (qr_height // 2)
             qr_window.geometry(f"{qr_width}x{qr_height}+{qr_x}+{qr_y}")
@@ -8044,11 +8191,27 @@ class IPSubnetSplitterApp:
             
             # 添加提示信息
             tip_label = ttk.Label(qr_content, 
-                               text=_("donate_tip"), 
+                               text=_(
+                                   "donate_tip"), 
                                font=(font_family, 10),
                                style="About.TLabel",
                                foreground="#666666")
             tip_label.pack(pady=(5, 5))
+            
+            # 添加开源地址链接
+            import webbrowser
+
+            def open_github_link():
+                webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+            
+            github_label = ttk.Label(qr_content, 
+                                   text="https://gitcode.com/ejones-cn/Subnet_Planner", 
+                                   font=(font_family, 9),
+                                   style="About.TLabel",
+                                   foreground="#1976d2",
+                                   cursor="hand2")
+            github_label.pack(pady=(5, 5))
+            github_label.bind("<Button-1>", lambda e: open_github_link())
             
             # 关闭按钮
             close_button = ttk.Button(qr_content, 
@@ -8082,10 +8245,27 @@ class IPSubnetSplitterApp:
         about_window.bind('<Return>', lambda e: ok_button.invoke())
         about_window.bind('<Escape>', lambda e: ok_button.invoke())
 
+        # 添加开源地址链接
+        import webbrowser
+
+        def open_github_link():
+            webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+        
+        github_label = ttk.Label(
+            inner_frame, 
+            text="https://gitcode.com/ejones-cn/Subnet_Planner", 
+            font=(font_family, 9),
+            style="About.TLabel",
+            foreground="#1976d2",
+            cursor="hand2"
+        )
+        github_label.pack(anchor=tk.CENTER, pady=(5, 5))
+        github_label.bind("<Button-1>", lambda e: open_github_link())
+        
         # 添加版权信息，使用动态字体设置，灰色调
         copyright_label = ttk.Label(
             inner_frame, 
-            text=_("copyright").format(app_name=self.app_name), 
+            text=_('copyright').format(app_name=self.app_name), 
             font=(font_family, 8),  # 使用动态字体，保持9号大小
             style="About.TLabel",
             foreground="#888888"

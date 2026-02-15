@@ -81,6 +81,47 @@ def format_large_number(num, use_scientific=True):
 __version__ = get_version()
 
 
+def _collect_invalid_subnets(subnets):
+    """
+    收集无效子网并分类有效子网
+
+    参数:
+    subnets: 子网列表，每个子网为CIDR格式字符串
+
+    返回:
+    tuple: (ipv4_nets, ipv6_nets, invalid_subnets)
+    ipv4_nets: 有效的IPv4子网列表
+    ipv6_nets: 有效的IPv6子网列表
+    invalid_subnets: 无效子网列表，每个元素包含subnet和error信息
+    """
+    ipv4_nets = []
+    ipv6_nets = []
+    invalid_subnets = []
+    
+    for subnet in subnets:
+        try:
+            network = ipaddress.ip_network(subnet, strict=False)
+            
+            # 按IP版本分组
+            if isinstance(network, ipaddress.IPv6Network):
+                ipv6_nets.append(network)
+            else:
+                ipv4_nets.append(network)
+                
+        except ValueError as e:
+            # 收集无效子网，使用handle_ip_subnet_error获取详细错误信息
+            try:
+                error_info = handle_ip_subnet_error(e)
+            except (ValueError, TypeError) as ex:
+                error_info = {"error": f"处理子网错误时发生异常: {str(ex)}"}
+            invalid_subnets.append({
+                "subnet": subnet,
+                "error": error_info["error"]
+            })
+    
+    return ipv4_nets, ipv6_nets, invalid_subnets
+
+
 def handle_ip_subnet_error(error):
     """
     通用IP子网错误处理函数
@@ -587,21 +628,14 @@ def merge_subnets(subnets):
             return {"error": _('subnet_list_cannot_be_empty')}
 
         # 验证输入并按IP版本分组
-        ipv4_nets = []
-        ipv6_nets = []
+        ipv4_nets, ipv6_nets, invalid_subnets = _collect_invalid_subnets(subnets)
         
-        for subnet in subnets:
-            try:
-                network = ipaddress.ip_network(subnet, strict=False)
-                
-                # 按IP版本分组
-                if isinstance(network, ipaddress.IPv6Network):
-                    ipv6_nets.append(network)
-                else:
-                    ipv4_nets.append(network)
-                    
-            except ValueError as e:
-                return handle_ip_subnet_error(e)
+        # 如果有无效子网，返回详细的错误信息
+        if invalid_subnets:
+            return {
+                "error": _('invalid_subnet_format').format(subnets=', '.join([item["subnet"] for item in invalid_subnets])),
+                "invalid_subnets": invalid_subnets
+            }
         
         # 允许分别合并不同IP版本的子网
         
@@ -1184,6 +1218,39 @@ def range_to_cidr(start_ip, end_ip):
         return handle_ip_subnet_error(e)
 
 
+def _check_overlaps_in_networks(networks):
+    """
+    检查同一IP版本的子网列表之间是否存在重叠
+
+    参数:
+    networks: 子网对象列表，必须为同一IP版本
+
+    返回:
+    包含重叠信息的列表
+    """
+    overlaps = []
+    for i in range(len(networks)):
+        for j in range(i + 1, len(networks)):
+            subnet1, subnet2 = networks[i], networks[j]
+            if subnet1.overlaps(subnet2):
+                # 对于CIDR子网，任何重叠必然是包含关系
+                if subnet1.subnet_of(subnet2):
+                    overlap_type = f"{subnet1} {_('contained_in')} {subnet2}"
+                    overlaps.append({
+                        "subnet1": str(subnet1),
+                        "subnet2": str(subnet2),
+                        "type": overlap_type
+                    })
+                elif subnet2.subnet_of(subnet1):
+                    overlap_type = f"{subnet2} {_('contained_in')} {subnet1}"
+                    overlaps.append({
+                        "subnet1": str(subnet2),
+                        "subnet2": str(subnet1),
+                        "type": overlap_type
+                    })
+    return overlaps
+
+
 def check_subnet_overlap(subnets):
     """
     检查多个子网之间是否存在重叠，支持IPv4和IPv6
@@ -1195,42 +1262,36 @@ def check_subnet_overlap(subnets):
     包含重叠信息的字典
     """
     try:
-        # 验证输入并转换为Network对象，自动检测IPv4/IPv6
-        network_objects = []
-        ip_version = None
+        # 验证输入并按IP版本分类
+        ipv4_networks, ipv6_networks, invalid_subnets = _collect_invalid_subnets(subnets)
         
-        for subnet in subnets:
-            try:
-                network = ipaddress.ip_network(subnet, strict=False)
-                network_objects.append(network)
-                
-                # 检查所有子网是否为同一IP版本
-                current_version = "IPv6" if isinstance(network, ipaddress.IPv6Network) else "IPv4"
-                if ip_version is None:
-                    ip_version = current_version
-                elif ip_version != current_version:
-                    return {"error": _('all_subnets_must_be_same_ip_version')}
-                    
-            except ValueError as e:
-                return handle_ip_subnet_error(e)
+        # 如果有无效子网，返回详细的错误信息
+        if invalid_subnets:
+            return {
+                "error": _('invalid_subnet_format').format(subnets=', '.join([item["subnet"] for item in invalid_subnets])),
+                "invalid_subnets": invalid_subnets
+            }
 
-        if len(network_objects) < 2:
-            return {"error": _('at_least_two_subnets_needed_to_check_overlap')}
+        # 检查是否至少有两个有效子网
+        if len(ipv4_networks) + len(ipv6_networks) < 2:
+            return {'error': _('at_least_two_subnets_needed_to_check_overlap')}
 
         overlaps = []
 
-        # 比较每对子网之间的关系
-        for i in range(len(network_objects)):
-            for j in range(i + 1, len(network_objects)):
-                subnet1 = network_objects[i]
-                subnet2 = network_objects[j]
+        # 检查IPv4子网之间的重叠
+        overlaps.extend(_check_overlaps_in_networks(ipv4_networks))
 
-                if subnet1.overlaps(subnet2):
-                    overlaps.append({
-                        "subnet1": str(subnet1),
-                        "subnet2": str(subnet2),
-                        "type": "contains" if subnet1.subnet_of(subnet2) or subnet2.subnet_of(subnet1) else "partial overlap"
-                    })
+        # 检查IPv6子网之间的重叠
+        overlaps.extend(_check_overlaps_in_networks(ipv6_networks))
+
+        # 确定返回的IP版本信息
+        ip_version = None
+        if ipv4_networks and not ipv6_networks:
+            ip_version = "IPv4"
+        elif ipv6_networks and not ipv4_networks:
+            ip_version = "IPv6"
+        elif ipv4_networks and ipv6_networks:
+            ip_version = "mixed"
 
         return {
             "subnets": subnets,

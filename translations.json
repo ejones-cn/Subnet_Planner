@@ -1,5 +1,5 @@
 {
-  "__version__": "2.6.0",
+  "__version__": "2.6.5",
   "error": {
     "zh": "错误",
     "zh_tw": "錯誤",
@@ -543,7 +543,7 @@
     "zh": "子网掩码",
     "zh_tw": "子網遮罩",
     "en": "Subnet Mask",
-    "ja": "サブネットマスク",
+    "ja": "サブマスク",
     "ko": "서브넷 마스크"
   },
   "check_overlap": {
@@ -748,6 +748,27 @@
     "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8 or 2001:0db8::/64)",
     "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8 または 2001:0db8::/64）",
     "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8 또는 2001:0db8::/64) 을 입력하십시오."
+  },
+  "invalid_subnet_format": {
+    "zh": "无效的子网格式: {subnets}",
+    "zh_tw": "無效的子網格式：{subnets}",
+    "en": "Invalid subnet format: {subnets}",
+    "ja": "無効なサブネット形式：{subnets}",
+    "ko": "유효하지 않은 서브넷 형식: {subnets}"
+  },
+  "invalid_cidr_format": {
+    "zh": "无效的CIDR格式",
+    "zh_tw": "無效的CIDR格式",
+    "en": "Invalid CIDR format",
+    "ja": "無効なCIDR形式",
+    "ko": "유효하지 않은 CIDR 형식"
+  },
+  "invalid_format": {
+    "zh": "无效格式",
+    "zh_tw": "無效格式",
+    "en": "Invalid format",
+    "ja": "無効な形式",
+    "ko": "유효하지 않은 형식"
   },
   "invalid_split_segment_cidr": {
     "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23 或 2001:0db8::/64）",
@@ -1315,6 +1336,13 @@
     "ja": "重複検出",
     "zh_tw": "重疊檢測",
     "ko": "오버랩 감지"
+  },
+  "contained_in": {
+    "zh": "包含于",
+    "en": "contained in",
+    "ja": "含まれる",
+    "zh_tw": "包含於",
+    "ko": "에 포함됨"
   },
   "project": {
     "zh": "项目",
@@ -2983,11 +3011,11 @@
     "ko": "잘못된 IPv6 주소: 잘못된 형식 (예: 2001: 0db8:: 1)"
   },
   "copyright": {
-    "zh": "© 2025 {app_name} 版权所有",
-    "zh_tw": "© 2025 {app_name} 版權所有",
-    "en": "Copyright © 2025 {app_name}",
-    "ja": "© 2025 {app_name} 著作権所有",
-    "ko": "© 2025 {app_name} 판권 소유"
+    "zh": "© 2026 {app_name} 版权所有",
+    "zh_tw": "© 2026 {app_name} 版權所有",
+    "en": "Copyright © 2026 {app_name}",
+    "ja": "© 2026 {app_name} 著作権所有",
+    "ko": "© 2026 {app_name} 판권 소유"
   },
   "db_language": {
     "zh": "简体中文",

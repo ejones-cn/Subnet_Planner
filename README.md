@@ -1,4 +1,4 @@
-# 子网规划师 v2.6.0
+# 子网规划师 v2.6.5
 
 **子网规划师** - 让网络管理变得简单高效！
 
@@ -6,7 +6,7 @@
 
 子网规划师是一个功能强大、易于使用的网络工具，旨在帮助网络管理员和工程师快速、准确地进行IP地址规划和子网划分。该工具完整支持IPv4和IPv6协议，支持CIDR表示法，能够自动计算子网信息，并提供友好的用户界面。
 
-在v2.6.0版本中，子网规划师实现了全面的IPv6协议支持，包括IPv6地址解析、验证、子网切分、规划和地址范围计算等功能，与IPv4功能无缝集成，为用户提供了完整的网络规划解决方案。
+在v2.6.0及后续版本中，子网规划师实现了全面的IPv6协议支持，包括IPv6地址解析、验证、子网切分、规划和地址范围计算等功能，与IPv4功能无缝集成，为用户提供了完整的网络规划解决方案。
 
 ## ✨ 功能特性
 
@@ -108,13 +108,12 @@ Subnet_Planner/
 ├── debug_error_matching.py  # 错误匹配调试脚本
 ├── fix_cidr.py              # CIDR修复脚本
 ├── font_config.py           # 字体配置模块
-├── get_setup_scrollbar.py   # 滚动条设置脚本
 ├── i18n.py                  # 国际化模块
 ├── icon.ico                 # 应用程序图标
 ├── icon.png                 # 应用程序图标
 ├── icon-O.ico               # 应用程序图标
 ├── Subnet_Planner.ico       # 应用程序图标
-├── SubnetPlannerV2.6.0.exe  # Windows可执行文件
+├── SubnetPlannerV2.6.0.exe  # Windows可执行文件 (当前版本)
 ├── Picture/                 # 图片资源目录
 ├── Sample/                  # 示例文件目录
 ├── translations.json        # 翻译文件
@@ -123,13 +122,15 @@ Subnet_Planner/
 ├── .gitignore               # Git忽略文件
 ├── .pylintrc                # Pylint配置文件
 ├── pyproject.toml           # 项目配置文件
-├── IMPLEMENTATION_SUMMARY.md # 实现摘要文档
-├── OPTIMIZATION_REPORT.md    # 优化报告文档
-├── ENHANCEMENT_PLAN.md       # 增强计划文档
-├── CODE_FLOWCHART.md         # 代码流程图文档
-├── 打包脚本功能更新说明.md   # 打包脚本更新说明
-├── 数字签名使用说明.md       # 数字签名说明
-└── 解决方案说明.md           # 解决方案说明文档
+├── pack_archive.py          # 压缩打包脚本
+├── pack_archive_config.json # 打包配置文件
+├── run_pack_simple.py       # 简单打包运行脚本
+├── push_with_tags.bat       # Git标签推送脚本
+├── validate_json.py         # JSON验证脚本
+├── subnetplanner.crt        # 数字证书文件
+├── subnetplanner.csr        # 证书签名请求文件
+├── subnetplanner.key        # 证书私钥文件
+├── subnetplanner.pfx        # PKCS#12证书文件
 ```
 
 ## 🖼️ 界面预览
@@ -437,6 +438,10 @@ Subnet_Planner/
 8. PDF导出功能需要安装reportlab库
 
 ## 📝 更新日志
+
+### v2.6.5 (2026-02-16)
+
+- 增强：更新了版本号到v2.6.5
 
 ### v2.6.0 (2026-02-15)
 
