@@ -12,7 +12,7 @@ with open('windows_app.py', 'r', encoding='utf-8') as f:
         # 处理多行字符串，合并成单行
         pattern_str = pattern_str.replace('\n', '')
         # 提取正则表达式部分
-        regex_match = re2.search(r'r\'([^']+)\'', pattern_str)
+        regex_match = re2.search(r"r'([^']+)'", pattern_str)
         if regex_match:
             cidr_pattern = regex_match.group(1)
         else:

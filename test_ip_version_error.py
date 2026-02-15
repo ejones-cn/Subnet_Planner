@@ -6,8 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 导入需要的模块
-from ip_subnet_calculator import split_subnet
-from i18n import set_language, get_language, _
+from ip_subnet_calculator import split_subnet  # noqa: E402
+from i18n import set_language, get_language, _  # noqa: E402
 
 # 测试不同语言下的错误处理
 languages = [
@@ -35,7 +35,7 @@ for lang_code, lang_name in languages:
     
     if "error" in result:
         error_msg = result["error"]
-        print(f"测试结果: 成功捕获错误")
+        print("测试结果: 成功捕获错误")
         print(f"错误信息: {error_msg}")
         
         # 验证错误信息不是原始英文错误

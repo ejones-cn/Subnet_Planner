@@ -519,11 +519,11 @@
     "ko": "CIDR로 변환"
   },
   "cidr_result": {
-    "zh": "CIDR结果",
-    "zh_tw": "CIDR結果",
-    "en": "CIDR Result",
-    "ja": "CIDR結果",
-    "ko": "CIDR 결과"
+    "zh": "合并结果",
+    "zh_tw": "合併結果",
+    "en": "Merge Result",
+    "ja": "合併結果",
+    "ko": "병합 결과"
   },
   "ipv4_address_info": {
     "zh": "IPv4地址信息查询",
@@ -762,6 +762,13 @@
     "en": "IP versions not compatible: Parent network and split segment must be the same IP version (IPv4 or IPv6)",
     "ja": "IPバージョンが互換性がありません：親ネットワークと分割セグメントは同じIPバージョン（IPv4またはIPv6）でなければなりません",
     "ko": "IP 버전이 호환되지 않습니다. 상위 네트워크와 분할 세그먼트는 동일한 IP 버전 (IPv4 또는 IPv6) 이어야 합니다."
+  },
+  "all_subnets_must_be_same_ip_version": {
+    "zh": "IP版本不兼容：所有子网必须是相同的IP版本（IPv4或IPv6）",
+    "zh_tw": "IP版本不兼容：所有子網必須是相同的IP版本（IPv4或IPv6）",
+    "en": "All subnets must be the same IP version",
+    "ja": "すべてのサブネットは同じIPバージョンでなければなりません",
+    "ko": "모든 서브넷은 동일한 IP 버전이어야 합니다"
   },
   "parent_and_split_cidr_cannot_be_empty": {
     "zh": "父网段和切分网段都不能为空！",
@@ -1274,6 +1281,27 @@
     "zh_tw": "IPv6查詢",
     "ko": "IPv6 조회"
   },
+  "ipv6_no_broadcast_remark": {
+    "zh": "IPv6没有广播地址，使用多播地址代替",
+    "en": "IPv6 has no broadcast address, use multicast address instead",
+    "ja": "IPv6にはブロードキャストアドレスがなく、マルチキャストアドレスを使用します",
+    "zh_tw": "IPv6沒有廣播位址，使用多播位址代替",
+    "ko": "IPv6에는 브로드캐스트 주소가 없으며 멀티캐스트 주소를 대신 사용합니다"
+  },
+  "multicast_address_note": {
+    "zh": "多播地址说明",
+    "en": "Multicast Address Note",
+    "ja": "マルチキャストアドレスの説明",
+    "zh_tw": "多播位址說明",
+    "ko": "멀티캐스트 주소 설명"
+  },
+  "ipv6_multicast_note": {
+    "zh": "IPv6使用多播地址代替广播，多播地址以FF开头",
+    "en": "IPv6 uses multicast addresses instead of broadcast, multicast addresses start with FF",
+    "ja": "IPv6はブロードキャストの代わりにマルチキャストアドレスを使用し、マルチキャストアドレスはFFで始まります",
+    "zh_tw": "IPv6使用多播位址代替廣播，多播位址以FF開頭",
+    "ko": "IPv6는 브로드캐스트 대신 멀티캐스트 주소를 사용하며 멀티캐스트 주소는 FF로 시작합니다"
+  },
   "subnet_merge": {
     "zh": "子网合并",
     "en": "Subnet Merge",
@@ -1609,6 +1637,27 @@
     "en": "Failed to register font",
     "ja": "フォントの登録に失敗しました",
     "ko": "글꼴 등록에 실패했습니다"
+  },
+  "mixed_ip_version_not_supported": {
+    "zh": "不支持混合IP版本的子网合并",
+    "zh_tw": "不支持混合IP版本的子網合併",
+    "en": "Mixed IP versions are not supported for subnet merging",
+    "ja": "サブネット統合では混合IPバージョンはサポートされていません",
+    "ko": "서브넷 병합에는 혼합 IP 버전이 지원되지 않습니다"
+  },
+  "ipv6_address_type_mismatch": {
+    "zh": "无法合并不同类型的IPv6地址（如全局地址和链路本地地址）",
+    "zh_tw": "無法合併不同類型的IPv6位址（如全域位址和鏈路本地位址）",
+    "en": "Cannot merge different types of IPv6 addresses (e.g., global addresses and link-local addresses)",
+    "ja": "異なるタイプのIPv6アドレス（グローバルアドレスやリンクローカルアドレスなど）を統合することはできません",
+    "ko": "서로 다른 유형의 IPv6 주소(예: 전역 주소 및 링크-로컬 주소)는 병합할 수 없습니다"
+  },
+  "different_ip_versions_cannot_be_converted": {
+    "zh": "不同IP版本的地址无法转换或合并",
+    "zh_tw": "不同IP版本的位址無法轉換或合併",
+    "en": "Different IP versions cannot be converted or merged",
+    "ja": "異なるIPバージョンのアドレスは変換または統合できません",
+    "ko": "서로 다른 IP 버전의 주소는 변환하거나 병합할 수 없습니다"
   },
   "no_chinese_font_found": {
     "zh": "未找到可用的中文字体",

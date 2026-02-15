@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 导入翻译模块
-from i18n import _, set_language, get_language, translate
+from i18n import _, set_language, get_language, translate  # noqa: E402
 
 # 测试翻译功能
 print("测试翻译功能...")
