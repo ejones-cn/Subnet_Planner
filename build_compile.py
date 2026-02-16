@@ -29,6 +29,7 @@ class Args(NamedTuple):
     install_deps: bool
     pfx_password: str | None
     signtool_path: str | None
+    onefile: bool  # 是否使用单文件编译模式
 
 
 
@@ -223,7 +224,7 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
 
 
 
-def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None) -> bool:
+def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None, onefile: bool = True) -> bool:
     """使用Nuitka编译"""
     print("\n🚀 使用 Nuitka 编译...")
     
@@ -234,7 +235,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     # 编译命令 - 优化配置以减少杀毒软件误报（仅使用稳定支持的选项）
     cmd: list[str] = [
         sys.executable, "-m", "nuitka",
-        "--onefile",
+        "--onefile" if onefile else "--output-dir=dist",  # 根据onefile参数决定编译模式
         "--windows-console-mode=disable",
         "--windows-icon-from-ico=Subnet_Planner.ico",
         "--include-data-file=translations.json=translations.json",
@@ -243,9 +244,20 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         "--include-data-dir=Picture=Picture",
         "--enable-plugin=tk-inter",
         "--disable-cache=dll-dependencies",
+        "--disable-console",  # 禁用控制台，这是一个标志选项，不需要值
         # 仅保留稳定支持的选项，减少可疑特征
         "--lto=no",  # 禁用链接时优化，减少可疑特征
         "--show-progress",  # 显示进度
+        "--nofollow-import-to=tkinter.test",  # 排除tkinter测试模块
+        "--nofollow-import-to=unittest",  # 排除unittest模块
+        "--nofollow-import-to=pytest",  # 排除pytest模块
+        "--nofollow-import-to=doctest",  # 排除doctest模块
+        "--nofollow-import-to=email",  # 排除email模块
+        "--nofollow-import-to=smtplib",  # 排除smtplib模块
+        "--nofollow-import-to=http",  # 排除http模块
+        "--nofollow-import-to=xmlrpc",  # 排除xmlrpc模块
+        "--nofollow-import-to=urllib3",  # 排除urllib3模块
+        "--nofollow-import-to=requests",  # 排除requests模块
         # 添加 Windows 可执行文件元数据
         "--product-name=Subnet Planner",
         f"--product-version={version}",
@@ -253,9 +265,12 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         "--file-description=Subnet Planner - 子网规划师",
         "--company-name=Subnet Planner Team",
         "--copyright=Copyright © 2025-2026 Subnet Planner Team",
-        f"--output-filename={output_filename}",
+        f"--output-filename={output_filename}" if onefile else "",  # 只有单文件模式需要指定输出文件名
         "windows_app.py"
     ]
+    
+    # 过滤掉空字符串选项
+    cmd = [option for option in cmd if option]
     
     # 执行编译
     try:
@@ -291,7 +306,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
 
 
 
-def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None) -> bool:
+def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None, onefile: bool = True) -> bool:
     """使用PyInstaller编译"""
     print("\n🚀 使用 PyInstaller 编译...")
     
@@ -546,7 +561,7 @@ exe = EXE(pyz,
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
-        upx=True,
+        upx=False,
         upx_exclude=[],
         runtime_tmpdir=None,
         console=False,
@@ -558,7 +573,7 @@ exe = EXE(pyz,
         entitlements_file=None,
         uac_admin=False,
         uac_uiaccess=False,
-        onefile=True)
+        onefile={onefile})
 '''
     
     # 写入spec文件
@@ -662,6 +677,8 @@ def main() -> None:
     _ = parser.add_argument("--install-deps", action="store_true", help="仅安装依赖")
     _ = parser.add_argument("--pfx-password", "-p", help="PFX证书密码，不指定则交互式输入")
     _ = parser.add_argument("--signtool-path", "-s", help="signtool.exe工具路径，不指定则自动检测")
+    _ = parser.add_argument("--onefile", action="store_true", default=True, help="使用单文件编译模式（默认：是）")
+    _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
     args = parser.parse_args()
     
     # 使用cast明确指定args.type为字符串类型
@@ -701,10 +718,10 @@ def main() -> None:
     success = True
     
     if args.type == CompileType.NUITKA or args.type == CompileType.BOTH:
-        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path)
+        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile)
     
     if args.type == CompileType.PYINSTALLER or (args.type == CompileType.BOTH and success):
-        success = compile_with_pyinstaller(args.output, args.pfx_password, args.signtool_path)
+        success = compile_with_pyinstaller(args.output, args.pfx_password, args.signtool_path, args.onefile)
     
     # 清理临时文件（如果需要）
     if args.clean and success:
