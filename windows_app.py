@@ -4011,16 +4011,34 @@ class IPSubnetSplitterApp:
                 'error_code': 'empty_input'
             }
 
-        # 验证父网段CIDR格式
-        if not self.validate_cidr(parent, ip_version=self.split_ip_version_var.get()):
+        # 验证并自动修正父网段CIDR格式
+        try:
+            parent_net = ipaddress.ip_network(parent, strict=False)
+            parent_address = ipaddress.ip_address(parent.split('/')[0])
+            if parent_address != parent_net.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_parent = f"{parent_net.network_address}/{parent_net.prefixlen}"
+                # 更新输入框内容
+                self.parent_entry.delete(0, tk.END)
+                self.parent_entry.insert(0, correct_parent)
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_parent_network_cidr"),
                 'error_code': 'invalid_parent'
             }
 
-        # 验证切分段CIDR格式
-        if not self.validate_cidr(split, ip_version=self.split_ip_version_var.get()):
+        # 验证并自动修正切分段CIDR格式
+        try:
+            split_net = ipaddress.ip_network(split, strict=False)
+            split_address = ipaddress.ip_address(split.split('/')[0])
+            if split_address != split_net.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_split = f"{split_net.network_address}/{split_net.prefixlen}"
+                # 更新输入框内容
+                self.split_entry.delete(0, tk.END)
+                self.split_entry.insert(0, correct_split)
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_split_segment_cidr"),
@@ -4239,6 +4257,10 @@ class IPSubnetSplitterApp:
             self.clear_tree_items(self.split_tree)
             self.show_error(_("input_error"), validation_result['error'])
             return
+        
+        # 重新获取修正后的父网段和切分段
+        parent = self.parent_entry.get().strip()
+        split = self.split_entry.get().strip()
 
         try:
             # 只验证IP地址格式，不自动修正格式，保留用户输入的原始格式
