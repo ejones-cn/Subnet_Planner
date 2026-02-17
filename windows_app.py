@@ -7560,60 +7560,85 @@ class IPSubnetSplitterApp:
 
     def clear_result(self):
         """清空子网切分和子网规划的结果表格和图表"""
-        # 清空切分段信息表格
-        self.clear_tree_items(self.split_tree)
-        # 更新切分段表格的斑马条纹标签
-        self.update_table_zebra_stripes(self.split_tree)
+        try:
+            # 清空切分段信息表格
+            if hasattr(self, 'split_tree') and self.split_tree:
+                self.clear_tree_items(self.split_tree)
+                # 更新切分段表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.split_tree)
 
-        # 清空剩余网段表表格
-        self.clear_tree_items(self.remaining_tree)
-        # 更新剩余网段表的斑马条纹标签
-        self.update_table_zebra_stripes(self.remaining_tree)
+            # 清空剩余网段表表格
+            if hasattr(self, 'remaining_tree') and self.remaining_tree:
+                self.clear_tree_items(self.remaining_tree)
+                # 更新剩余网段表的斑马条纹标签
+                self.update_table_zebra_stripes(self.remaining_tree)
 
-        # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
-        if hasattr(self, 'remaining_scroll_v') and self.remaining_scroll_v:
-            # 重置滚动条位置
-            self.remaining_scroll_v.set(0.0, 1.0)
-            self.remaining_scroll_v.grid_remove()
+            # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
+            if hasattr(self, 'remaining_scroll_v') and self.remaining_scroll_v:
+                try:
+                    # 重置滚动条位置
+                    self.remaining_scroll_v.set(0.0, 1.0)
+                    self.remaining_scroll_v.grid_remove()
+                except Exception:
+                    pass
 
-        # 清空图表
-        self.chart_canvas.delete("all")
-        self.chart_data = None
+            # 清空图表
+            if hasattr(self, 'chart_canvas') and self.chart_canvas:
+                try:
+                    self.chart_canvas.winfo_exists()
+                    self.chart_canvas.delete("all")
+                    self.chart_data = None
 
-        # 更新Canvas滚动区域，设置为不可滚动状态
-        self.chart_canvas.config(scrollregion=(0, 0, self.chart_canvas.winfo_width(), 100))
+                    # 更新Canvas滚动区域，设置为不可滚动状态
+                    self.chart_canvas.config(scrollregion=(0, 0, self.chart_canvas.winfo_width(), 100))
+                except Exception:
+                    pass
 
-        # 调用滚动条回调函数，确保滚动条隐藏
-        # 模拟内容不可滚动的情况，让滚动条隐藏
-        if hasattr(self, 'chart_scrollbar') and self.chart_scrollbar:
-            self.chart_scrollbar.set(0.0, 1.0)
-            # 使用grid_remove()直接隐藏滚动条
-            self.chart_scrollbar.grid_remove()
+            # 调用滚动条回调函数，确保滚动条隐藏
+            # 模拟内容不可滚动的情况，让滚动条隐藏
+            if hasattr(self, 'chart_scrollbar') and self.chart_scrollbar:
+                try:
+                    self.chart_scrollbar.set(0.0, 1.0)
+                    # 使用grid_remove()直接隐藏滚动条
+                    self.chart_scrollbar.grid_remove()
+                except Exception:
+                    pass
         
-        # 清空子网规划的已分配子网表格
-        if hasattr(self, 'allocated_tree') and self.allocated_tree:
-            self.clear_tree_items(self.allocated_tree)
-            # 更新已分配表格的斑马条纹标签
-            self.update_table_zebra_stripes(self.allocated_tree)
+            # 清空子网规划的已分配子网表格
+            if hasattr(self, 'allocated_tree') and self.allocated_tree:
+                self.clear_tree_items(self.allocated_tree)
+                # 更新已分配表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.allocated_tree)
         
-        # 清空子网规划的剩余子网表格
-        if hasattr(self, 'planning_remaining_tree') and self.planning_remaining_tree:
-            self.clear_tree_items(self.planning_remaining_tree)
-            # 更新剩余子网表格的斑马条纹标签
-            self.update_table_zebra_stripes(self.planning_remaining_tree)
-        
-        # 清空子网规划的图表
-        if hasattr(self, 'planning_chart_canvas') and self.planning_chart_canvas:
-            self.planning_chart_canvas.delete("all")
-            self.planning_chart_data = None
-            
-            # 更新规划图表Canvas滚动区域，设置为不可滚动状态
-            self.planning_chart_canvas.config(scrollregion=(0, 0, self.planning_chart_canvas.winfo_width(), 100))
-            
-            # 处理规划图表的滚动条，确保清空结果时滚动条隐藏
-            if hasattr(self, 'planning_chart_v_scrollbar') and self.planning_chart_v_scrollbar:
-                self.planning_chart_v_scrollbar.set(0.0, 1.0)
-                self.planning_chart_v_scrollbar.grid_remove()
+            # 清空子网规划的剩余子网表格
+            if hasattr(self, 'planning_remaining_tree') and self.planning_remaining_tree:
+                self.clear_tree_items(self.planning_remaining_tree)
+                # 更新剩余子网表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.planning_remaining_tree)
+            # 清空子网规划的图表
+            if hasattr(self, 'planning_chart_canvas') and self.planning_chart_canvas:
+                try:
+                    # 检查canvas是否仍然有效
+                    self.planning_chart_canvas.winfo_exists()
+                    self.planning_chart_canvas.delete("all")
+                    self.planning_chart_data = None
+                    
+                    # 更新规划图表Canvas滚动区域，设置为不可滚动状态
+                    self.planning_chart_canvas.config(scrollregion=(0, 0, self.planning_chart_canvas.winfo_width(), 100))
+                    
+                    # 处理规划图表的滚动条，确保清空结果时滚动条隐藏
+                    if hasattr(self, 'planning_chart_v_scrollbar') and self.planning_chart_v_scrollbar:
+                        try:
+                            self.planning_chart_v_scrollbar.set(0.0, 1.0)
+                            self.planning_chart_v_scrollbar.grid_remove()
+                        except Exception:
+                            pass
+                except Exception:
+                    # 如果canvas已经失效，忽略错误
+                    pass
+        except Exception as e:
+            # 捕获所有异常，确保语言切换等操作不会失败
+            pass
     
     def one_click_export(self):
         """一键导出功能：自动执行规划和切分，然后导出所有格式的结果"""
