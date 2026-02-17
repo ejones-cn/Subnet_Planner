@@ -510,13 +510,14 @@ class IPSubnetSplitterApp:
             # 自动补全失败时不影响用户输入
             pass
     
-    def validate_cidr(self, text, entry=None, style_based=False):
+    def validate_cidr(self, text, entry=None, style_based=False, ip_version=None):
         """通用CIDR验证函数
 
         Args:
             text: 要验证的CIDR字符串
             entry: 可选的输入框对象，用于显示验证结果
             style_based: 是否使用样式来显示验证结果，否则使用前景色
+            ip_version: 可选的IP版本字符串，用于指定要验证的IP版本，如"IPv4"或"IPv6"
 
         Returns:
             验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
@@ -525,8 +526,22 @@ class IPSubnetSplitterApp:
         is_valid = True
         if text:
             try:
-                ipaddress.ip_network(text, strict=False)
-                is_valid = True
+                ip_network = ipaddress.ip_network(text, strict=False)
+                # 检查IP版本是否与指定的版本匹配
+                if ip_version:
+                    # 使用传入的IP版本进行检查
+                    actual_version = f"IPv{ip_network.version}"
+                    if ip_version != actual_version:
+                        is_valid = False
+                elif hasattr(self, 'ip_version_var'):
+                    # 向后兼容：如果没有传入IP版本，尝试使用子网规划的IP版本变量
+                    selected_version = self.ip_version_var.get()
+                    actual_version = f"IPv{ip_network.version}"
+                    if selected_version != actual_version:
+                        is_valid = False
+                else:
+                    # 如果没有IP版本信息，只验证格式
+                    is_valid = True
             except ValueError:
                 is_valid = False
 
@@ -1306,7 +1321,7 @@ class IPSubnetSplitterApp:
 
         # 添加IP版本切换框架
         ip_version_frame = ttk.Frame(input_frame)
-        ip_version_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 5))
+        ip_version_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=0)
         
         # 初始化IP版本变量
         self.split_ip_version_var = tk.StringVar(value="IPv4")
@@ -1335,14 +1350,14 @@ class IPSubnetSplitterApp:
 
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(font_family, font_size)).grid(
-            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
+            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
         # 初始化子网切分的历史记录列表
         self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
         self.split_networks = ["10.21.50.0/23", "172.20.180.0/24", "2001:0db8::/64", "fe80::1/128"]  # 提供IPv4和IPv6初始记录
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,  # 使用包含两条记录的列表
@@ -1350,7 +1365,7 @@ class IPSubnetSplitterApp:
             validate='all',
             validatecommand=vcmd,
         )
-        self.parent_entry.grid(row=1, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
+        self.parent_entry.grid(row=1, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
         default_parent = "10.0.0.0/8"  # 默认父网段
         self.parent_entry.insert(0, default_parent)  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
@@ -1359,9 +1374,9 @@ class IPSubnetSplitterApp:
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
-            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
+            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
-        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
+        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
             values=self.split_networks,  # 使用包含两条记录的列表
@@ -1369,7 +1384,7 @@ class IPSubnetSplitterApp:
             validate='all',
             validatecommand=vcmd,
         )
-        self.split_entry.grid(row=2, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
+        self.split_entry.grid(row=2, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
         default_split = "10.21.50.0/23"  # 默认切分段
         self.split_entry.insert(0, default_split)  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
@@ -1771,37 +1786,36 @@ class IPSubnetSplitterApp:
         # 设置父网段设置面板的固定宽度
         parent_frame.configure(width=250)
 
-        # 创建IP版本切换框架
-        ip_version_frame = ttk.Frame(parent_frame)
-        ip_version_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
-        
         # 初始化IP版本变量
         self.ip_version_var = tk.StringVar(value="IPv4")
         
-        # 添加IPv4/IPv6切换按钮
-        ipv4_btn = ttk.Radiobutton(ip_version_frame, text="IPv4", variable=self.ip_version_var, value="IPv4", 
-                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
-        ipv4_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
-        ipv6_btn = ttk.Radiobutton(ip_version_frame, text="IPv6", variable=self.ip_version_var, value="IPv6", 
-                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
-        ipv6_btn.pack(side=tk.LEFT)
-
         # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
-        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
+        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]  # 初始时只提供IPv4记录，因为默认选中IPv4
 
-        # 父网段下拉文本框
-        ttk.Label(parent_frame, text="").pack(side=tk.LEFT, padx=(0, 0))
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
+        # 创建父网段输入区域框架，用于水平排列IP选项和输入框
+        parent_input_frame = ttk.Frame(parent_frame)
+        parent_input_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        # 添加IPv4/IPv6切换按钮 - 水平排列
+        ipv4_btn = ttk.Radiobutton(parent_input_frame, text="IPv4", variable=self.ip_version_var, value="IPv4", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv4_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        ipv6_btn = ttk.Radiobutton(parent_input_frame, text="IPv6", variable=self.ip_version_var, value="IPv6", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv6_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 父网段下拉文本框 - 与IP选项水平排列
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry, ip_version=self.ip_version_var.get())), '%P')
         self.planning_parent_entry = ttk.Combobox(
-            parent_frame,
+            parent_input_frame,
             values=self.planning_parent_networks,  # 使用包含两条记录的列表
-            width=16,
+            width=8,
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
-        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+        self.planning_parent_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         default_parent = "10.21.48.0/20"  # 默认值
         self.planning_parent_entry.insert(0, default_parent)  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
@@ -3992,7 +4006,7 @@ class IPSubnetSplitterApp:
             }
 
         # 验证父网段CIDR格式
-        if not self.validate_cidr(parent):
+        if not self.validate_cidr(parent, ip_version=self.split_ip_version_var.get()):
             return {
                 'valid': False,
                 'error': _("invalid_parent_network_cidr"),
@@ -4000,7 +4014,7 @@ class IPSubnetSplitterApp:
             }
 
         # 验证切分段CIDR格式
-        if not self.validate_cidr(split):
+        if not self.validate_cidr(split, ip_version=self.split_ip_version_var.get()):
             return {
                 'valid': False,
                 'error': _("invalid_split_segment_cidr"),
@@ -4091,7 +4105,18 @@ class IPSubnetSplitterApp:
             }
 
         # 验证父网段CIDR格式
-        if not self.validate_cidr(parent):
+        try:
+            ip_network = ipaddress.ip_network(parent, strict=False)
+            # 检查IP版本是否与当前选中的版本匹配
+            selected_version = self.ip_version_var.get()
+            actual_version = f"IPv{ip_network.version}"
+            if selected_version != actual_version:
+                return {
+                    'valid': False,
+                    'error': _("ip_versions_not_compatible"),
+                    'error_code': 'version_mismatch'
+                }
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_parent_network_format"),
