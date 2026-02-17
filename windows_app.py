@@ -962,6 +962,28 @@ class IPSubnetSplitterApp:
         parent = history_record['parent']
         split = history_record['split']
 
+        # 检测IP版本并自动切换
+        try:
+            # 检测父网段的IP版本
+            parent_net = ipaddress.ip_network(parent, strict=False)
+            detected_version = f"IPv{parent_net.version}"
+            
+            # 如果检测到的版本与当前选中版本不同，则切换IP版本
+            if detected_version != self.split_ip_version_var.get():
+                self.split_ip_version_var.set(detected_version)
+                self.on_split_ip_version_change()
+        except ValueError:
+            # 如果父网段检测失败，尝试检测切分段
+            try:
+                split_net = ipaddress.ip_network(split, strict=False)
+                detected_version = f"IPv{split_net.version}"
+                if detected_version != self.split_ip_version_var.get():
+                    self.split_ip_version_var.set(detected_version)
+                    self.on_split_ip_version_change()
+            except ValueError:
+                # 都检测失败，保持当前版本
+                pass
+
         # 填充到输入框
         self.parent_entry.delete(0, tk.END)
         self.parent_entry.insert(0, parent)
@@ -1353,19 +1375,26 @@ class IPSubnetSplitterApp:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
         # 初始化IP版本相关数据
+        # 为每个IP版本维护独立的历史记录列表
+        self.split_parent_networks_v4 = ["10.0.0.0/8", "172.16.0.0/12"]  # IPv4父网段历史记录
+        self.split_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6父网段历史记录
+        self.split_networks_v4 = ["10.21.50.0/23", "172.20.180.0/24"]  # IPv4切分段历史记录
+        self.split_networks_v6 = ["2001:0db8::/64", "fe80::1/128"]  # IPv6切分段历史记录
+        
+        # 根据IP版本选择对应的历史记录列表
         ip_version = self.split_ip_version_var.get()
         if ip_version == "IPv4":
-            # 设置IPv4默认值和历史记录
+            # 使用IPv4历史记录
+            self.split_parent_networks = self.split_parent_networks_v4
+            self.split_networks = self.split_networks_v4
             default_parent = "10.0.0.0/8"
             default_split = "10.21.50.0/23"
-            self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]
-            self.split_networks = ["10.21.50.0/23", "172.20.180.0/24"]
         else:
-            # 设置IPv6默认值和历史记录
+            # 使用IPv6历史记录
+            self.split_parent_networks = self.split_parent_networks_v6
+            self.split_networks = self.split_networks_v6
             default_parent = "2001:0db8::/32"
             default_split = "2001:0db8::/64"
-            self.split_parent_networks = ["2001:0db8::/32", "fe80::/10"]
-            self.split_networks = ["2001:0db8::/64", "fe80::1/128"]
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get())), '%P')
@@ -1641,7 +1670,7 @@ class IPSubnetSplitterApp:
         # 创建剩余网段信息表格
         self.remaining_tree = ttk.Treeview(
             self.remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            columns=("index", "cidr", "network", "end_address", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
             height=5,
         )
@@ -1649,6 +1678,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.heading("index", text=_("index"))
         self.remaining_tree.heading("cidr", text=_("cidr"))
         self.remaining_tree.heading("network", text=_("network_address"))
+        self.remaining_tree.heading("end_address", text=_("network_end_address"))
         self.remaining_tree.heading("netmask", text=_("subnet_mask"))
         self.remaining_tree.heading("wildcard", text=_("wildcard_mask"))
         self.remaining_tree.heading("broadcast", text=_("broadcast_address"))
@@ -1658,10 +1688,11 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("index", minwidth=35, width=35, stretch=False, anchor="e")
         self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
+        self.remaining_tree.column("end_address", minwidth=100, width=0, stretch=False)  # 初始隐藏网段结束地址列
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("broadcast", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
+        self.remaining_tree.column("usable", minwidth=50, width=60, stretch=True)  # 初始就窄化可用地址数列，因为使用科学计数法
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.remaining_tree)
@@ -1798,8 +1829,10 @@ class IPSubnetSplitterApp:
         # 初始化IP版本变量
         self.ip_version_var = tk.StringVar(value="IPv4")
         
-        # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
-        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]  # 初始时只提供IPv4记录，因为默认选中IPv4
+        # 初始化父网段列表 - 为每个IP版本维护独立的历史记录列表
+        self.planning_parent_networks_v4 = ["10.21.48.0/20", "192.168.0.0/16"]  # IPv4历史记录
+        self.planning_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6历史记录
+        self.planning_parent_networks = self.planning_parent_networks_v4  # 当前使用的历史记录列表
 
         # 创建父网段输入区域框架，用于水平排列IP选项和输入框
         parent_input_frame = ttk.Frame(parent_frame)
@@ -2017,7 +2050,7 @@ class IPSubnetSplitterApp:
         )
         self.allocated_tree = ttk.Treeview(
             self.allocated_frame,
-            columns=("index", "name", "cidr", "required", "available", "network", "netmask", "wildcard", "broadcast"),
+            columns=("index", "name", "cidr", "required", "available", "network", "end_address", "netmask", "wildcard", "broadcast"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -2031,6 +2064,7 @@ class IPSubnetSplitterApp:
         self.allocated_tree.heading("required", text=_("required_count"))
         self.allocated_tree.heading("available", text=_("available_count"))
         self.allocated_tree.heading("network", text=_("network_address"))
+        self.allocated_tree.heading("end_address", text=_("network_end_address"))
         self.allocated_tree.heading("netmask", text=_("subnet_mask"))
         self.allocated_tree.heading("wildcard", text=_("wildcard_mask"))
         self.allocated_tree.heading("broadcast", text=_("broadcast_address"))
@@ -2042,6 +2076,7 @@ class IPSubnetSplitterApp:
         self.allocated_tree.column("required", width=0, minwidth=35, stretch=True)  # 需求数列自动宽度
         self.allocated_tree.column("available", width=0, minwidth=35, stretch=True)  # 可用数列自动宽度
         self.allocated_tree.column("network", width=0, minwidth=80, stretch=True)  # 网络地址列自动宽度
+        self.allocated_tree.column("end_address", width=0, minwidth=80, stretch=False)  # 网段结束地址列初始隐藏
         self.allocated_tree.column("netmask", width=0, minwidth=80, stretch=True)  # 子网掩码列自动宽度
         self.allocated_tree.column("wildcard", width=0, minwidth=80, stretch=True)  # 通配符掩码列自动宽度
         self.allocated_tree.column("broadcast", width=0, minwidth=80, stretch=True)  # 广播地址列自动宽度
@@ -2076,7 +2111,7 @@ class IPSubnetSplitterApp:
         )
         self.planning_remaining_tree = ttk.Treeview(
             self.planning_remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            columns=("index", "cidr", "network", "end_address", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -2086,6 +2121,7 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.heading("index", text=_("index"))
         self.planning_remaining_tree.heading("cidr", text=_("cidr"))
         self.planning_remaining_tree.heading("network", text=_("network_address"))
+        self.planning_remaining_tree.heading("end_address", text=_("network_end_address"))
         self.planning_remaining_tree.heading("netmask", text=_("subnet_mask"))
         self.planning_remaining_tree.heading("wildcard", text=_("wildcard_mask"))
         self.planning_remaining_tree.heading("broadcast", text=_("broadcast_address"))
@@ -2095,12 +2131,13 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.column("index", width=35, minwidth=35, stretch=False, anchor="e")
         self.planning_remaining_tree.column("cidr", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column(
-            "network", width=80, minwidth=70, stretch=True
-        )  # 调小网络地址列宽并启用拉伸
+            "network", width=120, minwidth=100, stretch=True
+        )  # 加宽网络地址列以完整显示IPv6地址
+        self.planning_remaining_tree.column("end_address", width=0, minwidth=100, stretch=False)  # 网段结束地址列，初始隐藏
         self.planning_remaining_tree.column("netmask", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("wildcard", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
-        self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
+        self.planning_remaining_tree.column("usable", width=60, minwidth=50, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
 
         # 垂直滚动条
         remaining_v_scrollbar = ttk.Scrollbar(
@@ -3832,15 +3869,19 @@ class IPSubnetSplitterApp:
             # 检测IP版本
             is_ipv6 = ipaddress.ip_network(parent).version == 6
             
-            # 根据IP版本显示或隐藏通配符掩码列和子网掩码列
+            # 根据IP版本显示或隐藏相应的列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列和子网掩码列
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
                 self.allocated_tree.column("wildcard", width=0, stretch=False)
                 self.allocated_tree.column("netmask", width=0, stretch=False)
+                self.allocated_tree.column("broadcast", width=0, stretch=False)
+                self.allocated_tree.column("end_address", width=120, stretch=True)  # 显示网段结束地址列
             else:
-                # IPv4显示通配符掩码列和子网掩码列
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
                 self.allocated_tree.column("wildcard", width=100, stretch=True)
                 self.allocated_tree.column("netmask", width=100, stretch=True)
+                self.allocated_tree.column("broadcast", width=120, stretch=True)
+                self.allocated_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
             
             # 显示已分配子网
             for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
@@ -3856,9 +3897,10 @@ class IPSubnetSplitterApp:
                         format_large_number(subnet["required_hosts"]),
                         format_large_number(subnet["available_hosts"]),
                         subnet["info"]["network"],
+                        subnet["info"]["broadcast"],  # 网段结束地址
                         subnet["info"]["netmask"],
                         subnet["info"]["wildcard"],
-                        subnet["info"]["broadcast"],
+                        subnet["info"]["broadcast"] if not is_ipv6 else "-",
                     ),
                     tags=tags,
                 )
@@ -3867,15 +3909,27 @@ class IPSubnetSplitterApp:
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
 
-            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列和子网掩码列
+            # 根据IP版本显示或隐藏相应的列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列和子网掩码列
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
                 self.planning_remaining_tree.column("wildcard", width=0, stretch=False)
                 self.planning_remaining_tree.column("netmask", width=0, stretch=False)
+                self.planning_remaining_tree.column("broadcast", width=0, stretch=False)
+                # 调整IPv6列宽，确保完整显示IPv6地址
+                self.planning_remaining_tree.column("cidr", width=180, stretch=True)
+                self.planning_remaining_tree.column("network", width=180, stretch=True)  # 加宽网络地址列
+                self.planning_remaining_tree.column("end_address", width=200, stretch=True)  # 显示网段结束地址列
+                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
             else:
-                # IPv4显示通配符掩码列和子网掩码列
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
                 self.planning_remaining_tree.column("wildcard", width=100, stretch=True)
                 self.planning_remaining_tree.column("netmask", width=100, stretch=True)
+                self.planning_remaining_tree.column("broadcast", width=120, stretch=True)
+                self.planning_remaining_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
+                # 恢复IPv4列宽
+                self.planning_remaining_tree.column("cidr", width=120, stretch=True)
+                self.planning_remaining_tree.column("network", width=120, stretch=True)
+                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
             
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
@@ -3887,9 +3941,10 @@ class IPSubnetSplitterApp:
                         i,
                         plan_result['remaining_subnets'][i - 1],
                         subnet["network"],
+                        subnet["broadcast"],  # 网段结束地址
                         subnet["netmask"],
                         subnet["wildcard"],
-                        subnet["broadcast"],
+                        subnet["broadcast"] if not is_ipv6 else "-",
                         format_large_number(subnet["usable_addresses"]),  # 修正为正确的字段名
                     ),
                     tags=tags,
@@ -4058,15 +4113,15 @@ class IPSubnetSplitterApp:
             # 清空当前输入框
             self.planning_parent_entry.delete(0, tk.END)
             
-            # 根据IP版本更新默认值和历史记录
+            # 根据IP版本选择对应的历史记录列表
             if ip_version == "IPv4":
-                # 设置IPv4默认值和历史记录
+                # 使用IPv4历史记录
+                self.planning_parent_networks = self.planning_parent_networks_v4
                 default_parent = "10.21.48.0/20"
-                self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]
             else:
-                # 设置IPv6默认值和历史记录
+                # 使用IPv6历史记录
+                self.planning_parent_networks = self.planning_parent_networks_v6
                 default_parent = "2001:0db8::/32"
-                self.planning_parent_networks = ["2001:0db8::/32", "fe80::/10"]
             
             # 更新输入框默认值和下拉列表
             self.planning_parent_entry.insert(0, default_parent)
@@ -4087,19 +4142,19 @@ class IPSubnetSplitterApp:
             self.parent_entry.delete(0, tk.END)
             self.split_entry.delete(0, tk.END)
             
-            # 根据IP版本更新默认值和历史记录
+            # 根据IP版本选择对应的历史记录列表
             if ip_version == "IPv4":
-                # 设置IPv4默认值和历史记录
+                # 使用IPv4历史记录
+                self.split_parent_networks = self.split_parent_networks_v4
+                self.split_networks = self.split_networks_v4
                 default_parent = "10.0.0.0/8"
                 default_split = "10.21.50.0/23"
-                self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]
-                self.split_networks = ["10.21.50.0/23", "172.20.180.0/24"]
             else:
-                # 设置IPv6默认值和历史记录
+                # 使用IPv6历史记录
+                self.split_parent_networks = self.split_parent_networks_v6
+                self.split_networks = self.split_networks_v6
                 default_parent = "2001:0db8::/32"
                 default_split = "2001:0db8::/64"
-                self.split_parent_networks = ["2001:0db8::/32", "fe80::/10"]
-                self.split_networks = ["2001:0db8::/64", "fe80::1/128"]
             
             # 更新输入框默认值和下拉列表
             self.parent_entry.insert(0, default_parent)
@@ -4324,15 +4379,27 @@ class IPSubnetSplitterApp:
             # 检测IP版本
             is_ipv6 = ipaddress.ip_network(parent).version == 6
             
-            # 根据IP版本显示或隐藏剩余网段表的通配符掩码列和子网掩码列
+            # 根据IP版本显示或隐藏剩余网段表的列
             if is_ipv6:
-                # IPv6隐藏通配符掩码列和子网掩码列
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
                 self.remaining_tree.column("wildcard", width=0, stretch=False)
                 self.remaining_tree.column("netmask", width=0, stretch=False)
+                self.remaining_tree.column("broadcast", width=0, stretch=False)
+                # 调整IPv6列宽，确保完整显示IPv6地址
+                self.remaining_tree.column("cidr", width=180, stretch=True)
+                self.remaining_tree.column("network", width=180, stretch=True)
+                self.remaining_tree.column("end_address", width=200, stretch=True)
+                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
             else:
-                # IPv4显示通配符掩码列和子网掩码列
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
                 self.remaining_tree.column("wildcard", width=100, stretch=True)
                 self.remaining_tree.column("netmask", width=100, stretch=True)
+                self.remaining_tree.column("broadcast", width=120, stretch=True)
+                self.remaining_tree.column("end_address", width=0, stretch=False)
+                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+                # 恢复IPv4列宽
+                self.remaining_tree.column("cidr", width=120, stretch=True)
+                self.remaining_tree.column("network", width=120, stretch=True)
             
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
@@ -4345,6 +4412,7 @@ class IPSubnetSplitterApp:
                             i,
                             network["cidr"],
                             network["network"],
+                            network["broadcast"],  # 网段结束地址
                             network["netmask"],
                             network.get("wildcard", ""),
                             network["broadcast"] if not is_ipv6 else "-",
@@ -4354,7 +4422,7 @@ class IPSubnetSplitterApp:
                     )
 
             else:
-                self.remaining_tree.insert("", tk.END, values=(1, _("none"), _("none"), _("none"), _("none"), _("none")))
+                self.remaining_tree.insert("", tk.END, values=(1, _("none"), _("none"), _("none"), _("none"), _("none"), _("none"), _("none")))
 
             # 不再手动调整表格宽度，依靠Tkinter的stretch=True自动处理
 

@@ -630,6 +630,13 @@
     "ja": "ネットアド",
     "ko": "네트워크 주소"
   },
+  "network_end_address": {
+    "zh": "网段结束地址",
+    "zh_tw": "網段結束位址",
+    "en": "Network End Addr",
+    "ja": "ネットワーク終了アドレス",
+    "ko": "네트워크 종료 주소"
+  },
   "wildcard_mask": {
     "zh": "通配符掩码",
     "zh_tw": "萬用字元遮罩",
