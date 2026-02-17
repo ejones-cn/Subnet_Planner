@@ -3795,6 +3795,9 @@ class IPSubnetSplitterApp:
         if not validation_result['valid']:
             self.show_error(_("error"), validation_result['error'])
             return
+        
+        # 重新获取修正后的父网段
+        parent = self.planning_parent_entry.get().strip()
 
         # 获取子网需求
         subnet_requirements = []
@@ -3909,17 +3912,11 @@ class IPSubnetSplitterApp:
             self.generate_planning_chart_data(plan_result)
 
         except ValueError as e:
-            error_msg = str(e)
-            if "not permitted" in error_msg and "Octet" in error_msg:
-                match = re.search(r"Octet\D*(\d+)", error_msg)
-                if match:
-                    octet = match.group(1)
-                    message = f"子网规划失败: IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
-                else:
-                    message = f"子网规划失败: {error_msg}"
-            else:
-                message = f"子网规划失败: {error_msg}"
-            self.show_error(_("error"), message)
+            # 导入handle_ip_subnet_error函数
+            from ip_subnet_calculator import handle_ip_subnet_error
+            # 使用通用错误处理函数处理IP相关错误
+            error_dict = handle_ip_subnet_error(e)
+            self.show_error(_("error"), f"{_("subnet_planning_failed")}: {error_dict.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
 
@@ -4115,6 +4112,7 @@ class IPSubnetSplitterApp:
 
         # 验证父网段CIDR格式
         try:
+            # 使用strict=False创建网络对象，允许主机位设置
             ip_network = ipaddress.ip_network(parent, strict=False)
             # 检查IP版本是否与当前选中的版本匹配
             selected_version = self.ip_version_var.get()
@@ -4125,6 +4123,15 @@ class IPSubnetSplitterApp:
                     'error': _("ip_versions_not_compatible"),
                     'error_code': 'version_mismatch'
                 }
+            
+            # 检查输入的地址是否与网络地址完全匹配
+            input_address = ipaddress.ip_address(parent.split('/')[0])
+            if input_address != ip_network.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_cidr = f"{ip_network.network_address}/{ip_network.prefixlen}"
+                # 更新输入框内容
+                self.planning_parent_entry.delete(0, tk.END)
+                self.planning_parent_entry.insert(0, correct_cidr)
         except ValueError:
             return {
                 'valid': False,
