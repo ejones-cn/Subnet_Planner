@@ -1352,21 +1352,31 @@ class IPSubnetSplitterApp:
         ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(font_family, font_size)).grid(
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
-        # 初始化子网切分的历史记录列表
-        self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
-        self.split_networks = ["10.21.50.0/23", "172.20.180.0/24", "2001:0db8::/64", "fe80::1/128"]  # 提供IPv4和IPv6初始记录
+        # 初始化IP版本相关数据
+        ip_version = self.split_ip_version_var.get()
+        if ip_version == "IPv4":
+            # 设置IPv4默认值和历史记录
+            default_parent = "10.0.0.0/8"
+            default_split = "10.21.50.0/23"
+            self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]
+            self.split_networks = ["10.21.50.0/23", "172.20.180.0/24"]
+        else:
+            # 设置IPv6默认值和历史记录
+            default_parent = "2001:0db8::/32"
+            default_split = "2001:0db8::/64"
+            self.split_parent_networks = ["2001:0db8::/32", "fe80::/10"]
+            self.split_networks = ["2001:0db8::/64", "fe80::1/128"]
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
-            values=self.split_parent_networks,  # 使用包含两条记录的列表
+            values=self.split_parent_networks,  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
         self.parent_entry.grid(row=1, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
-        default_parent = "10.0.0.0/8"  # 默认父网段
         self.parent_entry.insert(0, default_parent)  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
         # 添加IPv6自动补全功能
@@ -1379,13 +1389,12 @@ class IPSubnetSplitterApp:
         vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
-            values=self.split_networks,  # 使用包含两条记录的列表
+            values=self.split_networks,  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
         self.split_entry.grid(row=2, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
-        default_split = "10.21.50.0/23"  # 默认切分段
         self.split_entry.insert(0, default_split)  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
         # 添加IPv6自动补全功能
