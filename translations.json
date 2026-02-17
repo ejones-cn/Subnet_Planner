@@ -336,6 +336,13 @@
     "ja": "「分割を実行」ボタンをクリックして操作を開始してください...",
     "ko": "'분할 수행' 버튼을 클릭하여 시작하세요..."
   },
+  "click_execute_planning_to_start": {
+    "zh": "点击'执行规划'按钮开始操作...",
+    "zh_tw": "點擊'執行規劃'按鈕開始操作…",
+    "en": "Click 'Execute Planning' to start operation...",
+    "ja": "「計画を実行」ボタンをクリックして操作を開始してください...",
+    "ko": "'계획 실행' 버튼을 클릭하여 시작하세요..."
+  },
   "subnet_name": {
     "zh": "子网名称",
     "zh_tw": "子網名稱",
@@ -1777,6 +1784,13 @@
     "ja": "サブネットクリア",
     "zh_tw": "清空子網切分",
     "ko": "빈 서브넷 분할"
+  },
+  "clear_subnet_split_and_planning": {
+    "zh": "清空子网切分和规划",
+    "en": "Clear Subnet Split and Planning",
+    "ja": "サブネット分割と計画をクリア",
+    "zh_tw": "清空子網切分和規劃",
+    "ko": "서브넷 분할 및 계획 지우기"
   },
   "function_debug": {
     "zh": "功能调试",

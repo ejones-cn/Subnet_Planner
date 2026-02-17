@@ -96,6 +96,38 @@ def _calculate_usable_addresses(network_range: int, is_ipv6: bool = False) -> in
             return network_range - 2
 
 
+def _optimize_ipv6_display(ipv6_address: str) -> str:
+    """优化IPv6地址的显示格式
+    
+    对于长IPv6地址，使用更紧凑的显示方式，便于在图表中显示
+    
+    Args:
+        ipv6_address: 完整的IPv6地址
+        
+    Returns:
+        str: 优化后的IPv6地址显示
+    """
+    try:
+        # 使用ipaddress模块解析IPv6地址，自动处理零压缩
+        ip_obj = ipaddress.ip_address(ipv6_address.split('/')[0])
+        compressed_ip = str(ip_obj)
+        
+        # 如果是CIDR格式，保留前缀长度
+        if '/' in ipv6_address:
+            prefix = ipv6_address.split('/')[1]
+            compressed_ip = f"{compressed_ip}/{prefix}"
+        
+        # 对于特别长的IPv6地址，考虑进一步优化显示
+        # 例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334/64 -> 2001:db8:85a3::8a2e:370:7334/64
+        # 注意：ipaddress模块已经会自动进行零压缩，所以这里主要是处理其他情况
+        
+        return compressed_ip
+        
+    except ValueError:
+        # 如果解析失败，返回原始地址
+        return ipv6_address
+
+
 
 
 
@@ -213,6 +245,11 @@ def _draw_parent_segment(
 
     usable_addresses = _calculate_usable_addresses(parent_range, is_ipv6)
     parent_cidr = parent_info.get("name", "")
+    
+    # 优化IPv6地址显示
+    if is_ipv6:
+        parent_cidr = _optimize_ipv6_display(parent_cidr)
+    
     segment_text = f"{translate("parent_network")}: {parent_cidr}"
     text_x = x + 15
     text_y = y + bar_height / 2
@@ -286,8 +323,13 @@ def _draw_network_segments(
 
             name = network.get("name", "")
             usable_addresses = _calculate_usable_addresses(network_range, is_ipv6)
-
-            segment_text = f"{translate("segment")} {i + 1}: {name} {network.get('cidr', '')}"
+            
+            # 获取并优化IPv6地址显示
+            cidr = network.get('cidr', '')
+            if is_ipv6 and cidr:
+                cidr = _optimize_ipv6_display(cidr)
+            
+            segment_text = f"{translate("segment")} {i + 1}: {name} {cidr}"
             text_x = x + 15
             text_y = y + bar_height / 2
             font = (font_family, 9, "bold")
@@ -385,7 +427,11 @@ def _draw_remaining_segments(
 
         name = network.get("name", "")
         usable_addresses = _calculate_usable_addresses(network_range, is_ipv6)
-
+        
+        # 优化IPv6地址显示
+        if is_ipv6 and name:
+            name = _optimize_ipv6_display(name)
+        
         segment_text = f"{translate("segment")} {i + 1}: {name}"
         text_x = x + 15
         text_y = y + bar_height / 2

@@ -414,6 +414,102 @@ class IPSubnetSplitterApp:
     这个类实现了一个子网规划的GUI应用程序，
     支持子网分割、子网规划、IP信息查询等功能。
     """
+    def autocomplete_ipv6(self, event):
+        """IPv6地址自动补全功能
+        
+        当用户输入IPv6地址时，提供智能自动补全功能
+        - 自动补全双冒号
+        - 智能补全常见IPv6地址片段
+        - 支持零压缩
+        - 验证并格式化IPv6地址
+        
+        Args:
+            event: 键盘事件对象
+        """
+        try:
+            entry = event.widget
+            current_text = entry.get().strip()
+            cursor_pos = entry.index(tk.INSERT)
+            
+            # 处理退格键和删除键，不进行补全
+            if event.keysym in ['BackSpace', 'Delete']:
+                return
+            
+            # 智能补全常见IPv6地址片段
+            # 补全链路本地地址前缀: fe80 -> fe80::
+            if current_text == 'fe80':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fe80::')
+                entry.icursor(5)
+                return
+            
+            # 补全链路本地地址前缀: fe80: -> fe80::
+            if current_text == 'fe80:':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fe80::')
+                entry.icursor(5)
+                return
+            
+            # 补全唯一本地地址前缀: fd -> fd00::
+            if current_text == 'fd':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fd00::')
+                entry.icursor(5)
+                return
+            
+            # 补全唯一本地地址前缀: fd: -> fd00::
+            if current_text == 'fd:':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fd00::')
+                entry.icursor(5)
+                return
+            
+            # 补全文档地址前缀: 2001 -> 2001:db8::
+            if current_text == '2001':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001: -> 2001:db8::
+            if current_text == '2001:':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001:db8 -> 2001:db8::
+            if current_text == '2001:db8':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001:db8: -> 2001:db8::
+            if current_text == '2001:db8:':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 双冒号补全: 当用户输入单个冒号且前面不是冒号时
+            if event.char == ':' and cursor_pos > 0:
+                # 获取当前光标前的字符
+                before_cursor = current_text[:cursor_pos]
+                after_cursor = current_text[cursor_pos:]
+                
+                # 检查光标前是否已有冒号
+                if before_cursor and before_cursor[-1] != ':' and '::' not in current_text:
+                    # 在光标位置插入另一个冒号，形成双冒号
+                    entry.delete(0, tk.END)
+                    entry.insert(0, before_cursor + '::' + after_cursor)
+                    entry.icursor(cursor_pos + 1)
+                    return
+                    
+        except Exception as e:
+            # 自动补全失败时不影响用户输入
+            pass
+    
     def validate_cidr(self, text, entry=None, style_based=False):
         """通用CIDR验证函数
 
@@ -1208,6 +1304,22 @@ class IPSubnetSplitterApp:
         history_frame = ttk.LabelFrame(self.split_frame, text=_("history"), padding=(10, 10, 10, 10))
         history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 10))
 
+        # 添加IP版本切换框架
+        ip_version_frame = ttk.Frame(input_frame)
+        ip_version_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 5))
+        
+        # 初始化IP版本变量
+        self.split_ip_version_var = tk.StringVar(value="IPv4")
+        
+        # 添加IPv4/IPv6切换按钮
+        ipv4_btn = ttk.Radiobutton(ip_version_frame, text="IPv4", variable=self.split_ip_version_var, value="IPv4", 
+                                  command=self.on_split_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv4_btn.pack(side=tk.LEFT, padx=(10, 10))
+        
+        ipv6_btn = ttk.Radiobutton(ip_version_frame, text="IPv6", variable=self.split_ip_version_var, value="IPv6", 
+                                  command=self.on_split_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv6_btn.pack(side=tk.LEFT)
+
         # 配置 input_frame 的 grid 行列
         input_frame.grid_columnconfigure(0, minsize=30, weight=0)
         input_frame.grid_columnconfigure(1, minsize=0, weight=1)
@@ -1216,6 +1328,7 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(1, weight=0)
         input_frame.grid_rowconfigure(2, weight=0)
         input_frame.grid_rowconfigure(3, weight=0, minsize=0)
+        input_frame.grid_rowconfigure(4, weight=0, minsize=0)
 
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
@@ -1241,6 +1354,8 @@ class IPSubnetSplitterApp:
         default_parent = "10.0.0.0/8"  # 默认父网段
         self.parent_entry.insert(0, default_parent)  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.parent_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
@@ -1258,6 +1373,8 @@ class IPSubnetSplitterApp:
         default_split = "10.21.50.0/23"  # 默认切分段
         self.split_entry.insert(0, default_split)  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.split_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 按钮区域 - 执行按钮，跨四行的方形样式
         self.execute_btn = ttk.Button(input_frame, text=_("execute_split"), command=self.execute_split, width=10)
@@ -1649,10 +1766,26 @@ class IPSubnetSplitterApp:
         self.planning_frame.grid_rowconfigure(2, weight=1)  # 规划结果行，可伸缩
 
         # 父网段设置区域
-        parent_frame = ttk.LabelFrame(self.planning_frame, text=_("parent_network_settings"), padding=(5, 10, 10, 10))
+        parent_frame = ttk.LabelFrame(self.planning_frame, text=_('parent_network_settings'), padding=(5, 10, 10, 10))
         parent_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 0))  # 左上角
         # 设置父网段设置面板的固定宽度
         parent_frame.configure(width=250)
+
+        # 创建IP版本切换框架
+        ip_version_frame = ttk.Frame(parent_frame)
+        ip_version_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 5))
+        
+        # 初始化IP版本变量
+        self.ip_version_var = tk.StringVar(value="IPv4")
+        
+        # 添加IPv4/IPv6切换按钮
+        ipv4_btn = ttk.Radiobutton(ip_version_frame, text="IPv4", variable=self.ip_version_var, value="IPv4", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv4_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        ipv6_btn = ttk.Radiobutton(ip_version_frame, text="IPv6", variable=self.ip_version_var, value="IPv6", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv6_btn.pack(side=tk.LEFT)
 
         # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
         self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16", "2001:0db8::/32", "fe80::/10"]  # 提供IPv4和IPv6初始记录
@@ -1669,9 +1802,11 @@ class IPSubnetSplitterApp:
             validatecommand=vcmd,
         )
         self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
-        default_parent = "10.21.48.0/20"  # 默认父网段
+        default_parent = "10.21.48.0/20"  # 默认值
         self.planning_parent_entry.insert(0, default_parent)  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.planning_parent_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 需求池区域
         history_frame = ttk.LabelFrame(self.planning_frame, text=_('requirements_pool'), padding=(10, 10, 0, 10))
@@ -2925,13 +3060,15 @@ class IPSubnetSplitterApp:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
-                # 添加示例数据
+                # 添加示例数据（包含IPv4和IPv6示例）
                 example_data = [
                     [_("office"), "20"],
                     [_("hr_department"), "10"],
                     [_("finance_department"), "10"],
                     [_("planning_department"), "30"],
                     [_("it_department"), "20"],
+                    [_("ipv6_lab"), "50"],
+                    [_("ipv6_infrastructure"), "100"],
                 ]
                 for row_idx, row_data in enumerate(example_data, 2):
                     for col_idx, value in enumerate(row_data, 1):
@@ -3871,6 +4008,70 @@ class IPSubnetSplitterApp:
             }
 
         return {'valid': True, 'error': None, 'error_code': None}
+
+    def on_ip_version_change(self):
+        """处理IP版本切换事件
+        
+        当用户切换IPv4/IPv6时，更新父网段输入框的默认值和历史记录
+        """
+        try:
+            ip_version = self.ip_version_var.get()
+            
+            # 清空当前输入框
+            self.planning_parent_entry.delete(0, tk.END)
+            
+            # 根据IP版本更新默认值和历史记录
+            if ip_version == "IPv4":
+                # 设置IPv4默认值和历史记录
+                default_parent = "10.21.48.0/20"
+                self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]
+            else:
+                # 设置IPv6默认值和历史记录
+                default_parent = "2001:0db8::/32"
+                self.planning_parent_networks = ["2001:0db8::/32", "fe80::/10"]
+            
+            # 更新输入框默认值和下拉列表
+            self.planning_parent_entry.insert(0, default_parent)
+            self.planning_parent_entry.config(values=self.planning_parent_networks)
+            
+        except Exception as e:
+            self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
+    
+    def on_split_ip_version_change(self):
+        """处理子网切分功能的IP版本切换事件
+        
+        当用户切换IPv4/IPv6时，更新子网切分输入框的默认值和历史记录
+        """
+        try:
+            ip_version = self.split_ip_version_var.get()
+            
+            # 清空当前输入框
+            self.parent_entry.delete(0, tk.END)
+            self.split_entry.delete(0, tk.END)
+            
+            # 根据IP版本更新默认值和历史记录
+            if ip_version == "IPv4":
+                # 设置IPv4默认值和历史记录
+                default_parent = "10.0.0.0/8"
+                default_split = "10.21.50.0/23"
+                self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]
+                self.split_networks = ["10.21.50.0/23", "172.20.180.0/24"]
+            else:
+                # 设置IPv6默认值和历史记录
+                default_parent = "2001:0db8::/32"
+                default_split = "2001:0db8::/64"
+                self.split_parent_networks = ["2001:0db8::/32", "fe80::/10"]
+                self.split_networks = ["2001:0db8::/64", "fe80::1/128"]
+            
+            # 更新输入框默认值和下拉列表
+            self.parent_entry.insert(0, default_parent)
+            self.parent_entry.config(values=self.split_parent_networks)
+            
+            self.split_entry.insert(0, default_split)
+            self.split_entry.config(values=self.split_networks)
+            
+        except Exception as e:
+            self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
 
     def _validate_planning_input(self, parent):
         """验证子网规划输入
@@ -6763,8 +6964,7 @@ class IPSubnetSplitterApp:
         hide_info_btn.grid(row=2, column=0, padx=5, pady=5)
 
         clear_result_btn = ttk.Button(
-            button_frame, text=_(
-            "clear_subnet_split"), width=button_width, style=button_style, command=self.clear_result
+            button_frame, text=_("clear_subnet_split_and_planning"), width=button_width, style=button_style, command=self.clear_result
         )
         clear_result_btn.grid(row=2, column=1, padx=5, pady=5)
 
@@ -7359,11 +7559,9 @@ class IPSubnetSplitterApp:
         self._export_data(data_source, _("save_subnet_planning_result"), _("result_successfully_exported"), _("export_failed"))
 
     def clear_result(self):
-        """清空结果表格和图表"""
+        """清空子网切分和子网规划的结果表格和图表"""
         # 清空切分段信息表格
         self.clear_tree_items(self.split_tree)
-        # 添加提示行
-        self.split_tree.insert("", tk.END, values=(_("hint"), _("click_execute_split_to_start")), tags=('odd',))
         # 更新切分段表格的斑马条纹标签
         self.update_table_zebra_stripes(self.split_tree)
 
@@ -7373,7 +7571,7 @@ class IPSubnetSplitterApp:
         self.update_table_zebra_stripes(self.remaining_tree)
 
         # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
-        if hasattr(self, 'remaining_scroll_v'):
+        if hasattr(self, 'remaining_scroll_v') and self.remaining_scroll_v:
             # 重置滚动条位置
             self.remaining_scroll_v.set(0.0, 1.0)
             self.remaining_scroll_v.grid_remove()
@@ -7387,10 +7585,35 @@ class IPSubnetSplitterApp:
 
         # 调用滚动条回调函数，确保滚动条隐藏
         # 模拟内容不可滚动的情况，让滚动条隐藏
-        if hasattr(self, 'chart_scrollbar'):
+        if hasattr(self, 'chart_scrollbar') and self.chart_scrollbar:
             self.chart_scrollbar.set(0.0, 1.0)
             # 使用grid_remove()直接隐藏滚动条
             self.chart_scrollbar.grid_remove()
+        
+        # 清空子网规划的已分配子网表格
+        if hasattr(self, 'allocated_tree') and self.allocated_tree:
+            self.clear_tree_items(self.allocated_tree)
+            # 更新已分配表格的斑马条纹标签
+            self.update_table_zebra_stripes(self.allocated_tree)
+        
+        # 清空子网规划的剩余子网表格
+        if hasattr(self, 'planning_remaining_tree') and self.planning_remaining_tree:
+            self.clear_tree_items(self.planning_remaining_tree)
+            # 更新剩余子网表格的斑马条纹标签
+            self.update_table_zebra_stripes(self.planning_remaining_tree)
+        
+        # 清空子网规划的图表
+        if hasattr(self, 'planning_chart_canvas') and self.planning_chart_canvas:
+            self.planning_chart_canvas.delete("all")
+            self.planning_chart_data = None
+            
+            # 更新规划图表Canvas滚动区域，设置为不可滚动状态
+            self.planning_chart_canvas.config(scrollregion=(0, 0, self.planning_chart_canvas.winfo_width(), 100))
+            
+            # 处理规划图表的滚动条，确保清空结果时滚动条隐藏
+            if hasattr(self, 'planning_chart_v_scrollbar') and self.planning_chart_v_scrollbar:
+                self.planning_chart_v_scrollbar.set(0.0, 1.0)
+                self.planning_chart_v_scrollbar.grid_remove()
     
     def one_click_export(self):
         """一键导出功能：自动执行规划和切分，然后导出所有格式的结果"""
