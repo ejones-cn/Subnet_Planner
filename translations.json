@@ -127,18 +127,18 @@
     "ko": "서브넷 계획 결과 저장"
   },
   "result_successfully_exported": {
-    "zh": "结果已成功导出到: {file_path},",
+    "zh": "结果已成功导出到: {file_path}",
     "zh_tw": "結果已成功匯出到：{file_path}",
     "en": "Result successfully exported to: {file_path}",
     "ja": "結果が正常にエクスポートされました：{file_path}",
-    "ko": "성공적으로 내보낸 결과: {file_path},"
+    "ko": "성공적으로 내보낸 결과: {file_path}"
   },
   "export_failed": {
-    "zh": "导出失败: {error},",
+    "zh": "导出失败: {error}",
     "zh_tw": "匯出失敗：{error}",
     "en": "Export failed: {error}",
     "ja": "エクスポートに失敗しました：{error}",
-    "ko": "내보내기 실패: {error},"
+    "ko": "내보내기 실패: {error}"
   },
   "apply_theme": {
     "zh": "应用主题",
@@ -439,7 +439,7 @@
     "zh_tw": "可用數",
     "en": "Available",
     "ja": "可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "ipv6_address_info": {
     "zh": "IPv6地址信息查询",
@@ -656,7 +656,7 @@
     "zh_tw": "可用位址數",
     "en": "Usable Addrs",
     "ja": "利用可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "item": {
     "zh": "项目",
@@ -876,7 +876,7 @@
     "ko": "서브넷 오버랩 감지를 수행하지 못했습니다"
   },
   "please_select_records_to_move": {
-    "zh": "请先选择要移动的{record_type},记录",
+    "zh": "请先选择要移动的{record_type}记录",
     "zh_tw": "請先選擇要移動的{record_type}記錄",
     "en": "Please select {record_type} records to move first",
     "ja": "最初に移動する{record_type}記録を選択してください",
@@ -922,7 +922,7 @@
     "zh_tw": "可用位址數",
     "en": "Usable Address",
     "ja": "利用可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "prefix_length": {
     "zh": "前缀",
@@ -1604,7 +1604,7 @@
     "ko": "데이터 가져오기"
   },
   "data_import_summary": {
-    "zh": "共 {total_count}, 条数据，{valid_count} 条有效，{error_count} 条无效",
+    "zh": "共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效",
     "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
     "ja": "合計 {total_count} 件のデータ、{valid_count} 件有効、{error_count} 件無効",
     "zh_tw": "共 {total_count} 條數據，{valid_count} 條有效，{error_count} 條無效",
@@ -2143,18 +2143,18 @@
     "ko": "중간 네트워크 (/48 접두사)"
   },
   "regional_network": {
-    "zh": "区域级网络（/{0},前缀）",
+    "zh": "区域级网络（/{0} 前缀）",
     "en": "Regional Network (/ {0} Prefix)",
     "ja": "地域ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "區域級網路（/{0} 前綴）",
-    "ko": "영역 레벨 네트워크 (/{0}, 접두사)"
+    "ko": "영역 레벨 네트워크 (/{0} 접두사)"
   },
   "large_network": {
-    "zh": "大型网络（/{0},前缀）",
+    "zh": "大型网络（/{0} 前缀）",
     "en": "Large Network (/ {0} Prefix)",
     "ja": "大規模ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "大型網路（/{0} 前綴）",
-    "ko": "대형 네트워크 (/{0}, 접두사)"
+    "ko": "대형 네트워크 (/{0} 접두사)"
   },
   "extra_large_network": {
     "zh": "超大型网络（/32或更短前缀）",
@@ -2164,11 +2164,11 @@
     "ko": "매우 큰 네트워크 (/32 이하 접두사)"
   },
   "special_network": {
-    "zh": "特殊网络（/{0},前缀）",
+    "zh": "特殊网络（/{0} 前缀）",
     "en": "Special Network (/ {0} Prefix)",
     "ja": "特殊ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "特殊網路（/{0} 前綴）",
-    "ko": "특수 네트워크 (/{0}, 접두사)"
+    "ko": "특수 네트워크 (/{0} 접두사)"
   },
   "purpose_loopback_ipv6": {
     "zh": "用于本地主机测试和诊断",
@@ -2297,18 +2297,18 @@
     "ko": "네트워크 접두사"
   },
   "segment_index": {
-    "zh": "第{0},段",
+    "zh": "第{0}段",
     "en": "Segment {0}",
     "ja": "セグメント {0}",
     "zh_tw": "第{0}段",
-    "ko": "단락 {0},"
+    "ko": "단락 {0}"
   },
   "segment_value": {
-    "zh": "{0}, (十六进制) = {1} (十进制) = {2} (二进制)",
+    "zh": "{0} (十六进制) = {1} (十进制) = {2} (二进制)",
     "en": "{0} (Hex) = {1} (Decimal) = {2} (Binary)",
     "ja": "{0} （16進数） = {1} （10進数） = {2} （2進数）",
     "zh_tw": "{0} (十六進制) = {1} (十進制) = {2} (二進制)",
-    "ko": "{0}, (16진수) = {1} (십진수) = {2} (이진수)"
+    "ko": "{0} (16진수) = {1} (십진수) = {2} (이진수)"
   },
   "segment_value_zero": {
     "zh": "0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)",
@@ -2605,11 +2605,11 @@
     "ko": "상위 네트워크 CIDR"
   },
   "available_addresses": {
-    "zh": "可用地址数",
-    "zh_tw": "可用位址數",
-    "en": "Available Addresses",
-    "ja": "利用可能数",
-    "ko": "사용 가능한 주소 수"
+    "zh": "可用数",
+    "zh_tw": "可用數",
+    "en": "Available",
+    "ja": "可能数",
+    "ko": "사용 가능 수"
   },
   "host_address_range": {
     "zh": "主机地址范围",

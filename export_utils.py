@@ -193,7 +193,8 @@ class ExportUtils:
         adjusted_data = []
         for row_idx, row in enumerate(table_data):
             adjusted_row = []
-            for col_idx, cell in enumerate(row):
+            # 只处理与col_widths长度一致的列，避免IndexError
+            for col_idx, cell in enumerate(row[:len(col_widths)]):
                 text = self._get_cell_text(cell)
                 text_width = self._calculate_text_width(text, ascii_width=5, non_ascii_width=10, padding=8)
 
@@ -248,7 +249,8 @@ class ExportUtils:
 
         # 计算每列的最大内容宽度
         for row in table_data:
-            for col_idx, cell in enumerate(row):
+            # 只处理与表头列数一致的数据列，避免IndexError
+            for col_idx, cell in enumerate(row[:table_cols]):
                 text = self._get_cell_text(cell)
                 text_width = self._calculate_text_width(text, ascii_width=8, non_ascii_width=12, padding=15)
                 if text_width > max_col_widths[col_idx]:
@@ -268,7 +270,8 @@ class ExportUtils:
         for row_idx, row in enumerate(table_data):
             if row_idx == 0:  # 跳过表头，只考虑数据行
                 continue
-            for col_idx, cell in enumerate(row):
+            # 只处理与表头列数一致的数据列，避免IndexError
+            for col_idx, cell in enumerate(row[:table_cols]):
                 text = self._get_cell_text(cell)
                 text_width = self._calculate_text_width(text, ascii_width=8, non_ascii_width=12, padding=15)
                 if text_width > data_col_widths[col_idx]:
@@ -358,8 +361,56 @@ class ExportUtils:
         main_filter = data_source.get("main_filter", None)
         main_headers = data_source.get("main_headers")
 
+        # 检测IP版本：通过检查列宽度或IP版本变量
+        is_ipv6 = False
+        
+        # 方法1：检查是否有IP版本变量
+        ip_version = data_source.get("ip_version")
+        if ip_version:
+            is_ipv6 = ip_version == "IPv6"
+        else:
+            # 方法2：检查是否有end_address列且宽度大于0
+            for col in main_tree["columns"]:
+                col_width = main_tree.column(col, "width")
+                if col == "end_address" and col_width > 0:
+                    is_ipv6 = True
+                    break
+            
+            # 方法3：如果主表格没有end_address列，检查剩余表格
+            if not is_ipv6 and "remaining_tree" in data_source:
+                remaining_tree = data_source["remaining_tree"]
+                for col in remaining_tree["columns"]:
+                    col_width = remaining_tree.column(col, "width")
+                    if col == "end_address" and col_width > 0:
+                        is_ipv6 = True
+                        break
+
+        # 获取主表格的所有列名
+        main_columns = main_tree["columns"]
+        
+        # 根据IP版本过滤主表格字段
+        if is_ipv6:
+            # IPv6：去掉子网掩码、通配符掩码、广播地址
+            main_field_filter = lambda h: h not in [translate("subnet_mask"), translate("wildcard_mask"), translate("broadcast_address")]
+        else:
+            # IPv4：去掉网段结束地址
+            main_field_filter = lambda h: h != translate("network_end_address")
+
+        # 过滤主表格的标题
         if main_headers is None:
-            main_headers = [main_tree.heading(col, "text") or "" for col in main_tree["columns"]]
+            all_main_headers = [main_tree.heading(col, "text") or "" for col in main_columns]
+            # 根据IP版本过滤标题
+            main_headers = [h for h in all_main_headers if main_field_filter(h)]
+        else:
+            # 如果提供了main_headers，也进行过滤
+            main_headers = [h for h in main_headers if main_field_filter(h)]
+
+        # 过滤主表格的列
+        filtered_main_columns = []
+        for i, col in enumerate(main_columns):
+            header = main_tree.heading(col, "text") or ""
+            if main_field_filter(header):
+                filtered_main_columns.append(i)
 
         added_items = set()
         for item in main_tree.get_children():
@@ -370,17 +421,25 @@ class ExportUtils:
                         item_key = values[0]
                         if item_key not in added_items:
                             added_items.add(item_key)
-                            main_data.append(values)
+                            # 过滤值列表
+                            filtered_values = [values[i] for i in filtered_main_columns]
+                            main_data.append(filtered_values)
                     else:
-                        main_data.append(values)
+                        # 过滤值列表
+                        filtered_values = [values[i] for i in filtered_main_columns]
+                        main_data.append(filtered_values)
             elif values:
                 if len(values) >= 2 and values[0] != "":
                     item_key = values[0]
                     if item_key not in added_items:
                         added_items.add(item_key)
-                        main_data.append(values)
+                        # 过滤值列表
+                        filtered_values = [values[i] for i in filtered_main_columns]
+                        main_data.append(filtered_values)
                 else:
-                    main_data.append(values)
+                    # 过滤值列表
+                    filtered_values = [values[i] for i in filtered_main_columns]
+                    main_data.append(filtered_values)
 
         unique_main_data = []
         seen_rows = set()
@@ -392,12 +451,32 @@ class ExportUtils:
         main_data = unique_main_data
 
         remaining_tree = data_source["remaining_tree"]
-        remaining_headers = [remaining_tree.heading(col, "text") or "" for col in remaining_tree["columns"]]
+        remaining_columns = remaining_tree["columns"]
+        remaining_headers = []
+        
+        # 根据IP版本过滤剩余表格列
+        filtered_columns = []
+        for col in remaining_columns:
+            col_width = remaining_tree.column(col, "width")
+            # 只保留显示的列（宽度大于0）
+            if col_width > 0:
+                header = remaining_tree.heading(col, "text") or ""
+                if main_field_filter(header):
+                    filtered_columns.append(col)
+                    remaining_headers.append(header)
+        
         remaining_data = []
         for item in remaining_tree.get_children():
             values = remaining_tree.item(item, "values")
             if values:
-                remaining_data.append(dict(zip(remaining_headers, values)))
+                # 创建字典，只包含过滤后的列
+                filtered_values = []
+                for i, col in enumerate(remaining_columns):
+                    if col in filtered_columns:
+                        filtered_values.append(values[i])
+                # 创建字典，使用过滤后的列名和值
+                filtered_dict = dict(zip(remaining_headers, filtered_values))
+                remaining_data.append(filtered_dict)
 
         return main_data, main_headers, remaining_data, remaining_headers
 
@@ -878,28 +957,52 @@ class ExportUtils:
                 parent_table_data = []
                 
                 # 第一行：标题行
-                parent_table_data.append([
-                    Paragraph(str(translate("parent_cidr")), table_text_style),
-                    Paragraph(str(translate("network_address")), table_text_style),
-                    Paragraph(str(translate("subnet_mask")), table_text_style),
-                    Paragraph(str(translate("wildcard_mask")), table_text_style),
-                    Paragraph(str(translate("broadcast_address")), table_text_style),
-                    Paragraph(str(translate("prefix_length")), table_text_style),
-                    Paragraph(str(translate("available_addresses")), table_text_style),
-                    Paragraph(str(translate("host_address_range")), table_text_style)
-                ])
+                # 根据IP版本确定显示哪些字段
+                parent_ip_version = full_parent_info.get('version', 4)
+                is_ipv6 = parent_ip_version == 6
                 
-                # 第二行：数据行
-                parent_table_data.append([
-                    Paragraph(str(full_parent_info.get("cidr", parent_cidr)), table_text_style),
-                    Paragraph(str(full_parent_info.get("network", "")), table_text_style),
-                    Paragraph(str(full_parent_info.get("netmask", "")), table_text_style),
-                    Paragraph(str(full_parent_info.get("wildcard", "")), table_text_style),
-                    Paragraph(str(full_parent_info.get("broadcast", "")), table_text_style),
-                    Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
-                    Paragraph(self.format_large_number(full_parent_info.get('usable_addresses', 0)), table_text_style),
-                    Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
-                ])
+                if is_ipv6:
+                    # IPv6只显示必要字段
+                    parent_table_data.append([
+                        Paragraph(str(translate("parent_cidr")), table_text_style),
+                        Paragraph(str(translate("network_address")), table_text_style),
+                        Paragraph(str(translate("prefix_length")), table_text_style),
+                        Paragraph(str(translate("available_addresses")), table_text_style),
+                        Paragraph(str(translate("host_address_range")), table_text_style)
+                    ])
+                    
+                    # 第二行：数据行
+                    parent_table_data.append([
+                        Paragraph(str(full_parent_info.get("cidr", parent_cidr)), table_text_style),
+                        Paragraph(str(full_parent_info.get("network", "")), table_text_style),
+                        Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
+                        Paragraph(self.format_large_number(full_parent_info.get('usable_addresses', 0)), table_text_style),
+                        Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
+                    ])
+                else:
+                    # IPv4显示所有字段
+                    parent_table_data.append([
+                        Paragraph(str(translate("parent_cidr")), table_text_style),
+                        Paragraph(str(translate("network_address")), table_text_style),
+                        Paragraph(str(translate("subnet_mask")), table_text_style),
+                        Paragraph(str(translate("wildcard_mask")), table_text_style),
+                        Paragraph(str(translate("broadcast_address")), table_text_style),
+                        Paragraph(str(translate("prefix_length")), table_text_style),
+                        Paragraph(str(translate("available_addresses")), table_text_style),
+                        Paragraph(str(translate("host_address_range")), table_text_style)
+                    ])
+                    
+                    # 第二行：数据行
+                    parent_table_data.append([
+                        Paragraph(str(full_parent_info.get("cidr", parent_cidr)), table_text_style),
+                        Paragraph(str(full_parent_info.get("network", "")), table_text_style),
+                        Paragraph(str(full_parent_info.get("netmask", "")), table_text_style),
+                        Paragraph(str(full_parent_info.get("wildcard", "")), table_text_style),
+                        Paragraph(str(full_parent_info.get("broadcast", "")), table_text_style),
+                        Paragraph(str(full_parent_info.get("prefixlen", "")), table_text_style),
+                        Paragraph(self.format_large_number(full_parent_info.get('usable_addresses', 0)), table_text_style),
+                        Paragraph(f"{full_parent_info.get('host_range_start', '')} - {full_parent_info.get('host_range_end', '')}", table_text_style)
+                    ])
                 
                 # 创建父网段信息表格
                 table_width = page_width - margins[0] - margins[1]
@@ -940,11 +1043,25 @@ class ExportUtils:
         # 准备KeepTogether的内容列表
         keep_together_main = [main_heading]
 
+        # 检测是否为IPv6模式：检查数据中是否包含IPv6地址
+        is_ipv6 = False
+        for values in main_data:
+            for v in values:
+                if isinstance(v, str) and ':' in v and len(v) > 10:  # 简单检测IPv6地址
+                    is_ipv6 = True
+                    break
+            if is_ipv6:
+                break
+
         # 特殊处理：子网切分PDF的切分段信息表格
         if data_source["main_name"] == translate("split_segment_info"):
             # 转置表格并移除指定列
             # 定义要移除的列名
             columns_to_remove = [translate("parent_network"), translate("split_line"), translate("prefix_length"), translate("cidr"), translate("separator"), translate("network_address")]
+            
+            # 对于IPv4版本的切分段信息表格，移除广播地址字段
+            if not is_ipv6:
+                columns_to_remove.append(translate("broadcast_address"))
             
             # 键值对格式处理
             filtered_data = {}
@@ -975,11 +1092,38 @@ class ExportUtils:
                     ]
                 )
         else:
-            main_table_data = [[Paragraph(h, table_text_style) for h in main_headers]]
-            for values in main_data:
-                main_table_data.append(
-                    [Paragraph(str(v) if v is not None else "", table_text_style) for v in values]
-                )
+            # 根据IP版本过滤已分配子网表格的字段
+            if is_ipv6 and data_source["main_name"] == translate("allocated_subnets"):
+                # IPv6模式：过滤已分配子网表格的列
+                main_headers = [h for h in main_headers if h not in [translate("subnet_mask"), translate("wildcard_mask"), translate("broadcast_address")]]
+                main_table_data = [[Paragraph(h, table_text_style) for h in main_headers]]
+                
+                for values in main_data:
+                    # 创建过滤后的值列表，移除不适用的字段
+                    filtered_values = []
+                    for i, h in enumerate(main_data[0]):
+                        if i < len(values):
+                            header = main_headers[i] if i < len(main_headers) else ""
+                            if header not in [translate("subnet_mask"), translate("wildcard_mask"), translate("broadcast_address")]:
+                                filtered_values.append(values[i])
+                    main_table_data.append(
+                        [Paragraph(str(v) if v is not None else "", table_text_style) for v in filtered_values]
+                    )
+            else:
+                # IPv4模式：过滤已分配子网表格的列，移除"网段结束地址"字段
+                filtered_headers = [h for h in main_headers if h != translate("network_end_address")]
+                main_table_data = [[Paragraph(h, table_text_style) for h in filtered_headers]]
+                
+                for values in main_data:
+                    # 创建过滤后的值列表，移除"网段结束地址"字段
+                    filtered_values = []
+                    for i, header in enumerate(main_headers):
+                        if i < len(values):
+                            if header != translate("network_end_address"):
+                                filtered_values.append(values[i])
+                    main_table_data.append(
+                        [Paragraph(str(v) if v is not None else "", table_text_style) for v in filtered_values]
+                    )
 
         if len(main_table_data) > 1:
             table_width = page_width - margins[0] - margins[1]

@@ -66,10 +66,10 @@ def format_large_number(num, use_scientific=True):
             if num == exact_value:
                 symbol = "="
             else:
-                symbol = "≈"
+                symbol = "≈"  # 使用Unicode近似符号，保持用户喜欢的格式
             
             # 使用截断后的系数和原始指数重新组合科学计数法字符串
-            return f"{symbol}{coeff_trunc:.2f}e{exp_int:+d}"
+            return f"{symbol}{coeff_trunc:.2f}e+{exp_int:d}"
         else:
             return f"{num:,}"
     except (ValueError, TypeError):
@@ -428,7 +428,7 @@ def get_subnet_info(network_str):
             "usable_addresses": usable_addresses,
             "host_range_start": host_range_start,
             "host_range_end": host_range_end,
-            "version": "IPv6" if is_ipv6 else "IPv4"
+            "version": 6 if is_ipv6 else 4
         }
     except (ValueError, TypeError) as e:
         return handle_ip_subnet_error(e)

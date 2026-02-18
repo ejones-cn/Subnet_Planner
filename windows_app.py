@@ -1692,7 +1692,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("broadcast", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("usable", minwidth=50, width=60, stretch=True)  # 初始就窄化可用地址数列，因为使用科学计数法
+        self.remaining_tree.column("usable", minwidth=70, width=80, stretch=True)  # 初始就窄化可用地址数列，因为使用科学计数法
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.remaining_tree)
@@ -2137,7 +2137,7 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.column("netmask", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("wildcard", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
-        self.planning_remaining_tree.column("usable", width=60, minwidth=50, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+        self.planning_remaining_tree.column("usable", width=70, minwidth=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
 
         # 垂直滚动条
         remaining_v_scrollbar = ttk.Scrollbar(
@@ -3934,6 +3934,11 @@ class IPSubnetSplitterApp:
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
                 tags = ("even",) if i % 2 == 0 else ("odd",)
+                # 为隐藏列传递空字符串，避免数据显示异常
+                netmask_val = subnet["netmask"] if not is_ipv6 else ""
+                wildcard_val = subnet["wildcard"] if not is_ipv6 else ""
+                broadcast_val = subnet["broadcast"] if not is_ipv6 else ""
+                
                 self.planning_remaining_tree.insert(
                     "",
                     tk.END,
@@ -3941,10 +3946,10 @@ class IPSubnetSplitterApp:
                         i,
                         plan_result['remaining_subnets'][i - 1],
                         subnet["network"],
-                        subnet["broadcast"],  # 网段结束地址
-                        subnet["netmask"],
-                        subnet["wildcard"],
-                        subnet["broadcast"] if not is_ipv6 else "-",
+                        subnet["host_range_end"],  # 网段结束地址
+                        netmask_val,
+                        wildcard_val,
+                        broadcast_val,
                         format_large_number(subnet["usable_addresses"]),  # 修正为正确的字段名
                     ),
                     tags=tags,
@@ -4405,6 +4410,11 @@ class IPSubnetSplitterApp:
             if result["remaining_subnets_info"]:
                 for i, network in enumerate(result["remaining_subnets_info"], 1):
                     tags = ("even",) if i % 2 == 0 else ("odd",)
+                    # 为隐藏列传递空字符串，避免数据显示异常
+                    netmask_val = network["netmask"] if not is_ipv6 else ""
+                    wildcard_val = network.get("wildcard", "") if not is_ipv6 else ""
+                    broadcast_val = network["broadcast"] if not is_ipv6 else ""
+                    
                     self.remaining_tree.insert(
                         "",
                         tk.END,
@@ -4412,10 +4422,10 @@ class IPSubnetSplitterApp:
                             i,
                             network["cidr"],
                             network["network"],
-                            network["broadcast"],  # 网段结束地址
-                            network["netmask"],
-                            network.get("wildcard", ""),
-                            network["broadcast"] if not is_ipv6 else "-",
+                            network["host_range_end"],  # 网段结束地址
+                            netmask_val,
+                            wildcard_val,
+                            broadcast_val,
                             format_large_number(network["usable_addresses"], use_scientific=True),
                         ),
                         tags=tags,
@@ -7605,13 +7615,16 @@ class IPSubnetSplitterApp:
             from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
+            # 获取IP版本信息
+            ip_version = data_source.get("ip_version", "IPv4")
+            
             # 根据数据类型生成默认文件名前缀
             if data_source["main_name"] == _("split_segment_info"):
                 # 子网切分结果
-                default_file_name = f"{_("subnet_split")}_{timestamp}"
+                default_file_name = f"{_("subnet_split")}_{ip_version}_{timestamp}"
             else:
                 # 子网规划结果
-                default_file_name = f"{_("subnet_planning")}_{timestamp}"
+                default_file_name = f"{_("subnet_planning")}_{ip_version}_{timestamp}"
             
             # 先显示文件选择对话框，不准备数据
             file_path = filedialog.asksaveasfilename(
@@ -7668,6 +7681,7 @@ class IPSubnetSplitterApp:
             "main_table_cols": None,  # 使用默认列宽
             "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'chart_data', None),  # 添加网段分布图数据
+            "ip_version": self.split_ip_version_var.get(),  # 添加IP版本信息
         }
 
         self._export_data(data_source, _("save_subnet_split_result"), _("result_successfully_exported"), _("export_failed"))
@@ -7685,6 +7699,7 @@ class IPSubnetSplitterApp:
             "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
             "remaining_table_cols": [40, 90, 80, 110, 80, 60],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'planning_chart_data', None),  # 添加网段分布图数据
+            "ip_version": self.ip_version_var.get(),  # 添加IP版本信息
         }
 
         self._export_data(data_source, _("save_subnet_planning_result"), _("result_successfully_exported"), _("export_failed"))
@@ -7832,51 +7847,79 @@ class IPSubnetSplitterApp:
         default_formats = ['.pdf', '.csv', '.json', '.txt', '.xlsx']
         export_formats = formats if formats is not None else default_formats
         
-        # 导出子网切分结果
-        for fmt in export_formats:
-            # 准备数据
-            split_data_source = {
-                "main_tree": self.split_tree,
-                "main_name": _("split_segment_info"),
-                "main_filter": lambda values: values[0] not in [_("hint"), _("error"), "-", _("split_segment_info"), _("remaining_segment_info")],
-                "main_headers": [_("item"), _("value")],
-                "remaining_tree": self.remaining_tree,
-                "remaining_name": _("remaining_segment_info"),
-                "pdf_title": f"{_("subnet_planner")} - {_("split_result")}",
-                "main_table_cols": None,
-                "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],
-                "chart_data": getattr(self, 'chart_data', None),
-            }
-            
-            # 准备文件名 - 使用翻译后的名称
-            split_file_name = _("subnet_split")
-            split_file_path = os.path.join(export_dir, f"{split_file_name}_{timestamp}{fmt}")
-            
-            # 导出数据
-            self._export_data_to_format(split_file_path, split_data_source)
+        # 保存当前的IP版本状态
+        current_split_version = self.split_ip_version_var.get()
+        current_planning_version = self.ip_version_var.get()
         
-        # 导出子网规划结果
-        for fmt in export_formats:
-            # 准备数据
-            planning_data_source = {
-                "main_tree": self.allocated_tree,
-                "main_name": _("allocated_subnets"),
-                "main_filter": None,
-                "main_headers": None,
-                "remaining_tree": self.planning_remaining_tree,
-                "remaining_name": _("remaining_segment_info"),
-                "pdf_title": f"{_("subnet_planner")} - {_("planning_result")}",
-                "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],
-                "remaining_table_cols": [40, 90, 80, 110, 80, 60],
-                "chart_data": getattr(self, 'planning_chart_data', None),
-            }
-            
-            # 准备文件名 - 使用翻译后的名称
-            planning_file_name = _("subnet_planning")
-            planning_file_path = os.path.join(export_dir, f"{planning_file_name}_{timestamp}{fmt}")
-            
-            # 导出数据
-            self._export_data_to_format(planning_file_path, planning_data_source)
+        # 要导出的IP版本列表
+        ip_versions = ["IPv4", "IPv6"]
+        
+        try:
+            # 导出两个IP版本的结果
+            for ip_version in ip_versions:
+                # 设置子网切分的IP版本并重新执行
+                self.split_ip_version_var.set(ip_version)
+                self.on_split_ip_version_change()
+                self.execute_split(from_history=True)
+                
+                # 设置子网规划的IP版本并重新执行
+                self.ip_version_var.set(ip_version)
+                self.on_ip_version_change()
+                self.execute_subnet_planning(from_history=True)
+                
+                # 导出子网切分结果
+                for fmt in export_formats:
+                    # 准备数据
+                    split_data_source = {
+                        "main_tree": self.split_tree,
+                        "main_name": _("split_segment_info"),
+                        "main_filter": lambda values: values[0] not in [_("hint"), _("error"), "-", _("split_segment_info"), _("remaining_segment_info")],
+                        "main_headers": [_("item"), _("value")],
+                        "remaining_tree": self.remaining_tree,
+                        "remaining_name": _("remaining_segment_info"),
+                        "pdf_title": f"{_("subnet_planner")} - {_("split_result")}",
+                        "main_table_cols": None,
+                        "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],
+                        "chart_data": getattr(self, 'chart_data', None),
+                        "ip_version": ip_version,
+                    }
+                    
+                    # 准备文件名 - 使用翻译后的名称，并添加IP版本标识
+                    split_file_name = _("subnet_split")
+                    split_file_path = os.path.join(export_dir, f"{split_file_name}_{ip_version}_{timestamp}{fmt}")
+                    
+                    # 导出数据
+                    self._export_data_to_format(split_file_path, split_data_source)
+                
+                # 导出子网规划结果
+                for fmt in export_formats:
+                    # 准备数据
+                    planning_data_source = {
+                        "main_tree": self.allocated_tree,
+                        "main_name": _("allocated_subnets"),
+                        "main_filter": None,
+                        "main_headers": None,
+                        "remaining_tree": self.planning_remaining_tree,
+                        "remaining_name": _("remaining_segment_info"),
+                        "pdf_title": f"{_("subnet_planner")} - {_("planning_result")}",
+                        "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],
+                        "remaining_table_cols": [40, 90, 80, 110, 80, 60],
+                        "chart_data": getattr(self, 'planning_chart_data', None),
+                        "ip_version": ip_version,
+                    }
+                    
+                    # 准备文件名 - 使用翻译后的名称，并添加IP版本标识
+                    planning_file_name = _("subnet_planning")
+                    planning_file_path = os.path.join(export_dir, f"{planning_file_name}_{ip_version}_{timestamp}{fmt}")
+                    
+                    # 导出数据
+                    self._export_data_to_format(planning_file_path, planning_data_source)
+        finally:
+            # 恢复原来的IP版本状态
+            self.split_ip_version_var.set(current_split_version)
+            self.on_split_ip_version_change()
+            self.ip_version_var.set(current_planning_version)
+            self.on_ip_version_change()
     
     def _export_data_to_format(self, file_path, data_source):
         """导出数据到指定格式文件
