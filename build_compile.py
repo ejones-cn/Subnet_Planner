@@ -115,20 +115,95 @@ def get_version_info() -> str:
     return "2.6.0"  # 默认版本
 
 
+def generate_version_info():
+    """从version.py动态生成version_info.py文件
+    
+    每次编译前更新version_info.py，确保版本信息与version.py一致
+    """
+    try:
+        import version
+        
+        # 获取版本信息
+        version_string = version.get_version()
+        version_tuple = version.get_version_tuple()
+        
+        # 构建version_info.py内容
+        version_info_content = f"""VSVersionInfo(
+    ffi=FixedFileInfo(
+        filevers={version_tuple + (0,)},
+        prodvers={version_tuple + (0,)},
+        mask=0x0,
+        flags=0x0,
+        OS=0x4,
+        fileType=0x1,
+        subtype=0x0,
+        date=(0, 0)
+    ),
+    kids=[
+        StringFileInfo(
+            [
+                StringTable(
+                    '080404b0',
+                    [
+                        StringStruct('CompanyName', 'Subnet Planner Team'),
+                        StringStruct('FileDescription', '子网规划师 - IP子网规划工具'),
+                        StringStruct('FileVersion', '{version_string}'),
+                        StringStruct('InternalName', 'Subnet Planner'),
+                        StringStruct('LegalCopyright', 'Copyright © 2025-2026 Subnet Planner Team'),
+                        StringStruct('OriginalFilename', 'SubnetPlannerV{version_string}.exe'),
+                        StringStruct('ProductName', '子网规划师'),
+                        StringStruct('ProductVersion', '{version_string}'),
+                    ]
+                )
+            ]
+        ),
+        VarFileInfo([VarStruct('Translation', [2052, 1200])])
+    ]
+)"""
+        
+        # 写入version_info.py文件
+        with open("version_info.py", "w", encoding="utf-8") as f:
+            f.write(version_info_content)
+        print(f"✅ 已更新 version_info.py，版本: {version_string}")
+    except Exception as e:
+        print(f"⚠️  无法生成 version_info.py: {e}")
+
+
 def get_version_resource_info():
-    """从version_info.py获取版本资源信息
+    """从version.py获取版本资源信息
     
     Returns:
         dict: 包含公司名称、产品名称、版权信息、文件描述等版本资源信息
     """
-    # 为了避免编码和特殊字符问题，直接返回硬编码的版本资源信息
-    # 这些信息与version_info.py保持一致
-    return {
-        "company_name": "Subnet Planner Team",
-        "product_name": "Subnet Planner",
-        "copyright": "© 2025-2026 Subnet Planner Team",
-        "file_description": "子网规划师 - IP子网规划工具"
-    }
+    try:
+        # 直接从version.py获取版本信息
+        version = get_version_info()
+        
+        # 构建资源信息字典
+        return {
+            "company_name": "Subnet Planner Team",
+            "product_name": "Subnet Planner",
+            "copyright": "Copyright © 2025-2026 Subnet Planner Team",
+            "file_description": "子网规划师 - IP子网规划工具",
+            "internal_name": "Subnet Planner",
+            "original_filename": f"SubnetPlannerV{version}.exe",
+            "file_version": version,
+            "product_version": version
+        }
+    except Exception as e:
+        # 如果获取失败，使用默认的版本资源信息
+        print(f"⚠️  无法获取版本资源信息: {e}，使用默认值")
+        version = get_version_info()
+        return {
+            "company_name": "Subnet Planner Team",
+            "product_name": "Subnet Planner",
+            "copyright": "Copyright © 2025-2026 Subnet Planner Team",
+            "file_description": "子网规划师 - IP子网规划工具",
+            "internal_name": "Subnet Planner",
+            "original_filename": f"SubnetPlannerV{version}.exe",
+            "file_version": version,
+            "product_version": version
+        }
 
 
 
@@ -244,30 +319,37 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     """使用Nuitka编译"""
     print("\n🚀 使用 Nuitka 编译...")
     
+    # 生成version_info.py文件
+    generate_version_info()
+    
     # 获取版本信息
     version = get_version_info()
-    # 从version_info.py获取版本资源信息
+    # 从version.py获取版本资源信息
     version_resource = get_version_resource_info()
+    # 生成带版本号的输出文件名
     output_filename = f"SubnetPlannerV{version}.exe"
+    # 输出到程序根目录
+    final_output_dir = os.getcwd()
     
-    # 编译命令 - 简化配置，只保留必要选项
+    # 编译命令 - 使用Nuitka新版本支持的选项
     cmd: list[str] = [
         sys.executable, "-m", "nuitka",
-        "--onefile" if onefile else "--output-dir=dist",  # 根据onefile参数决定编译模式
+        "--onefile" if onefile else "",  # 根据onefile参数决定编译模式
         "--windows-icon-from-ico=Subnet_Planner.ico",
         "--include-data-file=translations.json=translations.json",
         "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
         "--include-data-file=icon.ico=icon.ico",
         "--include-data-dir=Picture=Picture",
         "--enable-plugin=tk-inter",
-        "--disable-console",  # 禁用控制台窗口
-        f"--product-name={version_resource['product_name']}",
+        "--windows-console-mode=disable",  # 禁用控制台
+        # 移除--remove-output选项，避免杀毒软件导致的删除失败
+        f"--product-name={version_resource['product_name']}",  # 使用中文产品名称
         f"--product-version={version}",
         f"--file-version={version}",
         f"--company-name={version_resource['company_name']}",
         f"--copyright={version_resource['copyright']}",
-        f"--file-description={version_resource['file_description']}",
-        f"--output-filename={output_filename}" if onefile else "",  # 只有单文件模式需要指定输出文件名
+        f"--file-description={version_resource['file_description']}",  # 使用中文文件描述
+        f"--output-filename={output_filename}",  # 始终指定输出文件名
         "windows_app.py"
     ]
     
@@ -280,11 +362,31 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         _ = subprocess.run(cmd, check=True, cwd=os.getcwd())
         print("✅ Nuitka 编译成功!")
         
-        # 检查输出文件
-        output_file = os.path.join(os.getcwd(), output_filename)
+        # 检查输出文件位置
+        if onefile:
+            # 单文件模式直接输出到当前目录
+            output_file = os.path.join(os.getcwd(), output_filename)
+            if os.path.exists(output_file):
+                print(f"📦 输出文件: {output_file}")
+        else:
+            # 多文件模式输出到当前目录
+            output_file = os.path.join(os.getcwd(), output_filename)
+            if os.path.exists(output_file):
+                print(f"📦 输出文件: {output_file}")
+            else:
+                # 查找正确的输出文件
+                for root, _, files in os.walk(os.getcwd()):
+                    for file in files:
+                        if file.endswith('.exe') and 'SubnetPlanner' in file:
+                            output_file = os.path.join(root, file)
+                            print(f"📦 输出文件: {output_file}")
+                            break
+                    if output_file and os.path.exists(output_file):
+                        break
+        
+        # 验证输出文件存在
         if os.path.exists(output_file):
             size = os.path.getsize(output_file) / (1024 * 1024)  # MB
-            print(f"📦 输出文件: {output_file}")
             print(f"📏 文件大小: {size:.2f} MB")
             print(f"📅 创建时间: {datetime.fromtimestamp(os.path.getmtime(output_file))}")
             
@@ -297,6 +399,9 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
                 dest_file = os.path.join(output_dir, output_filename)
                 _ = shutil.copy2(output_file, dest_file)
                 print(f"📋 已复制到: {dest_file}")
+        else:
+            print(f"❌ 输出文件未找到: {output_file}")
+            return False
         
         return True
     except subprocess.CalledProcessError as e:
@@ -312,15 +417,24 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
     """使用PyInstaller编译"""
     print("\n🚀 使用 PyInstaller 编译...")
     
+    # 生成version_info.py文件
+    generate_version_info()
+    
     # 获取版本信息
     version = get_version_info()
+    # 从version.py获取版本资源信息
+    version_resource = get_version_resource_info()
+    # 生成带版本号的输出文件名
+    output_filename = f"SubnetPlannerV{version}.exe"
     
     # 生成新的spec文件，优化配置以减少杀毒软件误报
     print("📝 生成优化的spec文件...")
     
     # 构建spec文件内容
-    spec_content = f'''
-# -*- mode: python ; coding: utf-8 -*-
+    spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
+
+# 直接使用传入的版本信息
+VERSION_STRING = '{version}'
 
 block_cipher = None
 
@@ -402,7 +516,7 @@ exe = EXE(pyz,
         a.zipfiles,
         a.datas,
         [],
-        name='SubnetPlannerV{version}',
+        name='{output_filename.rsplit('.', 1)[0]}',
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
@@ -418,16 +532,17 @@ exe = EXE(pyz,
         entitlements_file=None,
         uac_admin=False,
         uac_uiaccess=False,
-        onefile={onefile})
+        onefile={onefile},
+        version='version_info.py')
 '''
     
     # 写入spec文件
-    spec_file = f"SubnetPlannerV{version}.spec"
+    spec_file = f"{output_filename.rsplit('.', 1)[0]}.spec"
     with open(spec_file, "w", encoding="utf-8") as f:
         _ = f.write(spec_content)
     print(f"✅ 生成 spec 文件: {spec_file}")
     
-    # 编译命令 - 优化配置以减少杀毒软件误报
+    # 编译命令 - 优化配置以减少杀毒软件误报和文件大小
     cmd: list[str] = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
@@ -443,7 +558,7 @@ exe = EXE(pyz,
         
         # 检查输出文件
         dist_dir = os.path.join(os.getcwd(), "dist")
-        output_file = os.path.join(dist_dir, f"SubnetPlannerV{version}.exe")
+        output_file = os.path.join(dist_dir, output_filename)
         
         if os.path.exists(output_file):
             size = os.path.getsize(output_file) / (1024 * 1024)  # MB
@@ -457,7 +572,7 @@ exe = EXE(pyz,
             # 如果指定了输出目录，复制文件
             if output_dir != "." and output_dir != os.getcwd():
                 os.makedirs(output_dir, exist_ok=True)
-                dest_file = os.path.join(output_dir, f"SubnetPlannerV{version}_PyInstaller.exe")
+                dest_file = os.path.join(output_dir, f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.exe")
                 _ = shutil.copy2(output_file, dest_file)
                 print(f"📋 已复制到: {dest_file}")
         
@@ -475,17 +590,15 @@ def clean_build_files() -> None:
     """清理构建文件"""
     print("\n🧹 清理构建文件...")
     
-    # 需要清理的目录和文件
+    # 需要清理的目录和文件（不包括生成的可执行文件和dist目录）
     clean_items = [
         "build",
-        "dist",
         "__pycache__",
-        "*.spec",
         "*.log",
         "windows_app.build",
         "windows_app.dist",
         "windows_app.onefile-build",
-        "SubnetPlannerV*.exe"  # 清理所有版本的Nuitka输出文件
+        "SubnetPlanner.exe"  # 只清理不带版本号的可执行文件
     ]
     
     for item in clean_items:
