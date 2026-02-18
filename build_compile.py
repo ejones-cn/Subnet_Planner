@@ -163,7 +163,7 @@ def generate_version_info():
         
         # 写入version_info.py文件
         with open("version_info.py", "w", encoding="utf-8") as f:
-            f.write(version_info_content)
+            _ = f.write(version_info_content)
         print(f"✅ 已更新 version_info.py，版本: {version_string}")
     except Exception as e:
         print(f"⚠️  无法生成 version_info.py: {e}")
@@ -328,8 +328,6 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     version_resource = get_version_resource_info()
     # 生成带版本号的输出文件名
     output_filename = f"SubnetPlannerV{version}.exe"
-    # 输出到程序根目录
-    final_output_dir = os.getcwd()
     
     # 编译命令 - 使用Nuitka新版本支持的选项
     cmd: list[str] = [
@@ -422,8 +420,6 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
     
     # 获取版本信息
     version = get_version_info()
-    # 从version.py获取版本资源信息
-    version_resource = get_version_resource_info()
     # 生成带版本号的输出文件名
     output_filename = f"SubnetPlannerV{version}.exe"
     
