@@ -232,39 +232,17 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     version = get_version_info()
     output_filename = f"SubnetPlannerV{version}.exe"
     
-    # 编译命令 - 优化配置以减少杀毒软件误报（仅使用稳定支持的选项）
+    # 编译命令 - 简化配置，只保留必要选项
     cmd: list[str] = [
         sys.executable, "-m", "nuitka",
         "--onefile" if onefile else "--output-dir=dist",  # 根据onefile参数决定编译模式
-        "--windows-console-mode=disable",
         "--windows-icon-from-ico=Subnet_Planner.ico",
         "--include-data-file=translations.json=translations.json",
         "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
         "--include-data-file=icon.ico=icon.ico",
         "--include-data-dir=Picture=Picture",
         "--enable-plugin=tk-inter",
-        "--disable-cache=dll-dependencies",
-        "--disable-console",  # 禁用控制台，这是一个标志选项，不需要值
-        # 仅保留稳定支持的选项，减少可疑特征
-        "--lto=no",  # 禁用链接时优化，减少可疑特征
-        "--show-progress",  # 显示进度
-        "--nofollow-import-to=tkinter.test",  # 排除tkinter测试模块
-        "--nofollow-import-to=unittest",  # 排除unittest模块
-        "--nofollow-import-to=pytest",  # 排除pytest模块
-        "--nofollow-import-to=doctest",  # 排除doctest模块
-        "--nofollow-import-to=email",  # 排除email模块
-        "--nofollow-import-to=smtplib",  # 排除smtplib模块
-        "--nofollow-import-to=http",  # 排除http模块
-        "--nofollow-import-to=xmlrpc",  # 排除xmlrpc模块
-        "--nofollow-import-to=urllib3",  # 排除urllib3模块
-        "--nofollow-import-to=requests",  # 排除requests模块
-        # 添加 Windows 可执行文件元数据
-        "--product-name=Subnet Planner",
-        f"--product-version={version}",
-        f"--file-version={version}",
-        "--file-description=Subnet Planner - 子网规划师",
-        "--company-name=Subnet Planner Team",
-        "--copyright=Copyright © 2025-2026 Subnet Planner Team",
+        "--disable-console",  # 禁用控制台窗口
         f"--output-filename={output_filename}" if onefile else "",  # 只有单文件模式需要指定输出文件名
         "windows_app.py"
     ]
