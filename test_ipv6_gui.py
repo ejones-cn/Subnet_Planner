@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from windows_app import IPSubnetSplitterApp
+from windows_app import SubnetPlannerApp
 
 class TestIPv6GUIFunctions(unittest.TestCase):
     """测试IPv6 GUI功能"""
@@ -26,7 +26,7 @@ class TestIPv6GUIFunctions(unittest.TestCase):
         self.mock_root.winfo_height.return_value = 600
         
         # 创建应用程序实例
-        self.app = IPSubnetSplitterApp(self.mock_root)
+        self.app = SubnetPlannerApp(self.mock_root)
     
     def test_validate_cidr_ipv6(self):
         """测试CIDR验证函数对IPv6的支持"""

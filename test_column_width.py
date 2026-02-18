@@ -11,7 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import tkinter as tk
-from windows_app import IPSubnetSplitterApp
+from windows_app import SubnetPlannerApp
 
 
 def test_column_width():
@@ -20,7 +20,7 @@ def test_column_width():
     root.geometry("850x750")
     root.minsize(850, 750)
 
-    app = IPSubnetSplitterApp(root)
+    app = SubnetPlannerApp(root)
     root.update_idletasks()
 
     # 设置测试数据

@@ -17,7 +17,7 @@ from pyinstaller.utils.win32.versioninfo import (
 
 VSVersionInfo(
     ffi=FixedFileInfo(
-        filevers=(2, 6, 0),
+        filevers=(2, 6, 5),
         prodvers=(2, 6, 5),
         mask=0x0,
         flags=0x0,
@@ -32,12 +32,12 @@ VSVersionInfo(
                 StringTable(
                     '080404b0',
                     [
-                        StringStruct('CompanyName', 'SubnetPlanner'),
-                        StringStruct('FileDescription', '子网规划师 - IP子网计算工具'),
+                        StringStruct('CompanyName', 'Subnet Planner Team'),
+                        StringStruct('FileDescription', '子网规划师 - IP子网规划工具'),
                         StringStruct('FileVersion', '2.6.5'),
-                        StringStruct('InternalName', 'SubnetPlanner'),
-                        StringStruct('LegalCopyright', 'Copyright © 2025 SubnetPlanner'),
-                        StringStruct('OriginalFilename', '子网规划师.exe'),
+                        StringStruct('InternalName', 'Subnet Planner'),
+                        StringStruct('LegalCopyright', 'Copyright © 2025-2026 Subnet Planner Team'),
+                        StringStruct('OriginalFilename', 'SubnetPlanner.exe'),
                         StringStruct('ProductName', '子网规划师'),
                         StringStruct('ProductVersion', '2.6.5'),
                     ]

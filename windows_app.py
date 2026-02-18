@@ -408,7 +408,7 @@ class ColoredNotebook(ttk.Frame):
             self.tab_change_callback(tab_index)
 
 
-class IPSubnetSplitterApp:
+class SubnetPlannerApp:
     """子网规划师主应用程序类
 
     这个类实现了一个子网规划的GUI应用程序，
@@ -8736,5 +8736,5 @@ if __name__ == "__main__":
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)
     # 创建应用实例并运行
-    IPSubnetSplitterApp(root)
+    SubnetPlannerApp(root)
     root.mainloop()

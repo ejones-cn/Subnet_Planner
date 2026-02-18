@@ -3032,11 +3032,11 @@
     "ko": "잘못된 IPv6 주소: 잘못된 형식 (예: 2001: 0db8:: 1)"
   },
   "copyright": {
-    "zh": "© 2026 {app_name} 版权所有",
-    "zh_tw": "© 2026 {app_name} 版權所有",
-    "en": "Copyright © 2026 {app_name}",
-    "ja": "© 2026 {app_name} 著作権所有",
-    "ko": "© 2026 {app_name} 판권 소유"
+    "zh": "© 2025-2026 {app_name} 版权所有",
+    "zh_tw": "© 2025-2026 {app_name} 版權所有",
+    "en": "Copyright © 2025-2026 {app_name}",
+    "ja": "© 2025-2026 {app_name} 著作権所有",
+    "ko": "© 2025-2026 {app_name} 판권 소유"
   },
   "db_language": {
     "zh": "简体中文",

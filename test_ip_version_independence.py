@@ -10,7 +10,7 @@ import os
 # 添加项目根目录到系统路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from windows_app import IPSubnetSplitterApp
+from windows_app import SubnetPlannerApp
 import tkinter as tk
 
 # 创建测试窗口
@@ -18,7 +18,7 @@ root = tk.Tk()
 root.withdraw()  # 隐藏主窗口
 
 # 创建应用实例
-app = IPSubnetSplitterApp(root)
+app = SubnetPlannerApp(root)
 
 print("测试子网规划和子网切分功能的IP版本独立性")
 print("=" * 70)
