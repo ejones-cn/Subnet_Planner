@@ -389,12 +389,18 @@ class ExportUtils:
         main_columns = main_tree["columns"]
         
         # 根据IP版本过滤主表格字段
+        def ipv6_main_field_filter(h):
+            """IPv6主表格字段过滤器：去掉子网掩码、通配符掩码、广播地址"""
+            return h not in [translate("subnet_mask"), translate("wildcard_mask"), translate("broadcast_address")]
+        
+        def ipv4_main_field_filter(h):
+            """IPv4主表格字段过滤器：去掉网段结束地址"""
+            return h != translate("network_end_address")
+        
         if is_ipv6:
-            # IPv6：去掉子网掩码、通配符掩码、广播地址
-            main_field_filter = lambda h: h not in [translate("subnet_mask"), translate("wildcard_mask"), translate("broadcast_address")]
+            main_field_filter = ipv6_main_field_filter
         else:
-            # IPv4：去掉网段结束地址
-            main_field_filter = lambda h: h != translate("network_end_address")
+            main_field_filter = ipv4_main_field_filter
 
         # 过滤主表格的标题
         if main_headers is None:
