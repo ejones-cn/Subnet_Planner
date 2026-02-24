@@ -5940,7 +5940,7 @@ class SubnetPlannerApp:
             
             for subnet in merged_subnets:
                 info = get_subnet_info(subnet)
-                if info["version"] == "IPv4":
+                if info["version"] == 4:  # 使用整数比较，因为get_subnet_info返回的是整数
                     ipv4_results.append((subnet, info))
                 else:
                     ipv6_results.append((subnet, info))
@@ -6568,9 +6568,9 @@ class SubnetPlannerApp:
             
             for cidr in cidr_list:
                 info = get_subnet_info(cidr)
-                if info["version"] == "IPv4":
+                if info["version"] == 4:  # 使用整数比较，因为get_subnet_info返回的是整数
                     ipv4_cidrs.append(cidr)
-                else:
+                elif info["version"] == 6:  # 使用整数比较
                     ipv6_cidrs.append(cidr)
 
             # 1. 定义默认列配置
