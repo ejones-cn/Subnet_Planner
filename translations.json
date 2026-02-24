@@ -1,5 +1,5 @@
 {
-  "__version__": "2.5.5",
+  "__version__": "2.7.0",
   "error": {
     "zh": "错误",
     "zh_tw": "錯誤",
@@ -127,18 +127,18 @@
     "ko": "서브넷 계획 결과 저장"
   },
   "result_successfully_exported": {
-    "zh": "结果已成功导出到: {file_path},",
+    "zh": "结果已成功导出到: {file_path}",
     "zh_tw": "結果已成功匯出到：{file_path}",
     "en": "Result successfully exported to: {file_path}",
     "ja": "結果が正常にエクスポートされました：{file_path}",
-    "ko": "성공적으로 내보낸 결과: {file_path},"
+    "ko": "성공적으로 내보낸 결과: {file_path}"
   },
   "export_failed": {
-    "zh": "导出失败: {error},",
+    "zh": "导出失败: {error}",
     "zh_tw": "匯出失敗：{error}",
     "en": "Export failed: {error}",
     "ja": "エクスポートに失敗しました：{error}",
-    "ko": "내보내기 실패: {error},"
+    "ko": "내보내기 실패: {error}"
   },
   "apply_theme": {
     "zh": "应用主题",
@@ -336,6 +336,13 @@
     "ja": "「分割を実行」ボタンをクリックして操作を開始してください...",
     "ko": "'분할 수행' 버튼을 클릭하여 시작하세요..."
   },
+  "click_execute_planning_to_start": {
+    "zh": "点击'执行规划'按钮开始操作...",
+    "zh_tw": "點擊'執行規劃'按鈕開始操作…",
+    "en": "Click 'Execute Planning' to start operation...",
+    "ja": "「計画を実行」ボタンをクリックして操作を開始してください...",
+    "ko": "'계획 실행' 버튼을 클릭하여 시작하세요..."
+  },
   "subnet_name": {
     "zh": "子网名称",
     "zh_tw": "子網名稱",
@@ -432,7 +439,7 @@
     "zh_tw": "可用數",
     "en": "Available",
     "ja": "可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "ipv6_address_info": {
     "zh": "IPv6地址信息查询",
@@ -519,11 +526,11 @@
     "ko": "CIDR로 변환"
   },
   "cidr_result": {
-    "zh": "CIDR结果",
-    "zh_tw": "CIDR結果",
-    "en": "CIDR Result",
-    "ja": "CIDR結果",
-    "ko": "CIDR 결과"
+    "zh": "合并结果",
+    "zh_tw": "合併結果",
+    "en": "Merge Result",
+    "ja": "合併結果",
+    "ko": "병합 결과"
   },
   "ipv4_address_info": {
     "zh": "IPv4地址信息查询",
@@ -543,7 +550,7 @@
     "zh": "子网掩码",
     "zh_tw": "子網遮罩",
     "en": "Subnet Mask",
-    "ja": "サブネットマスク",
+    "ja": "サブマスク",
     "ko": "서브넷 마스크"
   },
   "check_overlap": {
@@ -623,6 +630,13 @@
     "ja": "ネットアド",
     "ko": "네트워크 주소"
   },
+  "network_end_address": {
+    "zh": "网段结束地址",
+    "zh_tw": "網段結束位址",
+    "en": "Network End Addr",
+    "ja": "ネットワーク終了アドレス",
+    "ko": "네트워크 종료 주소"
+  },
   "wildcard_mask": {
     "zh": "通配符掩码",
     "zh_tw": "萬用字元遮罩",
@@ -642,7 +656,7 @@
     "zh_tw": "可用位址數",
     "en": "Usable Addrs",
     "ja": "利用可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "item": {
     "zh": "项目",
@@ -715,11 +729,11 @@
     "ko": "상위 네트워크를 입력하십시오"
   },
   "invalid_parent_network_format": {
-    "zh": "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24）",
-    "zh_tw": "父網段格式不正確，請輸入有效的CIDR格式（例如：192.168.1.0/24）",
-    "en": "Invalid parent network format, please enter a valid CIDR format (e.g., 192.168.1.0/24)",
-    "ja": "無効な親ネットワーク形式です。有効なCIDR形式を入力してください（例：192.168.1.0/24）",
-    "ko": "상위 네트워크 형식이 잘못되었습니다. 유효한 CIDR 형식을 입력하십시오 (예: 192.168.1.0/24)."
+    "zh": "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式不正確，請輸入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "en": "Invalid parent network format, please enter a valid CIDR format (e.g., 192.168.1.0/24 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワーク形式です。有効なCIDR形式を入力してください（例：192.168.1.0/24 または 2001:0db8::/64）",
+    "ko": "상위 네트워크 형식이 잘못되었습니다. 유효한 CIDR 형식을 입력하십시오 (예: 192.168.1.0/24 또는 2001:0db8::/64)."
   },
   "please_add_at_least_one_requirement": {
     "zh": "请添加至少一个子网需求",
@@ -743,18 +757,53 @@
     "ko": "알 수 없는 오류가 발생했습니다"
   },
   "invalid_parent_network_cidr": {
-    "zh": "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8）",
-    "zh_tw": "父網段格式無效，請輸入有效的CIDR格式（如：10.0.0.0/8）",
-    "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8)",
-    "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8）",
-    "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8) 을 입력하십시오."
+    "zh": "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式無效，請輸入有效的CIDR格式（如：10.0.0.0/8 或 2001:0db8::/64）",
+    "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8 または 2001:0db8::/64）",
+    "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8 또는 2001:0db8::/64) 을 입력하십시오."
+  },
+  "invalid_subnet_format": {
+    "zh": "无效的子网格式: {subnets}",
+    "zh_tw": "無效的子網格式：{subnets}",
+    "en": "Invalid subnet format: {subnets}",
+    "ja": "無効なサブネット形式：{subnets}",
+    "ko": "유효하지 않은 서브넷 형식: {subnets}"
+  },
+  "invalid_cidr_format": {
+    "zh": "无效的CIDR格式",
+    "zh_tw": "無效的CIDR格式",
+    "en": "Invalid CIDR format",
+    "ja": "無効なCIDR形式",
+    "ko": "유효하지 않은 CIDR 형식"
+  },
+  "invalid_format": {
+    "zh": "无效格式",
+    "zh_tw": "無效格式",
+    "en": "Invalid format",
+    "ja": "無効な形式",
+    "ko": "유효하지 않은 형식"
   },
   "invalid_split_segment_cidr": {
-    "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23）",
-    "zh_tw": "切分網段格式無效，請輸入有效的CIDR格式（如：10.21.50.0/23）",
-    "en": "Invalid split segment CIDR format, please enter a valid CIDR (e.g., 10.21.50.0/23)",
-    "ja": "無効な分割セグメントCIDR形式です。有効なCIDRを入力してください（例：10.21.50.0/23）",
-    "ko": "유효하지 않은 세분화 형식입니다. 유효한 CIDR 형식을 입력하십시오 (예: 10.21.50.0/23)."
+    "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23 或 2001:0db8::/64）",
+    "zh_tw": "切分網段格式無效，請輸入有效的CIDR格式（如：10.21.50.0/23 或 2001:0db8::/64）",
+    "en": "Invalid split segment CIDR format, please enter a valid CIDR (e.g., 10.21.50.0/23 or 2001:0db8::/64)",
+    "ja": "無効な分割セグメントCIDR形式です。有効なCIDRを入力してください（例：10.21.50.0/23 または 2001:0db8::/64）",
+    "ko": "유효하지 않은 세분화 형식입니다. 유효한 CIDR 형식을 입력하십시오 (예: 10.21.50.0/23 또는 2001:0db8::/64)."
+  },
+  "ip_versions_not_compatible": {
+    "zh": "IP版本不兼容：父网段和切分网段必须是相同的IP版本（IPv4或IPv6）",
+    "zh_tw": "IP版本不兼容：父網段和切分段網段必須是相同的IP版本（IPv4或IPv6）",
+    "en": "IP versions not compatible: Parent network and split segment must be the same IP version (IPv4 or IPv6)",
+    "ja": "IPバージョンが互換性がありません：親ネットワークと分割セグメントは同じIPバージョン（IPv4またはIPv6）でなければなりません",
+    "ko": "IP 버전이 호환되지 않습니다. 상위 네트워크와 분할 세그먼트는 동일한 IP 버전 (IPv4 또는 IPv6) 이어야 합니다."
+  },
+  "all_subnets_must_be_same_ip_version": {
+    "zh": "IP版本不兼容：所有子网必须是相同的IP版本（IPv4或IPv6）",
+    "zh_tw": "IP版本不兼容：所有子網必須是相同的IP版本（IPv4或IPv6）",
+    "en": "All subnets must be the same IP version",
+    "ja": "すべてのサブネットは同じIPバージョンでなければなりません",
+    "ko": "모든 서브넷은 동일한 IP 버전이어야 합니다"
   },
   "parent_and_split_cidr_cannot_be_empty": {
     "zh": "父网段和切分网段都不能为空！",
@@ -827,7 +876,7 @@
     "ko": "서브넷 오버랩 감지를 수행하지 못했습니다"
   },
   "please_select_records_to_move": {
-    "zh": "请先选择要移动的{record_type},记录",
+    "zh": "请先选择要移动的{record_type}记录",
     "zh_tw": "請先選擇要移動的{record_type}記錄",
     "en": "Please select {record_type} records to move first",
     "ja": "最初に移動する{record_type}記録を選択してください",
@@ -873,7 +922,7 @@
     "zh_tw": "可用位址數",
     "en": "Usable Address",
     "ja": "利用可能数",
-    "ko": "사용 가능한 수"
+    "ko": "사용 가능 수"
   },
   "prefix_length": {
     "zh": "前缀",
@@ -1267,6 +1316,27 @@
     "zh_tw": "IPv6查詢",
     "ko": "IPv6 조회"
   },
+  "ipv6_no_broadcast_remark": {
+    "zh": "IPv6没有广播地址，使用多播地址代替",
+    "en": "IPv6 has no broadcast address, use multicast address instead",
+    "ja": "IPv6にはブロードキャストアドレスがなく、マルチキャストアドレスを使用します",
+    "zh_tw": "IPv6沒有廣播位址，使用多播位址代替",
+    "ko": "IPv6에는 브로드캐스트 주소가 없으며 멀티캐스트 주소를 대신 사용합니다"
+  },
+  "multicast_address_note": {
+    "zh": "多播地址说明",
+    "en": "Multicast Address Note",
+    "ja": "マルチキャストアドレスの説明",
+    "zh_tw": "多播位址說明",
+    "ko": "멀티캐스트 주소 설명"
+  },
+  "ipv6_multicast_note": {
+    "zh": "IPv6使用多播地址代替广播，多播地址以FF开头",
+    "en": "IPv6 uses multicast addresses instead of broadcast, multicast addresses start with FF",
+    "ja": "IPv6はブロードキャストの代わりにマルチキャストアドレスを使用し、マルチキャストアドレスはFFで始まります",
+    "zh_tw": "IPv6使用多播位址代替廣播，多播位址以FF開頭",
+    "ko": "IPv6는 브로드캐스트 대신 멀티캐스트 주소를 사용하며 멀티캐스트 주소는 FF로 시작합니다"
+  },
   "subnet_merge": {
     "zh": "子网合并",
     "en": "Subnet Merge",
@@ -1280,6 +1350,13 @@
     "ja": "重複検出",
     "zh_tw": "重疊檢測",
     "ko": "오버랩 감지"
+  },
+  "contained_in": {
+    "zh": "包含于",
+    "en": "contained in",
+    "ja": "含まれる",
+    "zh_tw": "包含於",
+    "ko": "에 포함됨"
   },
   "project": {
     "zh": "项目",
@@ -1527,7 +1604,7 @@
     "ko": "데이터 가져오기"
   },
   "data_import_summary": {
-    "zh": "共 {total_count}, 条数据，{valid_count} 条有效，{error_count} 条无效",
+    "zh": "共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效",
     "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
     "ja": "合計 {total_count} 件のデータ、{valid_count} 件有効、{error_count} 件無効",
     "zh_tw": "共 {total_count} 條數據，{valid_count} 條有效，{error_count} 條無效",
@@ -1602,6 +1679,27 @@
     "en": "Failed to register font",
     "ja": "フォントの登録に失敗しました",
     "ko": "글꼴 등록에 실패했습니다"
+  },
+  "mixed_ip_version_not_supported": {
+    "zh": "不支持混合IP版本的子网合并",
+    "zh_tw": "不支持混合IP版本的子網合併",
+    "en": "Mixed IP versions are not supported for subnet merging",
+    "ja": "サブネット統合では混合IPバージョンはサポートされていません",
+    "ko": "서브넷 병합에는 혼합 IP 버전이 지원되지 않습니다"
+  },
+  "ipv6_address_type_mismatch": {
+    "zh": "无法合并不同类型的IPv6地址（如全局地址和链路本地地址）",
+    "zh_tw": "無法合併不同類型的IPv6位址（如全域位址和鏈路本地位址）",
+    "en": "Cannot merge different types of IPv6 addresses (e.g., global addresses and link-local addresses)",
+    "ja": "異なるタイプのIPv6アドレス（グローバルアドレスやリンクローカルアドレスなど）を統合することはできません",
+    "ko": "서로 다른 유형의 IPv6 주소(예: 전역 주소 및 링크-로컬 주소)는 병합할 수 없습니다"
+  },
+  "different_ip_versions_cannot_be_converted": {
+    "zh": "不同IP版本的地址无法转换或合并",
+    "zh_tw": "不同IP版本的位址無法轉換或合併",
+    "en": "Different IP versions cannot be converted or merged",
+    "ja": "異なるIPバージョンのアドレスは変換または統合できません",
+    "ko": "서로 다른 IP 버전의 주소는 변환하거나 병합할 수 없습니다"
   },
   "no_chinese_font_found": {
     "zh": "未找到可用的中文字体",
@@ -1693,6 +1791,13 @@
     "ja": "サブネットクリア",
     "zh_tw": "清空子網切分",
     "ko": "빈 서브넷 분할"
+  },
+  "clear_subnet_split_and_planning": {
+    "zh": "清空子网切分和规划",
+    "en": "Clear Subnet Split and Planning",
+    "ja": "サブネット分割と計画をクリア",
+    "zh_tw": "清空子網切分和規劃",
+    "ko": "서브넷 분할 및 계획 지우기"
   },
   "function_debug": {
     "zh": "功能调试",
@@ -2038,18 +2143,18 @@
     "ko": "중간 네트워크 (/48 접두사)"
   },
   "regional_network": {
-    "zh": "区域级网络（/{0},前缀）",
+    "zh": "区域级网络（/{0} 前缀）",
     "en": "Regional Network (/ {0} Prefix)",
     "ja": "地域ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "區域級網路（/{0} 前綴）",
-    "ko": "영역 레벨 네트워크 (/{0}, 접두사)"
+    "ko": "영역 레벨 네트워크 (/{0} 접두사)"
   },
   "large_network": {
-    "zh": "大型网络（/{0},前缀）",
+    "zh": "大型网络（/{0} 前缀）",
     "en": "Large Network (/ {0} Prefix)",
     "ja": "大規模ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "大型網路（/{0} 前綴）",
-    "ko": "대형 네트워크 (/{0}, 접두사)"
+    "ko": "대형 네트워크 (/{0} 접두사)"
   },
   "extra_large_network": {
     "zh": "超大型网络（/32或更短前缀）",
@@ -2059,11 +2164,11 @@
     "ko": "매우 큰 네트워크 (/32 이하 접두사)"
   },
   "special_network": {
-    "zh": "特殊网络（/{0},前缀）",
+    "zh": "特殊网络（/{0} 前缀）",
     "en": "Special Network (/ {0} Prefix)",
     "ja": "特殊ネットワーク （/ {0}プレフィックス）",
     "zh_tw": "特殊網路（/{0} 前綴）",
-    "ko": "특수 네트워크 (/{0}, 접두사)"
+    "ko": "특수 네트워크 (/{0} 접두사)"
   },
   "purpose_loopback_ipv6": {
     "zh": "用于本地主机测试和诊断",
@@ -2192,18 +2297,18 @@
     "ko": "네트워크 접두사"
   },
   "segment_index": {
-    "zh": "第{0},段",
+    "zh": "第{0}段",
     "en": "Segment {0}",
     "ja": "セグメント {0}",
     "zh_tw": "第{0}段",
-    "ko": "단락 {0},"
+    "ko": "단락 {0}"
   },
   "segment_value": {
-    "zh": "{0}, (十六进制) = {1} (十进制) = {2} (二进制)",
+    "zh": "{0} (十六进制) = {1} (十进制) = {2} (二进制)",
     "en": "{0} (Hex) = {1} (Decimal) = {2} (Binary)",
     "ja": "{0} （16進数） = {1} （10進数） = {2} （2進数）",
     "zh_tw": "{0} (十六進制) = {1} (十進制) = {2} (二進制)",
-    "ko": "{0}, (16진수) = {1} (십진수) = {2} (이진수)"
+    "ko": "{0} (16진수) = {1} (십진수) = {2} (이진수)"
   },
   "segment_value_zero": {
     "zh": "0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)",
@@ -2500,11 +2605,11 @@
     "ko": "상위 네트워크 CIDR"
   },
   "available_addresses": {
-    "zh": "可用地址数",
-    "zh_tw": "可用位址數",
-    "en": "Available Addresses",
-    "ja": "利用可能数",
-    "ko": "사용 가능한 주소 수"
+    "zh": "可用数",
+    "zh_tw": "可用數",
+    "en": "Available",
+    "ja": "可能数",
+    "ko": "사용 가능 수"
   },
   "host_address_range": {
     "zh": "主机地址范围",
@@ -2927,11 +3032,11 @@
     "ko": "잘못된 IPv6 주소: 잘못된 형식 (예: 2001: 0db8:: 1)"
   },
   "copyright": {
-    "zh": "© 2025 {app_name} 版权所有",
-    "zh_tw": "© 2025 {app_name} 版權所有",
-    "en": "Copyright © 2025 {app_name}",
-    "ja": "© 2025 {app_name} 著作権所有",
-    "ko": "© 2025 {app_name} 판권 소유"
+    "zh": "© 2025-2026 {app_name} 版权所有",
+    "zh_tw": "© 2025-2026 {app_name} 版權所有",
+    "en": "Copyright © 2025-2026 {app_name}",
+    "ja": "© 2025-2026 {app_name} 著作権所有",
+    "ko": "© 2025-2026 {app_name} 판권 소유"
   },
   "db_language": {
     "zh": "简体中文",

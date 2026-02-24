@@ -28,9 +28,14 @@ from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
 # 本地模块
+from version import get_version
+
+__version__ = get_version()
+from ip_subnet_calculator import format_large_number
 from ip_subnet_calculator import (
     split_subnet,
     ip_to_int,
+    int_to_ip,
     get_subnet_info,
     suggest_subnet_planning,
     merge_subnets,
@@ -89,10 +94,14 @@ if sys.platform == 'win32':
 
         # 计算缩放因子
         SCALE_FACTOR = dpi_x / 96.0  # type: ignore
-        print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
+        # 只在直接运行应用程序时打印DPI信息，不在模块导入时打印
+        if __name__ == "__main__":
+            print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
 
     except Exception as e:
-        print(f"⚠️ 设置DPI感知失败: {e}")
+        # 只在直接运行应用程序时打印错误信息，不在模块导入时打印
+        if __name__ == "__main__":
+            print(f"⚠️ 设置DPI感知失败: {e}")
         # 使用默认缩放因子
         SCALE_FACTOR = 1.0  # type: ignore
         DPI_MODE = "Default"  # type: ignore
@@ -399,25 +408,142 @@ class ColoredNotebook(ttk.Frame):
             self.tab_change_callback(tab_index)
 
 
-class IPSubnetSplitterApp:
+class SubnetPlannerApp:
     """子网规划师主应用程序类
 
     这个类实现了一个子网规划的GUI应用程序，
     支持子网分割、子网规划、IP信息查询等功能。
     """
-    def validate_cidr(self, text, entry=None, style_based=False):
+    def autocomplete_ipv6(self, event):
+        """IPv6地址自动补全功能
+        
+        当用户输入IPv6地址时，提供智能自动补全功能
+        - 自动补全双冒号
+        - 智能补全常见IPv6地址片段
+        - 支持零压缩
+        - 验证并格式化IPv6地址
+        
+        Args:
+            event: 键盘事件对象
+        """
+        try:
+            entry = event.widget
+            current_text = entry.get().strip()
+            cursor_pos = entry.index(tk.INSERT)
+            
+            # 处理退格键和删除键，不进行补全
+            if event.keysym in ['BackSpace', 'Delete']:
+                return
+            
+            # 智能补全常见IPv6地址片段
+            # 补全链路本地地址前缀: fe80 -> fe80::
+            if current_text == 'fe80':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fe80::')
+                entry.icursor(5)
+                return
+            
+            # 补全链路本地地址前缀: fe80: -> fe80::
+            if current_text == 'fe80:':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fe80::')
+                entry.icursor(5)
+                return
+            
+            # 补全唯一本地地址前缀: fd -> fd00::
+            if current_text == 'fd':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fd00::')
+                entry.icursor(5)
+                return
+            
+            # 补全唯一本地地址前缀: fd: -> fd00::
+            if current_text == 'fd:':
+                entry.delete(0, tk.END)
+                entry.insert(0, 'fd00::')
+                entry.icursor(5)
+                return
+            
+            # 补全文档地址前缀: 2001 -> 2001:db8::
+            if current_text == '2001':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001: -> 2001:db8::
+            if current_text == '2001:':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001:db8 -> 2001:db8::
+            if current_text == '2001:db8':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 补全文档地址前缀: 2001:db8: -> 2001:db8::
+            if current_text == '2001:db8:':
+                entry.delete(0, tk.END)
+                entry.insert(0, '2001:db8::')
+                entry.icursor(9)
+                return
+            
+            # 双冒号补全: 当用户输入单个冒号且前面不是冒号时
+            if event.char == ':' and cursor_pos > 0:
+                # 获取当前光标前的字符
+                before_cursor = current_text[:cursor_pos]
+                after_cursor = current_text[cursor_pos:]
+                
+                # 检查光标前是否已有冒号
+                if before_cursor and before_cursor[-1] != ':' and '::' not in current_text:
+                    # 在光标位置插入另一个冒号，形成双冒号
+                    entry.delete(0, tk.END)
+                    entry.insert(0, before_cursor + '::' + after_cursor)
+                    entry.icursor(cursor_pos + 1)
+                    return
+                    
+        except Exception as e:
+            # 自动补全失败时不影响用户输入
+            pass
+    
+    def validate_cidr(self, text, entry=None, style_based=False, ip_version=None):
         """通用CIDR验证函数
 
         Args:
             text: 要验证的CIDR字符串
             entry: 可选的输入框对象，用于显示验证结果
             style_based: 是否使用样式来显示验证结果，否则使用前景色
+            ip_version: 可选的IP版本字符串，用于指定要验证的IP版本，如"IPv4"或"IPv6"
 
         Returns:
             验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
         """
         text = text.strip()
-        is_valid = bool(re.match(self.cidr_pattern, text)) if text else True
+        is_valid = True
+        if text:
+            try:
+                ip_network = ipaddress.ip_network(text, strict=False)
+                # 检查IP版本是否与指定的版本匹配
+                if ip_version:
+                    # 使用传入的IP版本进行检查
+                    actual_version = f"IPv{ip_network.version}"
+                    if ip_version != actual_version:
+                        is_valid = False
+                elif hasattr(self, 'ip_version_var'):
+                    # 向后兼容：如果没有传入IP版本，尝试使用子网规划的IP版本变量
+                    selected_version = self.ip_version_var.get()
+                    actual_version = f"IPv{ip_network.version}"
+                    if selected_version != actual_version:
+                        is_valid = False
+                else:
+                    # 如果没有IP版本信息，只验证格式
+                    is_valid = True
+            except ValueError:
+                is_valid = False
 
         if entry:
             if style_based:
@@ -526,13 +652,7 @@ class IPSubnetSplitterApp:
         self.app_name = _("app_name")
         self.app_version = get_version()
 
-        # CIDR格式验证正则表达式
-        self.cidr_pattern = (
-            r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
-            + r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/'
-            + r'([0-9]|[1-2][0-9]|3[0-2])$'
-        )
-
+        # CIDR验证已简化，不再使用复杂正则表达式，直接使用ipaddress.ip_network()进行实际解析
         # 存储删除记录历史，支持多次撤销
         self.deleted_history = []
 
@@ -548,8 +668,8 @@ class IPSubnetSplitterApp:
 
         # 窗口背景色（预声明，动态更新）
         self.bg_color = None
-        self.range_start_history = ["192.168.0.1", "10.0.0.1"]  # IP范围起始地址历史，两条初始记录
-        self.range_end_history = ["192.168.30.254", "10.0.0.254"]  # IP范围结束地址历史，两条初始记录
+        self.range_start_history = ["192.168.0.1", "10.0.0.1", "2001:db8::1", "fe80::1"]  # IP范围起始地址历史，包含IPv4和IPv6样例
+        self.range_end_history = ["192.168.30.254", "10.0.0.254", "2001:db8::100", "fe80::100"]  # IP范围结束地址历史，包含IPv4和IPv6样例
 
         # 切分子网相关属性 - 使用deque优化历史记录管理
         self.split_parent_networks = deque(maxlen=100)
@@ -841,6 +961,28 @@ class IPSubnetSplitterApp:
         history_record = self.history_records[selected_index]
         parent = history_record['parent']
         split = history_record['split']
+
+        # 检测IP版本并自动切换
+        try:
+            # 检测父网段的IP版本
+            parent_net = ipaddress.ip_network(parent, strict=False)
+            detected_version = f"IPv{parent_net.version}"
+            
+            # 如果检测到的版本与当前选中版本不同，则切换IP版本
+            if detected_version != self.split_ip_version_var.get():
+                self.split_ip_version_var.set(detected_version)
+                self.on_split_ip_version_change()
+        except ValueError:
+            # 如果父网段检测失败，尝试检测切分段
+            try:
+                split_net = ipaddress.ip_network(split, strict=False)
+                detected_version = f"IPv{split_net.version}"
+                if detected_version != self.split_ip_version_var.get():
+                    self.split_ip_version_var.set(detected_version)
+                    self.on_split_ip_version_change()
+            except ValueError:
+                # 都检测失败，保持当前版本
+                pass
 
         # 填充到输入框
         self.parent_entry.delete(0, tk.END)
@@ -1199,6 +1341,22 @@ class IPSubnetSplitterApp:
         history_frame = ttk.LabelFrame(self.split_frame, text=_("history"), padding=(10, 10, 10, 10))
         history_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0), pady=(0, 10))
 
+        # 添加IP版本切换框架
+        ip_version_frame = ttk.Frame(input_frame)
+        ip_version_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=0)
+        
+        # 初始化IP版本变量
+        self.split_ip_version_var = tk.StringVar(value="IPv4")
+        
+        # 添加IPv4/IPv6切换按钮
+        ipv4_btn = ttk.Radiobutton(ip_version_frame, text="IPv4", variable=self.split_ip_version_var, value="IPv4", 
+                                  command=self.on_split_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv4_btn.pack(side=tk.LEFT, padx=(10, 10))
+        
+        ipv6_btn = ttk.Radiobutton(ip_version_frame, text="IPv6", variable=self.split_ip_version_var, value="IPv6", 
+                                  command=self.on_split_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv6_btn.pack(side=tk.LEFT)
+
         # 配置 input_frame 的 grid 行列
         input_frame.grid_columnconfigure(0, minsize=30, weight=0)
         input_frame.grid_columnconfigure(1, minsize=0, weight=1)
@@ -1207,48 +1365,69 @@ class IPSubnetSplitterApp:
         input_frame.grid_rowconfigure(1, weight=0)
         input_frame.grid_rowconfigure(2, weight=0)
         input_frame.grid_rowconfigure(3, weight=0, minsize=0)
+        input_frame.grid_rowconfigure(4, weight=0, minsize=0)
 
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
 
         # 父网段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text=_("parent_network"), anchor="w", font=(font_family, font_size)).grid(
-            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
+            row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
-        # 初始化子网切分的历史记录列表
-        self.split_parent_networks = ["10.0.0.0/8", "172.16.0.0/12"]  # 提供两条初始记录，改善宽度计算
-        self.split_networks = ["10.21.50.0/23", "192.168.1.0/24"]  # 提供两条初始记录，改善宽度计算
+        # 初始化IP版本相关数据
+        # 为每个IP版本维护独立的历史记录列表
+        self.split_parent_networks_v4 = ["10.0.0.0/8", "172.16.0.0/12"]  # IPv4父网段历史记录
+        self.split_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6父网段历史记录
+        self.split_networks_v4 = ["10.21.50.0/23", "172.20.180.0/24"]  # IPv4切分段历史记录
+        self.split_networks_v6 = ["2001:0db8::/64", "fe80::1/128"]  # IPv6切分段历史记录
+        
+        # 根据IP版本选择对应的历史记录列表
+        ip_version = self.split_ip_version_var.get()
+        if ip_version == "IPv4":
+            # 使用IPv4历史记录
+            self.split_parent_networks = self.split_parent_networks_v4
+            self.split_networks = self.split_networks_v4
+            default_parent = "10.0.0.0/8"
+            default_split = "10.21.50.0/23"
+        else:
+            # 使用IPv6历史记录
+            self.split_parent_networks = self.split_parent_networks_v6
+            self.split_networks = self.split_networks_v6
+            default_parent = "2001:0db8::/32"
+            default_split = "2001:0db8::/64"
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry)), '%P')
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
-            values=self.split_parent_networks,  # 使用包含两条记录的列表
+            values=self.split_parent_networks,  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
-        self.parent_entry.grid(row=1, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
-        default_parent = "10.0.0.0/8"  # 默认父网段
+        self.parent_entry.grid(row=1, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
         self.parent_entry.insert(0, default_parent)  # 默认值
         self.parent_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.parent_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 切分段 - 统一pady、sticky和字体，确保与文本框垂直对齐
         ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
-            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=8, padx=(10, 0)
+            row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
-        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry)), '%P')
+        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry, ip_version=self.split_ip_version_var.get())), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
-            values=self.split_networks,  # 使用包含两条记录的列表
+            values=self.split_networks,  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
-        self.split_entry.grid(row=2, column=1, padx=10, pady=8, sticky=tk.EW + tk.N + tk.S)
-        default_split = "10.21.50.0/23"  # 默认切分段
+        self.split_entry.grid(row=2, column=1, padx=10, pady=4, sticky=tk.EW + tk.N + tk.S)
         self.split_entry.insert(0, default_split)  # 默认值
         self.split_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.split_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 按钮区域 - 执行按钮，跨四行的方形样式
         self.execute_btn = ttk.Button(input_frame, text=_("execute_split"), command=self.execute_split, width=10)
@@ -1300,19 +1479,85 @@ class IPSubnetSplitterApp:
             available_width = frame_width - 70
             column_width = max(100, available_width // total_columns)
             for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.remaining_tree, col):
+                    continue
                 self.remaining_tree.column(col, width=column_width)
         elif items:
             # 表格有数据时自适应内容
             for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.remaining_tree, col):
+                    continue
                 self.remaining_tree.column(col, width="0")
                 self.remaining_tree.update_idletasks()
                 auto_width = self.remaining_tree.column(col, "width")
                 self.remaining_tree.column(col, width=max(100, auto_width))
 
+    def is_column_hidden(self, tree, col):
+        """检查表格列是否被隐藏
+        
+        Args:
+            tree: Treeview对象
+            col: 列名
+            
+        Returns:
+            bool: 如果列被隐藏返回True，否则返回False
+        """
+        # 检查列是否被隐藏（宽度为0且stretch为False）
+        col_width = tree.column(col, "width")
+        col_stretch = tree.column(col, "stretch")
+        return col_width == 0 and not col_stretch
+    
+
+    
+    def adjust_allocated_tree_width(self):
+        """调整已分配子网表表格的宽度，使其根据内容自动调整"""
+        self.allocated_tree.update_idletasks()
+        
+        items = self.allocated_tree.get_children()
+        columns = ["name", "cidr", "required", "available", "network", "netmask", "wildcard", "broadcast"]
+        
+        if items:
+            # 表格有数据时，根据内容自适应列宽
+            for col in columns:
+                # 跳过已经隐藏的列
+                if self.is_column_hidden(self.allocated_tree, col):
+                    continue
+                    
+                # 将列宽设为0，触发自动计算
+                self.allocated_tree.column(col, width="0")
+                self.allocated_tree.update_idletasks()
+                # 获取自动计算的宽度
+                auto_width = self.allocated_tree.column(col, "width")
+                # 设置列宽为基于内容的宽度
+                self.allocated_tree.column(col, width=auto_width)
+
     def on_tab_change(self, tab_index):
         """标签页切换时的处理函数"""
         if tab_index == 2 and hasattr(self, 'chart_canvas'):
             self.draw_distribution_chart()
+            
+    def on_planning_tab_change(self, tab_index):
+        """规划结果标签页切换时的处理函数"""
+        # 确保UI更新完成
+        self.root.update_idletasks()
+        
+        # 检查 _temp_label 是否存在，如果不存在则创建
+        if not hasattr(self, '_temp_label'):
+            self._temp_label = tk.Label(self.root)
+            self._temp_label.pack_forget()
+        
+        if tab_index == 0:  # 已分配子网标签页
+            # 调整已分配子网表的列宽
+            self.auto_resize_columns(self.allocated_tree)
+        elif tab_index == 1:  # 剩余网段标签页
+            # 调整剩余网段表的列宽
+            self.auto_resize_columns(self.planning_remaining_tree)
+        elif tab_index == 2:  # 网段分布图标签页
+            # 重新绘制图表
+            if hasattr(self, 'chart_canvas'):
+                self.draw_distribution_chart()
 
     def on_top_level_tab_change(self, tab_index):
         """顶级标签页切换时的处理函数"""
@@ -1425,7 +1670,7 @@ class IPSubnetSplitterApp:
         # 创建剩余网段信息表格
         self.remaining_tree = ttk.Treeview(
             self.remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            columns=("index", "cidr", "network", "end_address", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
             height=5,
         )
@@ -1433,6 +1678,7 @@ class IPSubnetSplitterApp:
         self.remaining_tree.heading("index", text=_("index"))
         self.remaining_tree.heading("cidr", text=_("cidr"))
         self.remaining_tree.heading("network", text=_("network_address"))
+        self.remaining_tree.heading("end_address", text=_("network_end_address"))
         self.remaining_tree.heading("netmask", text=_("subnet_mask"))
         self.remaining_tree.heading("wildcard", text=_("wildcard_mask"))
         self.remaining_tree.heading("broadcast", text=_("broadcast_address"))
@@ -1442,10 +1688,11 @@ class IPSubnetSplitterApp:
         self.remaining_tree.column("index", minwidth=35, width=35, stretch=False, anchor="e")
         self.remaining_tree.column("cidr", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("network", minwidth=100, width=120, stretch=True)
+        self.remaining_tree.column("end_address", minwidth=100, width=0, stretch=False)  # 初始隐藏网段结束地址列
         self.remaining_tree.column("netmask", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("wildcard", minwidth=100, width=120, stretch=True)
         self.remaining_tree.column("broadcast", minwidth=100, width=120, stretch=True)
-        self.remaining_tree.column("usable", minwidth=100, width=110, stretch=True)
+        self.remaining_tree.column("usable", minwidth=70, width=80, stretch=True)  # 初始就窄化可用地址数列，因为使用科学计数法
 
         # 配置斑马条纹样式
         self.configure_treeview_styles(self.remaining_tree)
@@ -1486,14 +1733,24 @@ class IPSubnetSplitterApp:
         self.remaining_frame.grid_columnconfigure(0, weight=1)
         self.remaining_frame.grid_columnconfigure(1, weight=0)
 
+        # 垂直滚动条
         self.remaining_scroll_v = ttk.Scrollbar(
-            self.remaining_frame, orient=tk.VERTICAL, command=self.remaining_tree.yview
+            self.remaining_frame, orient=tk.VERTICAL
+        )
+        # 水平滚动条
+        self.remaining_scroll_h = ttk.Scrollbar(
+            self.remaining_frame, orient=tk.HORIZONTAL
         )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(self.remaining_scroll_v, self.remaining_tree, initial_hidden=False)
-        self.remaining_tree.grid(row=0, column=0, sticky=tk.NSEW)
-        self.remaining_scroll_v.grid(row=0, column=1, sticky=tk.NS)
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.remaining_frame, self.remaining_tree, self.remaining_scroll_v, no_scrollbar_padx=(0, 0))
+        
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.remaining_frame, self.remaining_tree, self.remaining_scroll_h)
+        
+        # 配置remaining_frame的列布局
+        self.remaining_frame.grid_columnconfigure(0, weight=1)
+        self.remaining_frame.grid_columnconfigure(1, weight=0)
 
         # 绑定窗口大小变化事件，实现表格自适应
         self.root.bind("<Configure>", self.on_window_resize, add='+')
@@ -1564,38 +1821,57 @@ class IPSubnetSplitterApp:
         self.planning_frame.grid_rowconfigure(2, weight=1)  # 规划结果行，可伸缩
 
         # 父网段设置区域
-        parent_frame = ttk.LabelFrame(self.planning_frame, text=_("parent_network_settings"), padding=(5, 10, 10, 10))
+        parent_frame = ttk.LabelFrame(self.planning_frame, text=_('parent_network_settings'), padding=(5, 10, 10, 10))
         parent_frame.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=(0, 0))  # 左上角
         # 设置父网段设置面板的固定宽度
         parent_frame.configure(width=250)
 
-        # 初始化父网段列表 - 为子网规划创建独立的历史记录列表
-        self.planning_parent_networks = ["10.21.48.0/20", "192.168.0.0/16"]  # 提供两条初始记录，改善宽度计算
+        # 初始化IP版本变量
+        self.ip_version_var = tk.StringVar(value="IPv4")
+        
+        # 初始化父网段列表 - 为每个IP版本维护独立的历史记录列表
+        self.planning_parent_networks_v4 = ["10.21.48.0/20", "192.168.0.0/16"]  # IPv4历史记录
+        self.planning_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6历史记录
+        self.planning_parent_networks = self.planning_parent_networks_v4  # 当前使用的历史记录列表
 
-        # 父网段下拉文本框
-        ttk.Label(parent_frame, text="").pack(side=tk.LEFT, padx=(0, 0))
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry)), '%P')
+        # 创建父网段输入区域框架，用于水平排列IP选项和输入框
+        parent_input_frame = ttk.Frame(parent_frame)
+        parent_input_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        # 添加IPv4/IPv6切换按钮 - 水平排列
+        ipv4_btn = ttk.Radiobutton(parent_input_frame, text="IPv4", variable=self.ip_version_var, value="IPv4", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv4_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        ipv6_btn = ttk.Radiobutton(parent_input_frame, text="IPv6", variable=self.ip_version_var, value="IPv6", 
+                                  command=self.on_ip_version_change, style="IpVersion.TRadiobutton")
+        ipv6_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 父网段下拉文本框 - 与IP选项水平排列
+        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry, ip_version=self.ip_version_var.get())), '%P')
         self.planning_parent_entry = ttk.Combobox(
-            parent_frame,
+            parent_input_frame,
             values=self.planning_parent_networks,  # 使用包含两条记录的列表
-            width=16,
+            width=8,
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
         )
-        self.planning_parent_entry.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
-        default_parent = "10.21.48.0/20"  # 默认父网段
+        self.planning_parent_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        default_parent = "10.21.48.0/20"  # 默认值
         self.planning_parent_entry.insert(0, default_parent)  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
+        # 添加IPv6自动补全功能
+        self.planning_parent_entry.bind('<KeyRelease>', self.autocomplete_ipv6)
 
         # 需求池区域
-        history_frame = ttk.LabelFrame(self.planning_frame, text=_("requirements_pool"), padding=(10, 10, 0, 10))
+        history_frame = ttk.LabelFrame(self.planning_frame, text=_('requirements_pool'), padding=(10, 10, 0, 10))
         history_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 5), pady=(0, 10))  # 左下角
         # 设置需求池面板的固定宽度
         history_frame.configure(width=250)
 
         # 子网需求区域
-        requirements_frame = ttk.LabelFrame(self.planning_frame, text=_("subnet_requirements"), padding=(10, 10, 0, 10))
+        requirements_frame = ttk.LabelFrame(self.planning_frame, text=_('subnet_requirements'), padding=(10, 10, 0, 10))
         requirements_frame.grid(
             row=0, column=1, rowspan=2, sticky="nsew", padx=(5, 0), pady=(0, 10)
         )  # 右侧跨两行
@@ -1729,11 +2005,11 @@ class IPSubnetSplitterApp:
         # 按钮已移动到删除按钮下方
 
         # 规划结果区域 - 使用grid布局，跨两列显示
-        result_frame = ttk.LabelFrame(self.planning_frame, text=_("planning_result"), padding="10")
+        result_frame = ttk.LabelFrame(self.planning_frame, text=_('planning_result'), padding="10")
         result_frame.grid(row=2, column=0, columnspan=2, sticky="nwse", pady=(0, 0))
 
         # 创建笔记本控件显示规划结果
-        self.planning_notebook = ColoredNotebook(result_frame, style=self.style)
+        self.planning_notebook = ColoredNotebook(result_frame, style=self.style, tab_change_callback=self.on_planning_tab_change)
         self.planning_notebook.pack(fill=tk.BOTH, expand=True)
 
         # 保存初始状态到历史记录
@@ -1774,7 +2050,7 @@ class IPSubnetSplitterApp:
         )
         self.allocated_tree = ttk.Treeview(
             self.allocated_frame,
-            columns=("index", "name", "cidr", "required", "available", "network", "netmask", "wildcard", "broadcast"),
+            columns=("index", "name", "cidr", "required", "available", "network", "end_address", "netmask", "wildcard", "broadcast"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -1788,6 +2064,7 @@ class IPSubnetSplitterApp:
         self.allocated_tree.heading("required", text=_("required_count"))
         self.allocated_tree.heading("available", text=_("available_count"))
         self.allocated_tree.heading("network", text=_("network_address"))
+        self.allocated_tree.heading("end_address", text=_("network_end_address"))
         self.allocated_tree.heading("netmask", text=_("subnet_mask"))
         self.allocated_tree.heading("wildcard", text=_("wildcard_mask"))
         self.allocated_tree.heading("broadcast", text=_("broadcast_address"))
@@ -1799,22 +2076,34 @@ class IPSubnetSplitterApp:
         self.allocated_tree.column("required", width=0, minwidth=35, stretch=True)  # 需求数列自动宽度
         self.allocated_tree.column("available", width=0, minwidth=35, stretch=True)  # 可用数列自动宽度
         self.allocated_tree.column("network", width=0, minwidth=80, stretch=True)  # 网络地址列自动宽度
+        self.allocated_tree.column("end_address", width=0, minwidth=80, stretch=False)  # 网段结束地址列初始隐藏
         self.allocated_tree.column("netmask", width=0, minwidth=80, stretch=True)  # 子网掩码列自动宽度
         self.allocated_tree.column("wildcard", width=0, minwidth=80, stretch=True)  # 通配符掩码列自动宽度
         self.allocated_tree.column("broadcast", width=0, minwidth=80, stretch=True)  # 广播地址列自动宽度
 
+        # 垂直滚动条
         allocated_v_scrollbar = ttk.Scrollbar(
             self.allocated_frame, orient=tk.VERTICAL
         )
+        # 水平滚动条
+        allocated_h_scrollbar = ttk.Scrollbar(
+            self.allocated_frame, orient=tk.HORIZONTAL
+        )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(allocated_v_scrollbar, self.allocated_tree, initial_hidden=False)
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.allocated_frame, self.allocated_tree, allocated_v_scrollbar, no_scrollbar_padx=(0, 0))
+        
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.allocated_frame, self.allocated_tree, allocated_h_scrollbar)
+        
+        # 配置allocated_frame的grid布局
         self.allocated_frame.grid_rowconfigure(0, weight=1)
         self.allocated_frame.grid_columnconfigure(0, weight=1)
-        self.allocated_tree.grid(row=0, column=0, sticky="nsew")
-        allocated_v_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.configure_treeview_styles(self.allocated_tree)
+        
+        # 初始化时根据表头自动调整列宽
+        self.auto_resize_columns(self.allocated_tree)
 
         # 剩余网段页面
         self.planning_remaining_frame = ttk.Frame(
@@ -1822,7 +2111,7 @@ class IPSubnetSplitterApp:
         )
         self.planning_remaining_tree = ttk.Treeview(
             self.planning_remaining_frame,
-            columns=("index", "cidr", "network", "netmask", "wildcard", "broadcast", "usable"),
+            columns=("index", "cidr", "network", "end_address", "netmask", "wildcard", "broadcast", "usable"),
             show="headings",
             height=5,  # 设置为5行高度
         )
@@ -1832,6 +2121,7 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.heading("index", text=_("index"))
         self.planning_remaining_tree.heading("cidr", text=_("cidr"))
         self.planning_remaining_tree.heading("network", text=_("network_address"))
+        self.planning_remaining_tree.heading("end_address", text=_("network_end_address"))
         self.planning_remaining_tree.heading("netmask", text=_("subnet_mask"))
         self.planning_remaining_tree.heading("wildcard", text=_("wildcard_mask"))
         self.planning_remaining_tree.heading("broadcast", text=_("broadcast_address"))
@@ -1841,26 +2131,39 @@ class IPSubnetSplitterApp:
         self.planning_remaining_tree.column("index", width=35, minwidth=35, stretch=False, anchor="e")
         self.planning_remaining_tree.column("cidr", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column(
-            "network", width=80, minwidth=70, stretch=True
-        )  # 调小网络地址列宽并启用拉伸
+            "network", width=120, minwidth=100, stretch=True
+        )  # 加宽网络地址列以完整显示IPv6地址
+        self.planning_remaining_tree.column("end_address", width=0, minwidth=100, stretch=False)  # 网段结束地址列，初始隐藏
         self.planning_remaining_tree.column("netmask", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("wildcard", width=120, minwidth=100, stretch=True)
         self.planning_remaining_tree.column("broadcast", width=120, minwidth=100, stretch=True)
-        self.planning_remaining_tree.column("usable", width=80, minwidth=60, stretch=True)
+        self.planning_remaining_tree.column("usable", width=70, minwidth=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
 
+        # 垂直滚动条
         remaining_v_scrollbar = ttk.Scrollbar(
             self.planning_remaining_frame,
             orient=tk.VERTICAL,
         )
+        # 水平滚动条
+        remaining_h_scrollbar = ttk.Scrollbar(
+            self.planning_remaining_frame,
+            orient=tk.HORIZONTAL,
+        )
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(remaining_v_scrollbar, self.planning_remaining_tree, initial_hidden=False)
+        # 使用通用方法创建带自动隐藏垂直滚动条的Treeview，滚动条隐藏时不添加右边距
+        self.create_scrollable_treeview(self.planning_remaining_frame, self.planning_remaining_tree, remaining_v_scrollbar, no_scrollbar_padx=(0, 0))
+        
+        # 使用通用方法创建带自动隐藏功能的水平滚动条
+        self.create_horizontal_scrollbar(self.planning_remaining_frame, self.planning_remaining_tree, remaining_h_scrollbar)
+        
+        # 配置planning_remaining_frame的grid布局
         self.planning_remaining_frame.grid_rowconfigure(0, weight=1)
         self.planning_remaining_frame.grid_columnconfigure(0, weight=1)
-        self.planning_remaining_tree.grid(row=0, column=0, sticky="nsew")
-        remaining_v_scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.configure_treeview_styles(self.planning_remaining_tree)
+        
+        # 初始化时根据表头自动调整列宽
+        self.auto_resize_columns(self.planning_remaining_tree)
 
         # 添加标签页 - 使用与切分结果一致的颜色
         self.planning_notebook.add_tab(_("allocated_subnets"), self.allocated_frame, "#e3f2fd")  # 浅蓝色
@@ -1909,6 +2212,11 @@ class IPSubnetSplitterApp:
             self.allocated_tree.delete(item)
         for item in self.planning_remaining_tree.get_children():
             self.planning_remaining_tree.delete(item)
+        
+        # 在主循环启动后，再调整列宽，确保表格完全渲染
+        # 使用after(100)确保表格完全渲染后再调整列宽
+        self.root.after(100, self.auto_resize_columns, self.allocated_tree)
+        self.root.after(100, self.auto_resize_columns, self.planning_remaining_tree)
 
     def setup_table_zebra_styles(self):
         """在窗口完全渲染后初始化表格斑马纹样式"""
@@ -1938,13 +2246,22 @@ class IPSubnetSplitterApp:
 
             tree.tag_configure("section", background="#d8d8d8", foreground="#000000")
 
-            tree.tag_configure("current", font=tree.cget("font") + ("bold",), foreground="#0066cc")
-
-            if include_special_tags:
-                tree.tag_configure("error", foreground="red")
-                tree.tag_configure("info", foreground="blue")
-        except (tk.TclError, AttributeError):
-            pass
+            # 配置当前选中行样式，避免字体类型错误
+            try:
+                tree.tag_configure("current", font=("TkDefaultFont", 11, "bold"), foreground="#0066cc")
+            except tk.TclError:
+                # 如果自定义字体失败，只设置前景色
+                tree.tag_configure("current", foreground="#0066cc")
+            
+            # 配置错误行样式
+            tree.tag_configure("error_row", foreground="red")
+            
+            # 配置错误和信息标签
+            tree.tag_configure("error", foreground="red")
+            tree.tag_configure("info", foreground="blue")
+        except (tk.TclError, AttributeError) as e:
+            # 只捕获与Tkinter配置相关的错误，避免隐藏其他重要错误
+            print(f"配置Treeview样式时出错: {str(e)}")
 
     def update_table_zebra_stripes(self, tree, update_index=False):
         """更新表格的斑马条纹标签
@@ -1959,22 +2276,37 @@ class IPSubnetSplitterApp:
             for index, item in enumerate(children, start=1):
                 tag = "even" if index % 2 == 0 else "odd"
 
+                # 获取当前行的标签，保留原有标签
+                current_tags = list(tree.item(item, "tags"))
+                
+                # 如果没有当前标签，创建空列表
+                if not current_tags:
+                    current_tags = []
+                
+                # 如果当前标签是字符串而不是列表，转换为列表
+                if isinstance(current_tags, str):
+                    current_tags = [current_tags]
+                
+                # 保存特殊标签
+                special_tags = [t for t in current_tags if t not in ["even", "odd"]]
+                
+                # 重新构建标签列表，特殊标签在前，斑马条纹标签在后
+                new_tags = special_tags.copy()
+                if tag not in new_tags:
+                    new_tags.append(tag)
+
                 if update_index:
                     # 更新序号列
                     values = list(tree.item(item, "values"))
                     if values and values[0] != index:  # 只有当序号不一致时才更新
                         values[0] = index
-                        tree.item(item, values=values, tags=(tag,))
+                        tree.item(item, values=values, tags=tuple(new_tags))
                     else:
                         # 只更新斑马条纹标签，减少不必要的UI更新
-                        current_tags = tree.item(item, "tags")
-                        if tag not in current_tags:
-                            tree.item(item, tags=(tag,))
+                        tree.item(item, tags=tuple(new_tags))
                 else:
                     # 只更新斑马条纹标签
-                    current_tags = tree.item(item, "tags")
-                    if tag not in current_tags:  # 只有当标签不一致时才更新
-                        tree.item(item, tags=(tag,))
+                    tree.item(item, tags=tuple(new_tags))
         except AttributeError:
             # 忽略属性不存在的错误
             pass
@@ -2028,31 +2360,43 @@ class IPSubnetSplitterApp:
         Args:
             tree: 要调整列宽的Treeview对象
         """
+        
+        # 检查 _temp_label 是否存在，如果不存在则创建
+        if not hasattr(self, '_temp_label'):
+            self._temp_label = tk.Label(self.root)
+            self._temp_label.pack_forget()
 
         # 为每列设置一个合理的默认最小宽度（基于列类型）
         default_min_widths = {
-            'index': 60,
-            'name': 120,
-            'cidr': 80,
+            'index': 40,
+            'name': 80,  # 减小默认宽度，让name列能自适应
+            'cidr': 80,  # 增加CIDR列的默认宽度，确保能显示完整的CIDR和中文标题
             'required': 70,
             'available': 70,
-            'network': 100,
-            'netmask': 100,
-            'broadcast': 100,
-            'wildcard': 100,
-            'usable': 100,
-            'size': 80,
+            'network': 100,  # 增加网络地址列的默认宽度，确保能显示完整的中文标题
+            'netmask': 100,  # 增加子网掩码列的默认宽度，确保能显示完整的中文标题
+            'broadcast': 120,  # 适中的广播地址列宽度，确保能显示完整的中文标题
+            'wildcard': 80,  # 减小通配符掩码列的默认宽度
+            'usable': 60,  # 增加可用地址数列的默认宽度，确保能显示完整的中文标题
+            'size': 60,  # 增加主机数列的默认宽度，确保能显示完整的中文标题
         }
 
         # 调整列宽以适应表头
         for col in tree['columns']:
+            # 跳过已经隐藏的列
+            if self.is_column_hidden(tree, col):
+                continue
+                
             # 获取表头文本
             header = tree.heading(col, 'text') or ''  # 确保header不是None
 
             # 跳过序号列，保持固定宽度
             if col == 'index':
                 continue
-
+            
+            # 获取当前列宽
+            current_width = tree.column(col, 'width')
+            
             # 设置临时标签文本并测量宽度
             self._temp_label.config(text=header)
             header_width = self._temp_label.winfo_reqwidth() + 20  # 增加一些边距
@@ -2068,11 +2412,19 @@ class IPSubnetSplitterApp:
                     # 确保cell_width和max_width都是有效的数值
                     max_width = max(max_width, cell_width)
 
-            # 应用默认最小宽度，如果计算出的宽度小于默认值
-            if header in default_min_widths and max_width < default_min_widths[header]:
-                max_width = default_min_widths[header]
-
-            # 设置列宽
+            # 应用默认最小宽度，确保列宽合理
+            if col in default_min_widths:
+                # 使用更合理的最小宽度，确保能显示完整内容
+                min_width = default_min_widths[col]
+                # 总是应用最小宽度，确保表格列宽一致
+                if max_width < min_width:
+                    max_width = min_width
+            
+            # 当表格没有数据时，确保使用默认最小宽度
+            if not tree.get_children() and col in default_min_widths:
+                max_width = default_min_widths[col]
+            
+            # 无论当前宽度如何，都根据内容调整列宽，允许缩小
             tree.column(col, width=max_width, stretch=True)
 
     def resize_tables(self):
@@ -2768,13 +3120,15 @@ class IPSubnetSplitterApp:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal="center")
 
-                # 添加示例数据
+                # 添加示例数据（包含IPv4和IPv6示例）
                 example_data = [
                     [_("office"), "20"],
                     [_("hr_department"), "10"],
                     [_("finance_department"), "10"],
                     [_("planning_department"), "30"],
                     [_("it_department"), "20"],
+                    [_("ipv6_lab"), "50"],
+                    [_("ipv6_infrastructure"), "100"],
                 ]
                 for row_idx, row_data in enumerate(example_data, 2):
                     for col_idx, value in enumerate(row_data, 1):
@@ -3478,6 +3832,9 @@ class IPSubnetSplitterApp:
         if not validation_result['valid']:
             self.show_error(_("error"), validation_result['error'])
             return
+        
+        # 重新获取修正后的父网段
+        parent = self.planning_parent_entry.get().strip()
 
         # 获取子网需求
         subnet_requirements = []
@@ -3490,6 +3847,9 @@ class IPSubnetSplitterApp:
             return
 
         try:
+            # 只验证IP地址格式，不自动修正格式，保留用户输入的原始格式
+            parent_network = ipaddress.ip_network(parent, strict=False)
+            
             # 执行子网规划
             # 转换子网需求格式以匹配函数参数要求
             formatted_requirements = [{'name': name, 'hosts': hosts} for name, hosts in subnet_requirements]
@@ -3506,6 +3866,23 @@ class IPSubnetSplitterApp:
             self.clear_tree_items(self.allocated_tree)
             self.clear_tree_items(self.planning_remaining_tree)
 
+            # 检测IP版本
+            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            
+            # 根据IP版本显示或隐藏相应的列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
+                self.allocated_tree.column("wildcard", width=0, stretch=False)
+                self.allocated_tree.column("netmask", width=0, stretch=False)
+                self.allocated_tree.column("broadcast", width=0, stretch=False)
+                self.allocated_tree.column("end_address", width=120, stretch=True)  # 显示网段结束地址列
+            else:
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
+                self.allocated_tree.column("wildcard", width=100, stretch=True)
+                self.allocated_tree.column("netmask", width=100, stretch=True)
+                self.allocated_tree.column("broadcast", width=120, stretch=True)
+                self.allocated_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
+            
             # 显示已分配子网
             for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
                 # 设置斑马条纹标签
@@ -3517,12 +3894,13 @@ class IPSubnetSplitterApp:
                         i,
                         subnet["name"],
                         subnet["cidr"],
-                        subnet["required_hosts"],
-                        subnet["available_hosts"],
+                        format_large_number(subnet["required_hosts"]),
+                        format_large_number(subnet["available_hosts"]),
                         subnet["info"]["network"],
+                        subnet["info"]["broadcast"],  # 网段结束地址
                         subnet["info"]["netmask"],
                         subnet["info"]["wildcard"],
-                        subnet["info"]["broadcast"],
+                        subnet["info"]["broadcast"] if not is_ipv6 else "-",
                     ),
                     tags=tags,
                 )
@@ -3531,9 +3909,36 @@ class IPSubnetSplitterApp:
             # 数据添加完成后，自动调整列宽以适应内容
             self.auto_resize_columns(self.allocated_tree)
 
+            # 根据IP版本显示或隐藏相应的列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
+                self.planning_remaining_tree.column("wildcard", width=0, stretch=False)
+                self.planning_remaining_tree.column("netmask", width=0, stretch=False)
+                self.planning_remaining_tree.column("broadcast", width=0, stretch=False)
+                # 调整IPv6列宽，确保完整显示IPv6地址
+                self.planning_remaining_tree.column("cidr", width=180, stretch=True)
+                self.planning_remaining_tree.column("network", width=180, stretch=True)  # 加宽网络地址列
+                self.planning_remaining_tree.column("end_address", width=200, stretch=True)  # 显示网段结束地址列
+                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+            else:
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
+                self.planning_remaining_tree.column("wildcard", width=100, stretch=True)
+                self.planning_remaining_tree.column("netmask", width=100, stretch=True)
+                self.planning_remaining_tree.column("broadcast", width=120, stretch=True)
+                self.planning_remaining_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
+                # 恢复IPv4列宽
+                self.planning_remaining_tree.column("cidr", width=120, stretch=True)
+                self.planning_remaining_tree.column("network", width=120, stretch=True)
+                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+            
             # 显示剩余网段
             for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
                 tags = ("even",) if i % 2 == 0 else ("odd",)
+                # 为隐藏列传递空字符串，避免数据显示异常
+                netmask_val = subnet["netmask"] if not is_ipv6 else ""
+                wildcard_val = subnet["wildcard"] if not is_ipv6 else ""
+                broadcast_val = subnet["broadcast"] if not is_ipv6 else ""
+                
                 self.planning_remaining_tree.insert(
                     "",
                     tk.END,
@@ -3541,10 +3946,11 @@ class IPSubnetSplitterApp:
                         i,
                         plan_result['remaining_subnets'][i - 1],
                         subnet["network"],
-                        subnet["netmask"],
-                        subnet["wildcard"],
-                        subnet["broadcast"],
-                        subnet["usable_addresses"],  # 修正为正确的字段名
+                        subnet["host_range_end"],  # 网段结束地址
+                        netmask_val,
+                        wildcard_val,
+                        broadcast_val,
+                        format_large_number(subnet["usable_addresses"]),  # 修正为正确的字段名
                     ),
                     tags=tags,
                 )
@@ -3566,17 +3972,11 @@ class IPSubnetSplitterApp:
             self.generate_planning_chart_data(plan_result)
 
         except ValueError as e:
-            error_msg = str(e)
-            if "not permitted" in error_msg and "Octet" in error_msg:
-                match = re.search(r"Octet\D*(\d+)", error_msg)
-                if match:
-                    octet = match.group(1)
-                    message = f"子网规划失败: IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
-                else:
-                    message = f"子网规划失败: {error_msg}"
-            else:
-                message = f"子网规划失败: {error_msg}"
-            self.show_error(_("error"), message)
+            # 导入handle_ip_subnet_error函数
+            from ip_subnet_calculator import handle_ip_subnet_error
+            # 使用通用错误处理函数处理IP相关错误
+            error_dict = handle_ip_subnet_error(e)
+            self.show_error(_("error"), f"{_("subnet_planning_failed")}: {error_dict.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
 
@@ -3630,6 +4030,8 @@ class IPSubnetSplitterApp:
             function: 滚动条回调函数
         """
         def scrollbar_callback(*args):
+            # 获取滚动条方向
+            scrollbar_orient = scrollbar.cget('orient')
             scrollbar.set(*args)
             if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
                 scrollbar.grid_remove()
@@ -3639,7 +4041,11 @@ class IPSubnetSplitterApp:
                     except (tk.TclError, AttributeError):
                         pass
             else:
-                scrollbar.grid()
+                # 根据滚动条方向设置正确的网格位置
+                if scrollbar_orient == 'horizontal':
+                    scrollbar.grid(row=1, column=0, sticky=tk.EW)
+                else:  # vertical
+                    scrollbar.grid(row=0, column=1, sticky=tk.NS)
                 if treeview and padx_adjust:
                     try:
                         treeview.grid_configure(padx=0)
@@ -3665,16 +4071,34 @@ class IPSubnetSplitterApp:
                 'error_code': 'empty_input'
             }
 
-        # 验证父网段CIDR格式
-        if not self.validate_cidr(parent):
+        # 验证并自动修正父网段CIDR格式
+        try:
+            parent_net = ipaddress.ip_network(parent, strict=False)
+            parent_address = ipaddress.ip_address(parent.split('/')[0])
+            if parent_address != parent_net.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_parent = f"{parent_net.network_address}/{parent_net.prefixlen}"
+                # 更新输入框内容
+                self.parent_entry.delete(0, tk.END)
+                self.parent_entry.insert(0, correct_parent)
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_parent_network_cidr"),
                 'error_code': 'invalid_parent'
             }
 
-        # 验证切分段CIDR格式
-        if not self.validate_cidr(split):
+        # 验证并自动修正切分段CIDR格式
+        try:
+            split_net = ipaddress.ip_network(split, strict=False)
+            split_address = ipaddress.ip_address(split.split('/')[0])
+            if split_address != split_net.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_split = f"{split_net.network_address}/{split_net.prefixlen}"
+                # 更新输入框内容
+                self.split_entry.delete(0, tk.END)
+                self.split_entry.insert(0, correct_split)
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_split_segment_cidr"),
@@ -3682,6 +4106,70 @@ class IPSubnetSplitterApp:
             }
 
         return {'valid': True, 'error': None, 'error_code': None}
+
+    def on_ip_version_change(self):
+        """处理IP版本切换事件
+        
+        当用户切换IPv4/IPv6时，更新父网段输入框的默认值和历史记录
+        """
+        try:
+            ip_version = self.ip_version_var.get()
+            
+            # 清空当前输入框
+            self.planning_parent_entry.delete(0, tk.END)
+            
+            # 根据IP版本选择对应的历史记录列表
+            if ip_version == "IPv4":
+                # 使用IPv4历史记录
+                self.planning_parent_networks = self.planning_parent_networks_v4
+                default_parent = "10.21.48.0/20"
+            else:
+                # 使用IPv6历史记录
+                self.planning_parent_networks = self.planning_parent_networks_v6
+                default_parent = "2001:0db8::/32"
+            
+            # 更新输入框默认值和下拉列表
+            self.planning_parent_entry.insert(0, default_parent)
+            self.planning_parent_entry.config(values=self.planning_parent_networks)
+            
+        except Exception as e:
+            self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
+    
+    def on_split_ip_version_change(self):
+        """处理子网切分功能的IP版本切换事件
+        
+        当用户切换IPv4/IPv6时，更新子网切分输入框的默认值和历史记录
+        """
+        try:
+            ip_version = self.split_ip_version_var.get()
+            
+            # 清空当前输入框
+            self.parent_entry.delete(0, tk.END)
+            self.split_entry.delete(0, tk.END)
+            
+            # 根据IP版本选择对应的历史记录列表
+            if ip_version == "IPv4":
+                # 使用IPv4历史记录
+                self.split_parent_networks = self.split_parent_networks_v4
+                self.split_networks = self.split_networks_v4
+                default_parent = "10.0.0.0/8"
+                default_split = "10.21.50.0/23"
+            else:
+                # 使用IPv6历史记录
+                self.split_parent_networks = self.split_parent_networks_v6
+                self.split_networks = self.split_networks_v6
+                default_parent = "2001:0db8::/32"
+                default_split = "2001:0db8::/64"
+            
+            # 更新输入框默认值和下拉列表
+            self.parent_entry.insert(0, default_parent)
+            self.parent_entry.config(values=self.split_parent_networks)
+            
+            self.split_entry.insert(0, default_split)
+            self.split_entry.config(values=self.split_networks)
+            
+        except Exception as e:
+            self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
 
     def _validate_planning_input(self, parent):
         """验证子网规划输入
@@ -3701,7 +4189,28 @@ class IPSubnetSplitterApp:
             }
 
         # 验证父网段CIDR格式
-        if not self.validate_cidr(parent):
+        try:
+            # 使用strict=False创建网络对象，允许主机位设置
+            ip_network = ipaddress.ip_network(parent, strict=False)
+            # 检查IP版本是否与当前选中的版本匹配
+            selected_version = self.ip_version_var.get()
+            actual_version = f"IPv{ip_network.version}"
+            if selected_version != actual_version:
+                return {
+                    'valid': False,
+                    'error': _("ip_versions_not_compatible"),
+                    'error_code': 'version_mismatch'
+                }
+            
+            # 检查输入的地址是否与网络地址完全匹配
+            input_address = ipaddress.ip_address(parent.split('/')[0])
+            if input_address != ip_network.network_address:
+                # 输入地址包含主机位，自动修正为正确的网络地址
+                correct_cidr = f"{ip_network.network_address}/{ip_network.prefixlen}"
+                # 更新输入框内容
+                self.planning_parent_entry.delete(0, tk.END)
+                self.planning_parent_entry.insert(0, correct_cidr)
+        except ValueError:
             return {
                 'valid': False,
                 'error': _("invalid_parent_network_format"),
@@ -3737,11 +4246,25 @@ class IPSubnetSplitterApp:
         # 设置滚动条的命令
         if widget_command:
             scrollbar.config(command=widget_command)
-        widget.configure(yscrollcommand=scrollbar.set)
-
-        # 创建滚动条回调
-        scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
-        widget.configure(yscrollcommand=scrollbar_callback)
+        
+        # 获取滚动条方向
+        scrollbar_orient = scrollbar.cget('orient')
+        
+        # 根据滚动条方向设置相应的滚动命令
+        if scrollbar_orient == 'horizontal':
+            # 水平滚动条
+            widget.configure(xscrollcommand=scrollbar.set)
+            
+            # 创建滚动条回调
+            scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
+            widget.configure(xscrollcommand=scrollbar_callback)
+        else:
+            # 垂直滚动条
+            widget.configure(yscrollcommand=scrollbar.set)
+            
+            # 创建滚动条回调
+            scrollbar_callback = self._create_scrollbar_callback(scrollbar, widget, padx_adjust)
+            widget.configure(yscrollcommand=scrollbar_callback)
 
         # 初始隐藏或显示滚动条
         if initial_hidden:
@@ -3792,11 +4315,18 @@ class IPSubnetSplitterApp:
             # 清空表格并显示错误信息
             self.clear_result()
             self.clear_tree_items(self.split_tree)
-            self.split_tree.insert("", tk.END, values=(_("error"), validation_result['error']), tags=("error",))
             self.show_error(_("input_error"), validation_result['error'])
             return
+        
+        # 重新获取修正后的父网段和切分段
+        parent = self.parent_entry.get().strip()
+        split = self.split_entry.get().strip()
 
         try:
+            # 只验证IP地址格式，不自动修正格式，保留用户输入的原始格式
+            parent_network = ipaddress.ip_network(parent, strict=False)
+            split_network = ipaddress.ip_network(split, strict=False)
+            
             # 调用切分函数
             result = split_subnet(parent, split)
 
@@ -3806,7 +4336,7 @@ class IPSubnetSplitterApp:
 
             if "error" in result:
                 # 显示错误信息
-                self.split_tree.insert("", tk.END, values=(_("error"), result["error"]), tags=("error",))
+                self.show_error(_("error"), result["error"])
                 return
 
             # 添加切分段信息，同时设置斑马条纹标签
@@ -3824,28 +4354,67 @@ class IPSubnetSplitterApp:
             split_info = result["split_info"]
             self.split_tree.insert("", tk.END, values=(_("network_address"), split_info["network"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("subnet_mask"), split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
-            row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("wildcard_mask"), split_info["wildcard"]), tags=("odd" if row_index % 2 == 0 else "even",))
-            row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("broadcast_address"), split_info["broadcast"]), tags=("odd" if row_index % 2 == 0 else "even",))
-            row_index += 1
+            
+            # 根据IP版本显示不同的字段
+            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            if not is_ipv6:
+                # IPv4显示子网掩码、通配符掩码和广播地址
+                self.split_tree.insert("", tk.END, values=(_("subnet_mask"), split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                row_index += 1
+                self.split_tree.insert("", tk.END, values=(_("wildcard_mask"), split_info["wildcard"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                row_index += 1
+                self.split_tree.insert("", tk.END, values=(_("broadcast_address"), split_info["broadcast"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                row_index += 1
+            
             self.split_tree.insert("", tk.END, values=(_("start_address"), split_info["host_range_start"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
             self.split_tree.insert("", tk.END, values=(_("end_address"), split_info["host_range_end"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("total_addresses"), split_info["num_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            
+            # 调整顺序：可用地址数在前，总地址数在后
+            self.split_tree.insert("", tk.END, values=(_("usable_addresses"), format_large_number(split_info["usable_addresses"], use_scientific=True)), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
-            self.split_tree.insert("", tk.END, values=(_("usable_addresses"), split_info["usable_addresses"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            self.split_tree.insert("", tk.END, values=(_("total_addresses"), format_large_number(split_info["num_addresses"], use_scientific=True)), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
+            
             self.split_tree.insert("", tk.END, values=(_("prefix_length"), split_info["prefixlen"]), tags=("odd" if row_index % 2 == 0 else "even",))
             row_index += 1
             self.split_tree.insert("", tk.END, values=(_("cidr"), split_info["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
 
+            # 检测IP版本
+            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            
+            # 根据IP版本显示或隐藏剩余网段表的列
+            if is_ipv6:
+                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
+                self.remaining_tree.column("wildcard", width=0, stretch=False)
+                self.remaining_tree.column("netmask", width=0, stretch=False)
+                self.remaining_tree.column("broadcast", width=0, stretch=False)
+                # 调整IPv6列宽，确保完整显示IPv6地址
+                self.remaining_tree.column("cidr", width=180, stretch=True)
+                self.remaining_tree.column("network", width=180, stretch=True)
+                self.remaining_tree.column("end_address", width=200, stretch=True)
+                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+            else:
+                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
+                self.remaining_tree.column("wildcard", width=100, stretch=True)
+                self.remaining_tree.column("netmask", width=100, stretch=True)
+                self.remaining_tree.column("broadcast", width=120, stretch=True)
+                self.remaining_tree.column("end_address", width=0, stretch=False)
+                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+                # 恢复IPv4列宽
+                self.remaining_tree.column("cidr", width=120, stretch=True)
+                self.remaining_tree.column("network", width=120, stretch=True)
+            
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
                 for i, network in enumerate(result["remaining_subnets_info"], 1):
                     tags = ("even",) if i % 2 == 0 else ("odd",)
+                    # 为隐藏列传递空字符串，避免数据显示异常
+                    netmask_val = network["netmask"] if not is_ipv6 else ""
+                    wildcard_val = network.get("wildcard", "") if not is_ipv6 else ""
+                    broadcast_val = network["broadcast"] if not is_ipv6 else ""
+                    
                     self.remaining_tree.insert(
                         "",
                         tk.END,
@@ -3853,16 +4422,17 @@ class IPSubnetSplitterApp:
                             i,
                             network["cidr"],
                             network["network"],
-                            network["netmask"],
-                            network.get("wildcard", ""),
-                            network["broadcast"],
-                            network["usable_addresses"],
+                            network["host_range_end"],  # 网段结束地址
+                            netmask_val,
+                            wildcard_val,
+                            broadcast_val,
+                            format_large_number(network["usable_addresses"], use_scientific=True),
                         ),
                         tags=tags,
                     )
 
             else:
-                self.remaining_tree.insert("", tk.END, values=(1, _("none"), _("none"), _("none"), _("none"), _("none")))
+                self.remaining_tree.insert("", tk.END, values=(1, _("none"), _("none"), _("none"), _("none"), _("none"), _("none"), _("none")))
 
             # 不再手动调整表格宽度，依靠Tkinter的stretch=True自动处理
 
@@ -4573,7 +5143,7 @@ class IPSubnetSplitterApp:
         self.ipv6_info_btn.pack(side=tk.RIGHT)
 
         # 创建结果区域
-        result_frame = ttk.LabelFrame(content_container, text=_("query_result"), padding=(10, 10, 0, 10))
+        result_frame = ttk.LabelFrame(content_container, text=_('query_result'), padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建Treeview和垂直滚动条
@@ -4605,7 +5175,7 @@ class IPSubnetSplitterApp:
         right_frame = ttk.Frame(input_container)
 
         # 使用grid布局，固定左侧宽度，右侧自适应
-        input_container.grid_columnconfigure(0, minsize=140, weight=0)  # 固定左侧宽度
+        input_container.grid_columnconfigure(0, minsize=210, weight=0)  # 固定左侧宽度，与重叠检测面板左侧列宽度一致
         input_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         input_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
 
@@ -4617,7 +5187,7 @@ class IPSubnetSplitterApp:
         left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板行（固定高度）
 
         # 左侧上方：子网合并列表 - 使用grid布局
-        subnet_frame = ttk.LabelFrame(left_frame, text=_("merge_subnets"), padding=(10, 10, 0, 10))
+        subnet_frame = ttk.LabelFrame(left_frame, text=_('merge_subnets'), padding=(10, 10, 0, 10))
         subnet_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 5))
 
         # 配置左侧面板的grid布局
@@ -4626,10 +5196,10 @@ class IPSubnetSplitterApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
 
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size - 1))
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
-        self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26")
+        self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
 
         # 配置子网合并列表面板的grid布局
         subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
@@ -4662,11 +5232,25 @@ class IPSubnetSplitterApp:
 
         # IP范围地址验证函数
         def validate_range_ip(text, entry):
-            """验证IP范围地址格式"""
+            """验证IP范围地址格式，支持IPv4和IPv6"""
             text = text.strip()
-            # IPv4地址正则表达式 - 修复了点号匹配问题，使用\.转义点号
-            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-            is_valid = bool(re.match(ipv4_pattern, text)) if text else True
+            if not text:
+                entry.config(foreground='black')
+                return "1"
+            
+            # 使用ipaddress模块进行验证，这比正则表达式更可靠
+            try:
+                # 尝试IPv4
+                ipaddress.IPv4Address(text)
+                is_valid = True
+            except ValueError:
+                try:
+                    # 尝试IPv6
+                    ipaddress.IPv6Address(text)
+                    is_valid = True
+                except ValueError:
+                    is_valid = False
+            
             entry.config(foreground='black' if is_valid else 'red')
             return "1"
 
@@ -4698,34 +5282,42 @@ class IPSubnetSplitterApp:
         self.range_to_cidr_btn = ttk.Button(range_frame, text=_("convert_to_cidr"), command=self.execute_range_to_cidr)
         self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
 
-        # 右侧：CIDR结果
-        self.merge_result_frame = ttk.LabelFrame(right_frame, text=_("cidr_result"), padding=(10, 10, 0, 10))
-        self.merge_result_frame.pack(fill=tk.BOTH, expand=True)
+        # 右侧：直接放置IPv4和IPv6结果，去掉总框架
+        # 创建IPv4结果框，右侧内边距为0，和其他框架保持一致
+        self.ipv4_frame = ttk.LabelFrame(right_frame, text=_('IPv4结果'), padding=(10, 10, 0, 10))
+        self.ipv4_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        # 创建IPv6结果框，右侧内边距为0，和其他框架保持一致
+        self.ipv6_frame = ttk.LabelFrame(right_frame, text=_('IPv6结果'), padding=(10, 10, 0, 10))
+        self.ipv6_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 创建正常的结果树（非转置）
-        columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
-        self.merge_result_tree = ttk.Treeview(self.merge_result_frame, columns=columns, show="headings")
-        self.bind_treeview_right_click(self.merge_result_tree)
-
-        # 设置列标题和初始宽度
-        for i, col in enumerate(columns):
-            self.merge_result_tree.heading(col, text=col)
-            if i == 0:  # CIDR列
-                self.merge_result_tree.column(col, width=110, minwidth=110, stretch=False)
-            elif i == 1:  # 网络地址列
-                self.merge_result_tree.column(col, width=70, minwidth=70)
-            elif i == 2:  # 子网掩码列
-                self.merge_result_tree.column(col, width=70, minwidth=70)
-            elif i == 3:  # 广播地址列
-                self.merge_result_tree.column(col, width=70, minwidth=70)
-            elif i == 4:  # 主机数列
-                self.merge_result_tree.column(col, width=40, minwidth=40)
-
-        # 添加垂直滚动条 - 作为实例变量，方便后续重新绑定
-        self.merge_result_scrollbar = ttk.Scrollbar(self.merge_result_frame, orient=tk.VERTICAL)
-        self.create_scrollable_treeview(self.merge_result_frame, self.merge_result_tree, self.merge_result_scrollbar)
-
-        self.configure_treeview_styles(self.merge_result_tree)
+        # 创建正常的列结构 - IPv4和IPv6使用不同的列配置
+        ipv4_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
+        ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
+        
+        # 创建IPv4结果树
+        self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=ipv4_columns, show="headings")
+        self.bind_treeview_right_click(self.ipv4_result_tree)
+        
+        # 创建IPv6结果树
+        self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=ipv6_columns, show="headings")
+        self.bind_treeview_right_click(self.ipv6_result_tree)
+        
+        # 使用公共方法配置IPv4结果树列宽
+        self.configure_treeview_columns(self.ipv4_result_tree, ipv4_columns, config_type="ipv4_result")
+        
+        # 使用公共方法配置IPv6结果树列宽
+        self.configure_treeview_columns(self.ipv6_result_tree, ipv6_columns, config_type="ipv6_result")
+            
+        # 添加垂直滚动条 - IPv4结果树
+        ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+        self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+        self.configure_treeview_styles(self.ipv4_result_tree)
+        
+        # 添加垂直滚动条 - IPv6结果树
+        ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+        self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+        self.configure_treeview_styles(self.ipv6_result_tree)
 
     def create_scrollable_treeview(self, parent_frame, treeview, scrollbar, no_scrollbar_padx=(0, 10)):
         """
@@ -4771,6 +5363,171 @@ class IPSubnetSplitterApp:
         parent_frame.grid_rowconfigure(0, weight=1)
         parent_frame.grid_columnconfigure(0, weight=1)
 
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
+
+    def create_treeview_component(self, parent_frame, columns, show_headings=True):
+        """创建并配置Treeview组件
+        
+        参数:
+            parent_frame: Treeview的父容器
+            columns: 列配置列表
+            show_headings: 是否显示表头，默认为True
+        
+        返回:
+            tuple: (treeview, scrollbar) - 创建的Treeview组件和滚动条组件
+        """
+        # 创建Treeview组件
+        tree = ttk.Treeview(parent_frame, columns=columns, show="headings" if show_headings else "")
+        self.bind_treeview_right_click(tree)
+        
+        # 使用公共方法配置列宽
+        self.configure_treeview_columns(tree, columns, config_type="default")
+        
+        # 创建并配置滚动条
+        scrollbar = ttk.Scrollbar(parent_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        # 使用grid布局显示Treeview和滚动条
+        parent_frame.grid_rowconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(1, weight=0)
+        
+        tree.grid(row=0, column=0, sticky=tk.NSEW)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置Treeview样式
+        self.configure_treeview_styles(tree)
+        
+        return tree, scrollbar
+        
+    def configure_treeview_columns(self, tree, columns, config_type="default"):
+        """配置Treeview组件的列宽
+        
+        参数:
+            tree: Treeview组件
+            columns: 列配置列表
+            config_type: 配置类型，可选值："default", "ipv4_result", "ipv6_result", "transposed"
+        """
+        # 设置列标题
+        for col in columns:
+            tree.heading(col, text=col)
+        
+        # 根据配置类型设置列宽
+        if config_type == "transposed":
+            # 转置Treeview的列配置
+            tree.column(columns[0], width=180, minwidth=180, stretch=False)
+            for col in columns[1:]:
+                tree.column(col, width=100, stretch=True)
+        elif config_type == "ipv4_result":
+            # IPv4结果树的列配置
+            for i, col in enumerate(columns):
+                if i == 0:  # CIDR列，需要更大宽度以适应长IP地址
+                    tree.column(col, width=130, minwidth=130, stretch=True)
+                elif i == 1:  # 网络地址列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 2:  # 子网掩码列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 3:  # 广播地址列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 4:  # 主机数列，可适当缩小宽度
+                    tree.column(col, width=80, minwidth=80, stretch=False)
+        elif config_type == "ipv6_result":
+            # IPv6结果树的列配置
+            for i, col in enumerate(columns):
+                if i == 0:  # CIDR列
+                    tree.column(col, width=120, minwidth=120, stretch=True)
+                elif i == 1:  # 网络地址列
+                    tree.column(col, width=120, minwidth=120, stretch=True)
+                elif i == 2:  # 主机数列
+                    tree.column(col, width=100, minwidth=100, stretch=False)
+        else:  # default
+            # 默认列配置，适用于create_treeview_component方法
+            for i, col in enumerate(columns):
+                if i == 0:  # CIDR列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 1:  # 网络地址列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 2:  # 子网掩码列或主机数列
+                    if len(columns) <= 3:  # IPv6配置，只有3列
+                        tree.column(col, width=100, minwidth=100, stretch=False)
+                    else:  # IPv4配置，有5列
+                        tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 3:  # 广播地址列
+                    tree.column(col, width=100, minwidth=100, stretch=True)
+                elif i == 4:  # 主机数列
+                    tree.column(col, width=80, minwidth=80, stretch=False)
+
+    def create_transposed_treeview(self, parent_frame, cidrs, is_ipv6=False):
+        """创建并配置转置后的Treeview组件
+        
+        参数:
+            parent_frame: Treeview的父容器
+            cidrs: CIDR列表
+            is_ipv6: 是否为IPv6，默认为False
+        
+        返回:
+            tuple: (treeview, scrollbar) - 创建的转置Treeview组件和滚动条组件
+        """
+        # 转换为转置后的列结构
+        transposed_columns = [_("attribute")] + cidrs
+        
+        # 创建Treeview组件
+        tree = ttk.Treeview(parent_frame, columns=transposed_columns, show="headings")
+        self.bind_treeview_right_click(tree)
+        
+        # 使用公共方法配置列宽
+        self.configure_treeview_columns(tree, transposed_columns, config_type="transposed")
+        
+        # 创建并配置滚动条
+        scrollbar = ttk.Scrollbar(parent_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        
+        # 使用grid布局显示Treeview和滚动条
+        parent_frame.grid_rowconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(0, weight=1)
+        parent_frame.grid_columnconfigure(1, weight=0)
+        
+        tree.grid(row=0, column=0, sticky=tk.NSEW)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        
+        # 配置Treeview样式
+        self.configure_treeview_styles(tree)
+        
+        return tree, scrollbar
+
+    def create_horizontal_scrollbar(self, parent_frame, treeview, scrollbar):
+        """
+        创建带自动隐藏功能的水平滚动条
+
+        参数:
+            parent_frame: Treeview和滚动条的父容器
+            treeview: 要添加滚动条的Treeview组件
+            scrollbar: 水平滚动条组件
+        """
+        # 创建滚动条回调函数，实现自动隐藏
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+            
+            # 检查是否需要滚动条
+            xview = treeview.xview()
+            need_scrollbar = not (float(xview[0]) <= 0.0 and float(xview[1]) >= 1.0)
+            
+            if need_scrollbar:
+                # 显示水平滚动条
+                scrollbar.grid(row=1, column=0, sticky=tk.EW)
+            else:
+                # 隐藏水平滚动条
+                scrollbar.grid_remove()
+        
+        # 配置水平滚动条
+        scrollbar.config(command=treeview.xview)
+        treeview.configure(xscrollcommand=scrollbar_callback)
+        
+        # 配置父容器的grid布局
+        parent_frame.grid_rowconfigure(1, weight=0)
+        
         # 初始调用一次回调函数，设置初始状态
         scrollbar_callback(0.0, 1.0)
 
@@ -5018,7 +5775,7 @@ class IPSubnetSplitterApp:
         left_frame = ttk.Frame(content_container)
         right_frame = ttk.Frame(content_container)
 
-        content_container.grid_columnconfigure(0, minsize=191, weight=0)  # 固定左侧宽度，参考子网合并页面
+        content_container.grid_columnconfigure(0, minsize=210, weight=0)  # 固定左侧宽度，与子网合并页面保持一致
         content_container.grid_columnconfigure(1, weight=1)  # 右侧自适应
         content_container.grid_rowconfigure(0, weight=1)  # 确保行能够撑满高度
 
@@ -5026,15 +5783,18 @@ class IPSubnetSplitterApp:
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
         # 左侧：子网列表
-        input_frame = ttk.LabelFrame(left_frame, text=_("overlap_subnets"), padding=(10, 10, 0, 10))
+        left_frame.grid_columnconfigure(0, weight=1)  # 确保左侧框架第一列占满宽度
+        left_frame.grid_rowconfigure(0, weight=1)  # 确保左侧框架第一行撑满高度
+        
+        input_frame = ttk.LabelFrame(left_frame, text=_('overlap_subnets'), padding=(10, 10, 0, 10))
         input_frame.pack(fill=tk.BOTH, expand=True)
 
         # 子网输入文本框和滚动条
         text_frame = ttk.Frame(input_frame)
         text_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size))
-        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23")
+        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1))
+        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
 
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
         overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
@@ -5046,7 +5806,7 @@ class IPSubnetSplitterApp:
         self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10))
 
         # 右侧：检测结果
-        result_frame = ttk.LabelFrame(right_frame, text=_("detection_result"), padding=(10, 10, 0, 10))
+        result_frame = ttk.LabelFrame(right_frame, text=_('detection_result'), padding=(10, 10, 0, 10))
         result_frame.pack(fill=tk.BOTH, expand=True)
 
         self.overlap_result_tree = ttk.Treeview(result_frame, columns=("status", "message"), show="headings", height=5)
@@ -5061,48 +5821,65 @@ class IPSubnetSplitterApp:
 
         self.create_scrollable_treeview(result_frame, self.overlap_result_tree, overlap_result_scrollbar)
 
-        self.configure_treeview_styles(self.overlap_result_tree)
+        self.configure_treeview_styles(self.overlap_result_tree, include_special_tags=True)
 
     def execute_merge_subnets(self):
         """执行子网合并操作"""
         try:
-            # 清空结果树
-            for item in self.merge_result_tree.get_children():
-                self.merge_result_tree.delete(item)
-
-            # 重新初始化表格结构为正常表格（非转置）
-            # 清除所有列
-            for col in self.merge_result_tree["columns"]:
-                self.merge_result_tree.heading(col, text="")
-            self.merge_result_tree.config(columns=())
-
-            # 创建正常的列结构：每列代表一个属性
-            columns = ["cidr", "network_address", "subnet_mask", "broadcast_address", "host_count"]
-            self.merge_result_tree.config(columns=columns)
-
-            # 设置列标题和宽度
-            for i, col_key in enumerate(columns):
-                self.merge_result_tree.heading(col_key, text=_(col_key))
-                if i == 0:  # CIDR列
-                    self.merge_result_tree.column(col_key, minwidth=120, stretch=True)
-                elif i == 1:  # 网络地址列
-                    self.merge_result_tree.column(col_key, minwidth=100, stretch=True)
-                elif i == 2:  # 子网掩码列
-                    self.merge_result_tree.column(col_key, minwidth=120, stretch=True)
-                elif i == 3:  # 广播地址列
-                    self.merge_result_tree.column(col_key, minwidth=100, stretch=True)
-                elif i == 4:  # 主机数列
-                    self.merge_result_tree.column(col_key, minwidth=40, stretch=True)
-
-            # 重新绑定滚动条，保持自动隐藏功能
-            if hasattr(self, 'merge_result_scrollbar'):
-                # 重新调用create_scrollable_treeview方法来重新绑定滚动条
-                self.create_scrollable_treeview(
-                    self.merge_result_frame,
-                    self.merge_result_tree,
-                    self.merge_result_scrollbar
-                )
-
+            # 定义默认列配置（IPv4）
+            ipv4_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
+            # 定义IPv6列配置（不包含子网掩码和广播地址）
+            ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
+            
+            # 检查并恢复Treeview组件的列结构
+            # 1. 处理IPv4结果树
+            # 检查当前列配置是否与需要的配置一致
+            current_ipv4_cols = self.ipv4_result_tree["columns"]
+            if list(current_ipv4_cols) != ipv4_columns:
+                # 如果列配置不一致，重新创建Treeview组件
+                for child in self.ipv4_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv4_result_tree.destroy()
+                
+                # 重新创建IPv4结果树
+                self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=ipv4_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv4_result_tree)
+                
+                # 创建IPv4结果树滚动条并使用按需显示功能
+                ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+            
+            # 清空现有内容
+            self.clear_tree_items(self.ipv4_result_tree)
+            
+            # 使用公共方法配置IPv4结果树列宽
+            self.configure_treeview_columns(self.ipv4_result_tree, ipv4_columns, config_type="ipv4_result")
+            self.configure_treeview_styles(self.ipv4_result_tree)
+            
+            # 2. 处理IPv6结果树
+            # 检查当前列配置是否与需要的配置一致
+            current_ipv6_cols = self.ipv6_result_tree["columns"]
+            if list(current_ipv6_cols) != ipv6_columns:
+                # 如果列配置不一致，重新创建Treeview组件
+                for child in self.ipv6_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv6_result_tree.destroy()
+                
+                # 重新创建IPv6结果树
+                self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=ipv6_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv6_result_tree)
+                
+                # 创建IPv6结果树滚动条并使用按需显示功能
+                ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+            
+            # 清空现有内容
+            self.clear_tree_items(self.ipv6_result_tree)
+            
+            # 使用公共方法配置IPv6结果树列宽
+            self.configure_treeview_columns(self.ipv6_result_tree, ipv6_columns, config_type="ipv6_result")
+            self.configure_treeview_styles(self.ipv6_result_tree)
+            
             # 获取输入的子网合并列表
             subnets_text = self.subnet_merge_text.get(1.0, tk.END).strip()
             if not subnets_text:
@@ -5115,42 +5892,117 @@ class IPSubnetSplitterApp:
             # 执行合并
             result = merge_subnets(subnets)
 
+            # 清空结果表格
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+
             if isinstance(result, dict) and "error" in result:
-                self.show_info(_("error"), result["error"])
-                return
+                # 获取无效子网列表
+                invalid_subnets = result.get("invalid_subnets", [])
+                
+                # 在结果表格中显示每条错误信息
+                if invalid_subnets:
+                    # 为无效子网添加红色高亮
+                    self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
+                    self.subnet_merge_text.tag_configure("invalid", foreground="red", underline=True)
+                    
+                    # 遍历文本内容，为无效子网添加高亮
+                    lines = subnets_text.splitlines()
+                    # 使用集合优化查找，将时间复杂度从O(n*m)降低到O(n)
+                    invalid_set = {invalid["subnet"] for invalid in invalid_subnets}
+                    for i, line in enumerate(lines, 1):
+                        subnet = line.strip()
+                        if subnet in invalid_set:
+                            start = f"{i}.0"
+                            end = f"{i}.end"
+                            self.subnet_merge_text.tag_add("invalid", start, end)
+                    
+                    # 显示每条错误信息
+                    row_index = 0
+                    for invalid in invalid_subnets:
+                        tag = "error_row"
+                        # 精简错误信息，只显示"无效格式"
+                        simplified_error = _("invalid_format")
+                        # 在CIDR字段直接显示错误的子网，在网络地址字段显示精简后的错误描述
+                        self.ipv4_result_tree.insert("", tk.END, values=(invalid["subnet"], simplified_error, "", "", ""), tags=(tag,))
+                        row_index += 1
+                    # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
+                    self.update_table_zebra_stripes(self.ipv4_result_tree)
+                    return
+            else:
+                # 清除无效子网高亮
+                self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
 
-            # 显示结果
+            # 分离IPv4和IPv6结果
             merged_subnets = result.get("merged_subnets", [])
-
-            # 如果没有结果，直接返回
-            if not merged_subnets:
-                return
-
-            # 填充正常表格数据：每行显示一个合并后的子网
-            row_index = 0
+            ipv4_results = []
+            ipv6_results = []
+            
             for subnet in merged_subnets:
                 info = get_subnet_info(subnet)
+                if info["version"] == "IPv4":
+                    ipv4_results.append((subnet, info))
+                else:
+                    ipv6_results.append((subnet, info))
+
+            # 填充IPv4结果表格
+            row_index = 0
+            for subnet, info in ipv4_results:
                 row_values = [
                     subnet,  # CIDR
                     info["network"],  # 网络地址
                     info["netmask"],  # 子网掩码
                     info["broadcast"],  # 广播地址
-                    info["usable_addresses"],  # 可用主机数
+                    format_large_number(info["usable_addresses"], use_scientific=True),  # 可用主机数，使用科学计数法
                 ]
                 tag = "odd" if row_index % 2 == 0 else "even"
-                self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
+                self.ipv4_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
+                row_index += 1
+            
+            # 填充IPv6结果表格
+            row_index = 0
+            for subnet, info in ipv6_results:
+                row_values = [
+                    subnet,  # CIDR
+                    info["network"],  # 网络地址
+                    format_large_number(info["usable_addresses"], use_scientific=True),  # 可用主机数，使用科学计数法
+                ]
+                tag = "odd" if row_index % 2 == 0 else "even"
+                self.ipv6_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
                 row_index += 1
 
-            self.auto_resize_columns(self.merge_result_tree)
+            # 更新斑马条纹
+            self.update_table_zebra_stripes(self.ipv4_result_tree)
+            self.update_table_zebra_stripes(self.ipv6_result_tree)
 
             # 操作成功完成，添加到历史记录
             self.update_range_start_history()
             self.update_range_end_history()
 
         except ValueError as e:
-            self.show_info(_("error"), f"{_("merge_subnet")}{_("failed")}: {str(e)}")
+            # 在结果表格中显示错误信息
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+            
+            # 尝试获取无效子网列表
+            error_msg = f"{_("merge_subnet")}{_("failed")}: {str(e)}"
+            tag = "error_row"
+            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            
+            # 清除无效子网高亮
+            self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
+            # 在结果表格中显示错误信息
+            self.clear_tree_items(self.ipv4_result_tree)
+            self.clear_tree_items(self.ipv6_result_tree)
+            
+            # 尝试获取无效子网列表
+            error_msg = f"{_("operation_failed")}: {str(e)}"
+            tag = "error_row"
+            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            
+            # 清除无效子网高亮
+            self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
 
     def execute_ipv6_info(self):
         """执行IPv6地址信息查询"""
@@ -5194,14 +6046,20 @@ class IPSubnetSplitterApp:
             address_type = ipv6_info.get("address_type", "unknown")
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_type"), _(address_type)))
             self.ipv6_info_tree.insert("", tk.END, values=(_("cidr_prefix"), ipv6_info.get("cidr", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("prefix_length"), ipv6_info.get("prefix_length", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), ipv6_info.get("network_address", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("broadcast_address"), ipv6_info.get("broadcast_address", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("subnet_mask"), ipv6_info.get("subnet_mask", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("first_usable_host"), ipv6_info.get("first_host", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("last_usable_host"), ipv6_info.get("last_host", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("total_hosts"), ipv6_info.get("total_hosts", "")))
+            # 添加多播地址说明
+            self.ipv6_info_tree.insert("", tk.END, values=(_("multicast_address_note"), _("ipv6_multicast_note")))
+            # IPv6没有广播地址，显示多播地址说明
+            first_host = ipv6_info.get("first_host", "")
+            if first_host:
+                # IPv6使用多播地址代替广播，第一个可用主机
+                self.ipv6_info_tree.insert("", tk.END, values=(_("first_usable_host"), first_host))
+            last_host = ipv6_info.get("last_host", "")
+            if last_host:
+                # IPv6使用多播地址代替广播，最后一个可用主机不是多播地址
+                self.ipv6_info_tree.insert("", tk.END, values=(_("last_usable_host"), last_host))
             self.ipv6_info_tree.insert("", tk.END, values=(_("usable_hosts"), ipv6_info.get("usable_hosts", "")))
+            self.ipv6_info_tree.insert("", tk.END, values=(_("total_hosts"), ipv6_info.get("total_hosts", "")))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_format"), ""), tags=("section",))
@@ -5257,50 +6115,26 @@ class IPSubnetSplitterApp:
             self.ipv6_info_tree.insert("", tk.END, values=(_("binary_representation"), ""), tags=("section",))
             self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info.get("binary", "")))
 
-            if ipv6_info.get("subnet_mask"):
-                subnet_mask_value = ipv6_info["subnet_mask"]
-                subnet_bin_value = subnet_mask_value.replace(':', '').zfill(32)
-                subnet_bin_grouped = ' '.join([subnet_bin_value[i:i + 4] for i in range(0, 32, 4)])
-                self.ipv6_info_tree.insert("", tk.END, values=(_("subnet_mask"), subnet_bin_grouped))
-
             if ipv6_info.get("network_address"):
                 network_addr_value = ipv6_info["network_address"]
                 network_bin_value = network_addr_value.replace(':', '').zfill(32)
                 network_bin_grouped = ' '.join([network_bin_value[i:i + 4] for i in range(0, 32, 4)])
                 self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), network_bin_grouped))
 
-            if ipv6_info.get("broadcast_address"):
-                broadcast_addr_value = ipv6_info["broadcast_address"]
-                broadcast_bin_value = broadcast_addr_value.replace(':', '').zfill(32)
-                broadcast_bin_grouped = ' '.join([broadcast_bin_value[i:i + 4] for i in range(0, 32, 4)])
-                self.ipv6_info_tree.insert("", tk.END, values=(_("broadcast_address"), broadcast_bin_grouped))
-
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("hexadecimal_representation"), ""), tags=("section",))
             self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info.get("hexadecimal", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("subnet_mask"), ipv6_info.get("subnet_mask", "")))
             self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), ipv6_info.get("network_address", "")))
-            self.ipv6_info_tree.insert("", tk.END, values=(_("broadcast_address"), ipv6_info.get("broadcast_address", "")))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("decimal_value_representation"), ""), tags=("section",))
             if "integer" in ipv6_info:
                 self.ipv6_info_tree.insert("", tk.END, values=(_("ip_address"), ipv6_info["integer"]))
 
-            if ipv6_info.get("subnet_mask"):
-                subnet_mask = ipv6_info["subnet_mask"]
-                subnet_int = int(ipaddress.IPv6Address(subnet_mask))
-                self.ipv6_info_tree.insert("", tk.END, values=(_("subnet_mask"), subnet_int))
-
             if ipv6_info.get("network_address"):
                 network_addr = ipv6_info["network_address"]
                 network_int = int(ipaddress.IPv6Address(network_addr))
                 self.ipv6_info_tree.insert("", tk.END, values=(_("network_address"), network_int))
-
-            if ipv6_info.get("broadcast_address"):
-                broadcast_addr = ipv6_info["broadcast_address"]
-                broadcast_int = int(ipaddress.IPv6Address(broadcast_addr))
-                self.ipv6_info_tree.insert("", tk.END, values=(_("broadcast_address"), broadcast_int))
 
             self.ipv6_info_tree.insert("", tk.END, values=())
             self.ipv6_info_tree.insert("", tk.END, values=(_("address_segment_details"), ""), tags=("section",))
@@ -5456,17 +6290,25 @@ class IPSubnetSplitterApp:
             cidr = self.ip_cidr_var.get()
 
             network_str = None
-            if cidr:
+            # 优先使用子网掩码计算网络地址
+            if subnet_mask:
                 try:
-                    network_str = f"{ip}/{cidr}"
+                    # 使用IP地址和子网掩码计算网络地址
+                    ip_int = ip_to_int(ip)
+                    mask_int = ip_to_int(subnet_mask)
+                    network_int = ip_int & mask_int
+                    network_address = int_to_ip(network_int)
+                    prefix_len = bin(mask_int).count('1')
+                    network_str = f"{network_address}/{prefix_len}"
                 except (ValueError, TypeError):
                     pass
 
-            if not network_str and subnet_mask:
+            # 如果子网掩码计算失败，再尝试使用CIDR
+            if not network_str and cidr:
                 try:
-                    mask_int = ip_to_int(subnet_mask)
-                    prefix_len = bin(mask_int).count('1')
-                    network_str = f"{ip}/{prefix_len}"
+                    # 使用CIDR直接构建网络地址
+                    temp_network = ipaddress.ip_network(f"{ip}/{cidr}", strict=False)
+                    network_str = str(temp_network)
                 except (ValueError, TypeError):
                     pass
 
@@ -5475,7 +6317,10 @@ class IPSubnetSplitterApp:
 
             if network_str:
                 try:
-                    subnet_info = get_subnet_info(network_str)
+                    # 自动修正CIDR格式（将IP地址转换为正确的网络地址）
+                    corrected_network = ipaddress.ip_network(network_str, strict=False)
+                    corrected_network_str = str(corrected_network)
+                    subnet_info = get_subnet_info(corrected_network_str)
                     basic_info = False
                 except (ValueError, TypeError):
                     pass
@@ -5500,8 +6345,8 @@ class IPSubnetSplitterApp:
                 self.ip_info_tree.insert("", tk.END, values=(_("broadcast_address"), subnet_info["broadcast"]))
                 self.ip_info_tree.insert("", tk.END, values=(_("first_usable_address"), subnet_info["host_range_start"]))
                 self.ip_info_tree.insert("", tk.END, values=(_("last_usable_address"), subnet_info["host_range_end"]))
-                self.ip_info_tree.insert("", tk.END, values=(_("usable_hosts"), subnet_info["usable_addresses"]))
-                self.ip_info_tree.insert("", tk.END, values=(_("total_hosts"), subnet_info["num_addresses"]))
+                self.ip_info_tree.insert("", tk.END, values=(_("usable_hosts"), format_large_number(subnet_info["usable_addresses"], use_scientific=True)))
+                self.ip_info_tree.insert("", tk.END, values=(_("total_hosts"), format_large_number(subnet_info["num_addresses"], use_scientific=True)))
 
                 self.ip_info_tree.insert("", tk.END, values=())
                 self.ip_info_tree.insert("", tk.END, values=(_("section_binary_representation"), ""), tags=("section",))
@@ -5691,9 +6536,10 @@ class IPSubnetSplitterApp:
     def execute_range_to_cidr(self):
         """执行IP地址范围转CIDR操作"""
         try:
-            for item in self.merge_result_tree.get_children():
-                self.merge_result_tree.delete(item)
-
+            # 定义默认列配置
+            default_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
+            ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
+            
             # 获取输入的IP范围
             start_ip = self.range_start_entry.get().strip()
             end_ip = self.range_end_entry.get().strip()
@@ -5711,54 +6557,260 @@ class IPSubnetSplitterApp:
 
             cidr_list = result.get("cidr_list", [])
 
-            # 转置表格：清空并重新创建列
-            for item in self.merge_result_tree.get_children():
-                self.merge_result_tree.delete(item)
-
-            for col in self.merge_result_tree["columns"]:
-                self.merge_result_tree.heading(col, text="")
-            self.merge_result_tree.config(columns=())
-
+            # 检查CIDR列表是否为空
             if not cidr_list:
+                self.show_info(_("error"), "无法将IP范围转换为CIDR")
                 return
 
-            # 创建转置后的列：第一列为属性名称，后续每列为一个CIDR
-            columns = [_("attribute")] + cidr_list
-            self.merge_result_tree.config(columns=columns)
+            # 分离IPv4和IPv6结果
+            ipv4_cidrs = []
+            ipv6_cidrs = []
+            
+            for cidr in cidr_list:
+                info = get_subnet_info(cidr)
+                if info["version"] == "IPv4":
+                    ipv4_cidrs.append(cidr)
+                else:
+                    ipv6_cidrs.append(cidr)
 
-            for i, col in enumerate(columns):
-                self.merge_result_tree.heading(col, text=col)
-                if i == 0:  # 第一列（属性列）
-                    self.merge_result_tree.column(col, width=140, minwidth=140, stretch=False)  # 增大一半并固定
-                else:  # 其他列
-                    self.merge_result_tree.column(col, width=200)
+            # 1. 定义默认列配置
+            default_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
+            ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
+            
+            # 2. 重置两个Treeview组件到默认状态
+            # 2.1 处理IPv4结果树
+            # 检查当前列配置是否与默认配置一致
+            current_ipv4_cols = self.ipv4_result_tree["columns"]
+            if list(current_ipv4_cols) != default_columns:
+                # 如果列配置不一致，重新创建Treeview组件
+                for child in self.ipv4_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv4_result_tree.destroy()
+                
+                # 重新创建IPv4结果树
+                self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=default_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv4_result_tree)
+                
+                # 创建滚动条并配置
+                ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+                self.configure_treeview_styles(self.ipv4_result_tree)
+            
+            # 2.2 处理IPv6结果树
+            # 检查当前列配置是否与IPv6配置一致
+            current_ipv6_cols = self.ipv6_result_tree["columns"]
+            if list(current_ipv6_cols) != ipv6_columns:
+                # 如果列配置不一致，重新创建Treeview组件
+                for child in self.ipv6_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv6_result_tree.destroy()
+                
+                # 重新创建IPv6结果树
+                self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=ipv6_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv6_result_tree)
+                
+                # 创建滚动条并配置
+                ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+                self.configure_treeview_styles(self.ipv6_result_tree)
+            
+            # 3. 清空现有内容并设置表头
+            # 清空IPv4结果树内容
+            self.clear_tree_items(self.ipv4_result_tree)
+            # 设置IPv4结果树表头
+            for i, col in enumerate(default_columns):
+                self.ipv4_result_tree.heading(col, text=col)
+            # 设置IPv4结果树列宽
+            self.ipv4_result_tree.column(default_columns[0], width=130, minwidth=130, stretch=True)
+            self.ipv4_result_tree.column(default_columns[1], width=100, minwidth=100, stretch=True)
+            self.ipv4_result_tree.column(default_columns[2], width=100, minwidth=100, stretch=True)
+            self.ipv4_result_tree.column(default_columns[3], width=100, minwidth=100, stretch=True)
+            self.ipv4_result_tree.column(default_columns[4], width=80, minwidth=80, stretch=False)
+            
+            # 清空IPv6结果树内容
+            self.clear_tree_items(self.ipv6_result_tree)
+            # 设置IPv6结果树表头
+            for i, col in enumerate(ipv6_columns):
+                self.ipv6_result_tree.heading(col, text=col)
+            # 设置IPv6结果树列宽
+            self.ipv6_result_tree.column(ipv6_columns[0], width=120, minwidth=120, stretch=True)
+            self.ipv6_result_tree.column(ipv6_columns[1], width=120, minwidth=120, stretch=True)
+            self.ipv6_result_tree.column(ipv6_columns[2], width=100, minwidth=100, stretch=False)
 
-            if hasattr(self, 'merge_result_scrollbar'):
-                self.create_scrollable_treeview(
-                    self.merge_result_frame,
-                    self.merge_result_tree,
-                    self.merge_result_scrollbar
-                )
+            # 处理IPv4结果 - 如果有结果则转置显示
+            if ipv4_cidrs:
+                # 转换为转置后的列结构
+                transposed_columns = [_("attribute")] + ipv4_cidrs
+                
+                # 重新创建IPv4结果树用于转置显示
+                for child in self.ipv4_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv4_result_tree.destroy()
+                
+                # 创建转置后的IPv4结果树
+                self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=transposed_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv4_result_tree)
+                
+                # 设置列标题
+                for col in transposed_columns:
+                    self.ipv4_result_tree.heading(col, text=col)
+                
+                # 设置列宽
+                self.ipv4_result_tree.column(transposed_columns[0], width=180, minwidth=180, stretch=False)
+                for col in transposed_columns[1:]:
+                    self.ipv4_result_tree.column(col, width=100, stretch=True)
+                
+                # 创建滚动条并配置 - 使用按需显示功能
+                ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+                self.configure_treeview_styles(self.ipv4_result_tree)
+                
+                # 定义要显示的属性列表（IPv4）
+                properties = [
+                    ("cidr", lambda info, cidr: cidr),
+                    ("network_address", lambda info, cidr: info["network"]),
+                    ("subnet_mask", lambda info, cidr: info["netmask"]),
+                    ("prefix_length", lambda info, cidr: info["prefixlen"]),
+                    ("broadcast_address", lambda info, cidr: info["broadcast"]),
+                    ("first_host", lambda info, cidr: info["host_range_start"]),
+                    ("last_host", lambda info, cidr: info["host_range_end"]),
+                    ("usable_addresses", lambda info, cidr: format_large_number(info["usable_addresses"], use_scientific=True)),
+                    ("total_addresses", lambda info, cidr: format_large_number(info["num_addresses"], use_scientific=True)),
+                ]
+                
+                # 填充转置后的数据
+                row_index = 0
+                for prop_key, prop_func in properties:
+                    row_values = [_(prop_key)]
+                    for cidr in ipv4_cidrs:
+                        info = get_subnet_info(cidr)
+                        row_values.append(prop_func(info, cidr))
+                    tag = "odd" if row_index % 2 == 0 else "even"
+                    self.ipv4_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
+                    row_index += 1
+            else:
+                # 没有IPv4结果时，确保IPv4结果树保持默认配置，不被转置
+                # 检查当前IPv4结果树是否是转置状态
+                current_columns = self.ipv4_result_tree['columns']
+                if current_columns and len(current_columns) > 5:  # 转置状态通常有更多列
+                    # 重新创建默认状态的IPv4结果树
+                    for child in self.ipv4_result_tree.winfo_children():
+                        child.destroy()
+                    self.ipv4_result_tree.destroy()
+                    
+                    # 重新创建默认状态的IPv4结果树
+                    self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=default_columns, show="headings")
+                    self.bind_treeview_right_click(self.ipv4_result_tree)
+                    
+                    # 设置默认状态的列标题和宽度
+                    for i, col in enumerate(default_columns):
+                        self.ipv4_result_tree.heading(col, text=col)
+                        if i == 0:  # CIDR列，需要更大宽度以适应长IP地址
+                            self.ipv4_result_tree.column(col, width=130, minwidth=130, stretch=True)
+                        elif i == 1:  # 网络地址列
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
+                        elif i == 2:  # 子网掩码列
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
+                        elif i == 3:  # 广播地址列
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
+                        elif i == 4:  # 主机数列，可适当缩小宽度
+                            self.ipv4_result_tree.column(col, width=80, minwidth=80, stretch=False)
+                    
+                    # 创建滚动条并配置 - 使用按需显示功能
+                    ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                    self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+                    self.configure_treeview_styles(self.ipv4_result_tree)
+                else:
+                    # 如果已经是默认状态，确保所有列宽度正常，表头可见
+                    for i, col in enumerate(default_columns):
+                        if i == 0:  # CIDR列
+                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                        elif i == 1:  # 网络地址列
+                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                        elif i == 2:  # 子网掩码列
+                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                        elif i == 3:  # 广播地址列
+                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                        elif i == 4:  # 主机数列
+                            self.ipv4_result_tree.column(col, width=120, minwidth=120, stretch=False)
 
-            # 定义要显示的属性列表
-            properties = [
-                ("cidr", lambda info, cidr: cidr),
-                ("network_address", lambda info, cidr: info["network"]),
-                ("subnet_mask", lambda info, cidr: info["netmask"]),
-                ("broadcast_address", lambda info, cidr: info["broadcast"]),
-                ("usable_addresses", lambda info, cidr: info["usable_addresses"]),
-            ]
-
-            # 填充转置后的数据
-            row_index = 0
-            for prop_key, prop_func in properties:
-                row_values = [_(prop_key)]
-                for cidr in cidr_list:
-                    info = get_subnet_info(cidr)
-                    row_values.append(prop_func(info, cidr))
-                tag = "odd" if row_index % 2 == 0 else "even"
-                self.merge_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
-                row_index += 1
+            # 处理IPv6结果 - 如果有结果则转置显示
+            if ipv6_cidrs:
+                # 转换为转置后的列结构
+                transposed_columns = [_("attribute")] + ipv6_cidrs
+                
+                # 重新创建IPv6结果树用于转置显示
+                for child in self.ipv6_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv6_result_tree.destroy()
+                
+                # 创建转置后的IPv6结果树
+                self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=transposed_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv6_result_tree)
+                
+                # 设置列标题
+                for col in transposed_columns:
+                    self.ipv6_result_tree.heading(col, text=col)
+                
+                # 设置列宽
+                self.ipv6_result_tree.column(transposed_columns[0], width=180, minwidth=180, stretch=False)
+                for col in transposed_columns[1:]:
+                    self.ipv6_result_tree.column(col, width=100, stretch=True)
+                
+                # 创建滚动条并配置 - 使用按需显示功能
+                ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+                self.configure_treeview_styles(self.ipv6_result_tree)
+                
+                # 定义要显示的属性列表（IPv6）
+                properties = [
+                    ("cidr", lambda info, cidr: cidr),
+                    ("network_address", lambda info, cidr: info["network"]),
+                    ("prefix_length", lambda info, cidr: info["prefixlen"]),
+                    ("first_host", lambda info, cidr: info["host_range_start"]),
+                    ("last_host", lambda info, cidr: info["host_range_end"]),
+                    ("usable_addresses", lambda info, cidr: format_large_number(info["usable_addresses"], use_scientific=True)),
+                    ("total_addresses", lambda info, cidr: format_large_number(info["num_addresses"], use_scientific=True)),
+                ]
+                
+                # 填充转置后的数据
+                row_index = 0
+                for prop_key, prop_func in properties:
+                    row_values = [_(prop_key)]
+                    for cidr in ipv6_cidrs:
+                        info = get_subnet_info(cidr)
+                        row_values.append(prop_func(info, cidr))
+                    tag = "odd" if row_index % 2 == 0 else "even"
+                    self.ipv6_result_tree.insert("", tk.END, values=row_values, tags=(tag,))
+                    row_index += 1
+            else:
+                # 没有IPv6结果时，确保IPv6结果树保持默认配置，不被转置
+                # 检查当前IPv6结果树是否是转置状态
+                current_columns = self.ipv6_result_tree['columns']
+                if current_columns and len(current_columns) > 3:  # 转置状态通常有更多列
+                    # 重新创建默认状态的IPv6结果树
+                    for child in self.ipv6_result_tree.winfo_children():
+                        child.destroy()
+                    self.ipv6_result_tree.destroy()
+                    
+                    # 重新创建默认状态的IPv6结果树
+                    self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=ipv6_columns, show="headings")
+                    self.bind_treeview_right_click(self.ipv6_result_tree)
+                    
+                    # 设置默认状态的列标题和宽度
+                    for i, col in enumerate(ipv6_columns):
+                        self.ipv6_result_tree.heading(col, text=col)
+                        if i == 0:  # CIDR列
+                            self.ipv6_result_tree.column(col, width=120, minwidth=120, stretch=True)
+                        elif i == 1:  # 网络地址列
+                            self.ipv6_result_tree.column(col, width=120, minwidth=120, stretch=True)
+                        elif i == 2:  # 主机数列
+                            self.ipv6_result_tree.column(col, width=180, minwidth=180, stretch=True)
+                    
+                    # 创建滚动条并配置 - 使用按需显示功能
+                    ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+                    self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+                    self.configure_treeview_styles(self.ipv6_result_tree)
 
             self.update_range_start_history()
             self.update_range_end_history()
@@ -5768,8 +6820,41 @@ class IPSubnetSplitterApp:
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
 
+    def _process_overlap_detection(self, subnets, ip_version_label, row_index):
+        """
+        处理子网重叠检测结果并更新UI
+        
+        参数:
+        subnets: 子网列表
+        ip_version_label: IP版本标签
+        row_index: 当前行索引
+        
+        返回:
+        更新后的行索引
+        """
+        result = check_subnet_overlap(subnets)
+        if isinstance(result, dict) and "error" in result:
+            tag = "error_row"
+            self.overlap_result_tree.insert("", tk.END, values=(_("error"), result["error"]), tags=(tag,))
+            row_index += 1
+        else:
+            overlaps = result.get("overlaps", [])
+            if not overlaps:
+                tag = "odd" if row_index % 2 == 0 else "even"
+                self.overlap_result_tree.insert("", tk.END, values=(_("no_overlap"), f"{ip_version_label}: {_('no_subnet_overlap_detected')}"), tags=(tag,))
+                row_index += 1
+            else:
+                for overlap in overlaps:
+                    tag = "odd" if row_index % 2 == 0 else "even"
+                    status = _("overlap")
+                    # 直接使用overlap['type']作为描述，因为它已经是完整的重叠关系描述
+                    description = overlap['type']
+                    self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
+                    row_index += 1
+        return row_index
+
     def execute_check_overlap(self):
-        """执行子网重叠检测操作"""
+        """执行子网重叠检测操作，支持同时检测IPv4和IPv6子网"""
         try:
             for item in self.overlap_result_tree.get_children():
                 self.overlap_result_tree.delete(item)
@@ -5783,34 +6868,64 @@ class IPSubnetSplitterApp:
             # 解析子网列表
             subnets = [line.strip() for line in subnets_text.splitlines() if line.strip()]
 
-            # 执行重叠检测
-            result = check_subnet_overlap(subnets)
+            # 按IP版本分类子网，用于分别检测IPv4和IPv6子网重叠
+            ipv4_subnets = []
+            ipv6_subnets = []
+            invalid_subnets = []
+            
+            # 验证子网格式并分类
+            for subnet in subnets:
+                try:
+                    network = ipaddress.ip_network(subnet, strict=False)
+                    if isinstance(network, ipaddress.IPv4Network):
+                        ipv4_subnets.append(subnet)
+                    else:
+                        ipv6_subnets.append(subnet)
+                except ValueError:
+                    invalid_subnets.append(subnet)
 
-            if isinstance(result, dict) and "error" in result:
-                self.show_info(_("error"), result["error"])
-                return
-
-            overlaps = result.get("overlaps", [])
+            # 显示无效子网信息
             row_index = 0
+            if invalid_subnets:
+                for subnet in invalid_subnets:
+                    tag = "error_row"
+                    self.overlap_result_tree.insert("", tk.END, values=(_("error"), f"{subnet}: {_('invalid_cidr_format')}"), tags=(tag,))
+                    row_index += 1
 
-            # 如果没有重叠，显示无重叠信息
-            if not overlaps:
+            # 检测IPv4子网重叠
+            if ipv4_subnets:
+                row_index = self._process_overlap_detection(ipv4_subnets, _("ipv4"), row_index)
+
+            # 检测IPv6子网重叠
+            if ipv6_subnets:
+                row_index = self._process_overlap_detection(ipv6_subnets, _("ipv6"), row_index)
+
+            # 如果没有任何子网（除了无效的），显示提示信息
+            if not ipv4_subnets and not ipv6_subnets and not invalid_subnets:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.overlap_result_tree.insert("", tk.END, values=(_("no_overlap"), _("no_subnet_overlap_detected")), tags=(tag,))
-            else:
-                # 显示所有重叠信息
-                for overlap in overlaps:
-                    status = _("overlap")
-                    overlap_type = _(overlap['type'])
-                    description = f"{overlap['subnet1']} {_('with')} {overlap['subnet2']} ({overlap_type})"
-                    tag = "odd" if row_index % 2 == 0 else "even"
-                    self.overlap_result_tree.insert("", tk.END, values=(status, description), tags=(tag,))
-                    row_index += 1
+            
+            # 为无效子网添加红色高亮
+            self.overlap_text.tag_remove("invalid", "1.0", tk.END)
+            self.overlap_text.tag_configure("invalid", foreground="red", underline=True)
+            
+            # 遍历文本内容，为无效子网添加高亮
+            lines = subnets_text.splitlines()
+            # 使用集合优化查找，将时间复杂度从O(n^2)降低到O(n)
+            invalid_set = set(invalid_subnets)
+            for i, line in enumerate(lines, 1):
+                subnet = line.strip()
+                if subnet in invalid_set:
+                    start = f"{i}.0"
+                    end = f"{i}.end"
+                    self.overlap_text.tag_add("invalid", start, end)
             
             self.auto_resize_columns(self.overlap_result_tree)
+            # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
+            self.update_table_zebra_stripes(self.overlap_result_tree)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("execute_subnet_overlap_detection_failed")}: {str(e)}")
+            self.show_info(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
 
     def _update_history(self, entry, history_list, value=None, max_items=10):
         """通用的历史记录更新方法
@@ -5990,8 +7105,7 @@ class IPSubnetSplitterApp:
         hide_info_btn.grid(row=2, column=0, padx=5, pady=5)
 
         clear_result_btn = ttk.Button(
-            button_frame, text=_(
-            "clear_subnet_split"), width=button_width, style=button_style, command=self.clear_result
+            button_frame, text=_("clear_subnet_split_and_planning"), width=button_width, style=button_style, command=self.clear_result
         )
         clear_result_btn.grid(row=2, column=1, padx=5, pady=5)
 
@@ -6501,13 +7615,16 @@ class IPSubnetSplitterApp:
             from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
+            # 获取IP版本信息
+            ip_version = data_source.get("ip_version", "IPv4")
+            
             # 根据数据类型生成默认文件名前缀
             if data_source["main_name"] == _("split_segment_info"):
                 # 子网切分结果
-                default_file_name = f"{_("subnet_split")}_{timestamp}"
+                default_file_name = f"{_("subnet_split")}_{ip_version}_{timestamp}"
             else:
                 # 子网规划结果
-                default_file_name = f"{_("subnet_planning")}_{timestamp}"
+                default_file_name = f"{_("subnet_planning")}_{ip_version}_{timestamp}"
             
             # 先显示文件选择对话框，不准备数据
             file_path = filedialog.asksaveasfilename(
@@ -6564,6 +7681,7 @@ class IPSubnetSplitterApp:
             "main_table_cols": None,  # 使用默认列宽
             "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'chart_data', None),  # 添加网段分布图数据
+            "ip_version": self.split_ip_version_var.get(),  # 添加IP版本信息
         }
 
         self._export_data(data_source, _("save_subnet_split_result"), _("result_successfully_exported"), _("export_failed"))
@@ -6581,43 +7699,92 @@ class IPSubnetSplitterApp:
             "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],  # 已分配子网表格列宽
             "remaining_table_cols": [40, 90, 80, 110, 80, 60],  # 剩余网段表格列宽
             "chart_data": getattr(self, 'planning_chart_data', None),  # 添加网段分布图数据
+            "ip_version": self.ip_version_var.get(),  # 添加IP版本信息
         }
 
         self._export_data(data_source, _("save_subnet_planning_result"), _("result_successfully_exported"), _("export_failed"))
 
     def clear_result(self):
-        """清空结果表格和图表"""
-        # 清空切分段信息表格
-        self.clear_tree_items(self.split_tree)
-        # 添加提示行
-        self.split_tree.insert("", tk.END, values=(_("hint"), _("click_execute_split_to_start")), tags=('odd',))
-        # 更新切分段表格的斑马条纹标签
-        self.update_table_zebra_stripes(self.split_tree)
+        """清空子网切分和子网规划的结果表格和图表"""
+        try:
+            # 清空切分段信息表格
+            if hasattr(self, 'split_tree') and self.split_tree:
+                self.clear_tree_items(self.split_tree)
+                # 更新切分段表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.split_tree)
 
-        # 清空剩余网段表表格
-        self.clear_tree_items(self.remaining_tree)
-        # 更新剩余网段表的斑马条纹标签
-        self.update_table_zebra_stripes(self.remaining_tree)
+            # 清空剩余网段表表格
+            if hasattr(self, 'remaining_tree') and self.remaining_tree:
+                self.clear_tree_items(self.remaining_tree)
+                # 更新剩余网段表的斑马条纹标签
+                self.update_table_zebra_stripes(self.remaining_tree)
 
-        # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
-        if hasattr(self, 'remaining_scroll_v'):
-            # 重置滚动条位置
-            self.remaining_scroll_v.set(0.0, 1.0)
-            self.remaining_scroll_v.grid_remove()
+            # 处理剩余网段表的滚动条，确保清空结果时滚动条隐藏
+            if hasattr(self, 'remaining_scroll_v') and self.remaining_scroll_v:
+                try:
+                    # 重置滚动条位置
+                    self.remaining_scroll_v.set(0.0, 1.0)
+                    self.remaining_scroll_v.grid_remove()
+                except Exception:
+                    pass
 
-        # 清空图表
-        self.chart_canvas.delete("all")
-        self.chart_data = None
+            # 清空图表
+            if hasattr(self, 'chart_canvas') and self.chart_canvas:
+                try:
+                    self.chart_canvas.winfo_exists()
+                    self.chart_canvas.delete("all")
+                    self.chart_data = None
 
-        # 更新Canvas滚动区域，设置为不可滚动状态
-        self.chart_canvas.config(scrollregion=(0, 0, self.chart_canvas.winfo_width(), 100))
+                    # 更新Canvas滚动区域，设置为不可滚动状态
+                    self.chart_canvas.config(scrollregion=(0, 0, self.chart_canvas.winfo_width(), 100))
+                except Exception:
+                    pass
 
-        # 调用滚动条回调函数，确保滚动条隐藏
-        # 模拟内容不可滚动的情况，让滚动条隐藏
-        if hasattr(self, 'chart_scrollbar'):
-            self.chart_scrollbar.set(0.0, 1.0)
-            # 使用grid_remove()直接隐藏滚动条
-            self.chart_scrollbar.grid_remove()
+            # 调用滚动条回调函数，确保滚动条隐藏
+            # 模拟内容不可滚动的情况，让滚动条隐藏
+            if hasattr(self, 'chart_scrollbar') and self.chart_scrollbar:
+                try:
+                    self.chart_scrollbar.set(0.0, 1.0)
+                    # 使用grid_remove()直接隐藏滚动条
+                    self.chart_scrollbar.grid_remove()
+                except Exception:
+                    pass
+        
+            # 清空子网规划的已分配子网表格
+            if hasattr(self, 'allocated_tree') and self.allocated_tree:
+                self.clear_tree_items(self.allocated_tree)
+                # 更新已分配表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.allocated_tree)
+        
+            # 清空子网规划的剩余子网表格
+            if hasattr(self, 'planning_remaining_tree') and self.planning_remaining_tree:
+                self.clear_tree_items(self.planning_remaining_tree)
+                # 更新剩余子网表格的斑马条纹标签
+                self.update_table_zebra_stripes(self.planning_remaining_tree)
+            # 清空子网规划的图表
+            if hasattr(self, 'planning_chart_canvas') and self.planning_chart_canvas:
+                try:
+                    # 检查canvas是否仍然有效
+                    self.planning_chart_canvas.winfo_exists()
+                    self.planning_chart_canvas.delete("all")
+                    self.planning_chart_data = None
+                    
+                    # 更新规划图表Canvas滚动区域，设置为不可滚动状态
+                    self.planning_chart_canvas.config(scrollregion=(0, 0, self.planning_chart_canvas.winfo_width(), 100))
+                    
+                    # 处理规划图表的滚动条，确保清空结果时滚动条隐藏
+                    if hasattr(self, 'planning_chart_v_scrollbar') and self.planning_chart_v_scrollbar:
+                        try:
+                            self.planning_chart_v_scrollbar.set(0.0, 1.0)
+                            self.planning_chart_v_scrollbar.grid_remove()
+                        except Exception:
+                            pass
+                except Exception:
+                    # 如果canvas已经失效，忽略错误
+                    pass
+        except Exception as e:
+            # 捕获所有异常，确保语言切换等操作不会失败
+            pass
     
     def one_click_export(self):
         """一键导出功能：自动执行规划和切分，然后导出所有格式的结果"""
@@ -6680,51 +7847,79 @@ class IPSubnetSplitterApp:
         default_formats = ['.pdf', '.csv', '.json', '.txt', '.xlsx']
         export_formats = formats if formats is not None else default_formats
         
-        # 导出子网切分结果
-        for fmt in export_formats:
-            # 准备数据
-            split_data_source = {
-                "main_tree": self.split_tree,
-                "main_name": _("split_segment_info"),
-                "main_filter": lambda values: values[0] not in [_("hint"), _("error"), "-", _("split_segment_info"), _("remaining_segment_info")],
-                "main_headers": [_("item"), _("value")],
-                "remaining_tree": self.remaining_tree,
-                "remaining_name": _("remaining_segment_info"),
-                "pdf_title": f"{_("subnet_planner")} - {_("split_result")}",
-                "main_table_cols": None,
-                "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],
-                "chart_data": getattr(self, 'chart_data', None),
-            }
-            
-            # 准备文件名 - 使用翻译后的名称
-            split_file_name = _("subnet_split")
-            split_file_path = os.path.join(export_dir, f"{split_file_name}_{timestamp}{fmt}")
-            
-            # 导出数据
-            self._export_data_to_format(split_file_path, split_data_source)
+        # 保存当前的IP版本状态
+        current_split_version = self.split_ip_version_var.get()
+        current_planning_version = self.ip_version_var.get()
         
-        # 导出子网规划结果
-        for fmt in export_formats:
-            # 准备数据
-            planning_data_source = {
-                "main_tree": self.allocated_tree,
-                "main_name": _("allocated_subnets"),
-                "main_filter": None,
-                "main_headers": None,
-                "remaining_tree": self.planning_remaining_tree,
-                "remaining_name": _("remaining_segment_info"),
-                "pdf_title": f"{_("subnet_planner")} - {_("planning_result")}",
-                "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],
-                "remaining_table_cols": [40, 90, 80, 110, 80, 60],
-                "chart_data": getattr(self, 'planning_chart_data', None),
-            }
-            
-            # 准备文件名 - 使用翻译后的名称
-            planning_file_name = _("subnet_planning")
-            planning_file_path = os.path.join(export_dir, f"{planning_file_name}_{timestamp}{fmt}")
-            
-            # 导出数据
-            self._export_data_to_format(planning_file_path, planning_data_source)
+        # 要导出的IP版本列表
+        ip_versions = ["IPv4", "IPv6"]
+        
+        try:
+            # 导出两个IP版本的结果
+            for ip_version in ip_versions:
+                # 设置子网切分的IP版本并重新执行
+                self.split_ip_version_var.set(ip_version)
+                self.on_split_ip_version_change()
+                self.execute_split(from_history=True)
+                
+                # 设置子网规划的IP版本并重新执行
+                self.ip_version_var.set(ip_version)
+                self.on_ip_version_change()
+                self.execute_subnet_planning(from_history=True)
+                
+                # 导出子网切分结果
+                for fmt in export_formats:
+                    # 准备数据
+                    split_data_source = {
+                        "main_tree": self.split_tree,
+                        "main_name": _("split_segment_info"),
+                        "main_filter": lambda values: values[0] not in [_("hint"), _("error"), "-", _("split_segment_info"), _("remaining_segment_info")],
+                        "main_headers": [_("item"), _("value")],
+                        "remaining_tree": self.remaining_tree,
+                        "remaining_name": _("remaining_segment_info"),
+                        "pdf_title": f"{_("subnet_planner")} - {_("split_result")}",
+                        "main_table_cols": None,
+                        "remaining_table_cols": [40, 80, 80, 100, 90, 80, 50],
+                        "chart_data": getattr(self, 'chart_data', None),
+                        "ip_version": ip_version,
+                    }
+                    
+                    # 准备文件名 - 使用翻译后的名称，并添加IP版本标识
+                    split_file_name = _("subnet_split")
+                    split_file_path = os.path.join(export_dir, f"{split_file_name}_{ip_version}_{timestamp}{fmt}")
+                    
+                    # 导出数据
+                    self._export_data_to_format(split_file_path, split_data_source)
+                
+                # 导出子网规划结果
+                for fmt in export_formats:
+                    # 准备数据
+                    planning_data_source = {
+                        "main_tree": self.allocated_tree,
+                        "main_name": _("allocated_subnets"),
+                        "main_filter": None,
+                        "main_headers": None,
+                        "remaining_tree": self.planning_remaining_tree,
+                        "remaining_name": _("remaining_segment_info"),
+                        "pdf_title": f"{_("subnet_planner")} - {_("planning_result")}",
+                        "main_table_cols": [10, 100, 90, 30, 40, 80, 110, 80],
+                        "remaining_table_cols": [40, 90, 80, 110, 80, 60],
+                        "chart_data": getattr(self, 'planning_chart_data', None),
+                        "ip_version": ip_version,
+                    }
+                    
+                    # 准备文件名 - 使用翻译后的名称，并添加IP版本标识
+                    planning_file_name = _("subnet_planning")
+                    planning_file_path = os.path.join(export_dir, f"{planning_file_name}_{ip_version}_{timestamp}{fmt}")
+                    
+                    # 导出数据
+                    self._export_data_to_format(planning_file_path, planning_data_source)
+        finally:
+            # 恢复原来的IP版本状态
+            self.split_ip_version_var.set(current_split_version)
+            self.on_split_ip_version_change()
+            self.ip_version_var.set(current_planning_version)
+            self.on_ip_version_change()
     
     def _export_data_to_format(self, file_path, data_source):
         """导出数据到指定格式文件
@@ -7175,9 +8370,9 @@ class IPSubnetSplitterApp:
         main_width = self.root.winfo_width()
         main_height = self.root.winfo_height()
 
-        # 设置对话框尺寸，适当增大以容纳更丰富的内容，确保所有语言下都能完整显示
+        # 设置对话框尺寸，进一步增大高度以确保所有内容（包括开源地址链接和版权信息）完整显示
         dialog_width = 400
-        dialog_height = 300
+        dialog_height = 330
 
         # 计算对话框在主窗口中心的位置
         dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
@@ -7302,9 +8497,9 @@ class IPSubnetSplitterApp:
             qr_window.transient(about_window)
             qr_window.grab_set()
             
-            # 设置对话框大小和位置
+            # 设置对话框大小和位置，增加高度以容纳开源地址链接
             qr_width = 450
-            qr_height = 380
+            qr_height = 400
             qr_x = dialog_x + (dialog_width // 2) - (qr_width // 2)
             qr_y = dialog_y + (dialog_height // 2) - (qr_height // 2)
             qr_window.geometry(f"{qr_width}x{qr_height}+{qr_x}+{qr_y}")
@@ -7418,11 +8613,27 @@ class IPSubnetSplitterApp:
             
             # 添加提示信息
             tip_label = ttk.Label(qr_content, 
-                               text=_("donate_tip"), 
+                               text=_(
+                                   "donate_tip"), 
                                font=(font_family, 10),
                                style="About.TLabel",
                                foreground="#666666")
             tip_label.pack(pady=(5, 5))
+            
+            # 添加开源地址链接
+            import webbrowser
+
+            def open_github_link():
+                webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+            
+            github_label = ttk.Label(qr_content, 
+                                   text="https://gitcode.com/ejones-cn/Subnet_Planner", 
+                                   font=(font_family, 9),
+                                   style="About.TLabel",
+                                   foreground="#1976d2",
+                                   cursor="hand2")
+            github_label.pack(pady=(5, 5))
+            github_label.bind("<Button-1>", lambda e: open_github_link())
             
             # 关闭按钮
             close_button = ttk.Button(qr_content, 
@@ -7456,10 +8667,27 @@ class IPSubnetSplitterApp:
         about_window.bind('<Return>', lambda e: ok_button.invoke())
         about_window.bind('<Escape>', lambda e: ok_button.invoke())
 
+        # 添加开源地址链接
+        import webbrowser
+
+        def open_github_link():
+            webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+        
+        github_label = ttk.Label(
+            inner_frame, 
+            text="https://gitcode.com/ejones-cn/Subnet_Planner", 
+            font=(font_family, 9),
+            style="About.TLabel",
+            foreground="#1976d2",
+            cursor="hand2"
+        )
+        github_label.pack(anchor=tk.CENTER, pady=(5, 5))
+        github_label.bind("<Button-1>", lambda e: open_github_link())
+        
         # 添加版权信息，使用动态字体设置，灰色调
         copyright_label = ttk.Label(
             inner_frame, 
-            text=_("copyright").format(app_name=self.app_name), 
+            text=_('copyright').format(app_name=self.app_name), 
             font=(font_family, 8),  # 使用动态字体，保持9号大小
             style="About.TLabel",
             foreground="#888888"
@@ -7508,5 +8736,5 @@ if __name__ == "__main__":
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)
     # 创建应用实例并运行
-    IPSubnetSplitterApp(root)
+    SubnetPlannerApp(root)
     root.mainloop()

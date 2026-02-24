@@ -5,13 +5,15 @@
 国际化模块
 提供翻译功能和语言切换支持
 支持从外部JSON文件加载翻译数据
-项目版本：v2.5.5
 """
 
 import json
 import os
 import sys
 from typing import cast
+from version import get_version
+
+__version__ = get_version()
 
 # 提前导入ctypes，以便类型检查器能识别其类型
 try:
