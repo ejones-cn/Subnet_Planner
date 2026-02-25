@@ -1,0 +1,55 @@
+stages:
+  - test
+  - build
+
+variables:
+  PYTHON_VERSION: "3.9"
+
+.test_template:
+  stage: test
+  script:
+    - python -m pip install --upgrade pip
+    - pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ pytest reportlab flake8 black isort
+    - for f in test_*.py; do
+        echo Running $f
+        python $f
+        if [ $? -ne 0 ]; then
+          exit 1
+        fi
+      done
+    - flake8 .
+    - black --check .
+    - isort --check .
+
+# 测试作业
+test-python-38:
+  extends: .test_template
+  image: python:3.8
+
+test-python-39:
+  extends: .test_template
+  image: python:3.9
+
+test-python-310:
+  extends: .test_template
+  image: python:3.10
+
+test-python-311:
+  extends: .test_template
+  image: python:3.11
+
+# 构建作业
+build:
+  stage: build
+  image: python:3.9
+  script:
+    - python -m pip install --upgrade pip
+    - pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ pyinstaller reportlab
+    - python build_compile.py
+  artifacts:
+    paths:
+      - SubnetPlannerV*.exe
+    expire_in: 7 days
+  only:
+    - main
+    - master
