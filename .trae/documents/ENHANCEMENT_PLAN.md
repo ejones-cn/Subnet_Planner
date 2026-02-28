@@ -105,12 +105,10 @@
 - 实现子网层级展示
 
 **技术方案**：
-- Web界面：使用D3.js或Vis.js
 - GUI界面：使用Tkinter Canvas或Matplotlib
 - 实现数据可视化逻辑
 
 **所需资源**：
-- Web界面：D3.js或Vis.js
 - GUI界面：Matplotlib（可选）
 
 **优先级**：中

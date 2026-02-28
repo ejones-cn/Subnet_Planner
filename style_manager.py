@@ -246,30 +246,24 @@ class StyleManager:
         # 创建功能按钮的样式配置，使用独立的字体大小
         function_button_font_style = {"font": (font_family, function_button_font_size)}
 
-        print(f"[StyleManager] {translate('updating_styles')}, {translate('current_language')}: {current_language}, {translate('font')}: {font_family}, {translate('size')}: {font_size}")
+        print(f"[StyleManager] 更新样式, 当前语言: {current_language}, 字体: {font_family}, 大小: {font_size}")
 
         # 基本控件样式
         self.style.configure("TLabel", **base_font_style)
         self.style.configure("TEntry", **base_font_style)
-        self.style.configure("Error.TLabel", **base_font_style, foreground="red")
-        self.style.configure("Success.TLabel", **base_font_style, foreground="#5E5E5E")
+        self.style.configure("TFrame")
+        self.style.configure("Error.TLabel", **base_font_style, foreground="#ff6b6b")
+        self.style.configure("Success.TLabel", **base_font_style, foreground="#4ecdc4")
 
         # 按钮样式 - 默认按钮
         button_padding = self._get_setting(self.BUTTON_PADDING_SETTINGS, current_language)
-        self.style.configure("TButton", **base_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        self.style.configure("TButton", **base_font_style, padding=button_padding)
         # 功能按钮样式 - 添加、删除、撤销、移动、导入等
-        self.style.configure("Function.TButton", **function_button_font_style, focuscolor="#888888", focuswidth=1, padding=button_padding)
+        self.style.configure("Function.TButton", **function_button_font_style, padding=button_padding)
         # 移动按钮样式 - 使用独立的字体配置，大小继承自功能按钮
         move_button_font = FontConfig.get_move_button_font(current_language)
         move_button_style = {"font": (move_button_font, function_button_font_size)}
-        self.style.configure("Move.TButton", **move_button_style, focuscolor="#888888", focuswidth=1, padding=button_padding)  # type: ignore
-        # 为默认按钮、功能按钮和移动按钮应用相同的映射配置
-        for button_style in ["TButton", "Function.TButton", "Move.TButton"]:
-            self.style.map(
-                button_style,
-                focuscolor=[("focus", "#888888"), ("!focus", "#888888")],
-                focuswidth=[("focus", 1), ("!focus", 1)],
-            )
+        self.style.configure("Move.TButton", **move_button_style, padding=button_padding)  # type: ignore
 
         # 滚动条样式
         scrollbar_style = {"width": 3}
@@ -277,7 +271,7 @@ class StyleManager:
             self.style.configure(scrollbar_type, **scrollbar_style)
 
         # Notebook样式
-        self.style.configure("TNotebook", background="#ffffff")
+        self.style.configure("TNotebook")
 
         # LabelFrame样式
         self.style.configure("TLabelframe")
@@ -295,9 +289,6 @@ class StyleManager:
         # Treeview样式
         self.style.configure(
             "TTreeview",
-            background="#e0e0e0",
-            fieldbackground="#ffffff",
-            foreground="black",
             rowheight=25,
             padding=(5, 2),
             borderwidth=0,
@@ -307,22 +298,9 @@ class StyleManager:
         # 表头样式
         self.style.configure(
             "TTreeview.Heading",
-            background="#1976d2",
-            foreground="white",
             font=(font_family, font_size, "bold"),
             padding=(10, 5),
             relief="ridge",
-        )
-
-        # 选中状态
-        self.style.map("TTreeview", background=[("selected", "#4A6984")], foreground=[("selected", "white")])
-
-        # Combobox样式
-        self.style.configure("TCombobox", **base_font_style)
-        self.style.map(
-            "TCombobox",
-            selectbackground=[("focus", "#4A6984"), ("!focus", "#ffffff")],
-            selectforeground=[("focus", "white"), ("!focus", "black")],
         )
 
     def get_colored_notebook_font_settings(self):
@@ -365,7 +343,7 @@ def update_styles():
     if style_manager:
         style_manager.update_all_styles()
     else:
-        print(f"[StyleManager] {translate('style_manager_not_initialized')}")
+        print("[StyleManager] 样式管理器未初始化")
 
 
 def get_current_font_settings():

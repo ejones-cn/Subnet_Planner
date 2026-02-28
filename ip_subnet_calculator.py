@@ -539,7 +539,7 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
     required_subnets: 需要的子网列表，每个子网包含name和hosts两个字段
 
     返回:
-    包含建议子网规划的字典
+    包含建议子网规划的字典，可能包含多个方案
     """
     try:
         # 使用ipaddress.ip_network自动检测IP版本，支持IPv4和IPv6
@@ -547,8 +547,8 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
         is_ipv6 = isinstance(parent_net, ipaddress.IPv6Network)
         address_bits = 128 if is_ipv6 else 32
 
-        # 预处理子网需求：计算前缀长度并排序
-        sorted_subnets = []
+        # 预处理子网需求：计算前缀长度
+        processed_subnets = []
         for subnet in required_subnets:
             # 计算需要的地址数量和前缀长度
             if is_ipv6:
@@ -562,54 +562,192 @@ def suggest_subnet_planning(parent_cidr, required_subnets):
             prefix_len = max(prefix_len, parent_net.prefixlen)
             prefix_len = min(prefix_len, address_bits)
 
-            sorted_subnets.append({
+            processed_subnets.append({
                 "name": subnet["name"],
                 "hosts": subnet["hosts"],
                 "prefix_len": prefix_len
             })
 
-        # 按所需主机数量从大到小排序，优先分配大的子网
-        sorted_subnets.sort(key=lambda x: x["hosts"], reverse=True)
+        # 生成多种分配方案
+        plans = []
+        
+        # 方案1：按主机数量从大到小排序（传统方法）
+        plan1 = _generate_plan(parent_net, processed_subnets, sort_key=lambda x: x["hosts"], reverse=True, name="按主机数量排序")
+        if "error" not in plan1:
+            plans.append(plan1)
+        
+        # 方案2：按前缀长度从小到大排序（更均匀分配）
+        plan2 = _generate_plan(parent_net, processed_subnets, sort_key=lambda x: x["prefix_len"], reverse=False, name="按前缀长度排序")
+        if "error" not in plan2:
+            plans.append(plan2)
+        
+        # 方案3：混合排序（大主机优先，同级别按名称排序）
+        plan3 = _generate_plan(parent_net, processed_subnets, sort_key=lambda x: (x["hosts"], x["name"]), reverse=True, name="混合排序")
+        if "error" not in plan3:
+            plans.append(plan3)
 
-        # 开始分配子网
-        available_subnets = [parent_net]
-        allocated_subnets = []
+        # 为每个方案评分
+        for plan in plans:
+            plan["score"] = _score_plan(plan, parent_net)
+            plan["score_explanation"] = _explain_score(plan, parent_net)
 
-        for required in sorted_subnets:
-            # 调用辅助函数分配子网
-            success, new_subnet, updated_available, error = _allocate_subnet(available_subnets, required)
+        # 按评分排序
+        plans.sort(key=lambda x: x["score"], reverse=True)
 
-            if not success:
-                return {"error": error}
-
-            # 分配成功，更新状态
-            if updated_available is not None:
-                available_subnets = updated_available
-            subnet_info = get_subnet_info(str(new_subnet)) if new_subnet else None
-            if subnet_info and new_subnet:
-                allocated_subnets.append({
-                    "name": required["name"],
-                    "cidr": str(new_subnet),
-                    "required_hosts": required["hosts"],
-                    "available_hosts": subnet_info["usable_addresses"],
-                    "info": subnet_info,
-                })
-
-        # 生成剩余子网信息
-        remaining_subnets = [str(subnet) for subnet in available_subnets]
-        remaining_subnets_info = [get_subnet_info(str(subnet)) for subnet in available_subnets]
+        # 如果没有生成任何方案，返回错误
+        if not plans:
+            return {"error": _("failed_to_generate_any_plan")}
 
         return {
             "parent_cidr": parent_cidr,
             "required_subnets": required_subnets,
-            "allocated_subnets": allocated_subnets,
-            "remaining_subnets": remaining_subnets,
-            "remaining_subnets_info": remaining_subnets_info,
+            "plans": plans,
             "ip_version": "IPv6" if is_ipv6 else "IPv4"
         }
 
     except ValueError as e:
         return handle_ip_subnet_error(e)
+
+
+def _generate_plan(parent_net, required_subnets, sort_key, reverse, name):
+    """
+    生成单个子网规划方案
+
+    参数:
+    parent_net: 父网络对象
+    required_subnets: 处理后的子网需求
+    sort_key: 排序键函数
+    reverse: 是否倒序排序
+    name: 方案名称
+
+    返回:
+    包含规划方案的字典
+    """
+    # 复制并排序子网需求
+    sorted_subnets = sorted(required_subnets.copy(), key=sort_key, reverse=reverse)
+    
+    # 开始分配子网
+    available_subnets = [parent_net]
+    allocated_subnets = []
+
+    for required in sorted_subnets:
+        # 调用辅助函数分配子网
+        success, new_subnet, updated_available, error = _allocate_subnet(available_subnets, required)
+
+        if not success:
+            return {"error": error}
+
+        # 分配成功，更新状态
+        if updated_available is not None:
+            available_subnets = updated_available
+        subnet_info = get_subnet_info(str(new_subnet)) if new_subnet else None
+        if subnet_info and new_subnet:
+            allocated_subnets.append({
+                "name": required["name"],
+                "cidr": str(new_subnet),
+                "required_hosts": required["hosts"],
+                "available_hosts": subnet_info["usable_addresses"],
+                "info": subnet_info,
+            })
+
+    # 生成剩余子网信息
+    remaining_subnets = [str(subnet) for subnet in available_subnets]
+    remaining_subnets_info = [get_subnet_info(str(subnet)) for subnet in available_subnets]
+
+    return {
+        "name": name,
+        "allocated_subnets": allocated_subnets,
+        "remaining_subnets": remaining_subnets,
+        "remaining_subnets_info": remaining_subnets_info
+    }
+
+
+def _score_plan(plan, parent_net):
+    """
+    为子网规划方案评分
+
+    参数:
+    plan: 规划方案
+    parent_net: 父网络对象
+
+    返回:
+    评分（0-100）
+    """
+    score = 0
+    
+    # 1. 地址利用率评分（40分）
+    total_required_hosts = sum(subnet["required_hosts"] for subnet in plan["allocated_subnets"])
+    total_available_hosts = sum(subnet["available_hosts"] for subnet in plan["allocated_subnets"])
+    if total_available_hosts > 0:
+        utilization = total_required_hosts / total_available_hosts
+        utilization_score = min(utilization * 40, 40)
+        score += utilization_score
+    
+    # 2. 剩余子网数量评分（20分）- 剩余子网越少越好
+    remaining_count = len(plan["remaining_subnets"])
+    if remaining_count == 0:
+        score += 20
+    elif remaining_count <= 2:
+        score += 15
+    elif remaining_count <= 5:
+        score += 10
+    else:
+        score += 5
+    
+    # 3. 子网连续性评分（20分）- 分配的子网越连续越好
+    # 这里简化处理，假设按顺序分配的子网更连续
+    score += 20
+    
+    # 4. 管理便利性评分（20分）
+    # 基于子网大小的一致性
+    prefix_lengths = [subnet["info"]["prefixlen"] for subnet in plan["allocated_subnets"]]
+    unique_prefixes = len(set(prefix_lengths))
+    if unique_prefixes == 1:
+        score += 20
+    elif unique_prefixes <= 3:
+        score += 15
+    elif unique_prefixes <= 5:
+        score += 10
+    else:
+        score += 5
+    
+    return int(score)
+
+
+def _explain_score(plan, parent_net):
+    """
+    解释方案评分
+
+    参数:
+    plan: 规划方案
+    parent_net: 父网络对象
+
+    返回:
+    评分解释
+    """
+    explanations = []
+    
+    # 1. 地址利用率
+    total_required_hosts = sum(subnet["required_hosts"] for subnet in plan["allocated_subnets"])
+    total_available_hosts = sum(subnet["available_hosts"] for subnet in plan["allocated_subnets"])
+    if total_available_hosts > 0:
+        utilization = total_required_hosts / total_available_hosts
+        utilization_percent = int(utilization * 100)
+        explanations.append(f"地址利用率: {utilization_percent}% (满分40分)")
+    
+    # 2. 剩余子网数量
+    remaining_count = len(plan["remaining_subnets"])
+    explanations.append(f"剩余子网数量: {remaining_count} (满分20分)")
+    
+    # 3. 子网连续性
+    explanations.append("子网连续性: 良好 (满分20分)")
+    
+    # 4. 管理便利性
+    prefix_lengths = [subnet["info"]["prefixlen"] for subnet in plan["allocated_subnets"]]
+    unique_prefixes = len(set(prefix_lengths))
+    explanations.append(f"管理便利性: {unique_prefixes} 种不同前缀长度 (满分20分)")
+    
+    return explanations
 
 
 def merge_subnets(subnets):

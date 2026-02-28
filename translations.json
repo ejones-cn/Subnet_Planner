@@ -1,5 +1,5 @@
 {
-  "__version__": "2.7.0",
+  "__version__": "3.0.0",
   "error": {
     "zh": "错误",
     "zh_tw": "錯誤",
@@ -1680,6 +1680,426 @@
     "ja": "フォントの登録に失敗しました",
     "ko": "글꼴 등록에 실패했습니다"
   },
+  "address_manage": {
+    "zh": "IP地址管理",
+    "zh_tw": "IP位址管理",
+    "en": "IP Address Management",
+    "ja": "IPアドレス管理",
+    "ko": "IP 주소 관리"
+  },
+  "batch_operations": {
+    "zh": "批量操作",
+    "zh_tw": "批量操作",
+    "en": "Batch Operations",
+    "ja": "一括操作",
+    "ko": "일괄 작업"
+  },
+  "auto_scan": {
+    "zh": "自动扫描",
+    "zh_tw": "自動掃描",
+    "en": "Auto Scan",
+    "ja": "自動スキャン",
+    "ko": "자동 스캔"
+  },
+  "export_data": {
+    "zh": "导出数据",
+    "zh_tw": "匯出數據",
+    "en": "Export Data",
+    "ja": "データをエクスポート",
+    "ko": "데이터 내보내기"
+  },
+  "import_data": {
+    "zh": "导入数据",
+    "zh_tw": "匯入數據",
+    "en": "Import Data",
+    "ja": "データをインポート",
+    "ko": "데이터 가져오기"
+  },
+  "backup_data": {
+    "zh": "备份数据",
+    "zh_tw": "備份數據",
+    "en": "Backup Data",
+    "ja": "データバックアップ",
+    "ko": "데이터 백업"
+  },
+  "restore_data": {
+    "zh": "恢复数据",
+    "zh_tw": "恢復數據",
+    "en": "Restore Data",
+    "ja": "データを復元",
+    "ko": "데이터 복원"
+  },
+  "backup_restore": {
+    "zh": "备份/恢复",
+    "zh_tw": "備份/恢復",
+    "en": "Backup/Restore",
+    "ja": "バックアップ/復元",
+    "ko": "백업/복원"
+  },
+  "choose_backup_restore_method": {
+    "zh": "请选择备份/恢复方式：",
+    "zh_tw": "請選擇備份/恢復方式：",
+    "en": "Please choose backup/restore method:",
+    "ja": "バックアップ/復元方法を選択してください：",
+    "ko": "백업/복원 방법을 선택하십시오："
+  },
+  "ip_address_management": {
+    "zh": "IP地址管理",
+    "zh_tw": "IP位址管理",
+    "en": "IP Address Management",
+    "ja": "IPアドレス管理",
+    "ko": "IP 주소 관리"
+  },
+  "allocate_address": {
+    "zh": "分配地址",
+    "zh_tw": "分配位址",
+    "en": "Allocate Address",
+    "ja": "アドレスを割り当てる",
+    "ko": "주소 할당"
+  },
+  "reserve_address": {
+    "zh": "保留地址",
+    "zh_tw": "保留位址",
+    "en": "Reserve Address",
+    "ja": "アドレスを予約",
+    "ko": "주소 예약"
+  },
+  "batch_allocate": {
+    "zh": "批量分配",
+    "zh_tw": "批量分配",
+    "en": "Batch Allocate",
+    "ja": "一括割り当て",
+    "ko": "일괄 할당"
+  },
+  "auto_allocate": {
+    "zh": "自动分配",
+    "zh_tw": "自動分配",
+    "en": "Auto Allocate",
+    "ja": "自動割り当て",
+    "ko": "자동 할당"
+  },
+  "release_address": {
+    "zh": "释放地址",
+    "zh_tw": "釋放位址",
+    "en": "Release Address",
+    "ja": "アドレスを解放",
+    "ko": "주소 해제"
+  },
+  "cleanup_unused": {
+    "zh": "清理未用",
+    "zh_tw": "清理未用",
+    "en": "Cleanup Unused",
+    "ja": "未使用をクリーンアップ",
+    "ko": "미사용 정리"
+  },
+  "search_and_filter": {
+    "zh": "搜索和过滤",
+    "zh_tw": "搜尋和過濾",
+    "en": "Search and Filter",
+    "ja": "検索とフィルタリング",
+    "ko": "검색 및 필터"
+  },
+  "keyword": {
+    "zh": "关键词",
+    "zh_tw": "關鍵詞",
+    "en": "Keyword",
+    "ja": "キーワード",
+    "ko": "키워드"
+  },
+  "scope": {
+    "zh": "范围",
+    "zh_tw": "範圍",
+    "en": "Scope",
+    "ja": "範囲",
+    "ko": "범위"
+  },
+  "search_mode": {
+    "zh": "搜索模式",
+    "zh_tw": "搜尋模式",
+    "en": "Search Mode",
+    "ja": "検索モード",
+    "ko": "검색 모드"
+  },
+  "all": {
+    "zh": "全部",
+    "zh_tw": "全部",
+    "en": "All",
+    "ja": "すべて",
+    "ko": "전체"
+  },
+  "exact_match": {
+    "zh": "精确匹配",
+    "zh_tw": "精確匹配",
+    "en": "Exact Match",
+    "ja": "完全一致",
+    "ko": "정확한 일치"
+  },
+  "contains": {
+    "zh": "包含",
+    "zh_tw": "包含",
+    "en": "Contains",
+    "ja": "含む",
+    "ko": "포함"
+  },
+  "regex": {
+    "zh": "正则表达式",
+    "zh_tw": "正則表達式",
+    "en": "Regex",
+    "ja": "正規表現",
+    "ko": "정규 표현식"
+  },
+  "allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "ko": "할당됨"
+  },
+  "reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済み",
+    "ko": "예약됨"
+  },
+  "allocated_time": {
+    "zh": "分配时间",
+    "zh_tw": "分配時間",
+    "en": "Allocated Time",
+    "ja": "割り当て時間",
+    "ko": "할당 시간"
+  },
+  "expiry_date": {
+    "zh": "过期日期",
+    "zh_tw": "過期日期",
+    "en": "Expiry Date",
+    "ja": "有効期限",
+    "ko": "만료 날짜"
+  },
+  "statistical_analysis": {
+    "zh": "统计分析",
+    "zh_tw": "統計分析",
+    "en": "Statistical Analysis",
+    "ja": "統計分析",
+    "ko": "통계 분석"
+  },
+  "import_export": {
+    "zh": "导入/导出",
+    "zh_tw": "導入/匯出",
+    "en": "Import/Export",
+    "ja": "インポート/エクスポート",
+    "ko": "가져오기/내보내기"
+  },
+  "choose_import_export_method": {
+    "zh": "请选择导入/导出方式：",
+    "zh_tw": "請選擇導入/匯出方式：",
+    "en": "Please choose import/export method:",
+    "ja": "インポート/エクスポート方法を選択してください：",
+    "ko": "가져오기/내보내기 방법을 선택하세요："
+  },
+  "export_selected": {
+    "zh": "导出选中",
+    "zh_tw": "匯出選中",
+    "en": "Export Selected",
+    "ja": "選択したものをエクスポート",
+    "ko": "선택 내보내기"
+  },
+  "export_all": {
+    "zh": "全部导出",
+    "zh_tw": "全部匯出",
+    "en": "Export All",
+    "ja": "すべてをエクスポート",
+    "ko": "전체 내보내기"
+  },
+  "visualization": {
+    "zh": "可视化",
+    "zh_tw": "視覺化",
+    "en": "Visualization",
+    "ja": "可視化",
+    "ko": "시각화"
+  },
+  "network_management": {
+    "zh": "网络管理",
+    "zh_tw": "網路管理",
+    "en": "Network Management",
+    "ja": "ネットワーク管理",
+    "ko": "네트워크 관리"
+  },
+  "network_cidr": {
+    "zh": "网络CIDR",
+    "zh_tw": "網路CIDR",
+    "en": "Network CIDR",
+    "ja": "ネットワークCIDR",
+    "ko": "네트워크 CIDR"
+  },
+  "add_network": {
+    "zh": "添加网络",
+    "zh_tw": "新增網路",
+    "en": "Add Network",
+    "ja": "ネットワークを追加",
+    "ko": "네트워크 추가"
+  },
+  "remove_network": {
+    "zh": "移除网络",
+    "zh_tw": "移除網路",
+    "en": "Remove Network",
+    "ja": "ネットワークを削除",
+    "ko": "네트워크 제거"
+  },
+  "created_at": {
+    "zh": "创建时间",
+    "zh_tw": "建立時間",
+    "en": "Created At",
+    "ja": "作成日時",
+    "ko": "생성 시간"
+  },
+  "ip_count": {
+    "zh": "IP数量",
+    "zh_tw": "IP數量",
+    "en": "IP Count",
+    "ja": "IP数",
+    "ko": "IP 수"
+  },
+  "ip_address_management": {
+    "zh": "IP地址管理",
+    "zh_tw": "IP位址管理",
+    "en": "IP Address Management",
+    "ja": "IPアドレス管理",
+    "ko": "IP 주소 관리"
+  },
+  "allocation_history": {
+    "zh": "分配历史",
+    "zh_tw": "分配歷史",
+    "en": "Allocation History",
+    "ja": "割り当て履歴",
+    "ko": "할당 기록"
+  },
+  "hostname": {
+    "zh": "主机名",
+    "zh_tw": "主機名",
+    "en": "Hostname",
+    "ja": "ホスト名",
+    "ko": "호스트 이름"
+  },
+  "allocate_ip": {
+    "zh": "分配IP",
+    "zh_tw": "分配IP",
+    "en": "Allocate IP",
+    "ja": "IPを割り当て",
+    "ko": "IP 할당"
+  },
+  "release_ip": {
+    "zh": "释放IP",
+    "zh_tw": "釋放IP",
+    "en": "Release IP",
+    "ja": "IPを解放",
+    "ko": "IP 해제"
+  },
+  "reserve_ip": {
+    "zh": "保留IP",
+    "zh_tw": "保留IP",
+    "en": "Reserve IP",
+    "ja": "IPを予約",
+    "ko": "IP 예약"
+  },
+  "please_select_ip_address": {
+    "zh": "请选择IP地址",
+    "zh_tw": "請選擇IP位址",
+    "en": "Please select IP address",
+    "ja": "IPアドレスを選択してください",
+    "ko": "IP 주소를 선택하십시오"
+  },
+  "ip_released_successfully": {
+    "zh": "IP地址释放成功",
+    "zh_tw": "IP位址釋放成功",
+    "en": "IP address released successfully",
+    "ja": "IPアドレスの解放に成功しました",
+    "ko": "IP 주소가 성공적으로 해제되었습니다"
+  },
+  "failed_to_release_ip": {
+    "zh": "释放IP地址失败",
+    "zh_tw": "釋放IP位址失敗",
+    "en": "Failed to release IP address",
+    "ja": "IPアドレスの解放に失敗しました",
+    "ko": "IP 주소 해제 실패"
+  },
+  "please_enter_ip_address": {
+    "zh": "请输入IP地址",
+    "zh_tw": "請輸入IP位址",
+    "en": "Please enter IP address",
+    "ja": "IPアドレスを入力してください",
+    "ko": "IP 주소를 입력하십시오"
+  },
+  "network_removed_successfully": {
+    "zh": "网络移除成功",
+    "zh_tw": "網路移除成功",
+    "en": "Network removed successfully",
+    "ja": "ネットワークの削除に成功しました",
+    "ko": "네트워크 제거 성공"
+  },
+  "network_added_successfully": {
+    "zh": "网络添加成功",
+    "zh_tw": "網路添加成功",
+    "en": "Network added successfully",
+    "ja": "ネットワークの追加に成功しました",
+    "ko": "네트워크 추가 성공"
+  },
+  "failed_to_add_network": {
+    "zh": "添加网络失败",
+    "zh_tw": "添加網路失敗",
+    "en": "Failed to add network",
+    "ja": "ネットワークの追加に失敗しました",
+    "ko": "네트워크 추가 실패"
+  },
+  "please_select_network": {
+    "zh": "请选择网络",
+    "zh_tw": "請選擇網路",
+    "en": "Please select network",
+    "ja": "ネットワークを選択してください",
+    "ko": "네트워크를 선택하십시오"
+  },
+  "please_enter_network": {
+    "zh": "请输入网络",
+    "zh_tw": "請輸入網路",
+    "en": "Please enter network",
+    "ja": "ネットワークを入力してください",
+    "ko": "네트워크를 입력하십시오"
+  },
+  "failed_to_remove_network": {
+    "zh": "移除网络失败",
+    "zh_tw": "移除網路失敗",
+    "en": "Failed to remove network",
+    "ja": "ネットワークの削除に失敗しました",
+    "ko": "네트워크 제거 실패"
+  },
+  "network_topology": {
+    "zh": "网络拓扑",
+    "zh_tw": "網路拓撲",
+    "en": "Network Topology",
+    "ja": "ネットワークトポロジ",
+    "ko": "네트워크 토폴로지"
+  },
+  "ip_allocation_visualization": {
+    "zh": "IP分配可视化",
+    "zh_tw": "IP分配視覺化",
+    "en": "IP Allocation Visualization",
+    "ja": "IP割り当ての可視化",
+    "ko": "IP 할당 시각화"
+  },
+  "select_network": {
+    "zh": "选择网络",
+    "zh_tw": "選擇網路",
+    "en": "Select Network",
+    "ja": "ネットワークを選択",
+    "ko": "네트워크 선택"
+  },
+  "refresh": {
+    "zh": "刷新",
+    "zh_tw": "重新整理",
+    "en": "Refresh",
+    "ja": "更新",
+    "ko": "새로 고침"
+  },
   "mixed_ip_version_not_supported": {
     "zh": "不支持混合IP版本的子网合并",
     "zh_tw": "不支持混合IP版本的子網合併",
@@ -3072,5 +3492,89 @@
     "ja": "値表現",
     "zh_tw": "值表示",
     "ko": "값 표현"
+  },
+  "reserved": {
+    "zh": "保留",
+    "en": "Reserved",
+    "ja": "予約",
+    "zh_tw": "保留",
+    "ko": "예약됨"
+  },
+  "available": {
+    "zh": "可用",
+    "en": "Available",
+    "ja": "利用可能",
+    "zh_tw": "可用",
+    "ko": "사용 가능"
+  },
+  "allocated": {
+    "zh": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "zh_tw": "已分配",
+    "ko": "할당됨"
+  },
+  "timestamp": {
+    "zh": "时间戳",
+    "en": "Timestamp",
+    "ja": "タイムスタンプ",
+    "zh_tw": "時間戳",
+    "ko": "타임스탬프"
+  },
+  "action": {
+    "zh": "操作",
+    "en": "Action",
+    "ja": "アクション",
+    "zh_tw": "操作",
+    "ko": "작업"
+  },
+  "please_enter_description": {
+    "zh": "请输入描述",
+    "en": "Please enter description",
+    "ja": "説明を入力してください",
+    "zh_tw": "請輸入描述",
+    "ko": "설명을 입력하세요"
+  },
+  "ipv6_lab": {
+    "zh": "IPv6实验室",
+    "en": "IPv6 Lab",
+    "ja": "IPv6ラボ",
+    "zh_tw": "IPv6實驗室",
+    "ko": "IPv6 랩"
+  },
+  "ipv6_infrastructure": {
+    "zh": "IPv6基础设施",
+    "en": "IPv6 Infrastructure",
+    "ja": "IPv6インフラストラクチャ",
+    "zh_tw": "IPv6基礎設施",
+    "ko": "IPv6 인프라"
+  },
+  "please_enter_hostname": {
+    "zh": "请输入主机名",
+    "en": "Please enter hostname",
+    "ja": "ホスト名を入力してください",
+    "zh_tw": "請輸入主機名",
+    "ko": "호스트 이름을 입력하세요"
+  },
+  "ip_range_host_part": {
+    "zh": "IP范围主机部分",
+    "en": "IP Range Host Part",
+    "ja": "IP範囲ホスト部分",
+    "zh_tw": "IP範圍主機部分",
+    "ko": "IP 범위 호스트 부분"
+  },
+  "description_prefixauto_add_number": {
+    "zh": "描述前缀（自动添加编号）",
+    "en": "Description Prefix (Auto Add Number)",
+    "ja": "説明プレフィックス（自動番号付与）",
+    "zh_tw": "描述前綴（自動添加編號）",
+    "ko": "설명 접두사(자동 번호 추가)"
+  },
+  "please_enter_hostname_or_description": {
+    "zh": "请输入主机名或描述",
+    "en": "Please enter hostname or description",
+    "ja": "ホスト名または説明を入力してください",
+    "zh_tw": "請輸入主機名或描述",
+    "ko": "호스트 이름 또는 설명을 입력하세요"
   }
 }

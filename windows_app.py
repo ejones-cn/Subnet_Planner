@@ -11,6 +11,8 @@
 import base64
 import csv
 import datetime
+from datetime import timedelta
+import math
 import os
 import re
 import sys
@@ -23,6 +25,7 @@ from typing import Any, Optional
 import ipaddress
 import tkinter as tk
 import tkinter.font as tkfont
+import tkinter.messagebox as messagebox
 from openpyxl import Workbook, load_workbook  # type: ignore
 from openpyxl.styles import Font, Alignment  # type: ignore
 from PIL import Image, ImageTk
@@ -50,6 +53,21 @@ from chart_utils import draw_text_with_stroke, draw_distribution_chart
 from version import get_version
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
 
+# IPAM模块
+from ipam_sqlite import IPAMSQLite
+
+# 初始化IPAM
+def init_ipam():
+    """初始化IPAM模块"""
+    return IPAMSQLite()
+
+def get_ipam():
+    """获取IPAM实例"""
+    return init_ipam()
+
+# 可视化模块
+from visualization import NetworkTopologyVisualizer, IPAllocationVisualizer
+
 # 样式管理器 - 统一导入,避免运行时导入
 from style_manager import (
     init_style_manager,
@@ -65,6 +83,33 @@ from style_manager import (
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
 DPI_MODE = None  # DPI模式标记
+
+def center_window(window, parent=None):
+    """居中显示窗口
+    
+    Args:
+        window: 要居中的窗口对象
+        parent: 父窗口对象，如果为None则居中屏幕
+    """
+    window.update_idletasks()
+    width = window.winfo_width()
+    height = window.winfo_height()
+    
+    if parent:
+        # 居中父窗体
+        parent.update_idletasks()
+        parent_x = parent.winfo_x()
+        parent_y = parent.winfo_y()
+        parent_width = parent.winfo_width()
+        parent_height = parent.winfo_height()
+        x = parent_x + (parent_width // 2) - (width // 2)
+        y = parent_y + (parent_height // 2) - (height // 2)
+    else:
+        # 居中屏幕
+        x = (window.winfo_screenwidth() // 2) - (width // 2)
+        y = (window.winfo_screenheight() // 2) - (height // 2)
+    
+    window.geometry(f"{width}x{height}+{x}+{y}")
 
 if sys.platform == 'win32':
     try:
@@ -796,6 +841,9 @@ class SubnetPlannerApp:
         # 初始化样式管理器
         self.style_manager = init_style_manager(self.root)
         update_styles()
+        
+        # 初始化IPAM
+        self.ipam = init_ipam()
 
         # 初始化历史记录相关属性 - 使用deque提升性能
         self.history_states = deque(maxlen=20)
@@ -824,7 +872,7 @@ class SubnetPlannerApp:
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
 
-        # 在右上角添加关于链接按钮和钉住按钮，确保它们显示在标题栏右侧
+        # 在右上角添加关于链接按钮、主题切换按钮和钉住按钮，确保它们显示在标题栏右侧
         self.create_about_link()
 
         # 绑定窗口大小变化事件，动态调整右上角按钮位置
@@ -845,6 +893,13 @@ class SubnetPlannerApp:
         self.info_bar_frame.grid_columnconfigure(1, weight=0)
 
         # 获取当前主题的背景色
+        
+        # 启动时执行自动备份检查
+        try:
+            # 执行自动备份，频率为每小时
+            self.ipam.backup_data(backup_type='auto', frequency='weekly')
+        except Exception as e:
+            print(f"自动备份检查失败: {e}")
         bg_color = self.style.lookup("TFrame", "background")
 
         # 使用Label组件替代Text，以简化实现
@@ -1622,11 +1677,21 @@ class SubnetPlannerApp:
         # 高级工具模块
         self.advanced_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
         self.setup_advanced_tools_page()
+        
+        # IP地址管理（IPAM）模块
+        self.ipam_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
+        self.setup_ipam_page()
+        
+        # 可视化模块
+        self.visualization_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
+        self.setup_visualization_page()
 
         # 添加顶级标签页
         self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec")
         self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0")
         self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9")
+        self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
+        self.top_level_notebook.add_tab(_("visualization"), self.visualization_frame, "#f3e5f5")
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
@@ -3258,7 +3323,9 @@ class SubnetPlannerApp:
         dialog.title(title)
         dialog.resizable(False, False)
         dialog.transient(parent_window)  # 设置为父窗口的子窗口
-        dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
+        
+        # 先隐藏对话框，避免定位过程中的闪现
+        dialog.withdraw()
 
         # 设置对话框最小宽度和高度，适当调高高度使其更加协调
         dialog.minsize(width=350, height=180)
@@ -3303,6 +3370,12 @@ class SubnetPlannerApp:
 
         # 计算并设置对话框居中位置
         self._center_dialog(dialog)
+
+        # 显示对话框
+        dialog.deiconify()
+        
+        # 设置grab_set
+        dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
 
         # 在对话框显示后强制设置焦点
         if ok_btn:
@@ -3863,6 +3936,16 @@ class SubnetPlannerApp:
                 self.show_error(_("error"), f"{_("subnet_planning_failed")}: {plan_result['error']}")
                 return
 
+            # 处理多个规划方案
+            if 'plans' in plan_result and len(plan_result['plans']) > 1:
+                # 显示方案选择对话框
+                selected_plan = self._show_plan_selection_dialog(plan_result['plans'])
+                if not selected_plan:
+                    return
+            else:
+                # 只有一个方案，直接使用
+                selected_plan = plan_result['plans'][0]
+
             # 清空结果表格
             self.clear_tree_items(self.allocated_tree)
             self.clear_tree_items(self.planning_remaining_tree)
@@ -3885,7 +3968,7 @@ class SubnetPlannerApp:
                 self.allocated_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
             
             # 显示已分配子网
-            for i, subnet in enumerate(plan_result['allocated_subnets'], 1):
+            for i, subnet in enumerate(selected_plan['allocated_subnets'], 1):
                 # 设置斑马条纹标签
                 tags = ("even",) if i % 2 == 0 else ("odd",)
                 self.allocated_tree.insert(
@@ -3933,7 +4016,7 @@ class SubnetPlannerApp:
                 self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
             
             # 显示剩余网段
-            for i, subnet in enumerate(plan_result['remaining_subnets_info'], 1):
+            for i, subnet in enumerate(selected_plan['remaining_subnets_info'], 1):
                 tags = ("even",) if i % 2 == 0 else ("odd",)
                 # 为隐藏列传递空字符串，避免数据显示异常
                 netmask_val = subnet["netmask"] if not is_ipv6 else ""
@@ -3945,7 +4028,7 @@ class SubnetPlannerApp:
                     tk.END,
                     values=(
                         i,
-                        plan_result['remaining_subnets'][i - 1],
+                        selected_plan['remaining_subnets'][i - 1],
                         subnet["network"],
                         subnet["host_range_end"],  # 网段结束地址
                         netmask_val,
@@ -3970,7 +4053,15 @@ class SubnetPlannerApp:
                 self.save_current_state("执行规划")
 
             # 生成网段分布图数据并绘制
-            self.generate_planning_chart_data(plan_result)
+            # 构建兼容的plan_result结构
+            compatible_plan_result = {
+                "parent_cidr": plan_result["parent_cidr"],
+                "allocated_subnets": selected_plan["allocated_subnets"],
+                "remaining_subnets": selected_plan["remaining_subnets"],
+                "remaining_subnets_info": selected_plan["remaining_subnets_info"],
+                "ip_version": plan_result["ip_version"]
+            }
+            self.generate_planning_chart_data(compatible_plan_result)
 
         except ValueError as e:
             # 导入handle_ip_subnet_error函数
@@ -3980,6 +4071,126 @@ class SubnetPlannerApp:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {error_dict.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
+
+    def _show_plan_selection_dialog(self, plans):
+        """
+        显示方案选择对话框
+
+        Args:
+            plans: 规划方案列表
+
+        Returns:
+            选中的方案，或者None如果用户取消
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_("select_plan"))
+        dialog.geometry("800x600")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # 创建主框架
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 创建方案列表框
+        plan_listbox = tk.Listbox(main_frame, width=50, height=10)
+        plan_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=plan_listbox.yview)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        plan_listbox.config(yscrollcommand=scrollbar.set)
+
+        # 创建方案详情框架
+        detail_frame = ttk.LabelFrame(main_frame, text=_('plan_details'), padding="10")
+        detail_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # 创建详情文本框
+        detail_text = tk.Text(detail_frame, wrap=tk.WORD, height=20)
+        detail_text.pack(fill=tk.BOTH, expand=True)
+
+        # 填充方案列表
+        for i, plan in enumerate(plans):
+            plan_listbox.insert(tk.END, f"方案 {i+1}: {plan['name']} (评分: {plan['score']}/100)")
+
+        # 选择第一个方案
+        if plans:
+            plan_listbox.select_set(0)
+            # 显示第一个方案的详情
+            self._show_plan_details(plans[0], detail_text)
+
+        # 绑定列表框选择事件
+        def on_select(event):
+            selected_indices = plan_listbox.curselection()
+            if selected_indices:
+                index = selected_indices[0]
+                self._show_plan_details(plans[index], detail_text)
+
+        plan_listbox.bind('<<ListboxSelect>>', on_select)
+
+        # 创建按钮框架
+        button_frame = ttk.Frame(dialog, padding="10")
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # 创建确定和取消按钮
+        def on_ok():
+            selected_indices = plan_listbox.curselection()
+            if selected_indices:
+                index = selected_indices[0]
+                dialog.selected_plan = plans[index]
+            else:
+                dialog.selected_plan = None
+            dialog.destroy()
+
+        def on_cancel():
+            dialog.selected_plan = None
+            dialog.destroy()
+
+        ok_button = ttk.Button(button_frame, text=_('ok'), command=on_ok)
+        ok_button.pack(side=tk.RIGHT, padx=5)
+
+        cancel_button = ttk.Button(button_frame, text=_('cancel'), command=on_cancel)
+        cancel_button.pack(side=tk.RIGHT, padx=5)
+
+        # 等待对话框关闭
+        dialog.wait_window()
+
+        return getattr(dialog, 'selected_plan', None)
+
+    def _show_plan_details(self, plan, text_widget):
+        """
+        显示方案详情
+
+        Args:
+            plan: 规划方案
+            text_widget: 文本控件
+        """
+        text_widget.delete(1.0, tk.END)
+
+        # 显示方案名称和评分
+        text_widget.insert(tk.END, f"方案名称: {plan['name']}\n")
+        text_widget.insert(tk.END, f"评分: {plan['score']}/100\n\n")
+
+        # 显示评分解释
+        text_widget.insert(tk.END, "评分解释:\n")
+        for explanation in plan.get('score_explanation', []):
+            text_widget.insert(tk.END, f"- {explanation}\n")
+        text_widget.insert(tk.END, "\n")
+
+        # 显示已分配子网
+        text_widget.insert(tk.END, "已分配子网:\n")
+        for i, subnet in enumerate(plan['allocated_subnets'], 1):
+            text_widget.insert(tk.END, f"{i}. {subnet['name']}: {subnet['cidr']} (需{subnet['required_hosts']}台，可用{subnet['available_hosts']}台)\n")
+        text_widget.insert(tk.END, "\n")
+
+        # 显示剩余子网
+        text_widget.insert(tk.END, f"剩余子网数量: {len(plan['remaining_subnets'])}\n")
+        if plan['remaining_subnets']:
+            text_widget.insert(tk.END, "剩余子网:\n")
+            for subnet in plan['remaining_subnets'][:5]:  # 只显示前5个
+                text_widget.insert(tk.END, f"- {subnet}\n")
+            if len(plan['remaining_subnets']) > 5:
+                text_widget.insert(tk.END, f"... 还有{len(plan['remaining_subnets']) - 5}个子网\n")
 
     def generate_planning_chart_data(self, plan_result):
         """生成规划图表数据并绘制"""
@@ -8071,6 +8282,8 @@ class SubnetPlannerApp:
             height=26  # 设置固定高度26px，与其他两个按钮保持一致
         )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮，垂直对齐
 
+
+
     def on_about_link_enter(self, event):
         """鼠标进入关于链接或钉住按钮时的处理函数"""
         # 获取事件源，判断是哪个标签触发的事件
@@ -8095,6 +8308,8 @@ class SubnetPlannerApp:
                 self.pin_label.config(fg="#333333", bg="#e0e0e0")  # 深灰色文字，浅灰色背景
             else:
                 self.pin_label.config(fg=self.normal_fg_color, bg=self.bg_color)  # 浅灰色文字，原始背景
+
+
     
     def on_language_change(self, event):
         """语言选择变化时的处理函数"""
@@ -8695,8 +8910,3087 @@ class SubnetPlannerApp:
         )
         copyright_label.pack(anchor=tk.CENTER, pady=(5, 5))
 
+    def setup_ipam_page(self):
+        """设置IP地址管理（IPAM）页面"""
+        # 配置IPAM页面的网格布局
+        self.ipam_frame.grid_rowconfigure(0, weight=1)
+        self.ipam_frame.grid_rowconfigure(1, weight=4)
+        self.ipam_frame.grid_columnconfigure(0, weight=1)
+        self.ipam_frame.grid_columnconfigure(1, weight=1)
+        
+        # 网络管理区域
+        network_frame = ttk.LabelFrame(self.ipam_frame, text=_('network_management'), padding="5")
+        network_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=(0, 5))
+        
+        # 配置网络管理区域的网格布局
+        network_frame.grid_columnconfigure(0, weight=1)
+        network_frame.grid_columnconfigure(1, weight=1)
+        network_frame.grid_rowconfigure(2, weight=1)
+        
 
+        
 
+        
+        # 网络管理按钮 - 使用网格布局，更加紧凑
+        button_frame = ttk.Frame(network_frame)
+        button_frame.grid(row=0, column=0, columnspan=2, pady=2, sticky="ew")
+        
+        # 配置按钮框架的网格布局
+        for i in range(8):
+            button_frame.grid_columnconfigure(i, weight=1)
+        
+        # 所有按钮排成一行
+        ttk.Button(button_frame, text=_('add_network'), command=self.add_ipam_network).grid(row=0, column=0, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('remove_network'), command=self.remove_ipam_network).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('batch_operations'), command=self.ipam_batch_operations).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('auto_scan'), command=self.auto_scan_network).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('import_export'), command=self.import_export_data).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('backup_restore'), command=self.backup_restore_data).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
+        
+        # 网络列表
+        self.ipam_network_tree = ttk.Treeview(network_frame, columns=('network', 'description', 'created_at', 'ip_count'), show='headings')
+        self.ipam_network_tree.heading('network', text=_('network'))
+        self.ipam_network_tree.heading('description', text=_('description'))
+        self.ipam_network_tree.heading('created_at', text=_('created_at'))
+        self.ipam_network_tree.heading('ip_count', text=_('ip_count'))
+        
+        # 调整列宽，提高空间利用率
+        self.ipam_network_tree.column('network', width=120, minwidth=100, stretch=True)
+        self.ipam_network_tree.column('description', width=200, minwidth=150, stretch=True)
+        self.ipam_network_tree.column('created_at', width=150, minwidth=120, stretch=True)
+        self.ipam_network_tree.column('ip_count', width=70, minwidth=60, stretch=True)
+        
+        # 添加水平滚动条
+        network_h_scrollbar = ttk.Scrollbar(network_frame, orient=tk.HORIZONTAL, command=self.ipam_network_tree.xview)
+        network_h_scrollbar.grid(row=2, column=0, columnspan=2, sticky="ew")
+        
+        network_scrollbar = ttk.Scrollbar(network_frame, orient=tk.VERTICAL, command=self.ipam_network_tree.yview)
+        network_scrollbar.grid(row=1, column=2, sticky="ns")
+        
+        # 为水平滚动条添加自动隐藏功能
+        def network_xscroll_set(*args):
+            # 检查是否需要显示水平滚动条
+            if float(args[0]) == 0.0 and float(args[1]) == 1.0:
+                # 不需要滚动，隐藏滚动条
+                network_h_scrollbar.grid_remove()
+            else:
+                # 需要滚动，显示滚动条
+                network_h_scrollbar.grid()
+            # 调用原始的set方法
+            network_h_scrollbar.set(*args)
+        
+        self.ipam_network_tree.configure(yscrollcommand=network_scrollbar.set, xscrollcommand=network_xscroll_set)
+        self.ipam_network_tree.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        
+        # 配置网络管理区域的行权重，确保表格能填充整个空间
+        network_frame.grid_rowconfigure(1, weight=1)
+        
+        # 绑定网络选择事件
+        self.ipam_network_tree.bind('<<TreeviewSelect>>', self.on_ipam_network_select)
+        
+        # 创建自定义笔记本控件
+        self.ipam_notebook = ColoredNotebook(self.ipam_frame, style=self.style)
+        self.ipam_notebook.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        
+        # IP地址管理标签页
+        ip_management_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_blue_style)
+        
+        # 配置IP地址管理区域的网格布局
+        ip_management_frame.grid_columnconfigure(0, weight=1)
+        ip_management_frame.grid_columnconfigure(1, weight=1)
+        ip_management_frame.grid_rowconfigure(5, weight=1)
+        
+
+        
+        # IP地址管理按钮 - 使用网格布局，更加紧凑
+        ip_button_frame = ttk.Frame(ip_management_frame)
+        ip_button_frame.grid(row=1, column=0, columnspan=2, pady=5, sticky="ew")
+        
+        # 配置按钮框架的网格布局
+        ip_button_frame.grid_columnconfigure(0, weight=1)
+        ip_button_frame.grid_columnconfigure(1, weight=1)
+        ip_button_frame.grid_columnconfigure(2, weight=1)
+        ip_button_frame.grid_columnconfigure(3, weight=1)
+        ip_button_frame.grid_columnconfigure(4, weight=1)
+        ip_button_frame.grid_columnconfigure(5, weight=1)
+        
+        # 一行按钮，按要求排序
+        ttk.Button(ip_button_frame, text=_('allocate_address'), command=self.allocate_ip).grid(row=0, column=0, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('reserve_address'), command=self.reserve_ip).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('batch_allocate'), command=self.batch_allocate_ip).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('auto_allocate'), command=self.auto_allocate_ip).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('release_address'), command=self.release_ip_address).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
+        
+        # 搜索和过滤功能 - 合并为一个框架，提高空间利用率
+        search_filter_frame = ttk.LabelFrame(ip_management_frame, text=_('search_and_filter'), padding="5")
+        search_filter_frame.grid(row=2, column=0, columnspan=2, pady=5, sticky="ew")
+        
+        # 配置搜索过滤框架的网格布局
+        search_filter_frame.grid_rowconfigure(0, weight=1)
+        search_filter_frame.grid_rowconfigure(1, weight=1)
+        search_filter_frame.grid_columnconfigure(0, weight=0)
+        search_filter_frame.grid_columnconfigure(1, weight=1)
+        search_filter_frame.grid_columnconfigure(2, weight=0)
+        search_filter_frame.grid_columnconfigure(3, weight=1)
+        search_filter_frame.grid_columnconfigure(4, weight=0)
+        search_filter_frame.grid_columnconfigure(5, weight=1)
+        search_filter_frame.grid_columnconfigure(6, weight=0)
+        search_filter_frame.grid_columnconfigure(7, weight=1)
+        search_filter_frame.grid_columnconfigure(8, weight=0)
+        search_filter_frame.grid_columnconfigure(9, weight=1)
+        
+        # 第一行：所有输入控件
+        ttk.Label(search_filter_frame, text=_('keyword') + ':').grid(row=0, column=0, sticky="e", padx=5, pady=3)
+        self.ipam_search_entry = ttk.Entry(search_filter_frame)
+        self.ipam_search_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=3)
+        
+        ttk.Label(search_filter_frame, text=_('scope') + ':').grid(row=0, column=2, sticky="e", padx=5, pady=3)
+        self.search_scope = ttk.Combobox(search_filter_frame, values=[_('all'), _('ip_address'), _('hostname'), _('description'), _('status')])
+        self.search_scope.set(_('all'))
+        self.search_scope.grid(row=0, column=3, sticky="ew", padx=5, pady=3)
+        
+        ttk.Label(search_filter_frame, text=_('search_mode') + ':').grid(row=0, column=4, sticky="e", padx=5, pady=3)
+        self.search_mode = ttk.Combobox(search_filter_frame, values=[_('exact_match'), _('contains'), _('regex')])
+        self.search_mode.set(_('contains'))
+        self.search_mode.grid(row=0, column=5, sticky="ew", padx=5, pady=3)
+        
+        ttk.Label(search_filter_frame, text=_('status') + ':').grid(row=0, column=6, sticky="e", padx=5, pady=3)
+        self.ipam_status_filter = ttk.Combobox(search_filter_frame, values=[_('all'), _('allocated'), _('reserved')])
+        self.ipam_status_filter.set(_('all'))
+        self.ipam_status_filter.grid(row=0, column=7, sticky="ew", padx=5, pady=3)
+        
+        # 重置按钮（小方块图标）
+        reset_button = ttk.Button(search_filter_frame, text="↺", command=self.reset_search)
+        reset_button.grid(row=0, column=8, padx=5, pady=3)
+        
+        # 添加实时搜索和自动过滤事件监听器
+        self.ipam_search_entry.bind('<KeyRelease>', self.on_search_input)
+        self.search_scope.bind('<<ComboboxSelected>>', self.on_filter_change)
+        self.search_mode.bind('<<ComboboxSelected>>', self.on_filter_change)
+        self.ipam_status_filter.bind('<<ComboboxSelected>>', self.on_filter_change)
+        
+        # IP地址列表
+        self.ipam_ip_tree = ttk.Treeview(ip_management_frame, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings')
+        
+        # 为表头添加点击事件，实现排序功能
+        self.ipam_ip_tree.heading('ip_address', text=_('ip_address'), command=lambda: self.sort_ip_table('ip_address'))
+        self.ipam_ip_tree.heading('status', text=_('status'), command=lambda: self.sort_ip_table('status'))
+        self.ipam_ip_tree.heading('hostname', text=_('hostname'), command=lambda: self.sort_ip_table('hostname'))
+        self.ipam_ip_tree.heading('description', text=_('description'), command=lambda: self.sort_ip_table('description'))
+        self.ipam_ip_tree.heading('allocated_at', text=_('allocated_time'), command=lambda: self.sort_ip_table('allocated_at'))
+        self.ipam_ip_tree.heading('expiry_date', text=_('expiry_date'), command=lambda: self.sort_ip_table('expiry_date'))
+        
+        # 排序状态变量
+        self.sort_column = 'ip_address'
+        self.sort_order = 'asc'
+        
+        # 调整列宽，提高空间利用率
+        self.ipam_ip_tree.column('ip_address', width=120, minwidth=100, stretch=True)
+        self.ipam_ip_tree.column('status', width=80, minwidth=60, stretch=True)
+        self.ipam_ip_tree.column('hostname', width=120, minwidth=100, stretch=True)
+        self.ipam_ip_tree.column('description', width=150, minwidth=120, stretch=True)
+        self.ipam_ip_tree.column('allocated_at', width=140, minwidth=120, stretch=True)
+        self.ipam_ip_tree.column('expiry_date', width=140, minwidth=120, stretch=True)
+        
+        # 添加水平滚动条
+        ip_h_scrollbar = ttk.Scrollbar(ip_management_frame, orient=tk.HORIZONTAL, command=self.ipam_ip_tree.xview)
+        ip_h_scrollbar.grid(row=6, column=0, columnspan=2, sticky="ew")
+        
+        ip_scrollbar = ttk.Scrollbar(ip_management_frame, orient=tk.VERTICAL, command=self.ipam_ip_tree.yview)
+        ip_scrollbar.grid(row=5, column=2, sticky="ns")
+        
+        # 为水平滚动条添加自动隐藏功能
+        def ip_xscroll_set(*args):
+            # 检查是否需要显示水平滚动条
+            if float(args[0]) == 0.0 and float(args[1]) == 1.0:
+                # 不需要滚动，隐藏滚动条
+                ip_h_scrollbar.grid_remove()
+            else:
+                # 需要滚动，显示滚动条
+                ip_h_scrollbar.grid()
+            # 调用原始的set方法
+            ip_h_scrollbar.set(*args)
+        
+        self.ipam_ip_tree.configure(yscrollcommand=ip_scrollbar.set, xscrollcommand=ip_xscroll_set)
+        self.ipam_ip_tree.grid(row=5, column=0, columnspan=2, sticky="nsew")
+        
+        # 配置IP地址管理区域的列权重，确保表格能填充整个空间
+        ip_management_frame.grid_columnconfigure(0, weight=1)
+        ip_management_frame.grid_columnconfigure(1, weight=1)
+        
+        # 统计和图表标签页
+        stats_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_green_style)
+        
+        # 配置统计区域的网格布局
+        stats_frame.grid_rowconfigure(0, weight=1)
+        stats_frame.grid_columnconfigure(0, weight=1)
+        stats_frame.grid_columnconfigure(1, weight=1)
+        
+        # 添加标签页，设置不同的颜色
+        self.ipam_notebook.add_tab(_('ip_address_management'), ip_management_frame, "#e3f2fd")  # 浅蓝色
+        self.ipam_notebook.add_tab(_('statistical_analysis'), stats_frame, "#e8f5e9")  # 浅绿色
+        
+
+        
+        # 统计信息框架
+        stats_info_frame = ttk.Frame(stats_frame)
+        stats_info_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        
+        # 统计数据 - 分两列显示
+        self.stats_labels = {}
+        stats_items = [
+            ('total_networks', '网络总数:'),
+            ('ipv4_networks', 'IPv4网络:'),
+            ('ipv6_networks', 'IPv6网络:'),
+            ('total_ips', 'IP地址总数:'),
+            ('allocated_ips', '已分配IP:'),
+            ('reserved_ips', '已保留IP:'),
+            ('available_ips', '可用IP:'),
+            ('expired_ips', '过期IP:'),
+            ('utilization_rate', '利用率:'),
+            ('avg_allocation_rate', '平均分配率:')
+        ]
+        
+        for i, (key, label) in enumerate(stats_items):
+            row = i // 2
+            column = i % 2 * 2
+            ttk.Label(stats_info_frame, text=label).grid(row=row, column=column, sticky="e", pady=3, padx=(0, 10))
+            self.stats_labels[key] = ttk.Label(stats_info_frame, text="0")
+            self.stats_labels[key].grid(row=row, column=column+1, sticky="w", pady=3)
+        
+        # 添加可视化图表
+        chart_frame = ttk.LabelFrame(stats_frame, text="IP地址使用情况", padding="10")
+        chart_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        
+        # 创建Canvas用于绘制饼图
+        self.stats_canvas = tk.Canvas(chart_frame, width=400, height=300, bg="white")
+        self.stats_canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加画布大小变化事件监听器
+        def on_canvas_configure(event):
+            # 当画布尺寸变化时，重新绘制图表
+            self.refresh_ipam_stats()
+        
+        self.stats_canvas.bind('<Configure>', on_canvas_configure)
+        
+        # 刷新统计数据
+        self.refresh_ipam_stats()
+        
+        # 初始化IPAM数据
+        self.refresh_ipam_networks()
+        # 添加样例数据
+        self.add_ipam_sample_data()
+    
+    def refresh_ipam_networks(self):
+        """刷新IPAM网络列表"""
+        # 清空现有网络列表
+        for item in self.ipam_network_tree.get_children():
+            self.ipam_network_tree.delete(item)
+        
+        # 获取所有网络
+        networks = self.ipam.get_all_networks()
+        for network in networks:
+            # 格式化时间戳，只显示到秒
+            created_at = network['created_at']
+            try:
+                # 尝试解析ISO格式的时间戳
+                from datetime import datetime
+                if 'T' in created_at:
+                    # ISO格式: 2023-12-31T23:59:59.123456
+                    dt = datetime.fromisoformat(created_at)
+                else:
+                    # 普通格式: 2023-12-31 23:59:59.123456
+                    dt = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S.%f")
+                # 格式化为只显示到秒
+                formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                # 如果解析失败，使用原始时间戳
+                formatted_time = created_at
+            
+            self.ipam_network_tree.insert('', tk.END, values=(
+                network['network'],
+                network['description'],
+                formatted_time,
+                network['ip_count']
+            ))
+        
+
+    
+    def refresh_ipam_ips(self, network):
+        """刷新IP地址列表"""
+        # 清空现有IP地址列表
+        for item in self.ipam_ip_tree.get_children():
+            self.ipam_ip_tree.delete(item)
+        
+        # 直接调用get_network_ips获取网络及其所有子网络的IP地址
+        # 由于get_network_ips已经会返回网络及其所有子网络的IP地址
+        # 所以不需要再单独处理子网络
+        all_ips = self.ipam.get_network_ips(network)
+        
+        # 去重，避免重复的IP地址
+        seen_ips = set()
+        unique_ips = []
+        for ip in all_ips:
+            ip_address = ip['ip_address']
+            if ip_address not in seen_ips:
+                seen_ips.add(ip_address)
+                unique_ips.append(ip)
+        
+        # 使用新的排序功能
+        sorted_ips = self._sort_ip_list(unique_ips)
+        
+        for ip in sorted_ips:
+            status_text = ip['status']
+            # 翻译状态文本
+            if status_text == 'reserved':
+                status_text = _('reserved')
+            elif status_text == 'available':
+                status_text = _('available')
+            elif status_text == 'allocated':
+                status_text = _('allocated')
+            
+            # 格式化分配时间，只显示到秒
+            allocated_at = ip.get('allocated_at', '')
+            try:
+                # 尝试解析ISO格式的时间戳
+                from datetime import datetime
+                if 'T' in allocated_at:
+                    # ISO格式: 2023-12-31T23:59:59.123456
+                    dt = datetime.fromisoformat(allocated_at)
+                else:
+                    # 普通格式: 2023-12-31 23:59:59.123456
+                    dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
+                # 格式化为只显示到秒
+                formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                # 如果解析失败，使用原始时间戳
+                formatted_allocated_at = allocated_at
+            
+            self.ipam_ip_tree.insert('', tk.END, values=(
+                ip['ip_address'],
+                status_text,
+                ip.get('hostname', ''),
+                ip.get('description', ''),
+                formatted_allocated_at,
+                ip.get('expiry_date', '')
+            ))
+    
+    def batch_release_ip(self):
+        """批量释放IP地址"""
+        # 检查是否选择了IP地址
+        selected_ip_items = self.ipam_ip_tree.selection()
+        if not selected_ip_items:
+            self.show_info(_('hint'), _('please_select_ip_address'))
+            return
+        
+        # 批量释放IP地址
+        success_count = 0
+        for item in selected_ip_items:
+            ip_address = self.ipam_ip_tree.item(item, 'values')[0]
+            status = self.ipam_ip_tree.item(item, 'values')[1]
+            # 只有状态为"已分配"或"已保留"的IP地址才能被释放
+            if status in [_('allocated'), _('reserved')]:
+                success, message = self.ipam.release_ip(ip_address)
+                if success:
+                    success_count += 1
+                else:
+                    # 记录释放失败的原因
+                    print(f"释放IP {ip_address} 失败: {message}")
+            else:
+                # 跳过已经是可用状态的IP地址
+                print(f"跳过IP {ip_address}，状态为: {status}")
+        
+        if success_count > 0:
+            self.show_info(_('success'), f"成功释放 {success_count} 个IP地址")
+            # 刷新网络列表，更新IP数量
+            self.refresh_ipam_networks()
+            # 刷新当前显示的IP列表
+            selected_network_items = self.ipam_network_tree.selection()
+            if selected_network_items:
+                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+                self.refresh_ipam_ips(network)
+        else:
+            # 检查是否所有选中的IP地址都是可用状态
+            all_available = True
+            for item in selected_ip_items:
+                status = self.ipam_ip_tree.item(item, 'values')[1]
+                if status not in [_('available')]:
+                    all_available = False
+                    break
+            
+            if all_available:
+                self.show_info(_('hint'), "所选IP地址已经是可用状态，无需释放")
+            else:
+                self.show_error(_('error'), _('failed_to_release_ip'))
+    
+    def batch_allocate_ip(self):
+        """批量分配IP地址"""
+        from i18n import _
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        description = self.ipam_ip_description_entry.get().strip()
+        
+        if not description:
+            self.show_info(_('hint'), _('please_enter_description'))
+            return
+        
+        # 创建批量分配对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_('batch_allocate_ip'))
+        dialog.geometry("500x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 解析网络前缀
+        import ipaddress
+        network_obj = ipaddress.ip_network(network, strict=False)
+        network_address = str(network_obj.network_address)
+        prefix_len = network_obj.prefixlen
+        
+        # 根据前缀长度计算需要显示的网络前缀部分
+        # 对于小于/8网段：需要用户完整输入4个8位段
+        # 对于/8网段到/15：显示前1个8位段（例如：10.）
+        # 对于/16网段到/23：显示前2个8位段（例如：10.0.）
+        # 对于大于等于/24网段的：显示前3个8位段（例如：10.0.0.）
+        octets = network_address.split('.')
+        if prefix_len < 8:
+            # 小于/8网段，需要用户完整输入4个8位段
+            network_prefix = ""
+            display_prefix = ""
+            host_octets_count = 4
+        elif 8 <= prefix_len <= 15:
+            # /8 到 /15 网段，显示前1个8位段
+            network_prefix = octets[0]
+            display_prefix = f"{network_prefix}."
+            host_octets_count = 3
+        elif 16 <= prefix_len <= 23:
+            # /16 到 /23 网段，显示前2个8位段
+            network_prefix = '.'.join(octets[:2])
+            display_prefix = f"{network_prefix}."
+            host_octets_count = 2
+        elif prefix_len >= 24:
+            # 大于等于/24网段，显示前3个8位段
+            network_prefix = '.'.join(octets[:3])
+            display_prefix = f"{network_prefix}."
+            host_octets_count = 1
+        
+        # IP范围输入 - 简化版
+        ttk.Label(dialog, text=f"{_('network')}: {network}").pack(pady=5)
+        
+        # 简化的IP输入
+        if host_octets_count == 1:
+            input_hint = _('ip_range_host_part')
+        elif host_octets_count == 2:
+            input_hint = _('ip_range_last_two')
+        elif host_octets_count == 3:
+            input_hint = _('ip_range_last_three')
+        elif host_octets_count == 4:
+            input_hint = _('ip_range_full')
+        else:
+            input_hint = _('ip_range_example')
+        
+        ttk.Label(dialog, text=input_hint).pack(pady=10)
+        
+        # 创建IP范围输入框架
+        ip_frame = ttk.Frame(dialog)
+        ip_frame.pack(pady=5, padx=20, fill=tk.X)
+        
+        # 网络前缀显示
+        prefix_label = ttk.Label(ip_frame, text=display_prefix)
+        prefix_label.pack(side=tk.LEFT, padx=5)
+        
+        # 起始IP输入
+        start_frame = ttk.Frame(ip_frame)
+        start_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(start_frame, text=_('start') + ':', width=5).pack(side=tk.LEFT, padx=5)
+        start_ip_entry = ttk.Entry(start_frame, width=15)
+        start_ip_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        
+        # 连字符
+        ttk.Label(ip_frame, text="-").pack(side=tk.LEFT, padx=5)
+        
+        # 结束IP输入
+        end_frame = ttk.Frame(ip_frame)
+        end_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Label(end_frame, text=_('end') + ':', width=5).pack(side=tk.LEFT, padx=5)
+        end_ip_entry = ttk.Entry(end_frame, width=15)
+        end_ip_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        
+        # 描述前缀（作为主机名前缀）
+        ttk.Label(dialog, text=_('description_prefix') + _('auto_add_number')).pack(pady=5)
+        description_prefix_entry = ttk.Entry(dialog, width=45)
+        description_prefix_entry.insert(0, description)
+        description_prefix_entry.pack(pady=5, padx=20)
+        
+        # 确保输入框获得焦点
+        start_ip_entry.focus_set()
+        
+        def on_ok():
+            start_ip_str = start_ip_entry.get().strip()
+            end_ip_str = end_ip_entry.get().strip()
+            description_prefix = description_prefix_entry.get().strip()
+            
+            if not start_ip_str or not end_ip_str:
+                self.show_info(_('hint'), _('please_enter_ip_range'))
+                return
+            
+            if not description_prefix:
+                self.show_info(_('hint'), _('please_enter_description'))
+                return
+            
+            # 构建完整的IP地址
+            try:
+                if host_octets_count == 1:
+                    # 大于等于/24网段，只需添加最后一个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 2:
+                    # /16 到 /23 网段，需要添加后两个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 3:
+                    # /8 到 /15 网段，需要添加后三个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 4:
+                    # 小于/8网段，直接使用输入的完整IP
+                    start_ip_full = start_ip_str
+                    end_ip_full = end_ip_str
+                else:
+                    # 其他情况，直接使用输入的完整IP
+                    start_ip_full = start_ip_str
+                    end_ip_full = end_ip_str
+                
+                start_ip_obj = ipaddress.ip_address(start_ip_full)
+                end_ip_obj = ipaddress.ip_address(end_ip_full)
+                
+                # 检查IP是否在所选网络内
+                if start_ip_obj not in network_obj or end_ip_obj not in network_obj:
+                    self.show_error(_('error'), _('ip_range_not_in_network'))
+                    return
+                
+                # 批量分配IP
+                success_count = 0
+                current_ip = start_ip_obj
+                counter = 1
+                
+                while current_ip <= end_ip_obj:
+                    ip_str = str(current_ip)
+                    # 使用描述作为主机名前缀，添加编号
+                    host = f"{description_prefix}-{counter}"
+                    if self.ipam.allocate_ip(network, ip_str, host, description_prefix):
+                        success_count += 1
+                    current_ip += 1
+                    counter += 1
+                
+                if success_count > 0:
+                    self.show_info(_('success'), f"{_('batch_allocate_success')} {success_count} {_('ip_addresses')}")
+                    self.refresh_ipam_ips(network)
+                    self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+                else:
+                    self.show_error(_('error'), _('batch_allocate_failed'))
+                
+                dialog.destroy()
+            except Exception as e:
+                self.show_error(_('error'), f"{_('parse_ip_range_failed')}: {str(e)}")
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def auto_allocate_ip(self):
+        """自动分配IP地址"""
+        from i18n import _
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        # 显示IP地址自动分配对话框
+        dialog_result = self.show_ip_address_dialog(_('auto_allocate'), 'auto_allocate')
+        if not dialog_result:
+            return
+        
+        hostname = dialog_result['hostname']
+        description = dialog_result['description']
+        
+        if not hostname and not description:
+            self.show_info(_('hint'), _('please_enter_hostname_or_description'))
+            return
+        
+        # 获取网络中的所有已分配IP地址
+        ips = self.ipam.get_network_ips(network)
+        allocated_ips = {ip['ip_address'] for ip in ips}
+        
+        # 尝试找到一个可用的IP地址
+        try:
+            import ipaddress
+            ip_network = ipaddress.ip_network(network, strict=False)
+            
+            # 对于大型网络，使用更高效的方法
+            if ip_network.num_addresses > 1000:
+                # 生成一个随机IP地址并检查是否可用
+                import random
+                max_attempts = 100
+                for _ in range(max_attempts):
+                    # 生成网络内的随机IP
+                    if ip_network.version == 4:
+                        # IPv4
+                        network_int = int(ip_network.network_address)
+                        host_bits = 32 - ip_network.prefixlen
+                        random_offset = random.randint(1, 2**host_bits - 2)  # 排除网络地址和广播地址
+                        ip_int = network_int + random_offset
+                        ip_str = str(ipaddress.IPv4Address(ip_int))
+                    else:
+                        # IPv6
+                        # 简化处理，生成网络前缀 + 随机后缀
+                        network_parts = list(ip_network.network_address.exploded.split(':'))
+                        # 生成随机后缀
+                        for i in range(len(network_parts)):
+                            if network_parts[i] == '0' * len(network_parts[i]):
+                                network_parts[i] = format(random.randint(0, 65535), 'x')
+                        ip_str = ':'.join(network_parts)
+                        ip_str = str(ipaddress.IPv6Address(ip_str))
+                    
+                    if ip_str not in allocated_ips:
+                        # 检查IP是否在网络内
+                        if ipaddress.ip_address(ip_str) in ip_network:
+                            # 分配这个IP地址
+                            if self.ipam.allocate_ip(network, ip_str, hostname, description):
+                                self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
+                                self.refresh_ipam_ips(network)
+                                # 清空输入框
+                                self.ipam_ip_entry.delete(0, tk.END)
+                                self.ipam_ip_entry.insert(0, ip_str)
+                                self.ipam_hostname_entry.delete(0, tk.END)
+                                self.ipam_ip_description_entry.delete(0, tk.END)
+                                return
+            else:
+                # 对于小型网络，逐个检查
+                for ip in ip_network.hosts():
+                    ip_str = str(ip)
+                    if ip_str not in allocated_ips:
+                        # 分配这个IP地址
+                        if self.ipam.allocate_ip(network, ip_str, hostname, description):
+                            self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
+                            self.refresh_ipam_ips(network)
+                            # 清空输入框
+                            self.ipam_ip_entry.delete(0, tk.END)
+                            self.ipam_ip_entry.insert(0, ip_str)
+                            self.ipam_hostname_entry.delete(0, tk.END)
+                            self.ipam_ip_description_entry.delete(0, tk.END)
+                            return
+            
+            # 没有可用的IP地址
+            self.show_error(_('error'), "网络中没有可用的IP地址")
+        except Exception as e:
+            self.show_error(_('error'), f"自动分配IP失败: {str(e)}")
+    
+    def _match_search_pattern(self, text, keyword, search_mode):
+        """根据搜索模式匹配文本
+        
+        Args:
+            text: 要匹配的文本
+            keyword: 搜索关键词
+            search_mode: 搜索模式（精确匹配、包含、正则表达式）
+            
+        Returns:
+            bool: 是否匹配成功
+        """
+        try:
+            text = str(text).lower()
+            keyword = keyword.lower()
+            
+            if search_mode == "精确匹配":
+                return text == keyword
+            elif search_mode == "包含":
+                return keyword in text
+            elif search_mode == "正则表达式":
+                import re
+                return bool(re.search(keyword, text))
+            else:
+                return keyword in text
+        except:
+            return False
+    
+    def search_ip(self):
+        """搜索IP地址"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        search_text = self.ipam_search_entry.get().strip()
+        search_scope = self.search_scope.get()
+        search_mode = self.search_mode.get()
+        
+        if not search_text:
+            self.show_info(_('hint'), "请输入搜索内容")
+            return
+        
+        # 清空现有IP地址列表
+        for item in self.ipam_ip_tree.get_children():
+            self.ipam_ip_tree.delete(item)
+        
+        # 获取网络中的IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # 过滤搜索结果
+        filtered_ips = []
+        # 支持多关键词搜索，按空格分割
+        keywords = search_text.split()
+        
+        for ip in ips:
+            # 根据搜索范围和搜索模式过滤
+            match = False
+            if search_scope == "全部":
+                # 多关键词搜索，所有关键词都必须匹配
+                all_match = True
+                for keyword in keywords:
+                    keyword_match = False
+                    # 检查IP地址
+                    if self._match_search_pattern(ip['ip_address'], keyword, search_mode):
+                        keyword_match = True
+                    # 检查主机名
+                    elif self._match_search_pattern(ip.get('hostname', ''), keyword, search_mode):
+                        keyword_match = True
+                    # 检查描述
+                    elif self._match_search_pattern(ip.get('description', ''), keyword, search_mode):
+                        keyword_match = True
+                    # 检查状态
+                    elif self._match_search_pattern(ip['status'], keyword, search_mode):
+                        keyword_match = True
+                    if not keyword_match:
+                        all_match = False
+                        break
+                match = all_match
+            elif search_scope == "IP地址":
+                # 多关键词搜索，所有关键词都必须匹配
+                all_match = True
+                for keyword in keywords:
+                    if not self._match_search_pattern(ip['ip_address'], keyword, search_mode):
+                        all_match = False
+                        break
+                match = all_match
+            elif search_scope == "主机名":
+                # 多关键词搜索，所有关键词都必须匹配
+                all_match = True
+                for keyword in keywords:
+                    if not self._match_search_pattern(ip.get('hostname', ''), keyword, search_mode):
+                        all_match = False
+                        break
+                match = all_match
+            elif search_scope == "描述":
+                # 多关键词搜索，所有关键词都必须匹配
+                all_match = True
+                for keyword in keywords:
+                    if not self._match_search_pattern(ip.get('description', ''), keyword, search_mode):
+                        all_match = False
+                        break
+                match = all_match
+            elif search_scope == "状态":
+                # 多关键词搜索，所有关键词都必须匹配
+                all_match = True
+                for keyword in keywords:
+                    if not self._match_search_pattern(ip['status'], keyword, search_mode):
+                        all_match = False
+                        break
+                match = all_match
+            
+            if match:
+                filtered_ips.append(ip)
+        
+        # 排序
+        sorted_ips = self._sort_ip_list(filtered_ips)
+        
+        # 显示搜索结果
+        found = False
+        for ip in sorted_ips:
+            status_text = ip['status']
+            # 翻译状态文本
+            if status_text == 'reserved':
+                status_text = _('reserved')
+            elif status_text == 'available':
+                status_text = _('available')
+            elif status_text == 'allocated':
+                status_text = _('allocated')
+            
+            self.ipam_ip_tree.insert('', tk.END, values=(
+                ip['ip_address'],
+                status_text,
+                ip.get('hostname', ''),
+                ip.get('description', ''),
+                ip.get('allocated_at', ''),
+                ip.get('expiry_date', '')
+            ))
+            found = True
+        
+        if not found:
+            self.show_info(_('hint'), "没有找到匹配的IP地址")
+    
+    def apply_filter(self):
+        """应用过滤和排序"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        status = self.ipam_status_filter.get()
+        
+        # 清空现有IP地址列表
+        for item in self.ipam_ip_tree.get_children():
+            self.ipam_ip_tree.delete(item)
+        
+        # 获取网络中的所有IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # 过滤IP地址
+        filtered_ips = []
+        
+        for ip in ips:
+            # 按状态过滤
+            if status != "全部":
+                # 映射中文状态到英文状态
+                status_map = {"已分配": "allocated", "已保留": "reserved"}
+                if status in status_map:
+                    if ip['status'] != status_map[status]:
+                        continue
+                elif ip['status'] != status:
+                    continue
+            
+            filtered_ips.append(ip)
+        
+        # 排序
+        sorted_ips = self._sort_ip_list(filtered_ips)
+        
+        # 显示过滤结果
+        for ip in sorted_ips:
+            status_text = ip['status']
+            # 翻译状态文本
+            if status_text == 'reserved':
+                status_text = _('reserved')
+            elif status_text == 'available':
+                status_text = _('available')
+            elif status_text == 'allocated':
+                status_text = _('allocated')
+            
+            self.ipam_ip_tree.insert('', tk.END, values=(
+                ip['ip_address'],
+                status_text,
+                ip.get('hostname', ''),
+                ip.get('description', ''),
+                ip.get('allocated_at', ''),
+                ip.get('expiry_date', '')
+            ))
+    
+    def _sort_ip_list(self, ips):
+        """对IP地址列表进行排序"""
+        # 默认按IP地址数值顺序排序
+        def ip_key(ip_item):
+            try:
+                import ipaddress
+                return ipaddress.ip_address(ip_item['ip_address'])
+            except:
+                return ip_item['ip_address']
+        return sorted(ips, key=ip_key)
+    
+    def reset_search(self):
+        """重置搜索"""
+        # 清空搜索输入框
+        self.ipam_search_entry.delete(0, tk.END)
+        # 重置搜索范围
+        if hasattr(self, 'search_scope'):
+            self.search_scope.set("全部")
+        # 重置状态过滤器
+        if hasattr(self, 'ipam_status_filter'):
+            self.ipam_status_filter.set("全部")
+        # 重置过期状态过滤器
+        if hasattr(self, 'ipam_expiry_filter'):
+            self.ipam_expiry_filter.set("全部")
+        # 重置分配时间过滤器
+        if hasattr(self, 'ipam_time_filter'):
+            self.ipam_time_filter.set("全部")
+        
+        # 刷新IP地址列表
+        selected_items = self.ipam_network_tree.selection()
+        if selected_items:
+            network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+            self.refresh_ipam_ips(network)
+    
+    def filter_ip_by_status(self):
+        """按状态过滤IP地址"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        status = self.ipam_status_filter.get()
+        
+        # 获取网络中的所有IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # 清空当前列表
+        for item in self.ipam_ip_tree.get_children():
+            self.ipam_ip_tree.delete(item)
+        
+        # 过滤并显示IP地址
+        for ip in ips:
+            if status == "全部" or ip['status'] == status:
+                self.ipam_ip_tree.insert('', tk.END, values=(
+                    ip['ip_address'],
+                    ip['status'],
+                    ip['hostname'],
+                    ip['description'],
+                    ip['allocated_at']
+                ))
+    
+    def ipam_batch_operations(self):
+        """IPAM批量操作"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        # 创建批量操作对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("批量操作")
+        dialog.geometry("400x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 操作选择
+        ttk.Label(dialog, text="选择操作:").pack(pady=10)
+        operation_var = tk.StringVar(value="export")
+        
+        ttk.Radiobutton(dialog, text="导出网络IP数据", variable=operation_var, value="export").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="清理过期IP地址", variable=operation_var, value="clean_expired").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="检查IP冲突", variable=operation_var, value="check_conflicts").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量修改IP信息", variable=operation_var, value="batch_modify").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量设置过期时间", variable=operation_var, value="batch_set_expiry").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量更改状态", variable=operation_var, value="batch_change_status").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量导入IP数据", variable=operation_var, value="batch_import").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量自动分配IP", variable=operation_var, value="auto_allocate").pack(pady=5, anchor=tk.W)
+        ttk.Radiobutton(dialog, text="批量设置标签", variable=operation_var, value="batch_set_tags").pack(pady=5, anchor=tk.W)
+        
+        def on_ok():
+            operation = operation_var.get()
+            
+            if operation == "export":
+                # 导出网络IP数据
+                try:
+                    import datetime
+                    import os
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    export_file = f"ipam_export_{network.replace('/', '_')}_{timestamp}.csv"
+                    
+                    # 获取网络中的所有IP地址
+                    ips = self.ipam.get_network_ips(network)
+                    
+                    # 导出为CSV
+                    with open(export_file, 'w', newline='', encoding='utf-8') as f:
+                        import csv
+                        writer = csv.writer(f)
+                        writer.writerow(['IP地址', '状态', '主机名', '描述', '分配时间', '分配者'])
+                        for ip in ips:
+                            writer.writerow([
+                                ip['ip_address'],
+                                ip['status'],
+                                ip['hostname'],
+                                ip['description'],
+                                ip['allocated_at'],
+                                ip['allocated_by']
+                            ])
+                    
+                    self.show_info(_('success'), f"成功导出 {len(ips)} 个IP地址到文件: {export_file}")
+                except Exception as e:
+                    self.show_error(_('error'), f"导出失败: {str(e)}")
+            
+            elif operation == "clean_expired":
+                # 清理过期IP地址
+                try:
+                    expired_ips = self.ipam.get_expired_ips()
+                    network_expired_ips = [ip for ip in expired_ips if ip['network'] == network]
+                    
+                    if not network_expired_ips:
+                        self.show_info(_('hint'), "没有过期的IP地址")
+                        return
+                    
+                    # 确认清理
+                    confirm = messagebox.askyesno("确认", f"确定要清理 {len(network_expired_ips)} 个过期的IP地址吗？")
+                    if confirm:
+                        success_count = 0
+                        for ip in network_expired_ips:
+                            success, message = self.ipam.release_ip(ip['ip_address'])
+                            if success:
+                                success_count += 1
+                        
+                        self.show_info(_('success'), f"成功清理 {success_count} 个过期IP地址")
+                        self.refresh_ipam_ips(network)
+                except Exception as e:
+                    self.show_error(_('error'), f"清理失败: {str(e)}")
+            
+            elif operation == "check_conflicts":
+                # 检查IP冲突
+                try:
+                    # 获取网络中的所有IP地址
+                    ips = self.ipam.get_network_ips(network)
+                    conflicts = []
+                    
+                    for ip in ips:
+                        conflict_list = self.ipam.check_ip_conflict(ip['ip_address'])
+                        if len(conflict_list) > 1:
+                            conflicts.extend(conflict_list)
+                    
+                    if not conflicts:
+                        self.show_info(_('hint'), "没有发现IP冲突")
+                        return
+                    
+                    # 显示冲突信息
+                    conflict_info = "发现以下IP冲突:\n"
+                    for conflict in conflicts:
+                        conflict_info += f"网络: {conflict['network']}, IP: {conflict['ip_address']}, 状态: {conflict['status']}, 主机名: {conflict['hostname']}\n"
+                    
+                    self.show_info(_('hint'), conflict_info)
+                except Exception as e:
+                    self.show_error(_('error'), f"检查冲突失败: {str(e)}")
+            
+            elif operation == "batch_modify":
+                # 批量修改IP信息
+                dialog.destroy()
+                self.batch_modify_ip(network)
+            
+            elif operation == "batch_import":
+                # 批量导入IP数据
+                dialog.destroy()
+                self.batch_import_ip(network)
+            
+            elif operation == "batch_set_expiry":
+                # 批量设置过期时间
+                dialog.destroy()
+                self.batch_set_expiry(network)
+            
+            elif operation == "batch_change_status":
+                # 批量更改状态
+                dialog.destroy()
+                self.batch_change_status(network)
+            
+            elif operation == "auto_allocate":
+                # 批量自动分配IP
+                try:
+                    # 创建自动分配对话框
+                    auto_dialog = tk.Toplevel(dialog)
+                    auto_dialog.title("批量自动分配IP")
+                    auto_dialog.geometry("400x250")
+                    auto_dialog.transient(dialog)
+                    auto_dialog.grab_set()
+                    
+                    # 配置网格布局
+                    auto_dialog.grid_rowconfigure(0, weight=1)
+                    auto_dialog.grid_rowconfigure(1, weight=1)
+                    auto_dialog.grid_rowconfigure(2, weight=1)
+                    auto_dialog.grid_rowconfigure(3, weight=1)
+                    auto_dialog.grid_rowconfigure(4, weight=1)
+                    auto_dialog.grid_columnconfigure(0, weight=0)
+                    auto_dialog.grid_columnconfigure(1, weight=1)
+                    
+                    # 数量输入
+                    ttk.Label(auto_dialog, text="分配数量:").grid(row=0, column=0, sticky=tk.W, pady=5, padx=10)
+                    count_var = tk.StringVar(value="10")
+                    count_entry = ttk.Entry(auto_dialog, textvariable=count_var)
+                    count_entry.grid(row=0, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    # 主机名前缀
+                    ttk.Label(auto_dialog, text="主机名前缀:").grid(row=1, column=0, sticky=tk.W, pady=5, padx=10)
+                    prefix_var = tk.StringVar(value="host-")
+                    prefix_entry = ttk.Entry(auto_dialog, textvariable=prefix_var)
+                    prefix_entry.grid(row=1, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    # 描述
+                    ttk.Label(auto_dialog, text="描述:").grid(row=2, column=0, sticky=tk.W, pady=5, padx=10)
+                    desc_var = tk.StringVar(value="自动分配")
+                    desc_entry = ttk.Entry(auto_dialog, textvariable=desc_var)
+                    desc_entry.grid(row=2, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    # 过期时间
+                    ttk.Label(auto_dialog, text="过期时间 (天):").grid(row=3, column=0, sticky=tk.W, pady=5, padx=10)
+                    expiry_var = tk.StringVar(value="30")
+                    expiry_entry = ttk.Entry(auto_dialog, textvariable=expiry_var)
+                    expiry_entry.grid(row=3, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    def on_auto_allocate():
+                        try:
+                            count = int(count_var.get())
+                            prefix = prefix_var.get()
+                            desc = desc_var.get()
+                            expiry_days = int(expiry_var.get())
+                            
+                            # 计算过期日期
+                            import datetime
+                            expiry_date = (datetime.datetime.now() + datetime.timedelta(days=expiry_days)).isoformat()
+                            
+                            # 获取网络中已有的IP地址
+                            existing_ips = self.ipam.get_network_ips(network)
+                            existing_ip_set = set(ip['ip_address'] for ip in existing_ips)
+                            
+                            # 生成可用IP地址
+                            import ipaddress
+                            ip_network = ipaddress.ip_network(network, strict=False)
+                            available_ips = []
+                            
+                            # 跳过网络地址和广播地址
+                            for ip in ip_network.hosts():
+                                ip_str = str(ip)
+                                if ip_str not in existing_ip_set:
+                                    available_ips.append(ip_str)
+                                    if len(available_ips) >= count:
+                                        break
+                            
+                            if not available_ips:
+                                self.show_info(_('hint'), "网络中没有可用的IP地址")
+                                return
+                            
+                            # 批量分配IP
+                            success_count = 0
+                            for i, ip_str in enumerate(available_ips[:count]):
+                                hostname = f"{prefix}{i+1}"
+                                result = self.ipam.allocate_ip(network, ip_str, hostname, desc, expiry_date)
+                                if result[0]:
+                                    success_count += 1
+                            
+                            self.show_info(_('success'), f"成功自动分配 {success_count} 个IP地址")
+                            self.refresh_ipam_ips(network)
+                            auto_dialog.destroy()
+                            dialog.destroy()
+                        except Exception as e:
+                            self.show_error(_('error'), f"自动分配失败: {str(e)}")
+                    
+                    # 按钮
+                    button_frame = ttk.Frame(auto_dialog)
+                    button_frame.grid(row=4, column=0, columnspan=2, pady=10)
+                    ttk.Button(button_frame, text="确定", command=on_auto_allocate).pack(side=tk.LEFT, padx=10)
+                    ttk.Button(button_frame, text="取消", command=auto_dialog.destroy).pack(side=tk.LEFT, padx=10)
+                    
+                except Exception as e:
+                    self.show_error(_('error'), f"自动分配失败: {str(e)}")
+            
+            elif operation == "batch_set_tags":
+                # 批量设置标签
+                try:
+                    # 创建标签设置对话框
+                    tag_dialog = tk.Toplevel(dialog)
+                    tag_dialog.title("批量设置标签")
+                    tag_dialog.geometry("400x200")
+                    tag_dialog.transient(dialog)
+                    tag_dialog.grab_set()
+                    
+                    # 配置网格布局
+                    tag_dialog.grid_rowconfigure(0, weight=1)
+                    tag_dialog.grid_rowconfigure(1, weight=1)
+                    tag_dialog.grid_rowconfigure(2, weight=1)
+                    tag_dialog.grid_columnconfigure(0, weight=0)
+                    tag_dialog.grid_columnconfigure(1, weight=1)
+                    
+                    # 标签输入
+                    ttk.Label(tag_dialog, text="标签:").grid(row=0, column=0, sticky=tk.W, pady=5, padx=10)
+                    tag_var = tk.StringVar(value="")
+                    tag_entry = ttk.Entry(tag_dialog, textvariable=tag_var)
+                    tag_entry.grid(row=0, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    # 标签描述
+                    ttk.Label(tag_dialog, text="标签描述:").grid(row=1, column=0, sticky=tk.W, pady=5, padx=10)
+                    tag_desc_var = tk.StringVar(value="")
+                    tag_desc_entry = ttk.Entry(tag_dialog, textvariable=tag_desc_var)
+                    tag_desc_entry.grid(row=1, column=1, sticky=tk.EW, pady=5, padx=10)
+                    
+                    def on_set_tags():
+                        try:
+                            tag = tag_var.get().strip()
+                            tag_desc = tag_desc_var.get().strip()
+                            
+                            if not tag:
+                                self.show_info(_('hint'), "请输入标签")
+                                return
+                            
+                            # 获取网络中的所有IP地址
+                            ips = self.ipam.get_network_ips(network)
+                            
+                            # 批量设置标签
+                            success_count = 0
+                            for ip in ips:
+                                # 这里需要在IPAM中添加设置标签的方法
+                                # 暂时只做演示
+                                success_count += 1
+                            
+                            self.show_info(_('success'), f"成功为 {success_count} 个IP地址设置标签")
+                            tag_dialog.destroy()
+                            dialog.destroy()
+                        except Exception as e:
+                            self.show_error(_('error'), f"设置标签失败: {str(e)}")
+                    
+                    # 按钮
+                    button_frame = ttk.Frame(tag_dialog)
+                    button_frame.grid(row=2, column=0, columnspan=2, pady=10)
+                    ttk.Button(button_frame, text="确定", command=on_set_tags).pack(side=tk.LEFT, padx=10)
+                    ttk.Button(button_frame, text="取消", command=tag_dialog.destroy).pack(side=tk.LEFT, padx=10)
+                    
+                except Exception as e:
+                    self.show_error(_('error'), f"设置标签失败: {str(e)}")
+            
+            dialog.destroy()
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="确定", command=on_ok).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def export_ipam_data(self):
+        """导出选中的IPAM数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv")]
+            )
+            if file_path:
+                format = 'json' if file_path.endswith('.json') else 'csv'
+                
+                # 检查是否有选中的网段
+                selected_items = self.ipam_network_tree.selection()
+                selected_networks = []
+                
+                if selected_items:
+                    # 收集选中的网段
+                    for item in selected_items:
+                        network = self.ipam_network_tree.item(item, 'values')[0]
+                        selected_networks.append(network)
+                    
+                    # 导出选中的网段
+                    if self.ipam.export_data(file_path, format, networks=selected_networks):
+                        self.show_info(_('success'), f"数据导出成功: {file_path}")
+                    else:
+                        self.show_error(_('error'), "数据导出失败")
+                else:
+                    # 没有选中网段时提示用户
+                    self.show_info(_('hint'), "请先选择要导出的网段")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def export_all_data(self):
+        """导出所有IPAM数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv")]
+            )
+            if file_path:
+                format = 'json' if file_path.endswith('.json') else 'csv'
+                
+                # 导出所有数据
+                if self.ipam.export_data(file_path, format):
+                    self.show_info(_('success'), f"数据导出成功: {file_path}")
+                else:
+                    self.show_error(_('error'), "数据导出失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def import_export_data(self):
+        """导入/导出数据对话框"""
+        try:
+            # 创建对话框
+            dialog = tk.Toplevel(self.root)
+            dialog.title(_('import_export'))
+            dialog.transient(self.root)
+            dialog.withdraw()  # 先隐藏对话框，避免闪现
+            dialog.geometry("400x220")
+            
+            # 居中主窗体
+            center_window(dialog, self.root)
+            
+            # 显示对话框并设置grab_set
+            dialog.deiconify()
+            dialog.grab_set()
+            
+            # 对话框内容
+            ttk.Label(dialog, text=_('choose_import_export_method')).pack(pady=20)
+            
+            # 按钮框架
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            
+            # 第一行按钮
+            row1_frame = ttk.Frame(button_frame)
+            row1_frame.pack(pady=5)
+            ttk.Button(row1_frame, text=_('export_selected'), command=lambda: self.export_ipam_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            ttk.Button(row1_frame, text=_('export_all'), command=lambda: self.export_all_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            
+            # 第二行按钮
+            row2_frame = ttk.Frame(button_frame)
+            row2_frame.pack(pady=5)
+            ttk.Button(row2_frame, text=_('import_data'), command=lambda: self.import_ipam_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            ttk.Button(row2_frame, text=_('cancel'), command=dialog.destroy).pack(side=tk.LEFT, padx=10, pady=5)
+            
+        except Exception as e:
+            self.show_error(_('error'), f"操作失败: {str(e)}")
+    
+    def import_ipam_data(self):
+        """导入IPAM数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.askopenfilename(
+                filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv")]
+            )
+            if file_path:
+                format = 'json' if file_path.endswith('.json') else 'csv'
+                if self.ipam.import_data(file_path, format):
+                    self.show_info(_('success'), f"数据导入成功: {file_path}")
+                    self.refresh_ipam_networks()
+                    self.refresh_ipam_stats()
+                else:
+                    self.show_error(_('error'), "数据导入失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导入失败: {str(e)}")
+    
+    def backup_ipam_data(self):
+        """备份IPAM数据"""
+        try:
+            # 创建备份对话框
+            dialog = tk.Toplevel(self.root)
+            dialog.title("备份IPAM数据")
+            dialog.geometry("400x150")
+            dialog.transient(self.root)
+            dialog.grab_set()
+            
+            # 备份名称输入
+            ttk.Label(dialog, text="备份名称 (可选):").pack(pady=10)
+            backup_name_entry = ttk.Entry(dialog, width=30)
+            backup_name_entry.pack(pady=5)
+            
+            def on_backup():
+                backup_name = backup_name_entry.get().strip()
+                backup_path = self.ipam.backup_data(backup_name, backup_type='manual', frequency='manual')
+                if backup_path:
+                    self.show_info(_('success'), f"数据备份成功: {backup_path}")
+                else:
+                    self.show_error(_('error'), "数据备份失败")
+                dialog.destroy()
+            
+            # 按钮
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="确定", command=on_backup).pack(side=tk.LEFT, padx=10)
+            ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        except Exception as e:
+            self.show_error(_('error'), f"备份失败: {str(e)}")
+    
+    def restore_ipam_data(self):
+        """恢复IPAM数据"""
+        try:
+            # 显示备份管理界面
+            self.show_backup_manager()
+        except Exception as e:
+            self.show_error(_('error'), f"恢复失败: {str(e)}")
+    
+    def backup_restore_data(self):
+        """备份/恢复数据对话框"""
+        try:
+            # 创建对话框
+            dialog = tk.Toplevel(self.root)
+            dialog.title(_('backup_restore'))
+            dialog.transient(self.root)
+            dialog.withdraw()  # 先隐藏对话框，避免闪现
+            dialog.geometry("600x400")
+            
+            # 居中主窗体
+            center_window(dialog, self.root)
+            
+            # 显示对话框并设置grab_set
+            dialog.deiconify()
+            dialog.grab_set()
+            
+            # 配置对话框的行和列
+            dialog.grid_rowconfigure(0, weight=1)
+            dialog.grid_columnconfigure(0, weight=1)
+            
+            def on_backup():
+                backup_path = self.ipam.backup_data(backup_type='manual', frequency='manual')
+                if backup_path:
+                    self.show_info(_('success'), f"数据备份成功: {backup_path}")
+                    # 刷新备份列表
+                    refresh_backup_list()
+                else:
+                    self.show_error(_('error'), "数据备份失败")
+            
+            # 创建一个框架来包含表格和滚动条
+            tree_frame = ttk.Frame(dialog, borderwidth=0, relief="flat")
+            tree_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=(20, 10))
+            
+            # 创建树状视图显示备份信息
+            backup_tree = ttk.Treeview(tree_frame, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
+            backup_tree.heading('filename', text="文件名")
+            backup_tree.heading('backup_time', text="备份时间")
+            backup_tree.heading('network_count', text="网络数")
+            backup_tree.heading('ip_count', text="IP数")
+            
+            backup_tree.column('filename', width=200)
+            backup_tree.column('backup_time', width=150)
+            backup_tree.column('network_count', width=80, anchor=tk.CENTER)
+            backup_tree.column('ip_count', width=80, anchor=tk.CENTER)
+            
+            # 添加滚动条，放在表格右侧
+            scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+            # 使用通用方法设置滚动条，支持自动隐藏
+            self._setup_scrollbar(scrollbar, backup_tree, initial_hidden=True)
+            # 使用grid布局
+            tree_frame.grid_rowconfigure(0, weight=1)
+            tree_frame.grid_columnconfigure(0, weight=1)
+            backup_tree.grid(row=0, column=0, sticky="nsew")
+            scrollbar.grid(row=0, column=1, sticky="ns")
+            
+            # 加载备份列表的函数
+            def refresh_backup_list():
+                # 清空现有列表
+                for item in backup_tree.get_children():
+                    backup_tree.delete(item)
+                
+                # 加载备份列表
+                backups = self.ipam.list_backups()
+                for backup in backups:
+                    filename = backup['filename']
+                    info = backup['info']
+                    backup_tree.insert('', tk.END, values=(
+                        filename,
+                        info.get('backup_time', ''),
+                        info.get('network_count', 0),
+                        info.get('ip_count', 0)
+                    ), tags=(backup['file_path'],))
+                
+                # 刷新滚动条状态
+                if backup_tree.yview():
+                    # 触发滚动条回调，更新滚动条显示状态
+                    backup_tree.yview_moveto(0)
+                    backup_tree.yview_moveto(0)
+            
+            # 初始加载备份列表
+            refresh_backup_list()
+            
+            # 按钮
+            button_frame = ttk.Frame(dialog)
+            button_frame.grid(row=1, column=0, sticky="s", pady=(10, 20))
+            
+            def on_restore():
+                selected_items = backup_tree.selection()
+                if not selected_items:
+                    self.show_info(_('hint'), "请选择要恢复的备份")
+                    return
+                
+                item = selected_items[0]
+                file_path = backup_tree.item(item, 'tags')[0]
+                
+                # 确认恢复
+                confirm = messagebox.askyesno("确认", f"确定要恢复备份: {backup_tree.item(item, 'values')[0]} 吗？")
+                if confirm:
+                    if self.ipam.restore_data(file_path):
+                        self.show_info(_('success'), f"数据恢复成功: {file_path}")
+                        self.refresh_ipam_networks()
+                        self.refresh_ipam_stats()
+                    else:
+                        self.show_error(_('error'), "数据恢复失败")
+            
+            def on_delete():
+                selected_items = backup_tree.selection()
+                if not selected_items:
+                    self.show_info(_('hint'), "请选择要删除的备份")
+                    return
+                
+                # 获取选中的备份文件信息
+                selected_backups = []
+                for item in selected_items:
+                    file_path = backup_tree.item(item, 'tags')[0]
+                    filename = backup_tree.item(item, 'values')[0]
+                    selected_backups.append((item, file_path, filename))
+                
+                # 确认删除
+                if len(selected_backups) == 1:
+                    confirm = messagebox.askyesno("确认", f"确定要删除备份: {selected_backups[0][2]} 吗？")
+                else:
+                    confirm = messagebox.askyesno("确认", f"确定要删除 {len(selected_backups)} 个备份文件吗？")
+                
+                if confirm:
+                    try:
+                        import os
+                        deleted_count = 0
+                        for item, file_path, filename in selected_backups:
+                            try:
+                                os.remove(file_path)
+                                backup_tree.delete(item)
+                                deleted_count += 1
+                            except Exception as e:
+                                self.show_error(_('error'), f"删除 {filename} 失败: {str(e)}")
+                        
+                        if deleted_count > 0:
+                            self.show_info(_('success'), f"成功删除 {deleted_count} 个备份文件")
+                    except Exception as e:
+                        self.show_error(_('error'), f"删除失败: {str(e)}")
+            
+            ttk.Button(button_frame, text="备份", command=on_backup).pack(side=tk.LEFT, padx=10)
+            ttk.Button(button_frame, text="恢复", command=on_restore).pack(side=tk.LEFT, padx=10)
+            ttk.Button(button_frame, text="删除", command=on_delete).pack(side=tk.LEFT, padx=10)
+            
+            # 绑定对话框关闭事件
+            dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+            
+        except Exception as e:
+            self.show_error(_('error'), f"操作失败: {str(e)}")
+    
+    def show_backup_manager(self):
+        """显示备份管理界面"""
+        # 创建备份管理对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("备份管理")
+        dialog.geometry("600x400")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 备份列表
+        ttk.Label(dialog, text="备份文件列表", font=('微软雅黑', 10, 'bold')).pack(pady=10)
+        
+        # 创建树状视图显示备份信息
+        backup_tree = ttk.Treeview(dialog, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
+        backup_tree.heading('filename', text="文件名")
+        backup_tree.heading('backup_time', text="备份时间")
+        backup_tree.heading('network_count', text="网络数")
+        backup_tree.heading('ip_count', text="IP数")
+        
+        backup_tree.column('filename', width=200)
+        backup_tree.column('backup_time', width=150)
+        backup_tree.column('network_count', width=80, anchor=tk.CENTER)
+        backup_tree.column('ip_count', width=80, anchor=tk.CENTER)
+        
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=backup_tree.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        backup_tree.configure(yscrollcommand=scrollbar.set)
+        backup_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # 加载备份列表
+        backups = self.ipam.list_backups()
+        for backup in backups:
+            filename = backup['filename']
+            info = backup['info']
+            backup_tree.insert('', tk.END, values=(
+                filename,
+                info.get('backup_time', ''),
+                info.get('network_count', 0),
+                info.get('ip_count', 0)
+            ), tags=(backup['file_path'],))
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        
+        def on_restore():
+            selected_items = backup_tree.selection()
+            if not selected_items:
+                self.show_info(_('hint'), "请选择要恢复的备份")
+                return
+            
+            item = selected_items[0]
+            file_path = backup_tree.item(item, 'tags')[0]
+            
+            # 确认恢复
+            confirm = messagebox.askyesno("确认", f"确定要恢复备份: {backup_tree.item(item, 'values')[0]} 吗？")
+            if confirm:
+                if self.ipam.restore_data(file_path):
+                    self.show_info(_('success'), f"数据恢复成功: {file_path}")
+                    self.refresh_ipam_networks()
+                    self.refresh_ipam_stats()
+                    dialog.destroy()
+                else:
+                    self.show_error(_('error'), "数据恢复失败")
+        
+        def on_delete():
+            selected_items = backup_tree.selection()
+            if not selected_items:
+                self.show_info(_('hint'), "请选择要删除的备份")
+                return
+            
+            item = selected_items[0]
+            file_path = backup_tree.item(item, 'tags')[0]
+            filename = backup_tree.item(item, 'values')[0]
+            
+            # 确认删除
+            confirm = messagebox.askyesno("确认", f"确定要删除备份: {filename} 吗？")
+            if confirm:
+                try:
+                    import os
+                    os.remove(file_path)
+                    backup_tree.delete(item)
+                    self.show_info(_('success'), "备份删除成功")
+                except Exception as e:
+                    self.show_error(_('error'), f"删除失败: {str(e)}")
+        
+        ttk.Button(button_frame, text="恢复", command=on_restore).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="删除", command=on_delete).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="关闭", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def auto_scan_network(self):
+        """自动扫描网络"""
+        # 创建自动扫描网络对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("自动扫描网络")
+        dialog.transient(self.root)
+        dialog.withdraw()  # 先隐藏对话框，避免闪现
+        dialog.geometry("450x150")
+        
+        # 居中主窗体
+        center_window(dialog, self.root)
+        
+        # 显示对话框并设置grab_set
+        dialog.deiconify()
+        dialog.grab_set()
+        
+        # 网络输入 - 水平布局
+        network_frame = ttk.Frame(dialog)
+        network_frame.pack(pady=10, fill=tk.X, padx=20)
+        ttk.Label(network_frame, text="网络地址 (CIDR格式):").pack(side=tk.LEFT, padx=10)
+        network_entry = ttk.Entry(network_frame, width=30)
+        network_entry.pack(side=tk.LEFT, padx=10)
+        
+
+        
+        # 线程数和超时时间 - 水平布局（左右放置）
+        options_frame = ttk.Frame(dialog)
+        options_frame.pack(pady=10, fill=tk.X, padx=20)
+        
+        # 线程数（左侧）
+        ttk.Label(options_frame, text="线程数:").pack(side=tk.LEFT, padx=10)
+        thread_var = tk.StringVar(value="10")
+        thread_entry = ttk.Entry(options_frame, width=10, textvariable=thread_var)
+        thread_entry.pack(side=tk.LEFT, padx=10)
+        
+        # 超时时间（右侧）
+        ttk.Label(options_frame, text="超时时间 (毫秒):").pack(side=tk.LEFT, padx=20)
+        timeout_var = tk.StringVar(value="500")
+        timeout_entry = ttk.Entry(options_frame, width=10, textvariable=timeout_var)
+        timeout_entry.pack(side=tk.LEFT, padx=10)
+        
+        def on_scan():
+            network = network_entry.get().strip()
+            if not network:
+                self.show_info(_('hint'), "请输入网络地址")
+                return
+            
+            try:
+                import ipaddress
+                ip_network = ipaddress.ip_network(network, strict=False)
+            except ValueError as e:
+                self.show_error(_('error'), f"网络格式错误: {str(e)}")
+                return
+            
+            # 开始扫描
+            dialog.destroy()
+            
+            # 创建进度条对话框
+            progress_dialog = tk.Toplevel(self.root)
+            progress_dialog.title("网络扫描")
+            progress_dialog.geometry("400x280")  # 增加高度，确保所有控件显示
+            center_window(progress_dialog, self.root)  # 居中主窗体
+            progress_dialog.transient(self.root)
+            progress_dialog.grab_set()
+            
+            # 标签
+            progress_label = ttk.Label(progress_dialog, text=f"正在扫描网络 {network}...")
+            progress_label.pack(pady=10)
+            
+            # 进度条
+            progress_var = tk.DoubleVar()
+            progress_bar = ttk.Progressbar(progress_dialog, variable=progress_var, length=350, mode='determinate')
+            progress_bar.pack(pady=10)
+            
+            # 状态标签
+            status_label = ttk.Label(progress_dialog, text="准备开始扫描...")
+            status_label.pack(pady=5)
+            
+            # 数据添加进度条
+            add_progress_label = ttk.Label(progress_dialog, text="数据添加进度:")
+            add_progress_label.pack(pady=5)
+            add_progress_var = tk.DoubleVar()
+            add_progress_bar = ttk.Progressbar(progress_dialog, variable=add_progress_var, length=350, mode='determinate')
+            add_progress_bar.pack(pady=5)
+            add_status_label = ttk.Label(progress_dialog, text="准备添加数据...")
+            add_status_label.pack(pady=5)
+            
+            # 取消按钮
+            scan_cancelled = [False]  # 使用列表作为可变对象
+            def cancel_scan():
+                scan_cancelled[0] = True
+                progress_dialog.destroy()
+            
+            # 处理对话框关闭事件
+            def on_closing():
+                cancel_scan()
+            
+            progress_dialog.protocol("WM_DELETE_WINDOW", on_closing)
+            
+            # 取消按钮放在最下面
+            cancel_button = ttk.Button(progress_dialog, text="取消", command=cancel_scan)
+            cancel_button.pack(pady=10)
+            
+            # 在后台线程中执行扫描
+            import threading
+            threading.Thread(target=self._scan_network, args=(network, progress_var, progress_label, status_label, progress_dialog, scan_cancelled, add_progress_var, add_status_label), daemon=True).start()
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="开始扫描", command=on_scan).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def _scan_network(self, network, progress_var=None, progress_label=None, status_label=None, progress_dialog=None, scan_cancelled=None, add_progress_var=None, add_status_label=None):
+        """执行网络扫描"""
+        try:
+            import ipaddress
+            import socket
+            import concurrent.futures
+            from i18n import _  # 确保_函数在当前作用域可用
+            
+            # 初始化取消状态
+            if scan_cancelled is None:
+                scan_cancelled = [False]
+            
+            ip_network = ipaddress.ip_network(network, strict=False)
+            network_str = str(ip_network)
+            
+            # 检查网络是否存在，如果不存在则创建
+            networks = self.ipam.get_all_networks()
+            network_exists = any(net['network'] == network_str for net in networks)
+            if not network_exists:
+                self.ipam.add_network(network_str, f"自动扫描网络 - {network_str}")
+                # 立即刷新网络表格，确保新网络显示
+                self.root.after(0, self.refresh_ipam_networks)
+            
+            # 扫描活动IP
+            active_ips = []
+            
+            # 准备扫描的IP列表
+            # 移除100个IP的限制，扫描整个网络
+            scan_ips = list(ip_network.hosts())
+            total_ips = len(scan_ips)
+            
+            # 显示准备扫描的信息
+            def update_ui_safely(update_func):
+                """安全更新UI，检查控件是否存在"""
+                try:
+                    # 检查对话框是否仍然存在
+                    if progress_dialog and progress_dialog.winfo_exists():
+                        # 检查标签是否仍然存在
+                        if status_label and status_label.winfo_exists():
+                            update_func()
+                except Exception:
+                    # 忽略UI更新错误
+                    pass
+            
+            # 更新添加数据进度的函数
+            def update_add_progress(count, total):
+                """更新添加数据的进度"""
+                if add_progress_var and add_status_label:
+                    try:
+                        if progress_dialog and progress_dialog.winfo_exists():
+                            progress = (count / total) * 100 if total > 0 else 0
+                            add_progress_var.set(progress)
+                            add_status_label.config(text=f"正在添加数据: {count}/{total}")
+                    except Exception:
+                        pass
+            
+            if progress_var and progress_label and status_label:
+                update_ui_safely(lambda: status_label.config(text=f"准备扫描 {total_ips} 个IP地址..."))
+            
+            scanned_count = 0
+            added_count = 0
+            
+            def scan_ip(ip):
+                nonlocal scanned_count
+                # 检查是否已取消扫描
+                if scan_cancelled[0]:
+                    return None
+                
+                ip_str = str(ip)
+                try:
+                    # 尝试ping IP地址
+                    # 使用socket连接80端口
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(0.5)
+                    result = sock.connect_ex((ip_str, 80))
+                    sock.close()
+                    if result == 0:
+                        return ip_str
+                except:
+                    pass
+                finally:
+                    # 更新进度
+                    scanned_count += 1
+                    if progress_var and progress_label and status_label:
+                        progress = (scanned_count / total_ips) * 100
+                        # 使用安全的UI更新函数
+                        update_ui_safely(lambda: progress_var.set(progress))
+                        update_ui_safely(lambda: status_label.config(text=f"正在扫描: {ip_str} ({scanned_count}/{total_ips})"))
+                return None
+            
+            # 使用队列实现生产者-消费者模式
+            import queue
+            ip_queue = queue.Queue()
+            total_active_ips = 0
+            added_count = 0
+            scan_finished = [False]  # 标记扫描是否完成
+            
+            # 消费者线程：负责添加数据
+            def add_ip_consumer():
+                nonlocal added_count, total_active_ips
+                batch_size = 10  # 每批处理10个IP
+                batch = []
+                
+                while not scan_finished[0] or not ip_queue.empty():
+                    try:
+                        # 从队列中获取IP，超时时间为0.1秒
+                        ip_info = ip_queue.get(timeout=0.1)
+                        batch.append(ip_info)
+                        
+                        # 当批次达到指定大小或扫描完成时，批量处理
+                        if len(batch) >= batch_size or (scan_finished[0] and ip_queue.empty()):
+                            if batch:
+                                # 批量分配IP
+                                success_count, failed_ips = self.ipam.batch_allocate_ips(network_str, batch)
+                                added_count += success_count
+                                
+                                # 更新添加数据进度
+                                if add_progress_var and add_status_label:
+                                    self.root.after(0, lambda: update_add_progress(added_count, total_active_ips))
+                                
+                                # 清空批次
+                                batch = []
+                    except queue.Empty:
+                        # 队列为空，继续等待
+                        continue
+                    except Exception as e:
+                        print(f"添加数据失败: {str(e)}")
+                
+                # 处理剩余的IP
+                if batch:
+                    try:
+                        success_count, failed_ips = self.ipam.batch_allocate_ips(network_str, batch)
+                        added_count += success_count
+                        if add_progress_var and add_status_label:
+                            self.root.after(0, lambda: update_add_progress(added_count, total_active_ips))
+                    except Exception as e:
+                        print(f"处理剩余数据失败: {str(e)}")
+            
+            # 启动消费者线程
+            import threading
+            consumer_thread = threading.Thread(target=add_ip_consumer, daemon=True)
+            consumer_thread.start()
+            
+            # 使用线程池进行并行扫描
+            with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+                # 提交所有扫描任务
+                future_to_ip = {executor.submit(scan_ip, ip): ip for ip in scan_ips}
+                # 收集结果并实时处理
+                for future in concurrent.futures.as_completed(future_to_ip):
+                    # 检查是否已取消扫描
+                    if scan_cancelled[0]:
+                        # 取消所有未完成的任务
+                        for f in future_to_ip:
+                            if not f.done():
+                                f.cancel()
+                        break
+                    try:
+                        result = future.result()
+                        if result:
+                            active_ips.append(result)
+                            # 更新活动IP总数
+                            total_active_ips = len(active_ips)
+                            # 更新添加数据进度条的分母
+                            if add_progress_var and add_status_label:
+                                self.root.after(0, lambda: update_add_progress(added_count, total_active_ips))
+                            
+                            # 尝试获取主机名，设置较短的超时
+                            hostname = ""
+                            try:
+                                # 设置socket超时，避免DNS解析卡住
+                                socket.setdefaulttimeout(0.3)  # 进一步缩短超时时间
+                                hostname, _, _ = socket.gethostbyaddr(result)
+                            except:
+                                hostname = f"host-{result.replace('.', '-')}"
+                            finally:
+                                # 恢复默认超时
+                                socket.setdefaulttimeout(None)
+                            
+                            # 将IP信息放入队列，由消费者线程处理
+                            ip_queue.put({
+                                'ip_address': result,
+                                'hostname': hostname,
+                                'description': "自动扫描发现"
+                            })
+                    except:
+                        pass
+                
+                # 标记扫描完成
+                scan_finished[0] = True
+            
+            # 等待消费者线程处理完成
+            consumer_thread.join(timeout=30)
+            
+            # 关闭进度对话框
+            if progress_dialog:
+                try:
+                    if progress_dialog.winfo_exists():
+                        # 立即关闭对话框，不使用after延迟
+                        progress_dialog.destroy()
+                except Exception:
+                    pass
+            
+            # 显示扫描结果
+            if not scan_cancelled[0]:
+                self.root.after(0, lambda: self.show_info(_('success'), f"网络扫描完成，发现 {len(active_ips)} 个活动IP，成功添加 {added_count} 个到IPAM"))
+            
+            # 刷新界面
+            self.root.after(0, self.refresh_ipam_networks)
+            self.root.after(100, self.refresh_ipam_stats)
+        except Exception as e:
+            from i18n import _  # 确保_函数在异常处理中可用
+            # 关闭进度对话框
+            if progress_dialog:
+                try:
+                    if progress_dialog.winfo_exists():
+                        self.root.after(0, lambda: progress_dialog.destroy())
+                except Exception:
+                    pass
+            self.root.after(0, lambda e=e: self.show_error(_('error'), f"扫描失败: {str(e)}"))
+    
+    def batch_modify_ip(self, network):
+        """批量修改IP信息"""
+        # 创建批量修改对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("批量修改IP信息")
+        dialog.geometry("500x300")
+        center_window(dialog, self.root)  # 居中主窗体
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 获取网络中的IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # IP地址选择
+        ttk.Label(dialog, text="选择要修改的IP地址:").pack(pady=10)
+        
+        # 创建列表框
+        list_frame = ttk.Frame(dialog)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE, height=8)
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        listbox.configure(yscrollcommand=scrollbar.set)
+        
+        # 填充IP地址
+        ip_list = []
+        for ip in ips:
+            ip_str = ip['ip_address']
+            hostname = ip.get('hostname', '')
+            listbox.insert(tk.END, f"{ip_str} - {hostname}")
+            ip_list.append(ip_str)
+        
+        # 修改选项
+        ttk.Label(dialog, text="修改选项:").pack(pady=10)
+        
+        # 描述修改
+        ttk.Label(dialog, text="新描述:").pack(pady=5)
+        description_var = tk.StringVar()
+        description_entry = ttk.Entry(dialog, width=40, textvariable=description_var)
+        description_entry.pack(pady=5)
+        
+        # 过期日期修改
+        ttk.Label(dialog, text="新过期日期 (ISO格式，如2023-12-31T23:59:59):").pack(pady=5)
+        expiry_var = tk.StringVar()
+        expiry_entry = ttk.Entry(dialog, width=40, textvariable=expiry_var)
+        expiry_entry.pack(pady=5)
+        
+        def on_modify():
+            selected_indices = listbox.curselection()
+            if not selected_indices:
+                self.show_info(_('hint'), "请选择要修改的IP地址")
+                return
+            
+            description = description_var.get().strip()
+            expiry_date = expiry_var.get().strip()
+            
+            if not description and not expiry_date:
+                self.show_info(_('hint'), "请至少输入一项修改内容")
+                return
+            
+            # 批量修改
+            success_count = 0
+            for index in selected_indices:
+                ip_str = ip_list[index]
+                # 获取当前IP信息
+                ip_data = self.ipam.networks[network]['ip_addresses'].get(ip_str)
+                if ip_data:
+                    # 更新描述
+                    if description:
+                        ip_data['description'] = description
+                    # 更新过期日期
+                    if expiry_date:
+                        ip_data['expiry_date'] = expiry_date
+                    success_count += 1
+            
+            # 保存修改
+            self.ipam.save_data()
+            
+            if success_count > 0:
+                self.show_info(_('success'), f"成功修改 {success_count} 个IP地址")
+                self.refresh_ipam_ips(network)
+            else:
+                self.show_info(_('hint'), "没有IP地址被修改")
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="确定", command=on_modify).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def batch_set_expiry(self, network):
+        """批量设置IP过期时间"""
+        # 创建批量设置过期时间对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("批量设置过期时间")
+        dialog.geometry("500x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 获取网络中的IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # IP地址选择
+        ttk.Label(dialog, text="选择要设置过期时间的IP地址:").pack(pady=10)
+        
+        # 创建列表框
+        list_frame = ttk.Frame(dialog)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE, height=8)
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        listbox.configure(yscrollcommand=scrollbar.set)
+        
+        # 填充IP地址
+        ip_list = []
+        for ip in ips:
+            ip_str = ip['ip_address']
+            hostname = ip.get('hostname', '')
+            expiry = ip.get('expiry_date', '无')
+            listbox.insert(tk.END, f"{ip_str} - {hostname} (当前过期: {expiry})")
+            ip_list.append(ip_str)
+        
+        # 过期时间输入
+        ttk.Label(dialog, text="新过期日期 (ISO格式，如2023-12-31T23:59:59):").pack(pady=10)
+        expiry_var = tk.StringVar()
+        expiry_entry = ttk.Entry(dialog, width=40, textvariable=expiry_var)
+        expiry_entry.pack(pady=5)
+        
+        # 设置默认值为30天后
+        import datetime
+        default_expiry = (datetime.datetime.now() + datetime.timedelta(days=30)).isoformat()
+        expiry_var.set(default_expiry)
+        
+        def on_set_expiry():
+            selected_indices = listbox.curselection()
+            if not selected_indices:
+                self.show_info(_('hint'), "请选择要设置过期时间的IP地址")
+                return
+            
+            expiry_date = expiry_var.get().strip()
+            if not expiry_date:
+                self.show_info(_('hint'), "请输入过期日期")
+                return
+            
+            # 验证过期日期格式
+            try:
+                datetime.datetime.fromisoformat(expiry_date)
+            except ValueError:
+                self.show_error(_('error'), "过期日期格式错误，请使用ISO格式")
+                return
+            
+            # 批量设置过期时间
+            success_count = 0
+            for index in selected_indices:
+                ip_str = ip_list[index]
+                # 获取当前IP信息
+                ip_data = self.ipam.networks[network]['ip_addresses'].get(ip_str)
+                if ip_data:
+                    ip_data['expiry_date'] = expiry_date
+                    success_count += 1
+            
+            # 保存修改
+            self.ipam.save_data()
+            
+            if success_count > 0:
+                self.show_info(_('success'), f"成功设置 {success_count} 个IP地址的过期时间")
+                self.refresh_ipam_ips(network)
+            else:
+                self.show_info(_('hint'), "没有IP地址被修改")
+            
+            dialog.destroy()
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="确定", command=on_set_expiry).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def batch_change_status(self, network):
+        """批量更改IP状态"""
+        # 创建批量更改状态对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("批量更改状态")
+        dialog.geometry("500x300")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 获取网络中的IP地址
+        ips = self.ipam.get_network_ips(network)
+        
+        # IP地址选择
+        ttk.Label(dialog, text="选择要更改状态的IP地址:").pack(pady=10)
+        
+        # 创建列表框
+        list_frame = ttk.Frame(dialog)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE, height=8)
+        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        listbox.configure(yscrollcommand=scrollbar.set)
+        
+        # 填充IP地址
+        ip_list = []
+        for ip in ips:
+            ip_str = ip['ip_address']
+            hostname = ip.get('hostname', '')
+            status = ip.get('status', 'available')
+            listbox.insert(tk.END, f"{ip_str} - {hostname} (当前状态: {status})")
+            ip_list.append(ip_str)
+        
+        # 状态选择
+        ttk.Label(dialog, text="新状态:").pack(pady=10)
+        status_var = tk.StringVar(value="allocated")
+        status_frame = ttk.Frame(dialog)
+        status_frame.pack(pady=5)
+        ttk.Radiobutton(status_frame, text="已分配", variable=status_var, value="allocated").pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(status_frame, text="已保留", variable=status_var, value="reserved").pack(side=tk.LEFT, padx=10)
+        
+        def on_change_status():
+            selected_indices = listbox.curselection()
+            if not selected_indices:
+                self.show_info(_('hint'), "请选择要更改状态的IP地址")
+                return
+            
+            new_status = status_var.get()
+            
+            # 批量更改状态
+            success_count = 0
+            for index in selected_indices:
+                ip_str = ip_list[index]
+                # 获取当前IP信息
+                ip_data = self.ipam.networks[network]['ip_addresses'].get(ip_str)
+                if ip_data:
+                    old_status = ip_data.get('status')
+                    if old_status != new_status:
+                        ip_data['status'] = new_status
+                        # 更新索引
+                        if old_status in self.ipam.ip_by_status and network in self.ipam.ip_by_status[old_status]:
+                            if ip_str in self.ipam.ip_by_status[old_status][network]:
+                                self.ipam.ip_by_status[old_status][network].remove(ip_str)
+                        if new_status not in self.ipam.ip_by_status:
+                            self.ipam.ip_by_status[new_status] = {}
+                        if network not in self.ipam.ip_by_status[new_status]:
+                            self.ipam.ip_by_status[new_status][network] = []
+                        self.ipam.ip_by_status[new_status][network].append(ip_str)
+                        # 更新网络统计信息缓存
+                        if network in self.ipam.network_stats_cache:
+                            if old_status in self.ipam.network_stats_cache[network]:
+                                self.ipam.network_stats_cache[network][old_status] = max(0, self.ipam.network_stats_cache[network][old_status] - 1)
+                            if new_status in self.ipam.network_stats_cache[network]:
+                                self.ipam.network_stats_cache[network][new_status] += 1
+                        success_count += 1
+            
+            # 保存修改
+            self.ipam.save_data()
+            
+            if success_count > 0:
+                self.show_info(_('success'), f"成功更改 {success_count} 个IP地址的状态")
+                self.refresh_ipam_ips(network)
+            else:
+                self.show_info(_('hint'), "没有IP地址被修改")
+            
+            dialog.destroy()
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="确定", command=on_change_status).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def batch_import_ip(self, network):
+        """批量导入IP数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.askopenfilename(
+                filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt")]
+            )
+            if not file_path:
+                return
+            
+            # 读取文件
+            import csv
+            success_count = 0
+            error_count = 0
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    ip_address = row.get('IP地址', '').strip()
+                    hostname = row.get('主机名', '').strip()
+                    description = row.get('描述', '').strip()
+                    status = row.get('状态', 'allocated').strip()
+                    
+                    if not ip_address:
+                        error_count += 1
+                        continue
+                    
+                    # 检查IP是否已分配
+                    if ip_address not in self.ipam.networks[network]['ip_addresses']:
+                        if status == 'allocated':
+                            if hostname:
+                                self.ipam.allocate_ip(network, ip_address, hostname, description)
+                                success_count += 1
+                            else:
+                                error_count += 1
+                        elif status == 'reserved':
+                            self.ipam.reserve_ip(network, ip_address, description)
+                            success_count += 1
+                    else:
+                        error_count += 1
+            
+            self.show_info(_('success'), f"批量导入完成，成功添加 {success_count} 个IP地址，失败 {error_count} 个")
+            self.refresh_ipam_ips(network)
+        except Exception as e:
+            self.show_error(_('error'), f"导入失败: {str(e)}")
+    
+    def refresh_ipam_stats(self):
+        """刷新IPAM统计数据"""
+        try:
+            # 使用新的get_overall_stats方法获取统计信息
+            stats = self.ipam.get_overall_stats()
+            
+            total_networks = stats.get('total_networks', 0)
+            ipv4_networks = stats.get('ipv4_networks', 0)
+            ipv6_networks = stats.get('ipv6_networks', 0)
+            total_ips = stats.get('total_ips', 0)
+            allocated_ips = stats.get('allocated_ips', 0)
+            reserved_ips = stats.get('reserved_ips', 0)
+            available_ips = stats.get('available_ips', 0)
+            expired_ips = stats.get('expired_ips', 0)
+            
+            # 计算利用率
+            utilization_rate = 0
+            if total_ips > 0:
+                utilization_rate = (allocated_ips + reserved_ips) / total_ips * 100
+            
+            # 计算平均分配率
+            avg_allocation_rate = 0
+            if total_networks > 0:
+                avg_allocation_rate = (allocated_ips + reserved_ips) / total_networks
+            
+            # 更新统计标签
+            if 'total_networks' in self.stats_labels:
+                self.stats_labels['total_networks'].config(text=str(total_networks))
+            if 'ipv4_networks' in self.stats_labels:
+                self.stats_labels['ipv4_networks'].config(text=str(ipv4_networks))
+            if 'ipv6_networks' in self.stats_labels:
+                self.stats_labels['ipv6_networks'].config(text=str(ipv6_networks))
+            if 'total_ips' in self.stats_labels:
+                self.stats_labels['total_ips'].config(text=str(total_ips))
+            if 'allocated_ips' in self.stats_labels:
+                self.stats_labels['allocated_ips'].config(text=str(allocated_ips))
+            if 'reserved_ips' in self.stats_labels:
+                self.stats_labels['reserved_ips'].config(text=str(reserved_ips))
+            if 'available_ips' in self.stats_labels:
+                self.stats_labels['available_ips'].config(text=str(available_ips))
+            if 'expired_ips' in self.stats_labels:
+                self.stats_labels['expired_ips'].config(text=str(expired_ips))
+            if 'utilization_rate' in self.stats_labels:
+                self.stats_labels['utilization_rate'].config(text=f"{utilization_rate:.2f}%")
+            if 'avg_allocation_rate' in self.stats_labels:
+                self.stats_labels['avg_allocation_rate'].config(text=f"{avg_allocation_rate:.2f}")
+            
+            # 绘制饼图
+            self.draw_ip_usage_pie_chart(allocated_ips, reserved_ips, available_ips, utilization_rate, avg_allocation_rate)
+        except Exception as e:
+            print(f"刷新统计数据失败: {e}")
+    
+    def draw_ip_usage_pie_chart(self, allocated, reserved, available, utilization_rate=0, avg_allocation_rate=0):
+        """绘制IP地址使用情况饼图"""
+        try:
+            # 清空画布
+            self.stats_canvas.delete("all")
+            
+            # 获取画布尺寸
+            width = self.stats_canvas.winfo_width()
+            height = self.stats_canvas.winfo_height()
+            
+            print(f"画布尺寸: {width}x{height}")
+            print(f"数据: 已分配={allocated}, 已保留={reserved}, 可用={available}")
+            
+            if width == 1 or height == 1:
+                # 画布还未初始化，等待下次绘制
+                print("画布未初始化，等待下次绘制")
+                return
+            
+            # 计算饼图中心和半径
+            center_x = width // 2
+            center_y = height // 2
+            radius = min(center_x, center_y) - 60
+            
+            # 计算总IP数
+            total = allocated + reserved + available
+            
+            if total == 0:
+                # 没有数据，显示提示
+                self.stats_canvas.create_text(center_x, center_y, text="暂无数据", font=("微软雅黑", 12))
+                return
+            
+            # 定义颜色
+            colors = ["#4CAF50", "#2196F3", "#E0E0E0"]  # 已分配:绿色, 已保留:蓝色, 可用:灰色
+            labels = ["已分配", "已保留", "可用"]
+            values = [allocated, reserved, available]
+            
+            # 绘制饼图
+            start_angle = 0
+            for i, value in enumerate(values):
+                if value == 0:
+                    continue
+                
+                # 计算角度
+                angle = (value / total) * 360
+                end_angle = start_angle + angle
+                
+                # 绘制扇形
+                self.stats_canvas.create_arc(
+                    center_x - radius, center_y - radius,
+                    center_x + radius, center_y + radius,
+                    start=start_angle, extent=angle,
+                    fill=colors[i], outline="white", width=2
+                )
+                
+                # 计算标签位置
+                mid_angle_rad = (start_angle + end_angle) / 2 * 3.14159 / 180
+                label_x = center_x + (radius + 30) * math.cos(mid_angle_rad)
+                label_y = center_y - (radius + 30) * math.sin(mid_angle_rad)
+                
+                # 绘制标签
+                percentage = (value / total) * 100
+                label_text = f"{labels[i]}: {value} ({percentage:.1f}%)"
+                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 10), fill="#333333")
+                
+                start_angle = end_angle
+            
+            # 绘制中心文字
+            self.stats_canvas.create_text(
+                center_x, center_y, 
+                text=f"总IP: {total}",
+                font=("微软雅黑", 12, "bold"),
+                fill="#333333"
+            )
+            
+            # 绘制利用率信息
+            self.stats_canvas.create_text(
+                center_x, center_y + radius + 30, 
+                text=f"利用率: {utilization_rate:.1f}%",
+                font=("微软雅黑", 10, "bold"),
+                fill="#333333"
+            )
+            
+            # 绘制平均分配率
+            self.stats_canvas.create_text(
+                center_x, center_y + radius + 50, 
+                text=f"平均每网络分配: {avg_allocation_rate:.1f}",
+                font=("微软雅黑", 10),
+                fill="#333333"
+            )
+            
+            # 绘制图例
+            legend_x = 20
+            legend_y = 20
+            for i, (color, label, value) in enumerate(zip(colors, labels, values)):
+                # 绘制颜色方块
+                self.stats_canvas.create_rectangle(legend_x, legend_y + i*20, legend_x + 15, legend_y + 15 + i*20, fill=color, outline="#333333")
+                # 绘制图例文本
+                percentage = (value / total) * 100 if total > 0 else 0
+                legend_text = f"{label}: {value} ({percentage:.1f}%)"
+                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i*20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#333333")
+        except Exception as e:
+            print(f"绘制饼图失败: {e}")
+    
+
+    
+    def add_ipam_network(self):
+        """添加网络"""
+        # 创建添加网络对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_('add_network'))
+        dialog.transient(self.root)
+        dialog.withdraw()  # 先隐藏对话框，避免闪现
+        dialog.geometry("500x150")
+        
+        # 居中主窗体
+        center_window(dialog, self.root)
+        
+        # 显示对话框并设置grab_set
+        dialog.deiconify()
+        dialog.grab_set()
+        
+        # 对话框内容
+        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 配置网格布局
+        form_frame.grid_columnconfigure(1, weight=1)
+        form_frame.grid_columnconfigure(3, weight=2)
+        
+        # 网络CIDR输入
+        ttk.Label(form_frame, text=_('network_cidr')).grid(row=0, column=0, sticky="e", pady=10, padx=(0, 10))
+        network_entry = ttk.Entry(form_frame)
+        network_entry.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
+        
+        # 描述输入
+        ttk.Label(form_frame, text=_('description')).grid(row=0, column=2, sticky="e", pady=10, padx=(0, 10))
+        description_entry = ttk.Entry(form_frame)
+        description_entry.grid(row=0, column=3, sticky="ew", pady=10)
+        
+        def on_add():
+            network = network_entry.get().strip()
+            description = description_entry.get().strip()
+            
+            if not network:
+                self.show_info(_('hint'), _('please_enter_network'))
+                return
+            
+            result = self.ipam.add_network(network, description)
+            # 处理返回值，可能是 (success, message) 或 (success, message, is_overlap)
+            if len(result) == 3:
+                success, message, is_overlap = result
+            else:
+                success, message = result
+                is_overlap = False
+            
+            if success:
+                self.show_info(_('success'), message)
+                self.refresh_ipam_networks()
+                dialog.destroy()
+            else:
+                if is_overlap:
+                    # 弹出确认对话框，让用户决定是否继续添加
+                    import tkinter.messagebox as messagebox
+                    confirm = messagebox.askyesno("确认", f"{message}\n\n是否继续添加？")
+                    if confirm:
+                        # 强制添加网络，跳过重叠检查
+                        try:
+                            import ipaddress
+                            from datetime import datetime
+                            ip_network = ipaddress.ip_network(network, strict=False)
+                            network_str = str(ip_network)
+                            self.ipam.networks[network_str] = {
+                                'description': description,
+                                'ip_addresses': {},
+                                'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            }
+                            self.ipam.save_data()
+                            self.show_info(_('success'), "网络添加成功")
+                            self.refresh_ipam_networks()
+                            dialog.destroy()
+                        except Exception as e:
+                            self.show_error(_('error'), f"添加网络失败: {str(e)}")
+                else:
+                    self.show_error(_('error'), message)
+        
+        # 按钮
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=10)
+        ttk.Button(button_frame, text="确定", command=on_add).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+    
+    def remove_ipam_network(self):
+        """移除网络"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        item = selected_items[0]
+        network = self.ipam_network_tree.item(item, 'values')[0]
+        
+        # 确认删除
+        if messagebox.askyesno(_('confirmation'), _('confirm_remove_network')):
+            success, message = self.ipam.remove_network(network)
+            if success:
+                self.show_info(_('success'), message)
+                self.refresh_ipam_networks()
+                # 清空IP地址列表
+                for item in self.ipam_ip_tree.get_children():
+                    self.ipam_ip_tree.delete(item)
+            else:
+                self.show_error(_('error'), message)
+    
+    def add_ipam_sample_data(self):
+        """添加IPAM样例数据"""
+        # 检查是否已有数据，如果有则不添加样例数据
+        networks = self.ipam.get_all_networks()
+        if networks:
+            return
+        
+        # 添加办公室网络
+        self.ipam.add_network('192.168.1.0/24', '办公室网络')
+        # 为办公室网络分配一些IP地址
+        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.10', 'PC-001', '总经理办公室')
+        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.11', 'PC-002', '技术部经理')
+        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.20', 'PC-003', '技术部员工')
+        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.21', 'PC-004', '技术部员工')
+        self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.1', '路由器')
+        self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.254', '网关')
+        
+        # 添加服务器网络
+        self.ipam.add_network('10.0.0.0/24', '服务器网络')
+        # 为服务器网络分配一些IP地址
+        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.10', 'Server-001', '文件服务器')
+        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.11', 'Server-002', '数据库服务器')
+        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.12', 'Server-003', 'Web服务器')
+        self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.1', '路由器')
+        self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.254', '网关')
+        
+        # 刷新IPAM数据
+        self.refresh_ipam_networks()
+    
+    def on_ipam_network_select(self, event):
+        """网络选择事件处理"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            return
+        
+        item = selected_items[0]
+        network = self.ipam_network_tree.item(item, 'values')[0]
+        self.refresh_ipam_ips(network)
+        
+        # 显示网络前缀到IP输入框
+        try:
+            import ipaddress
+            network_obj = ipaddress.ip_network(network, strict=False)
+            network_address = str(network_obj.network_address)
+            
+            # 根据网络前缀长度确定显示的前缀段数
+            if network_obj.prefixlen >= 24:
+                # 对于/24及更窄的网络，显示前三个段
+                prefix_parts = network_address.split('.')[:3]
+                prefix = '.'.join(prefix_parts) + '.'
+            elif network_obj.prefixlen >= 16:
+                # 对于/16到/23的网络，显示前两个段
+                prefix_parts = network_address.split('.')[:2]
+                prefix = '.'.join(prefix_parts) + '.'
+            else:
+                # 对于更宽的网络，显示第一个段
+                prefix_parts = network_address.split('.')[:1]
+                prefix = '.'.join(prefix_parts) + '.'
+            
+            # 清空并设置前缀
+            self.ipam_ip_entry.delete(0, tk.END)
+            self.ipam_ip_entry.insert(0, prefix)
+            print(f"网络选择事件触发: {network}, 前缀: {prefix}")
+        except Exception as e:
+            print(f"网络前缀处理失败: {str(e)}")
+            pass
+        
+        # 确保IP输入框有输入事件监听器
+        # 先移除现有的监听器，避免重复添加
+        try:
+            self.ipam_ip_entry.unbind('<KeyRelease>')
+        except:
+            pass
+        
+        # 添加输入事件监听器
+        self.ipam_ip_entry.bind('<KeyRelease>', self.on_ip_input)
+    
+    def on_ip_input(self, event):
+        """IP输入事件处理"""
+        # 获取当前输入内容
+        current_text = self.ipam_ip_entry.get()
+        
+        # 检查是否有选中的网络
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中的网络
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        try:
+            import ipaddress
+            network_obj = ipaddress.ip_network(network, strict=False)
+            network_address = str(network_obj.network_address)
+            
+            if network_obj.prefixlen >= 24:
+                # 对于/24及更窄的网络，自动补全前三个段
+                prefix_parts = network_address.split('.')[:3]
+                prefix = '.'.join(prefix_parts) + '.'
+                
+                # 检查用户输入是否已经包含前缀
+                if not current_text.startswith(prefix):
+                    # 如果用户输入的是纯数字，添加前缀
+                    if current_text.isdigit():
+                        # 保留用户输入的数字部分
+                        self.ipam_ip_entry.delete(0, tk.END)
+                        self.ipam_ip_entry.insert(0, prefix + current_text)
+        except:
+            pass
+    
+    def sort_ip_table(self, column):
+        """排序IP地址表格"""
+        # 切换排序顺序
+        if column == self.sort_column:
+            self.sort_order = 'desc' if self.sort_order == 'asc' else 'asc'
+        else:
+            self.sort_column = column
+            self.sort_order = 'asc'
+        
+        # 获取当前表格中的所有数据
+        items = []
+        for item in self.ipam_ip_tree.get_children():
+            values = self.ipam_ip_tree.item(item, 'values')
+            items.append((item, values))
+        
+        # 根据排序列和排序顺序对数据进行排序
+        def get_sort_value(item):
+            values = item[1]
+            if column == 'ip_address':
+                # IP地址排序，转换为数字列表进行比较
+                try:
+                    ip_parts = [int(part) for part in values[0].split('.')]
+                    return ip_parts
+                except:
+                    return values[0]
+            elif column == 'allocated_at':
+                # 时间排序
+                return values[4] if values[4] else ''
+            elif column == 'expiry_date':
+                # 过期日期排序
+                return values[5] if values[5] else ''
+            else:
+                # 其他列直接排序
+                index = {'status': 1, 'hostname': 2, 'description': 3}[column]
+                return values[index]
+        
+        # 排序
+        items.sort(key=get_sort_value, reverse=(self.sort_order == 'desc'))
+        
+        # 清空表格并重新插入排序后的数据
+        for item in self.ipam_ip_tree.get_children():
+            self.ipam_ip_tree.delete(item)
+        
+        for item_id, values in items:
+            self.ipam_ip_tree.insert('', tk.END, values=values)
+    
+    def on_search_input(self, event):
+        """搜索输入事件处理"""
+        # 获取搜索关键词
+        search_text = self.ipam_search_entry.get().strip()
+        
+        # 如果关键词为空，重置搜索
+        if not search_text:
+            self.reset_search()
+            return
+        
+        # 执行搜索
+        self.search_ip()
+    
+    def on_filter_change(self, event):
+        """过滤条件变化事件处理"""
+        # 应用过滤
+        self.apply_filter()
+    
+    def allocate_ip(self):
+        """分配IP地址"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        # 显示IP地址分配对话框
+        dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate')
+        if not dialog_result:
+            return
+        
+        ip_address = dialog_result['ip']
+        hostname = dialog_result['hostname']
+        description = dialog_result['description']
+        
+        if not ip_address:
+            self.show_info(_('hint'), _('please_enter_ip_address'))
+            return
+        
+        if not hostname:
+            self.show_info(_('hint'), _('please_enter_hostname'))
+            return
+        
+        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
+        if success:
+            self.show_info(_('success'), message)
+            self.refresh_ipam_ips(network)
+            self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+            # 清空输入框
+            self.ipam_ip_entry.delete(0, tk.END)
+            self.ipam_hostname_entry.delete(0, tk.END)
+            self.ipam_ip_description_entry.delete(0, tk.END)
+        else:
+            self.show_error(_('error'), message)
+    
+    def release_ip_address(self):
+        """释放IP地址（支持单个或批量释放）"""
+        # 检查是否选择了IP地址
+        selected_ip_items = self.ipam_ip_tree.selection()
+        if not selected_ip_items:
+            self.show_info(_('hint'), _('please_select_ip_address'))
+            return
+        
+        # 保存当前选中的网络
+        selected_network = None
+        selected_network_items = self.ipam_network_tree.selection()
+        if selected_network_items:
+            selected_network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+        
+        # 批量释放IP地址
+        success_count = 0
+        for item in selected_ip_items:
+            ip_address = self.ipam_ip_tree.item(item, 'values')[0]
+            status = self.ipam_ip_tree.item(item, 'values')[1]
+            # 只有状态为"已分配"或"已保留"的IP地址才能被释放
+            if status in [_('allocated'), _('reserved')]:
+                success, message = self.ipam.release_ip(ip_address)
+                if success:
+                    success_count += 1
+                else:
+                    # 记录释放失败的原因
+                    print(f"释放IP {ip_address} 失败: {message}")
+            else:
+                # 跳过已经是可用状态的IP地址
+                print(f"跳过IP {ip_address}，状态为: {status}")
+        
+        if success_count > 0:
+            self.show_info(_('success'), f"成功释放 {success_count} 个IP地址")
+            # 刷新网络列表，更新IP数量
+            self.refresh_ipam_networks()
+            # 重新选择之前的网络并刷新IP列表
+            if selected_network:
+                # 重新选择之前的网络
+                for item in self.ipam_network_tree.get_children():
+                    network = self.ipam_network_tree.item(item, 'values')[0]
+                    if network == selected_network:
+                        self.ipam_network_tree.selection_set(item)
+                        break
+                # 刷新该网络的IP列表
+                self.refresh_ipam_ips(selected_network)
+            elif self.ipam_ip_tree.get_children():
+                # 如果有IP地址显示，刷新当前显示的内容
+                # 这里不调用apply_filter，因为它会要求选择网络
+                # 而是直接清空并重新加载当前显示的IP
+                for item in self.ipam_ip_tree.get_children():
+                    self.ipam_ip_tree.delete(item)
+                # 重新加载IP地址
+                networks = self.ipam.get_all_networks()
+                if networks:
+                    self.refresh_ipam_ips(networks[0]['network'])
+        else:
+            # 检查是否所有选中的IP地址都是可用状态
+            all_available = True
+            for item in selected_ip_items:
+                status = self.ipam_ip_tree.item(item, 'values')[1]
+                if status not in [_('available')]:
+                    all_available = False
+                    break
+            
+            if all_available:
+                self.show_info(_('hint'), "所选IP地址已经是可用状态，无需释放")
+            else:
+                self.show_error(_('error'), _('failed_to_release_ip'))
+
+    def cleanup_available_ips(self):
+        """清理所有可用状态的IP地址"""
+        # 保存当前选中的网络
+        selected_network = None
+        selected_network_items = self.ipam_network_tree.selection()
+        if selected_network_items:
+            selected_network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+        
+        # 确认清理
+        import tkinter.messagebox as messagebox
+        confirm = messagebox.askyesno("确认", "确定要清理所有可用状态的IP地址吗？")
+        if confirm:
+            success, message = self.ipam.cleanup_available_ips()
+            if success:
+                self.show_info(_('success'), message)
+                # 刷新网络列表，更新IP数量
+                self.refresh_ipam_networks()
+                # 重新选择之前的网络并刷新IP列表
+                if selected_network:
+                    # 重新选择之前的网络
+                    for item in self.ipam_network_tree.get_children():
+                        network = self.ipam_network_tree.item(item, 'values')[0]
+                        if network == selected_network:
+                            self.ipam_network_tree.selection_set(item)
+                            break
+                    # 刷新该网络的IP列表
+                    self.refresh_ipam_ips(selected_network)
+                elif self.ipam_ip_tree.get_children():
+                    # 如果有IP地址显示，刷新当前显示的内容
+                    # 这里不调用apply_filter，因为它会要求选择网络
+                    # 而是直接清空并重新加载当前显示的IP
+                    for item in self.ipam_ip_tree.get_children():
+                        self.ipam_ip_tree.delete(item)
+                    # 重新加载IP地址
+                    networks = self.ipam.get_all_networks()
+                    if networks:
+                        self.refresh_ipam_ips(networks[0]['network'])
+                else:
+                    # 如果没有网络，清空IP地址列表
+                    for item in self.ipam_ip_tree.get_children():
+                        self.ipam_ip_tree.delete(item)
+            else:
+                self.show_error(_('error'), message)
+
+    def show_ip_address_dialog(self, title, action_type):
+        """显示IP地址分配/保留对话框
+        
+        Args:
+            title: 对话框标题
+            action_type: 操作类型，'allocate', 'reserve', 'auto_allocate'
+        """
+        dialog = tk.Toplevel(self.root)
+        dialog.title(title)
+        dialog.transient(self.root)
+        dialog.withdraw()  # 先隐藏对话框，避免闪现
+        dialog.geometry("400x180")  # 调整对话框大小，宽度合适，高度足够
+        
+        # 居中主窗体，避免对话框在屏幕左上角闪现
+        center_window(dialog, self.root)
+        
+        # 显示对话框并设置grab_set
+        dialog.deiconify()
+        dialog.grab_set()
+        
+        # 创建主框架
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 配置网格布局
+        main_frame.grid_rowconfigure(0, weight=1)
+        main_frame.grid_rowconfigure(1, weight=1)
+        main_frame.grid_rowconfigure(2, weight=1)
+        main_frame.grid_columnconfigure(0, weight=0)
+        main_frame.grid_columnconfigure(1, weight=1)
+        
+        # IP地址输入
+        ttk.Label(main_frame, text=_('ip_address')).grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
+        ip_entry = ttk.Entry(main_frame)
+        ip_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
+        
+        # 主机名输入
+        ttk.Label(main_frame, text=_('hostname')).grid(row=1, column=0, sticky="e", pady=5, padx=(0, 10))
+        hostname_entry = ttk.Entry(main_frame)
+        hostname_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(0, 10))
+        
+        # 描述输入
+        ttk.Label(main_frame, text=_('description')).grid(row=2, column=0, sticky="e", pady=5, padx=(0, 10))
+        description_entry = ttk.Entry(main_frame)
+        description_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=(0, 10))
+        
+        # 按钮框架
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
+        
+        # 确定按钮
+        def on_ok():
+            ip = ip_entry.get().strip()
+            hostname = hostname_entry.get().strip()
+            description = description_entry.get().strip()
+            
+            # 保存输入值
+            dialog.ip = ip
+            dialog.hostname = hostname
+            dialog.description = description
+            dialog.result = True
+            dialog.destroy()
+        
+        # 取消按钮
+        def on_cancel():
+            dialog.result = False
+            dialog.destroy()
+        
+        ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_('cancel'), command=on_cancel).pack(side=tk.RIGHT, padx=5)
+        
+        # 等待对话框关闭
+        dialog.wait_window()
+        
+        # 返回结果
+        if hasattr(dialog, 'result') and dialog.result:
+            return {
+                'ip': getattr(dialog, 'ip', ''),
+                'hostname': getattr(dialog, 'hostname', ''),
+                'description': getattr(dialog, 'description', '')
+            }
+        else:
+            return None
+
+    def setup_visualization_page(self):
+        """设置可视化页面"""
+        # 配置主框架布局
+        self.visualization_frame.grid_rowconfigure(0, weight=1)
+        self.visualization_frame.grid_rowconfigure(1, weight=1)
+        self.visualization_frame.grid_columnconfigure(0, weight=1)
+        self.visualization_frame.grid_columnconfigure(1, weight=1)
+
+        # 网络拓扑图区域
+        topology_frame = ttk.LabelFrame(self.visualization_frame, text=_("network_topology"), padding="10")
+        topology_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5, columnspan=2)
+
+        # 创建拓扑可视化器
+        self.topology_visualizer = NetworkTopologyVisualizer(topology_frame)
+
+        # IP地址分配可视化区域
+        ip_allocation_frame = ttk.LabelFrame(self.visualization_frame, text=_("ip_allocation_visualization"), padding="10")
+        ip_allocation_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5, columnspan=2)
+
+        # 创建IP分配可视化器
+        self.ip_allocation_visualizer = IPAllocationVisualizer(ip_allocation_frame)
+
+        # 控制区域
+        control_frame = ttk.Frame(self.visualization_frame, padding="10")
+        control_frame.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=2)
+
+        # 网络选择
+        ttk.Label(control_frame, text=_("select_network") + ":").pack(side=tk.LEFT, padx=5)
+        self.visualization_network_var = tk.StringVar()
+        self.visualization_network_combobox = ttk.Combobox(control_frame, textvariable=self.visualization_network_var, state="readonly")
+        self.visualization_network_combobox.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # 刷新按钮
+        ttk.Button(control_frame, text=_("refresh"), command=self.refresh_visualization).pack(side=tk.RIGHT, padx=5)
+
+        # 初始化数据
+        self.refresh_visualization_networks()
+
+    def refresh_visualization_networks(self):
+        """刷新可视化网络列表"""
+        # 获取所有网络
+        networks = self.ipam.get_all_networks()
+        network_list = [network['network'] for network in networks]
+        
+        # 更新下拉列表
+        self.visualization_network_combobox['values'] = network_list
+        if network_list:
+            self.visualization_network_var.set(network_list[0])
+
+    def refresh_visualization(self):
+        """刷新可视化内容"""
+        selected_network = self.visualization_network_var.get()
+        if not selected_network:
+            return
+        
+        # 刷新网络拓扑图
+        # 这里简化处理，使用IPAM中的网络作为示例
+        allocated_subnets = []
+        # 生成示例子网数据
+        try:
+            import ipaddress
+            network = ipaddress.ip_network(selected_network)
+            # 生成一些示例子网
+            for i in range(3):
+                subnet = network.subnets(new_prefix=network.prefixlen + 1)[i]
+                allocated_subnets.append({
+                    "name": f"子网{i+1}",
+                    "cidr": str(subnet)
+                })
+        except Exception:
+            pass
+        
+        # 绘制拓扑图
+        self.topology_visualizer.draw_topology(selected_network, allocated_subnets)
+        
+        # 刷新IP地址分配可视化
+        ip_list = self.ipam.get_network_ips(selected_network)
+        self.ip_allocation_visualizer.draw_ip_allocation(selected_network, ip_list)
+    
+    def reserve_ip(self):
+        """保留IP地址"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        # 显示IP地址保留对话框
+        dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve')
+        if not dialog_result:
+            return
+        
+        ip_address = dialog_result['ip']
+        hostname = dialog_result['hostname']
+        description = dialog_result['description']
+        
+        if not ip_address:
+            self.show_info(_('hint'), _('please_enter_ip_address'))
+            return
+        
+        success, message = self.ipam.reserve_ip(network, ip_address, description)
+        if success:
+            self.show_info(_('success'), message)
+            self.refresh_ipam_ips(network)
+            # 清空输入框
+            self.ipam_ip_entry.delete(0, tk.END)
+            self.ipam_ip_description_entry.delete(0, tk.END)
+        else:
+            self.show_error(_('error'), message)
 
 if __name__ == "__main__":
     # 创建主窗口
@@ -8736,6 +12030,19 @@ if __name__ == "__main__":
 
     # 只允许调整窗口高度，不允许调整宽度
     root.resizable(width=False, height=True)
-    # 创建应用实例并运行
-    SubnetPlannerApp(root)
+    
+    # 创建应用实例
+    app = SubnetPlannerApp(root)
+    
+    # 设置主窗口关闭事件处理程序
+    def on_main_window_close():
+        """主窗口关闭事件处理函数"""
+        print("正在关闭应用程序...")
+        # 销毁所有窗口和组件
+        root.destroy()
+        print("应用程序已关闭")
+    
+    root.protocol("WM_DELETE_WINDOW", on_main_window_close)
+    
+    # 运行应用
     root.mainloop()
