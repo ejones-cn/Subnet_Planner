@@ -6,6 +6,7 @@
 """
 
 from ip_subnet_calculator import ip_to_int, int_to_ip
+from ipaddress import ip_address
 
 # 测试IPv4地址转换
 print("=== 测试IPv4地址转换 ===")
@@ -24,6 +25,8 @@ try:
     print(f"IPv6地址 {ipv6_addr} 转换为整数: {ipv6_int}")
     converted_back = int_to_ip(ipv6_int)
     print(f"整数 {ipv6_int} 转换回IPv6地址: {converted_back}")
-    print(f"转换是否正确: {ipv6_addr == converted_back or ipv6_addr.lower() == converted_back.lower()}")
+    # 使用ipaddress库来比较IP地址，而不是简单的字符串比较
+    is_correct = ip_address(ipv6_addr) == ip_address(converted_back)
+    print(f"转换是否正确: {is_correct}")
 except Exception as e:
     print(f"转换错误: {e}")

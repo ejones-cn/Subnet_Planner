@@ -20,6 +20,311 @@
 import re
 import ipaddress
 import math
+from abc import ABC, abstractmethod
+from typing import Dict, List, Optional, Pattern, Union
+
+
+# 错误处理器抽象基类
+class ErrorProcessor(ABC):
+    """错误处理器抽象基类，定义错误处理的统一接口"""
+    
+    def can_handle(self, error_msg: str) -> bool:
+        """判断是否能处理该错误消息
+        
+        参数:
+            error_msg: 错误消息字符串
+            
+        返回:
+            bool: 如果能处理返回True，否则返回False
+            
+        抛出:
+            TypeError: 如果error_msg不是字符串类型
+        """
+        if not isinstance(error_msg, str):
+            raise TypeError("error_msg must be a string")
+        return self._can_handle_impl(error_msg)
+    
+    @abstractmethod
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        """具体实现判断是否能处理该错误消息
+        
+        参数:
+            error_msg: 错误消息字符串
+            
+        返回:
+            bool: 如果能处理返回True，否则返回False
+        """
+        pass
+    
+    def extract_params(self, error_msg: str) -> Dict[str, str]:
+        """从错误消息中提取参数
+        
+        参数:
+            error_msg: 错误消息字符串
+            
+        返回:
+            Dict[str, str]: 提取的参数字典
+            
+        抛出:
+            TypeError: 如果error_msg不是字符串类型
+            ValueError: 如果error_msg为空
+        """
+        if not isinstance(error_msg, str):
+            raise TypeError("error_msg must be a string")
+        if not error_msg:
+            raise ValueError("error_msg cannot be empty")
+        return self._extract_params_impl(error_msg)
+    
+    @abstractmethod
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        """具体实现从错误消息中提取参数
+        
+        参数:
+            error_msg: 错误消息字符串
+            
+        返回:
+            Dict[str, str]: 提取的参数字典
+        """
+        pass
+    
+    @abstractmethod
+    def get_translation_key(self) -> str:
+        """获取翻译键
+        
+        返回:
+            str: 翻译键
+        """
+        pass
+
+
+# 全局初始化状态
+_ERROR_PROCESSORS_INITIALIZED = False
+
+
+def _ensure_processors_initialized():
+    """确保错误处理器已初始化（惰性初始化）
+    
+    如果处理器未初始化，则执行初始化，避免模块加载时的副作用
+    """
+    global _ERROR_PROCESSORS_INITIALIZED
+    if not _ERROR_PROCESSORS_INITIALIZED:
+        _register_all_processors()
+        _ERROR_PROCESSORS_INITIALIZED = True
+
+
+# 错误处理器注册表
+class ErrorProcessorRegistry:
+    """错误处理器注册表，管理所有错误处理器"""
+    
+    def __init__(self):
+        self._processors: List[ErrorProcessor] = []
+    
+    def register(self, processor: ErrorProcessor) -> None:
+        """注册错误处理器
+        
+        参数:
+            processor: 错误处理器实例
+        """
+        self._processors.append(processor)
+    
+    def find_processor(self, error_msg: str) -> Optional[ErrorProcessor]:
+        """查找能够处理该错误消息的处理器
+        
+        参数:
+            error_msg: 错误消息字符串
+            
+        返回:
+            Optional[ErrorProcessor]: 如果找到处理器返回处理器实例，否则返回None
+        """
+        _ensure_processors_initialized()
+        for processor in self._processors:
+            if processor.can_handle(error_msg):
+                return processor
+        return None
+
+
+# 创建全局注册表实例
+_error_processor_registry = ErrorProcessorRegistry()
+
+
+# 具体错误处理器类
+
+
+class InvalidSubnetMaskProcessor(ErrorProcessor):
+    """无效子网掩码错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "not a valid netmask" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        netmask_match = re.search(r"'([^']+)'", error_msg)
+        netmask = netmask_match.group(1) if netmask_match else error_msg.split()[0].strip("'")
+        return {"netmask": netmask}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_subnet_mask'
+
+
+class InvalidNetworkAddressProcessor(ErrorProcessor):
+    """无效网络地址错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "does not appear to be an IPv4 or IPv6 network" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        network_match = re.search(r"'([^']+)'", error_msg)
+        network = network_match.group(1) if network_match else "invalid_network"
+        return {"network": network}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_network_address_format'
+
+
+class CIDRHostBitsSetProcessor(ErrorProcessor):
+    """CIDR主机位设置错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "has host bits set" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        cidr_match = re.search(r"'([^']+)'", error_msg)
+        cidr = cidr_match.group(1) if cidr_match else error_msg.split()[0]
+        return {"cidr": cidr}
+    
+    def get_translation_key(self) -> str:
+        return 'cidr_has_host_bits_set'
+
+
+class InvalidOctetProcessor(ErrorProcessor):
+    """无效八位组错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return bool(re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE))
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        octet_match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
+        octet = octet_match.group(1) if octet_match else "invalid"
+        return {"octet": octet}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_octet_in_ip'
+
+
+class InvalidIPv6GroupTooLongProcessor(ErrorProcessor):
+    """IPv6组过长错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "At most 4 characters permitted" in error_msg and "IPv6" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        group_match = re.search(r"'([^']+)'", error_msg)
+        group = group_match.group(1) if group_match else "invalid_group"
+        return {"group": group}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_ipv6_group_too_long'
+
+
+class IPv6DoubleColonProcessor(ErrorProcessor):
+    """IPv6双冒号错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "At most one '::' permitted" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
+        address = address_match.group(1) if address_match else error_msg
+        return {"address": address}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_ipv6_double_colon'
+
+
+class IPv6PartsCountProcessor(ErrorProcessor):
+    """IPv6部分数量错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "Expected at most" in error_msg and "IPv6" in error_msg.lower()
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        max_parts_match = re.search(r'Expected at most (\d+)', error_msg)
+        max_parts = max_parts_match.group(1) if max_parts_match else '7'
+        
+        address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
+        address = address_match.group(1) if address_match else error_msg
+        
+        return {"max_parts": max_parts, "address": address}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_ipv6_parts_count'
+
+
+class SimpleErrorProcessor(ErrorProcessor):
+    """简单错误处理器，用于处理不需要额外参数的错误"""
+    
+    def __init__(self, pattern: Union[str, Pattern[str]], translation_key: str):
+        self._pattern = pattern
+        self._translation_key = translation_key
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        if isinstance(self._pattern, str):
+            return self._pattern in error_msg
+        else:
+            return bool(self._pattern.search(error_msg))
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        return {}
+    
+    def get_translation_key(self) -> str:
+        return self._translation_key
+
+
+# 注册所有错误处理器
+
+def _register_all_processors() -> None:
+    """注册所有错误处理器到全局注册表"""
+    
+    # 1. 注册需要参数提取的复杂处理器
+    _error_processor_registry.register(InvalidSubnetMaskProcessor())
+    _error_processor_registry.register(InvalidNetworkAddressProcessor())
+    _error_processor_registry.register(CIDRHostBitsSetProcessor())
+    _error_processor_registry.register(InvalidOctetProcessor())
+    _error_processor_registry.register(InvalidIPv6GroupTooLongProcessor())
+    _error_processor_registry.register(IPv6DoubleColonProcessor())
+    _error_processor_registry.register(IPv6PartsCountProcessor())
+    
+    # 2. 注册不需要参数的简单处理器
+    # 定义简单错误模式列表，格式：(匹配模式, 翻译键)
+    simple_patterns = [
+        # IPv4相关错误
+        ("Only decimal digits permitted", 'invalid_ipv4_decimal_digits'),
+        ("Unexpected '/'", 'invalid_ipv4_unexpected_slash'),
+        ("At most 3 characters permitted", 'invalid_ipv4_octet_too_long'),
+        (re.compile(r"expected.*?4 octets", re.IGNORECASE | re.DOTALL), 'invalid_ip_format_4_octets'),
+        
+        # IPv6相关错误
+        ("does not appear to be an IPv6 address", 'invalid_ipv6_address_format'),
+        ("at most 4 hex digits per group", 'invalid_ipv6_hex_digits'),
+        ("too many colons", 'invalid_ipv6_too_many_colons'),
+        ("At most 8 colons permitted", 'invalid_ipv6_too_many_colons'),
+        ("Only hex digits permitted", 'invalid_ipv6_hex_only'),
+        ("At most 45 characters expected", 'invalid_ipv6_address_too_long'),
+        ("Trailing ':' only permitted as part of '::'", 'invalid_ipv6_trailing_colon'),
+        ("Exactly 8 parts expected", 'invalid_ipv6_exactly_8_parts'),
+        ("parts expected", 'invalid_ipv6_parts_count'),
+        (re.compile(r"At most.*?characters permitted", re.IGNORECASE), 'invalid_ipv6_characters_limit'),
+        
+        # 通用错误
+        ("are not of the same version", 'ip_versions_not_compatible'),
+        
+        # IPv6通用匹配
+        (re.compile(r"IPv6|(colon.*?hex)|(hex.*?colon)", re.IGNORECASE), 'invalid_ipv6_format'),
+    ]
+    
+    # 注册简单错误处理器
+    for pattern, translation_key in simple_patterns:
+        _error_processor_registry.register(SimpleErrorProcessor(pattern, translation_key))
+
 
 # 导入本地模块
 from version import get_version
@@ -127,156 +432,34 @@ def handle_ip_subnet_error(error):
     通用IP子网错误处理函数
 
     参数:
-    error: 捕获的ValueError异常
+        error: 捕获的ValueError异常
 
     返回:
-    包含错误信息的字典
+        包含错误信息的字典
     """
     error_msg = str(error)
-    error_info = None
     error_type = _("ip_subnet")
-
-    # 定义错误模式匹配列表, 包含匹配函数和翻译键
-    error_patterns = [
-        # (匹配函数, 翻译键)
-        (lambda msg: "not a valid netmask" in msg, 'invalid_subnet_mask'),
-        (lambda msg: "does not appear to be an IPv4 or IPv6 network" in msg, 'invalid_network_address_format'),
-        (lambda msg: "has host bits set" in msg, 'cidr_has_host_bits_set'),
-        (lambda msg: re.search(r"expected.*?4 octets", msg, re.IGNORECASE | re.DOTALL), 'invalid_ip_format_4_octets'),
-        (lambda msg: re.search(r"octet.*?(\d+)", msg, re.IGNORECASE), 'invalid_octet_in_ip'),
-        (lambda msg: "Only decimal digits permitted" in msg, 'invalid_ipv4_decimal_digits'),
-        (lambda msg: "Unexpected '/'" in msg, 'invalid_ipv4_unexpected_slash'),
-        # 添加IP版本不匹配的错误处理，放在IPv6通用匹配之前
-        (lambda msg: "are not of the same version" in msg, 'ip_versions_not_compatible'),
-        (lambda msg: "does not appear to be an IPv6 address" in msg, 'invalid_ipv6_address_format'),
-        (lambda msg: "at most 4 hex digits per group" in msg, 'invalid_ipv6_hex_digits'),
-        (lambda msg: "too many colons" in msg, 'invalid_ipv6_too_many_colons'),
-        (lambda msg: "Only hex digits permitted" in msg, 'invalid_ipv6_hex_only'),
-        (lambda msg: "At most 8 colons permitted" in msg, 'invalid_ipv6_too_many_colons'),
-        (lambda msg: "At most 45 characters expected" in msg, 'invalid_ipv6_address_too_long'),
-        (lambda msg: "Trailing ':' only permitted as part of '::'" in msg, 'invalid_ipv6_trailing_colon'),
-        (lambda msg: "Exactly 8 parts expected" in msg, 'invalid_ipv6_exactly_8_parts'),
-        (lambda msg: "parts expected" in msg, 'invalid_ipv6_parts_count'),
-        (lambda msg: "At most one '::' permitted" in msg, 'invalid_ipv6_double_colon'),
-        (lambda msg: "IPv6" in msg or ("colon" in msg.lower() and "hex" in msg.lower()), 'invalid_ipv6_format'),
-        (lambda msg: "Expected 4 octets" in msg, 'invalid_ip_format_4_octets'),
-        # 处理At most X other parts with ':' in 错误，使用更通用的匹配方式
-        (lambda msg: "Expected at most" in msg, 'invalid_ipv6_parts_count'),
-        # 处理At most X characters permitted错误，按具体情况匹配
-        (lambda msg: "At most 3 characters permitted" in msg, 'invalid_ipv4_octet_too_long'),
-        (lambda msg: "At most 4 characters permitted" in msg, 'invalid_ipv6_group_too_long'),
-        (lambda msg: "At most" in msg and "characters permitted" in msg, 'invalid_ipv6_characters_limit'),
-    ]
-
-    # 检查错误模式
-    for match_func, translation_key in error_patterns:
-        if match_func(error_msg):
-            # 提取错误中的变量
-            if translation_key == 'invalid_subnet_mask':
-                # 从错误信息中提取网络掩码，去除单引号
-                try:
-                    netmask_match = re.search(r"'([^']+)'", error_msg)
-                    netmask = netmask_match.group(1) if netmask_match else error_msg.split()[0].strip("'")
-                    translation = _(translation_key)
-                    error_info = translation.format(netmask=netmask) if translation else f"Invalid netmask: {netmask}"
-                except (AttributeError, IndexError):
-                    error_info = _(translation_key).format(netmask="invalid_netmask") if _(translation_key) else "Invalid netmask: invalid_netmask"
-            elif translation_key == 'invalid_network_address_format':
-                # 从错误信息中提取网络地址
-                try:
-                    network_match = re.search(r"'([^']+)'", error_msg)
-                    network = network_match.group(1) if network_match else "invalid_network"
-                    translation = _(translation_key)
-                    error_info = translation.format(network=network) if translation else f"Invalid network address: {network}"
-                except AttributeError:
-                    error_info = _(translation_key).format(network="invalid_network") if _(translation_key) else "Invalid network address: invalid_network"
-            elif translation_key == 'cidr_has_host_bits_set':
-                # 从错误信息中提取CIDR地址
-                try:
-                    cidr_match = re.search(r"'([^']+)'", error_msg)
-                    cidr = cidr_match.group(1) if cidr_match else error_msg.split()[0]
-                    translation = _(translation_key)
-                    error_info = translation.format(cidr=cidr) if translation else f"Invalid CIDR: {cidr}"
-                except (AttributeError, IndexError):
-                    error_info = _(translation_key).format(cidr="invalid_cidr") if _(translation_key) else "Invalid CIDR: invalid_cidr"
-            elif translation_key == 'invalid_ipv6_group_too_long':
-                # 处理IPv6组过长错误
-                try:
-                    group_match = re.search(r"'([^']+)'", error_msg)
-                    group = group_match.group(1) if group_match else "invalid_group"
-                    translation = _(translation_key)
-                    error_info = translation.format(group=group) if translation else f"Invalid IPv6 group: {group}"
-                except AttributeError:
-                    # 如果没有找到引号，使用默认值
-                    error_info = _(translation_key).format(group="invalid_group")
-            elif translation_key == 'invalid_ipv6_double_colon':
-                # 提取错误中的变量：address
-                address = None
-                try:
-                    # 提取地址
-                    address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
-                    if address_match:
-                        address = address_match.group(1)
-                    
-                    # 格式化错误信息
-                    error_info = _(translation_key, address=address if address else error_msg)
-                except Exception:
-                    # 异常情况下使用默认值
-                    error_info = _(translation_key, address=error_msg)
-            elif translation_key == 'invalid_ipv6_parts_count':
-                # 提取错误中的变量：max_parts和address
-                max_parts = None
-                address = None
-                try:
-                    # 提取最大部分数
-                    max_parts_match = re.search(r'Expected at most (\d+)', error_msg)
-                    if max_parts_match:
-                        max_parts = max_parts_match.group(1)
-                    
-                    # 提取地址
-                    address_match = re.search(r"in ['\"]([^'\"]+)['\"]", error_msg)
-                    if address_match:
-                        address = address_match.group(1)
-                    
-                    # 格式化错误信息
-                    error_info = _(translation_key, max_parts=max_parts if max_parts else '7', address=address if address else error_msg)
-                except Exception:
-                    # 异常情况下使用默认值
-                    error_info = _(translation_key, max_parts='7', address=error_msg)
-            elif translation_key in ['invalid_ip_format_4_octets', 'invalid_ipv4_decimal_digits', 'invalid_ipv4_unexpected_slash',
-                                    'invalid_ipv6_address_format', 'invalid_ipv6_hex_digits', 'invalid_ipv6_too_many_colons',
-                                    'invalid_ipv6_hex_only', 'invalid_ipv4_octet_too_long', 'invalid_ipv6_address_too_long',
-                                    'invalid_ipv6_characters_limit', 'invalid_ipv6_trailing_colon', 'invalid_ipv6_exactly_8_parts',
-                                    'invalid_ipv6_format', 'ip_versions_not_compatible']:
-                # 这些错误不需要额外变量
-                error_info = _(translation_key) or f"Invalid format error ({translation_key})"
-            elif translation_key == 'invalid_octet_in_ip':
-                octet_match = re.search(r"octet.*?(\d+)", error_msg, re.IGNORECASE)
-                if octet_match:
-                    octet = octet_match.group(1)
-                    translation = _(translation_key)
-                    error_info = translation.format(octet=octet) if translation else f"Invalid octet: {octet}"
-            elif translation_key == 'invalid_ipv6_group_too_long':
-                group_match = re.search(r"'([^']+)'", error_msg)
-                if group_match:
-                    group = group_match.group(1)
-                    translation = _(translation_key)
-                    error_info = translation.format(group=group) if translation else f"Invalid IPv6 group: {group}"
-            break
-
-    # 检查octet长度错误(特殊处理)
-    if not error_info and re.search(r"at most 3 characters permitted", error_msg, re.IGNORECASE):
-        octet_match = re.search(r"in?'?([^']+)'?", error_msg, re.IGNORECASE)
-        if octet_match:
-            invalid_octet = octet_match.group(1)
-            translation = _('invalid_octet_in_ip')
-            error_info = translation.format(octet=invalid_octet) if translation else f"Invalid octet: {invalid_octet}"
-
-    # 使用默认错误信息
-    if not error_info:
+    
+    # 查找能够处理该错误的处理器
+    processor = _error_processor_registry.find_processor(error_msg)
+    
+    if processor:
+        # 提取参数并格式化错误信息
+        params = processor.extract_params(error_msg)
+        translation_key = processor.get_translation_key()
+        translation = _(translation_key)
+        
+        if translation and params:
+            error_info = translation.format(**params)
+        elif translation:
+            error_info = translation
+        else:
+            error_info = f"Error ({translation_key})"
+    else:
+        # 使用默认错误信息
         error_text = _('error') or "Error"
         error_info = f"{error_type} {error_text}: {error_msg}"
-
+    
     return {"error": error_info}
 
 

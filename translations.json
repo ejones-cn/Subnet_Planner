@@ -35,6 +35,27 @@
     "ja": "確認",
     "ko": "확인"
   },
+  "confirmation": {
+    "zh": "确认",
+    "zh_tw": "確認",
+    "en": "Confirmation",
+    "ja": "確認",
+    "ko": "확인"
+  },
+  "confirm_remove_network": {
+    "zh": "确定要删除选中的网络吗？",
+    "zh_tw": "確定要刪除選中的網路嗎？",
+    "en": "Are you sure you want to delete the selected network?",
+    "ja": "選択したネットワークを削除してもよろしいですか？",
+    "ko": "선택한 네트워크를 삭제하시겠습니까?"
+  },
+  "confirm_cleanup_available_ips": {
+    "zh": "确定要清理所有可用状态的IP地址吗？",
+    "zh_tw": "確定要清理所有可用狀態的IP位址嗎？",
+    "en": "Are you sure you want to clean up all available IP addresses?",
+    "ja": "利用可能なすべてのIPアドレスをクリーンアップしてもよろしいですか？",
+    "ko": "사용 가능한 모든 IP 주소를 정리하시겠습니까?"
+  },
   "export": {
     "zh": "导出",
     "zh_tw": "匯出",
@@ -1744,11 +1765,11 @@
     "ko": "백업/복원 방법을 선택하십시오："
   },
   "ip_address_management": {
-    "zh": "IP地址管理",
-    "zh_tw": "IP位址管理",
-    "en": "IP Address Management",
-    "ja": "IPアドレス管理",
-    "ko": "IP 주소 관리"
+    "zh": "地址管理",
+    "zh_tw": "位址管理",
+    "en": "Address Management",
+    "ja": "アドレス管理",
+    "ko": "주소 관리"
   },
   "allocate_address": {
     "zh": "分配地址",
@@ -1763,6 +1784,13 @@
     "en": "Reserve Address",
     "ja": "アドレスを予約",
     "ko": "주소 예약"
+  },
+  "restore_allocation": {
+    "zh": "恢复分配",
+    "zh_tw": "恢復分配",
+    "en": "Restore Allocation",
+    "ja": "割り当てを復元",
+    "ko": "할당 복원"
   },
   "batch_allocate": {
     "zh": "批量分配",
@@ -1961,11 +1989,11 @@
     "ko": "IP 수"
   },
   "ip_address_management": {
-    "zh": "IP地址管理",
-    "zh_tw": "IP位址管理",
-    "en": "IP Address Management",
-    "ja": "IPアドレス管理",
-    "ko": "IP 주소 관리"
+    "zh": "地址管理",
+    "zh_tw": "位址管理",
+    "en": "Address Management",
+    "ja": "アドレス管理",
+    "ko": "주소 관리"
   },
   "allocation_history": {
     "zh": "分配历史",
@@ -3576,5 +3604,12 @@
     "ja": "ホスト名または説明を入力してください",
     "zh_tw": "請輸入主機名或描述",
     "ko": "호스트 이름 또는 설명을 입력하세요"
+  },
+  "ip_address_list": {
+    "zh": "IP地址列表",
+    "en": "IP Address List",
+    "ja": "IPアドレスリスト",
+    "zh_tw": "IP位址列表",
+    "ko": "IP 주소 목록"
   }
 }

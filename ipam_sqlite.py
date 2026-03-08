@@ -331,31 +331,57 @@ class IPAMSQLite:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
             
-            # 检查IP地址是否已存在
-            cursor.execute('SELECT id FROM ip_addresses WHERE ip_address = ?', (ip_address,))
-            if cursor.fetchone():
+            try:
+                # 开始事务
+                conn.execute('BEGIN EXCLUSIVE')
+                
+                # 检查IP地址是否已存在
+                cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+                ip_row = cursor.fetchone()
+                
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                success_result = None
+                if ip_row:
+                    # IP地址已存在
+                    ip_id, status = ip_row
+                    if status == 'available':
+                        # IP地址已被释放，可以重新分配
+                        cursor.execute('''
+                        UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, 
+                        allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
+                        WHERE id = ?
+                        ''', ('allocated', hostname, description, now, 'admin', expiry_date, now, ip_id))
+                    else:
+                        # IP地址已被分配或保留
+                        success_result = (False, "IP地址已被分配或保留")
+                else:
+                    # 新的IP地址，插入记录
+                    cursor.execute('''
+                    INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, 
+                    allocated_at, allocated_by, expiry_date, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (network_id, ip_address, 'allocated', hostname, description,
+                          now, 'admin', expiry_date, now, now))
+                
+                if success_result is None:
+                    # 记录分配历史
+                    cursor.execute('''
+                    INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
+                    performed_by, performed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (network_id, ip_address, 'allocate', hostname, description, 'admin', now))
+                    conn.commit()
+                    success_result = (True, "IP地址分配成功")
+                else:
+                    conn.rollback()
+                
+                return success_result
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
                 conn.close()
-                return False, "IP地址已被分配或保留"
-            
-            # 分配IP地址
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute('''
-            INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, 
-            allocated_at, allocated_by, expiry_date, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (network_id, ip_address, 'allocated', hostname, description,
-                  now, 'admin', expiry_date, now, now))
-            
-            # 记录分配历史
-            cursor.execute('''
-            INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
-            performed_by, performed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (network_id, ip_address, 'allocate', hostname, description, 'admin', now))
-            
-            conn.commit()
-            conn.close()
-            return True, "IP地址分配成功"
         except Exception as e:
             return False, f"分配IP地址失败: {str(e)}"
     
@@ -540,6 +566,83 @@ class IPAMSQLite:
             return True, "IP地址释放成功"
         except Exception as e:
             return False, f"释放IP地址失败: {str(e)}"
+    
+    def get_ip_info(self, ip_address: str):
+        """获取IP地址信息
+        
+        Args:
+            ip_address: IP地址
+        
+        Returns:
+            Dict or None: IP地址信息，包含hostname, description等字段，失败返回None
+        """
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 查询IP地址信息
+            cursor.execute('SELECT hostname, description, network_id FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+            ip_row = cursor.fetchone()
+            
+            if ip_row:
+                return {
+                    'hostname': ip_row[0],
+                    'description': ip_row[1],
+                    'network_id': ip_row[2]
+                }
+            return None
+        except Exception as e:
+            print(f"获取IP地址信息失败: {str(e)}")
+            return None
+        finally:
+            if conn:
+                conn.close()
+    
+    def update_ip_info(self, ip_address: str, hostname: str, description: str):
+        """更新IP地址信息
+        
+        Args:
+            ip_address: IP地址
+            hostname: 新的主机名
+            description: 新的描述
+        
+        Returns:
+            tuple: (bool, str) - (是否更新成功, 错误信息)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 检查IP地址是否存在
+            cursor.execute('SELECT id, network_id FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+            ip_row = cursor.fetchone()
+            if not ip_row:
+                conn.close()
+                return False, "IP地址不存在"
+            
+            ip_id, network_id = ip_row
+            
+            # 更新IP地址信息
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute('''
+            UPDATE ip_addresses 
+            SET hostname = ?, description = ?, updated_at = ?
+            WHERE id = ?
+            ''', (hostname, description, now, ip_id))
+            
+            # 记录更新历史
+            cursor.execute('''
+            INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
+            performed_by, performed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (network_id, ip_address, 'update', hostname, description, 'admin', now))
+            
+            conn.commit()
+            conn.close()
+            return True, "IP地址信息更新成功"
+        except Exception as e:
+            return False, f"更新IP地址信息失败: {str(e)}"
     
     def cleanup_available_ips(self):
         """清理所有可用状态的IP地址
