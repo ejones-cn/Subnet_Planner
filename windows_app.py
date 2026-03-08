@@ -485,6 +485,32 @@ class SubnetPlannerApp:
     这个类实现了一个子网规划的GUI应用程序，
     支持子网分割、子网规划、IP信息查询等功能。
     """
+    
+    # 状态相关的类常量
+    VALID_STATUSES = {'available', 'allocated', 'reserved'}
+    
+    @classmethod
+    def _get_status_map(cls):
+        """获取状态映射表（动态本地化版本）
+        
+        Returns:
+            dict: 本地化状态到英文状态的映射
+        """
+        return {
+            _('available'): 'available',
+            _('allocated'): 'allocated',
+            _('reserved'): 'reserved'
+        }
+    
+    @classmethod
+    def _get_all_valid_statuses(cls):
+        """获取所有有效状态值（英文和本地化版本）
+        
+        Returns:
+            set: 包含所有有效状态值的集合
+        """
+        return cls.VALID_STATUSES | set(cls._get_status_map().keys())
+    
     def autocomplete_ipv6(self, event):
         """IPv6地址自动补全功能
         
@@ -9800,12 +9826,8 @@ class SubnetPlannerApp:
         for ip in ips:
             # 按状态过滤
             if status != _('all'):
-                # 映射本地化状态到英文状态
-                status_map = {
-                    _('allocated'): 'allocated', 
-                    _('reserved'): 'reserved',
-                    _('available'): 'available'
-                }
+                # 使用类方法获取状态映射表
+                status_map = self._get_status_map()
                 if status in status_map:
                     if ip['status'] != status_map[status]:
                         continue
@@ -11767,6 +11789,27 @@ class SubnetPlannerApp:
                     # 全选文本
                     self.inline_edit_widget.select_range(0, tk.END)
     
+    def _validate_status(self, status_value):
+        """验证状态值的合法性
+        
+        Args:
+            status_value: 要验证的状态值
+            
+        Returns:
+            tuple: (is_valid, actual_status) - 是否有效和转换后的实际状态
+        """
+        # 使用类常量获取所有有效状态
+        valid_statuses = self._get_all_valid_statuses()
+        if status_value not in valid_statuses:
+            return False, None
+        
+        # 使用类方法获取状态转换映射
+        status_map = self._get_status_map()
+        actual_status = status_map.get(status_value, status_value)
+        
+        # 第一次检查已确保状态有效，无需再次验证
+        return True, actual_status
+    
     def on_inline_edit_save(self, event):
         """保存内联编辑的内容"""
         if hasattr(self, 'inline_edit_widget') and hasattr(self, 'inline_edit_data'):
@@ -11788,17 +11831,45 @@ class SubnetPlannerApp:
                 return
             network = self.ipam_network_tree.item(network_items[0], 'values')[0]
             
+            # 输入验证
+            validation_error = None
+            actual_status = None
+            if column_name == 'status':
+                # 验证状态合法性
+                is_valid, actual_status = self._validate_status(new_value)
+                if not is_valid:
+                    validation_error = "无效的状态值"
+            elif column_name in ['hostname', 'description']:
+                # 先过滤特殊字符（防止注入），确保验证使用正确的值
+                if new_value:
+                    # 移除控制字符（0-31和127），但保留所有可打印字符（包括中文、俄文等Unicode字符）
+                    new_value = ''.join(char for char in new_value if not (0 <= ord(char) < 32 or ord(char) == 127))
+                    
+                    if column_name == 'hostname':
+                        # 主机名：允许Unicode字符（包括中文、俄文等），同时只排除危险字符
+                        # 允许的字符：Unicode单词字符、连字符、点、下划线
+                        new_value = re.sub(r'[^\w\-\.]', '', new_value) if new_value else ''
+                    else:
+                        # 描述：只过滤真正危险的字符（SQL注入和XSS），保留常见标点符号
+                        # 保留的字符：中文、俄文等Unicode字符，以及常见标点符号（逗号、句号、感叹号等）
+                        new_value = re.sub(r'[\'\"<>;\\]', '', new_value) if new_value else ''
+                
+                # 验证长度（使用过滤后的值）
+                if column_name == 'hostname' and len(new_value) > 255:
+                    validation_error = "主机名长度不能超过255个字符"
+                elif column_name == 'description' and len(new_value) > 1000:
+                    validation_error = "描述长度不能超过1000个字符"
+            
+            if validation_error:
+                self.show_error(_('error'), validation_error)
+                return
+            
             try:
                 # 更新数据库
                 if column_name == 'status':
-                    # 状态转换
-                    status_map = {
-                        _('available'): 'available',
-                        _('allocated'): 'allocated',
-                        _('reserved'): 'reserved'
-                    }
-                    actual_status = status_map.get(new_value, new_value)
+                    # 获取当前值并转换（original_value是已知合法值，无需完整验证）
                     current_value = edit_data['original_value']
+                    status_map = self._get_status_map()
                     current_actual_status = status_map.get(current_value, current_value)
                     
                     # 只有当状态真正改变时才执行操作

@@ -444,17 +444,22 @@ def handle_ip_subnet_error(error):
     processor = _error_processor_registry.find_processor(error_msg)
     
     if processor:
-        # 提取参数并格式化错误信息
-        params = processor.extract_params(error_msg)
-        translation_key = processor.get_translation_key()
-        translation = _(translation_key)
-        
-        if translation and params:
-            error_info = translation.format(**params)
-        elif translation:
-            error_info = translation
-        else:
-            error_info = f"Error ({translation_key})"
+        try:
+            # 提取参数并格式化错误信息
+            params = processor.extract_params(error_msg)
+            translation_key = processor.get_translation_key()
+            translation = _(translation_key)
+            
+            if translation and params:
+                error_info = translation.format(**params)
+            elif translation:
+                error_info = translation
+            else:
+                error_info = f"Error ({translation_key})"
+        except Exception as e:
+            # 处理器提取参数失败，使用默认错误信息
+            error_text = _('error') or "Error"
+            error_info = f"{error_type} {error_text}: {error_msg}"
     else:
         # 使用默认错误信息
         error_text = _('error') or "Error"
