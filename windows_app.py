@@ -8913,8 +8913,8 @@ class SubnetPlannerApp:
     def setup_ipam_page(self):
         """设置IP地址管理（IPAM）页面"""
         # 配置IPAM页面的网格布局
-        self.ipam_frame.grid_rowconfigure(0, weight=1)
-        self.ipam_frame.grid_rowconfigure(1, weight=4)
+        self.ipam_frame.grid_rowconfigure(0, weight=0)
+        self.ipam_frame.grid_rowconfigure(1, weight=1)
         self.ipam_frame.grid_columnconfigure(0, weight=1)
         self.ipam_frame.grid_columnconfigure(1, weight=1)
         
@@ -8948,7 +8948,7 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text=_('backup_restore'), command=self.backup_restore_data).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
         
         # 网络列表
-        self.ipam_network_tree = ttk.Treeview(network_frame, columns=('network', 'description', 'created_at', 'ip_count'), show='headings')
+        self.ipam_network_tree = ttk.Treeview(network_frame, columns=('network', 'description', 'created_at', 'ip_count'), show='headings', height=8)
         self.ipam_network_tree.heading('network', text=_('network'))
         self.ipam_network_tree.heading('description', text=_('description'))
         self.ipam_network_tree.heading('created_at', text=_('created_at'))
@@ -8982,8 +8982,8 @@ class SubnetPlannerApp:
         self.ipam_network_tree.configure(yscrollcommand=network_scrollbar.set, xscrollcommand=network_xscroll_set)
         self.ipam_network_tree.grid(row=1, column=0, columnspan=2, sticky="nsew")
         
-        # 配置网络管理区域的行权重，确保表格能填充整个空间
-        network_frame.grid_rowconfigure(1, weight=1)
+        # 配置网络管理区域的行权重，表格高度由内部控件决定
+        network_frame.grid_rowconfigure(1, weight=0)
         
         # 绑定网络选择事件
         self.ipam_network_tree.bind('<<TreeviewSelect>>', self.on_ipam_network_select)
@@ -9071,7 +9071,7 @@ class SubnetPlannerApp:
         self.ipam_status_filter.bind('<<ComboboxSelected>>', self.on_filter_change)
         
         # IP地址列表
-        self.ipam_ip_tree = ttk.Treeview(ip_management_frame, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings')
+        self.ipam_ip_tree = ttk.Treeview(ip_management_frame, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings', height=8)
         
         # 为表头添加点击事件，实现排序功能
         self.ipam_ip_tree.heading('ip_address', text=_('ip_address'), command=lambda: self.sort_ip_table('ip_address'))
@@ -9622,6 +9622,16 @@ class SubnetPlannerApp:
         except:
             return False
     
+    def _get_localized_status(self, status):
+        """获取本地化的状态文本"""
+        if status == 'reserved':
+            return _('reserved')
+        elif status == 'available':
+            return _('available')
+        elif status == 'allocated':
+            return _('allocated')
+        return status
+    
     def search_ip(self):
         """搜索IP地址"""
         selected_items = self.ipam_network_tree.selection()
@@ -9635,7 +9645,7 @@ class SubnetPlannerApp:
         search_mode = self.search_mode.get()
         
         if not search_text:
-            self.show_info(_('hint'), "请输入搜索内容")
+            self.show_info(_('hint'), _('please_enter_search_content'))
             return
         
         # 清空现有IP地址列表
@@ -9653,59 +9663,29 @@ class SubnetPlannerApp:
         for ip in ips:
             # 根据搜索范围和搜索模式过滤
             match = False
+            # 获取本地化状态文本
+            localized_status = self._get_localized_status(ip['status'])
+            
+            # 检查IP地址
+            ip_match = self._match_search_pattern(ip['ip_address'], ' '.join(keywords), search_mode)
+            # 检查主机名
+            hostname_match = self._match_search_pattern(ip.get('hostname', ''), ' '.join(keywords), search_mode)
+            # 检查描述
+            desc_match = self._match_search_pattern(ip.get('description', ''), ' '.join(keywords), search_mode)
+            # 检查状态（同时支持中文和英文）
+            status_match = self._match_search_pattern(ip['status'], ' '.join(keywords), search_mode) or \
+                          self._match_search_pattern(localized_status, ' '.join(keywords), search_mode)
+            
             if search_scope == "全部":
-                # 多关键词搜索，所有关键词都必须匹配
-                all_match = True
-                for keyword in keywords:
-                    keyword_match = False
-                    # 检查IP地址
-                    if self._match_search_pattern(ip['ip_address'], keyword, search_mode):
-                        keyword_match = True
-                    # 检查主机名
-                    elif self._match_search_pattern(ip.get('hostname', ''), keyword, search_mode):
-                        keyword_match = True
-                    # 检查描述
-                    elif self._match_search_pattern(ip.get('description', ''), keyword, search_mode):
-                        keyword_match = True
-                    # 检查状态
-                    elif self._match_search_pattern(ip['status'], keyword, search_mode):
-                        keyword_match = True
-                    if not keyword_match:
-                        all_match = False
-                        break
-                match = all_match
+                match = ip_match or hostname_match or desc_match or status_match
             elif search_scope == "IP地址":
-                # 多关键词搜索，所有关键词都必须匹配
-                all_match = True
-                for keyword in keywords:
-                    if not self._match_search_pattern(ip['ip_address'], keyword, search_mode):
-                        all_match = False
-                        break
-                match = all_match
+                match = ip_match
             elif search_scope == "主机名":
-                # 多关键词搜索，所有关键词都必须匹配
-                all_match = True
-                for keyword in keywords:
-                    if not self._match_search_pattern(ip.get('hostname', ''), keyword, search_mode):
-                        all_match = False
-                        break
-                match = all_match
+                match = hostname_match
             elif search_scope == "描述":
-                # 多关键词搜索，所有关键词都必须匹配
-                all_match = True
-                for keyword in keywords:
-                    if not self._match_search_pattern(ip.get('description', ''), keyword, search_mode):
-                        all_match = False
-                        break
-                match = all_match
+                match = desc_match
             elif search_scope == "状态":
-                # 多关键词搜索，所有关键词都必须匹配
-                all_match = True
-                for keyword in keywords:
-                    if not self._match_search_pattern(ip['status'], keyword, search_mode):
-                        all_match = False
-                        break
-                match = all_match
+                match = status_match
             
             if match:
                 filtered_ips.append(ip)
@@ -9735,8 +9715,7 @@ class SubnetPlannerApp:
             ))
             found = True
         
-        if not found:
-            self.show_info(_('hint'), "没有找到匹配的IP地址")
+
     
     def apply_filter(self):
         """应用过滤和排序"""
