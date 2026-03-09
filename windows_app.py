@@ -2006,7 +2006,7 @@ class SubnetPlannerApp:
 
         # 创建需求池表格
         self.pool_tree = self._create_requirements_tree(
-            history_frame, height=6, double_click_handler=self.on_pool_tree_double_click
+            history_frame, height=6, double_click_handler=None
         )
 
 
@@ -2032,14 +2032,35 @@ class SubnetPlannerApp:
 
         # 子网需求表格
         self.requirements_tree = self._create_requirements_tree(
-            inner_frame, height=5, double_click_handler=self.on_requirements_tree_double_click
+            inner_frame, height=5, double_click_handler=None
         )
-
 
         # 放置表格
         self.requirements_tree.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
         self.requirements_scrollbar = ttk.Scrollbar(inner_frame, orient=tk.VERTICAL)
+        
+        # 注册子网需求表和需求池表的内联编辑配置
+        # 两表结构相同，可编辑name和hosts列
+        for tree_name, tree in [('requirements', self.requirements_tree), ('pool', self.pool_tree)]:
+            # 注册内联编辑配置
+            self.register_inline_edit_config(tree_name, {
+                'editable_columns': [1, 2],  # 允许编辑name和hosts列
+                'column_types': {
+                    1: 'entry',  # name列使用文本框
+                    2: 'entry'   # hosts列使用文本框
+                }
+            })
+            
+            # 注册内联编辑处理器
+            self.register_inline_edit_handler(tree_name, {
+                'get_row_data': lambda item, tree_name=tree_name: self._get_requirements_row_data(item, tree_name),
+                'validate': self._validate_requirements_edit,
+                'save': lambda new_value, column_name, row_data, item, tree_name=tree_name: self._save_requirements_edit(new_value, column_name, row_data, item, tree_name)
+            })
+            
+            # 绑定双击事件
+            tree.bind('<Double-1>', lambda event, tree=tree, tree_name=tree_name: self.on_generic_tree_double_click(tree, tree_name, event))
 
         # self.create_scrollable_treeview_with_grid(
         #     inner_frame, self.requirements_tree, self.requirements_scrollbar,
@@ -2448,6 +2469,10 @@ class SubnetPlannerApp:
             trees_to_update.append(self.allocated_tree)
         if hasattr(self, 'planning_remaining_tree'):
             trees_to_update.append(self.planning_remaining_tree)
+        if hasattr(self, 'ipam_network_tree'):
+            trees_to_update.append(self.ipam_network_tree)
+        if hasattr(self, 'ipam_ip_tree'):
+            trees_to_update.append(self.ipam_ip_tree)
 
         # 批量更新所有表格
         for tree in trees_to_update:
@@ -2574,22 +2599,7 @@ class SubnetPlannerApp:
     def add_subnet_requirement(self):
         """添加子网需求"""
         # 创建临时窗口
-        temp_window = tk.Toplevel(self.root)
-        temp_window.title(_('add_subnet_requirement'))
-        temp_window.resizable(False, False)
-        temp_window.transient(self.root)
-        temp_window.grab_set()
-
-        # 先隐藏对话框，避免定位过程中的闪现
-        temp_window.withdraw()
-
-        # 计算居中位置并设置对话框的尺寸和位置
-        window_width = 320
-        window_height = 220
-        self.center_window(temp_window, window_width, window_height)
-
-        # 显示对话框
-        temp_window.deiconify()
+        temp_window = self.create_dialog(_('add_subnet_requirement'), 320, 220)
 
         # 创建主内容框架，设置合适的内边距
         main_frame = ttk.Frame(temp_window, padding="20")
@@ -2745,6 +2755,40 @@ class SubnetPlannerApp:
         # 一次性设置对话框的尺寸和位置
         window.geometry(f"{width}x{height}+{dialog_x}+{dialog_y}")
 
+    def create_dialog(self, title, width, height, resizable=False, modal=True):
+        """创建统一居中的对话框
+
+        Args:
+            title: 对话框标题
+            width: 对话框宽度
+            height: 对话框高度
+            resizable: 是否允许调整大小
+            modal: 是否为模态对话框
+
+        Returns:
+            tk.Toplevel: 居中的对话框对象
+        """
+        # 创建对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title(title)
+        dialog.resizable(resizable, resizable)
+        dialog.transient(self.root)
+        
+        if modal:
+            dialog.grab_set()
+        
+        # 先隐藏对话框，避免定位过程中的闪现
+        dialog.withdraw()
+        
+        # 居中对话框
+        self.center_window(dialog, width, height)
+        
+        # 显示对话框并设置焦点
+        dialog.deiconify()
+        dialog.focus_force()
+        
+        return dialog
+
     def delete_subnet_requirement(self):
         """删除选中的子网需求或需求池记录，并重新应用斑马条纹"""
         # 检查两个表格中是否有选中的记录
@@ -2804,23 +2848,7 @@ class SubnetPlannerApp:
         font_family, font_size = get_current_font_settings()
         
         # 显示导入选项对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_("import_data"))
-        dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        dialog.withdraw()
-
-        # 计算居中位置，调整高度确保取消按钮能完整显示
-        window_width = 350
-        window_height = 280  # 适度增加高度以确保取消按钮显示完整
-        self.center_window(dialog, window_width, window_height)
-
-        dialog.deiconify()
-
-        # 设置对话框为焦点
-        dialog.focus_force()
+        dialog = self.create_dialog(_("import_data"), 350, 280)
 
         # 创建主内容框架
         main_frame = ttk.Frame(dialog, padding="20 20 20 0")  # 减少底部padding，确保所有控件能完整显示
@@ -3037,20 +3065,7 @@ class SubnetPlannerApp:
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
         
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_("import_data"))
-        dialog.resizable(False, False)
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        dialog.withdraw()
-
-        # 计算居中位置
-        window_width = 750
-        window_height = 500
-        self.center_window(dialog, window_width, window_height)
-
-        dialog.deiconify()
+        dialog = self.create_dialog(_("import_data"), 750, 500)
 
         dialog.focus_force()
 
@@ -3361,22 +3376,10 @@ class SubnetPlannerApp:
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
         
-        # 确保主窗口完全初始化，先更新主窗口布局
-        self.root.update_idletasks()
-
-        # 直接使用主窗口作为父窗口，避免焦点窗口不存在的问题
-        parent_window = self.root
-
-        # 创建Toplevel窗口，将父窗口设置为主窗口
-        dialog = tk.Toplevel(parent_window)
-        dialog.title(title)
-        dialog.resizable(False, False)
-        dialog.transient(parent_window)  # 设置为父窗口的子窗口
+        # 创建对话框
+        dialog = self.create_dialog(title, 350, 180)
         
-        # 先隐藏对话框，避免定位过程中的闪现
-        dialog.withdraw()
-
-        # 设置对话框最小宽度和高度，适当调高高度使其更加协调
+        # 设置对话框最小宽度和高度
         dialog.minsize(width=350, height=180)
 
         # 设置对话框内容
@@ -3492,12 +3495,12 @@ class SubnetPlannerApp:
         Returns:
             tk.Toplevel: 创建的对话框对象
         """
+        # 对于主窗口的对话框，使用统一的创建方法
+        if not parent_window or parent_window == self.root:
+            return self.create_dialog(title, width, height, resizable)
+        
+        # 对于其他父窗口的对话框，保持原有逻辑
         self.root.update_idletasks()
-
-        if not parent_window:
-            parent_window = self.root.focus_get()
-            if not parent_window or parent_window == self.root:
-                parent_window = self.root
 
         dialog = tk.Toplevel(parent_window)
         dialog.title(title)
@@ -3532,20 +3535,8 @@ class SubnetPlannerApp:
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
         
-        self.root.update_idletasks()
-
-        parent_window = self.root.focus_get()
-        if not parent_window or parent_window == self.root:
-            parent_window = self.root
-
-        dialog = tk.Toplevel(parent_window)
-        dialog.title(title)
-        dialog.resizable(False, False)
-        dialog.transient(parent_window)  # 设置为父窗口的子窗口
-        dialog.grab_set()  # 模态对话框
-
-        # 设置对话框最小宽度和高度
-        dialog.minsize(width=500, height=150)
+        # 创建对话框
+        dialog = self.create_dialog(title, 500, 150)
 
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -3788,7 +3779,7 @@ class SubnetPlannerApp:
 
     def on_treeview_click(self, event):
         """处理Treeview左键单击事件，实现取消选择功能"""
-        # 检查是否有正在编辑的状态
+        # 检查是否有正在编辑的状态（旧机制）
         if hasattr(self, 'current_edit_item') and self.current_edit_item is not None:
             # 获取当前编辑的表格
             if self.current_edit_tree == "requirements":
@@ -3798,6 +3789,11 @@ class SubnetPlannerApp:
             
             # 保存当前编辑
             self.save_edit(from_focus_out=True)
+        
+        # 检查是否有正在编辑的状态（新机制）
+        if hasattr(self, 'inline_edit_widget') and hasattr(self, 'inline_edit_data'):
+            # 保存当前编辑
+            self.on_generic_inline_edit_save(None)
         
         # 获取点击位置的信息
         tree = event.widget
@@ -7166,33 +7162,15 @@ class SubnetPlannerApp:
                 # 如果对话框已被销毁，忽略错误并创建新对话框
                 self.test_dialog = None
 
-        # 创建功能调试对话框
-        self.test_dialog = tk.Toplevel(self.root)
-        self.test_dialog.title(_("function_debug"))
-        self.test_dialog.resizable(False, False)  # 固定对话框大小，不可调节
-        self.test_dialog.transient(self.root)
-
-        # 绑定关闭事件，确保对话框关闭时更新状态
-        self.test_dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
-
-        self.test_dialog.focus_force()
-
-        # 计算对话框居中显示的位置（相对于主窗口）
+        # 计算对话框尺寸
         dialog_width = 500  # 加大窗体宽度，适应不同语言
         dialog_height = 550  # 增加对话框高度，确保所有控件能完整显示
-
-        # 获取主窗口的位置和大小
-        root_x = self.root.winfo_x()
-        root_y = self.root.winfo_y()
-        root_width = self.root.winfo_width()
-        root_height = self.root.winfo_height()
-
-        # 计算对话框居中位置
-        dialog_x = root_x + (root_width - dialog_width) // 2
-        dialog_y = root_y + (root_height - dialog_height) // 2
-
-        # 设置对话框大小和位置
-        self.test_dialog.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
+        
+        # 创建功能调试对话框，使用统一的create_dialog方法
+        self.test_dialog = self.create_dialog(_("function_debug"), dialog_width, dialog_height, modal=False)
+        
+        # 绑定关闭事件，确保对话框关闭时更新状态
+        self.test_dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
 
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
@@ -8533,34 +8511,15 @@ class SubnetPlannerApp:
 
     def show_about_dialog(self):
         """显示关于对话框"""
-        # 创建对话框窗口
-        about_window = tk.Toplevel(self.root)
-        about_window.title(f"{_("about")} {self.app_name}")
-        about_window.resizable(False, False)
-        about_window.configure(bg="#ffffff")  # 设置背景色为白色
-
-        # 确保对话框在主窗口之上
-        about_window.transient(self.root)
-        about_window.grab_set()
-
-        about_window.withdraw()
-
-        main_x = self.root.winfo_x()
-        main_y = self.root.winfo_y()
-        main_width = self.root.winfo_width()
-        main_height = self.root.winfo_height()
-
         # 设置对话框尺寸，进一步增大高度以确保所有内容（包括开源地址链接和版权信息）完整显示
         dialog_width = 400
         dialog_height = 330
-
-        # 计算对话框在主窗口中心的位置
-        dialog_x = main_x + (main_width // 2) - (dialog_width // 2)
-        dialog_y = main_y + (main_height // 2) - (dialog_height // 2)
-
-        about_window.geometry(f"{dialog_width}x{dialog_height}+{dialog_x}+{dialog_y}")
-
-        about_window.deiconify()
+        
+        # 创建对话框窗口，使用统一的create_dialog方法
+        about_window = self.create_dialog(f"{_("about")} {self.app_name}", dialog_width, dialog_height)
+        
+        # 设置背景色为白色
+        about_window.configure(bg="#ffffff")
 
         # 创建内容框架，移除所有边框和焦点指示
         content_frame = ttk.Frame(about_window, padding=(20, 20, 20, 15), relief="flat", borderwidth=0)
@@ -8920,7 +8879,7 @@ class SubnetPlannerApp:
         table_container.grid_columnconfigure(0, weight=1)
         
         # 网络列表 - 在table_container上创建
-        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='headings', height=8)
+        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='headings', height=8, selectmode='extended')
         self.ipam_network_tree.heading('network', text=_('network'))
         self.ipam_network_tree.heading('description', text=_('description'))
         self.ipam_network_tree.heading('created_at', text=_('created_at'))
@@ -8940,6 +8899,30 @@ class SubnetPlannerApp:
         
         # 绑定网络选择事件
         self.ipam_network_tree.bind('<<TreeviewSelect>>', self.on_ipam_network_select)
+        
+        # 为网络管理表添加内联编辑功能
+        # 注册网络管理表的内联编辑配置
+        self.register_inline_edit_config('ipam_network', {
+            'editable_columns': [1],  # 只允许编辑描述列
+            'column_types': {
+                1: 'entry'  # 描述列使用文本框
+            }
+        })
+        
+        # 注册网络管理表的内联编辑处理器
+        self.register_inline_edit_handler('ipam_network', {
+            'get_row_data': self._get_network_row_data,
+            'validate': self._validate_network_edit,
+            'save': self._save_network_edit
+        })
+        
+        # 绑定双击事件
+        self.ipam_network_tree.bind('<Double-1>', lambda event: self.on_generic_tree_double_click(self.ipam_network_tree, 'ipam_network', event))
+        
+        # 配置Treeview样式，包括斑马条纹
+        self.configure_treeview_styles(self.ipam_network_tree)
+        # 添加斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_network_tree)
         
         # 创建自定义笔记本控件
         self.ipam_notebook = ColoredNotebook(self.ipam_frame, style=self.style)
@@ -9040,7 +9023,7 @@ class SubnetPlannerApp:
         table_container.grid_columnconfigure(0, weight=1)
         
         # IP 地址列表 - 在table_container上创建
-        self.ipam_ip_tree = ttk.Treeview(table_container, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings', height=8)
+        self.ipam_ip_tree = ttk.Treeview(table_container, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings', height=8, selectmode='extended')
         
         # 为表头添加点击事件，实现排序功能
         self.ipam_ip_tree.heading('ip_address', text=_('ip_address'), command=lambda: self.sort_ip_table('ip_address'))
@@ -9080,7 +9063,31 @@ class SubnetPlannerApp:
         # 为IP地址表格添加右键菜单
         self.ipam_ip_tree.bind('<Button-3>', self.on_ip_tree_right_click)
         # 为IP地址表格添加双击编辑功能 - 支持内联编辑
-        self.ipam_ip_tree.bind('<Double-1>', self.on_ip_tree_double_click_inline)
+        # 注册IP地址表的内联编辑配置
+        self.register_inline_edit_config('ipam_ip', {
+            'editable_columns': [0, 1, 2, 3, 5],  # 允许编辑IP地址、状态、主机名、描述和过期日期
+            'column_types': {
+                1: 'combobox'  # 状态列使用下拉框
+            },
+            'combobox_values': {
+                1: [_('available'), _('allocated'), _('reserved')]  # 状态选项
+            }
+        })
+        
+        # 注册IP地址表的内联编辑处理器
+        self.register_inline_edit_handler('ipam_ip', {
+            'get_row_data': self._get_ip_row_data,
+            'validate': self._validate_ip_edit,
+            'save': self._save_ip_edit
+        })
+        
+        # 绑定双击事件
+        self.ipam_ip_tree.bind('<Double-1>', lambda event: self.on_generic_tree_double_click(self.ipam_ip_tree, 'ipam_ip', event))
+        
+        # 配置Treeview样式，包括斑马条纹
+        self.configure_treeview_styles(self.ipam_ip_tree)
+        # 添加斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_ip_tree)
         
         # 统计和图表标签页
         stats_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_green_style)
@@ -9178,8 +9185,9 @@ class SubnetPlannerApp:
                 network['ip_count']
             ))
         
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_network_tree)
 
-    
     def refresh_ipam_ips(self, network):
         """刷新IP地址列表"""
         # 清空现有IP地址列表
@@ -9238,6 +9246,9 @@ class SubnetPlannerApp:
                 formatted_allocated_at,
                 ip.get('expiry_date', '')
             ))
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_ip_tree)
     
     def batch_release_ip(self):
         """批量释放IP地址"""
@@ -9303,14 +9314,8 @@ class SubnetPlannerApp:
             self.show_info(_('hint'), _('please_enter_description'))
             return
         
-        # 创建批量分配对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_('batch_allocate'))
-        dialog.geometry("500x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
-        # 居中主窗体
-        center_window(dialog, self.root)
+        # 创建批量分配对话框，使用统一的create_dialog方法
+        dialog = self.create_dialog(_('batch_allocate'), 500, 300)
         
         # 解析网络前缀
         import ipaddress
@@ -9373,7 +9378,6 @@ class SubnetPlannerApp:
         # 起始IP输入
         start_frame = ttk.Frame(ip_frame)
         start_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Label(start_frame, text=_('start') + ':', width=5).pack(side=tk.LEFT, padx=5)
         start_ip_border, start_ip_entry = create_bordered_entry(start_frame, width=15)
         start_ip_border.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
@@ -9383,7 +9387,6 @@ class SubnetPlannerApp:
         # 结束IP输入
         end_frame = ttk.Frame(ip_frame)
         end_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Label(end_frame, text=_('end') + ':', width=5).pack(side=tk.LEFT, padx=5)
         end_ip_border, end_ip_entry = create_bordered_entry(end_frame, width=15)
         end_ip_border.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
@@ -9481,8 +9484,8 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         
-        # 显示IP地址自动分配对话框
-        dialog_result = self.show_ip_address_dialog(_('auto_allocate'), 'auto_allocate')
+        # 显示IP地址自动分配对话框，传递network参数
+        dialog_result = self.show_ip_address_dialog(_('auto_allocate'), 'auto_allocate', network=network)
         if not dialog_result:
             return
         
@@ -9829,19 +9832,14 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         
-        # 创建批量操作对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title("批量操作")
-        dialog.geometry("400x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
+        # 创建批量操作对话框 - 移除了"清理过期IP地址"选项，调整高度到400
+        dialog = self.create_dialog("批量操作", 400, 400)
         
         # 操作选择
         ttk.Label(dialog, text="选择操作:").pack(pady=10)
         operation_var = tk.StringVar(value="export")
         
         ttk.Radiobutton(dialog, text="导出网络IP数据", variable=operation_var, value="export").pack(pady=5, anchor=tk.W)
-        ttk.Radiobutton(dialog, text="清理过期IP地址", variable=operation_var, value="clean_expired").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="检查IP冲突", variable=operation_var, value="check_conflicts").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量修改IP信息", variable=operation_var, value="batch_modify").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量设置过期时间", variable=operation_var, value="batch_set_expiry").pack(pady=5, anchor=tk.W)
@@ -9882,30 +9880,6 @@ class SubnetPlannerApp:
                     self.show_info(_('success'), f"成功导出 {len(ips)} 个IP地址到文件: {export_file}")
                 except Exception as e:
                     self.show_error(_('error'), f"导出失败: {str(e)}")
-            
-            elif operation == "clean_expired":
-                # 清理过期IP地址
-                try:
-                    expired_ips = self.ipam.get_expired_ips()
-                    network_expired_ips = [ip for ip in expired_ips if ip['network'] == network]
-                    
-                    if not network_expired_ips:
-                        self.show_info(_('hint'), "没有过期的IP地址")
-                        return
-                    
-                    # 确认清理
-                    confirm = messagebox.askyesno("确认", f"确定要清理 {len(network_expired_ips)} 个过期的IP地址吗？")
-                    if confirm:
-                        success_count = 0
-                        for ip in network_expired_ips:
-                            success, message = self.ipam.release_ip(ip['ip_address'])
-                            if success:
-                                success_count += 1
-                        
-                        self.show_info(_('success'), f"成功清理 {success_count} 个过期IP地址")
-                        self.refresh_ipam_ips(network)
-                except Exception as e:
-                    self.show_error(_('error'), f"清理失败: {str(e)}")
             
             elif operation == "check_conflicts":
                 # 检查IP冲突
@@ -10233,12 +10207,8 @@ class SubnetPlannerApp:
     def backup_ipam_data(self):
         """备份IPAM数据"""
         try:
-            # 创建备份对话框
-            dialog = tk.Toplevel(self.root)
-            dialog.title("备份IPAM数据")
-            dialog.geometry("400x150")
-            dialog.transient(self.root)
-            dialog.grab_set()
+            # 创建备份对话框，使用统一的create_dialog方法
+            dialog = self.create_dialog("备份IPAM数据", 400, 150)
             
             # 备份名称输入
             ttk.Label(dialog, text="备份名称 (可选):").pack(pady=10)
@@ -10273,19 +10243,8 @@ class SubnetPlannerApp:
     def backup_restore_data(self):
         """备份/恢复数据对话框"""
         try:
-            # 创建对话框
-            dialog = tk.Toplevel(self.root)
-            dialog.title(_('backup_restore'))
-            dialog.transient(self.root)
-            dialog.withdraw()  # 先隐藏对话框，避免闪现
-            dialog.geometry("600x400")
-            
-            # 居中主窗体
-            center_window(dialog, self.root)
-            
-            # 显示对话框并设置grab_set
-            dialog.deiconify()
-            dialog.grab_set()
+            # 创建对话框，使用统一的create_dialog方法
+            dialog = self.create_dialog(_('backup_restore'), 600, 400)
             
             # 配置对话框的行和列
             dialog.grid_rowconfigure(0, weight=1)
@@ -10515,19 +10474,8 @@ class SubnetPlannerApp:
     
     def auto_scan_network(self):
         """自动扫描网络"""
-        # 创建自动扫描网络对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title("自动扫描网络")
-        dialog.transient(self.root)
-        dialog.withdraw()  # 先隐藏对话框，避免闪现
-        dialog.geometry("450x150")
-        
-        # 居中主窗体
-        center_window(dialog, self.root)
-        
-        # 显示对话框并设置grab_set
-        dialog.deiconify()
-        dialog.grab_set()
+        # 创建自动扫描网络对话框，使用统一的create_dialog方法
+        dialog = self.create_dialog("自动扫描网络", 450, 150)
         
         # 网络输入 - 水平布局
         network_frame = ttk.Frame(dialog)
@@ -10570,13 +10518,8 @@ class SubnetPlannerApp:
             # 开始扫描
             dialog.destroy()
             
-            # 创建进度条对话框
-            progress_dialog = tk.Toplevel(self.root)
-            progress_dialog.title("网络扫描")
-            progress_dialog.geometry("400x280")  # 增加高度，确保所有控件显示
-            center_window(progress_dialog, self.root)  # 居中主窗体
-            progress_dialog.transient(self.root)
-            progress_dialog.grab_set()
+            # 创建进度条对话框，使用统一的create_dialog方法
+            progress_dialog = self.create_dialog("网络扫描", 400, 280)
             
             # 标签
             progress_label = ttk.Label(progress_dialog, text=f"正在扫描网络 {network}...")
@@ -10941,12 +10884,8 @@ class SubnetPlannerApp:
     
     def batch_set_expiry(self, network):
         """批量设置IP过期时间"""
-        # 创建批量设置过期时间对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title("批量设置过期时间")
-        dialog.geometry("500x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
+        # 创建批量设置过期时间对话框，使用统一的create_dialog方法
+        dialog = self.create_dialog("批量设置过期时间", 500, 300)
         
         # 获取网络中的IP地址
         ips = self.ipam.get_network_ips(network)
@@ -11032,12 +10971,8 @@ class SubnetPlannerApp:
     
     def batch_change_status(self, network):
         """批量更改IP状态"""
-        # 创建批量更改状态对话框
-        dialog = tk.Toplevel(self.root)
-        dialog.title("批量更改状态")
-        dialog.geometry("500x300")
-        dialog.transient(self.root)
-        dialog.grab_set()
+        # 创建批量更改状态对话框，使用统一的create_dialog方法
+        dialog = self.create_dialog("批量更改状态", 500, 300)
         
         # 获取网络中的IP地址
         ips = self.ipam.get_network_ips(network)
@@ -11506,24 +11441,31 @@ class SubnetPlannerApp:
     
     def on_ip_tree_right_click(self, event):
         """IP地址表格右键菜单处理"""
-        # 获取当前选中的项
+        # 获取当前右键点击的行
         item = self.ipam_ip_tree.identify_row(event.y)
         if item:
-            # 选中当前项
-            self.ipam_ip_tree.selection_set(item)
-            # 获取当前IP的状态
-            status = self.ipam_ip_tree.item(item, 'values')[1]
+            # 如果当前行不在选中的行中，将其添加到选中的行中
+            # 否则，保留当前的选中状态
+            if item not in self.ipam_ip_tree.selection():
+                # 使用selection_add而不是selection_set，保留之前的多选状态
+                self.ipam_ip_tree.selection_add(item)
             
-            # 重新创建右键菜单，根据状态动态调整菜单项
+            # 获取所有选中行的状态
+            selected_items = self.ipam_ip_tree.selection()
+            all_available = all(self.ipam_ip_tree.item(item, 'values')[1] == _('available') for item in selected_items)
+            any_allocated_or_reserved = any(self.ipam_ip_tree.item(item, 'values')[1] != _('available') for item in selected_items)
+            
+            # 重新创建右键菜单，根据选中行的状态动态调整菜单项
             self.ip_tree_menu = tk.Menu(self.root, tearoff=0)
             
-            if status == _('available'):
-                # 可用状态：显示恢复分配、分配和保留选项
+            # 根据选中行的状态显示不同的菜单项
+            if all_available:
+                # 所有选中行都是可用状态：显示恢复分配、分配和保留选项
                 self.ip_tree_menu.add_command(label=_('restore_allocation'), command=lambda: self.on_ip_menu_action('restore'))
                 self.ip_tree_menu.add_command(label=_('allocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
                 self.ip_tree_menu.add_command(label=_('reserve_address'), command=lambda: self.on_ip_menu_action('reserve'))
-            else:
-                # 已分配或已保留状态：显示释放选项
+            elif any_allocated_or_reserved:
+                # 有选中行是已分配或已保留状态：显示释放选项
                 self.ip_tree_menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
             
             # 显示右键菜单
@@ -11536,7 +11478,7 @@ class SubnetPlannerApp:
         """
         try:
             if hasattr(self, '_inline_edit_save_after_id') and self._inline_edit_save_after_id:
-                self.after_cancel(self._inline_edit_save_after_id)
+                self.root.after_cancel(self._inline_edit_save_after_id)
                 delattr(self, '_inline_edit_save_after_id')
         except Exception:
             pass
@@ -11557,115 +11499,655 @@ class SubnetPlannerApp:
                 delattr(self, 'inline_edit_data')
         except Exception:
             pass
+        
+        try:
+            # 移除根窗口点击事件绑定
+            self.root.unbind('<Button-1>')
+        except Exception:
+            pass
+    
+    def _init_inline_edit_data(self):
+        """初始化内联编辑相关的数据属性
+        
+        确保所有需要的属性都已初始化，避免AttributeError
+        """
+        if not hasattr(self, '_inline_edit_handlers'):
+            self._inline_edit_handlers = {}
+        if not hasattr(self, '_inline_edit_configs'):
+            self._inline_edit_configs = {}
+    
+    def register_inline_edit_handler(self, tree_name, handlers):
+        """注册内联编辑处理器
+        
+        Args:
+            tree_name: 表格名称标识
+            handlers: 处理器字典，包含以下键：
+                - validate: 验证函数，接收(new_value, column_name, row_data)，返回(是否有效, 错误消息或None)
+                - save: 保存函数，接收(new_value, column_name, row_data, item)，返回(是否成功, 消息)
+                - get_row_data: 获取行数据函数，接收(item)，返回行数据字典
+        """
+        self._init_inline_edit_data()
+        self._inline_edit_handlers[tree_name] = handlers
+    
+    def register_inline_edit_config(self, tree_name, config):
+        """注册内联编辑配置
+        
+        Args:
+            tree_name: 表格名称标识
+            config: 配置字典，包含以下键：
+                - editable_columns: 可编辑列的索引列表
+                - column_types: 列类型字典，键为列索引，值为'entry'或'combobox'
+                - combobox_values: 下拉框值字典，键为列索引，值为可选值列表
+        """
+        self._init_inline_edit_data()
+        self._inline_edit_configs[tree_name] = config
+    
+    def on_generic_tree_double_click(self, tree, tree_name, event):
+        """通用的双击Treeview单元格编辑处理函数
+        
+        Args:
+            tree: Treeview组件
+            tree_name: 表格名称标识
+            event: 事件对象
+        """
+        # 检查是否有注册的配置和处理器
+        if tree_name not in self._inline_edit_configs or tree_name not in self._inline_edit_handlers:
+            return
+        
+        config = self._inline_edit_configs[tree_name]
+        
+        # 获取双击的行和列
+        region = tree.identify_region(event.x, event.y)
+        if region != "cell":
+            return
+        
+        item = tree.identify_row(event.y)
+        column = tree.identify_column(event.x)
+        
+        if not item or not column:
+            return
+        
+        # 获取列索引
+        column_index = int(column[1:]) - 1
+        
+        # 检查是否是可编辑列
+        if column_index not in config['editable_columns']:
+            return
+        
+        # 获取当前单元格的值
+        values = tree.item(item, 'values')
+        current_value = values[column_index]
+        
+        # 获取单元格的坐标
+        try:
+            x, y, width, height = tree.bbox(item, column)
+        except tk.TclError:
+            return
+        
+        # 安全销毁所有旧的编辑控件，防止内存泄漏
+        self._destroy_inline_edit_widgets()
+        
+        # 获取列名
+        columns = tree["columns"]
+        column_name = columns[column_index] if column_index < len(columns) else f"column_{column_index}"
+        
+        # 保存相关信息
+        self.inline_edit_data = {
+            'item': item,
+            'column_index': column_index,
+            'column_name': column_name,
+            'original_value': current_value,
+            'tree': tree,
+            'tree_name': tree_name
+        }
+        
+        # 绑定事件 - 先定义事件处理函数
+        def on_widget_save(event):
+            # 直接保存
+            self.on_generic_inline_edit_save(None)
+        
+        def on_widget_focus_out(event):
+            # 直接保存，与子网规划表保持一致的行为
+            self.on_generic_inline_edit_save(None)
+        
+        def on_widget_cancel(event):
+            # 直接取消
+            self.on_generic_inline_edit_cancel(event)
+        
+        # 根据列类型创建编辑控件
+        column_type = config.get('column_types', {}).get(column_index, 'entry')
+        
+        if column_type == 'combobox':
+            # 为Combobox创建一个特殊的框架，确保下拉列表正常显示
+            self.inline_edit_frame = ttk.Frame(tree)
+            self.inline_edit_frame.place(x=x, y=y, width=width, height=height)
+            
+            # 获取下拉框值
+            combobox_values = config.get('combobox_values', {}).get(column_index, [])
+            
+            self.inline_edit_widget = ttk.Combobox(self.inline_edit_frame, 
+                                                   values=combobox_values,
+                                                   width=width//10-2,
+                                                   state='readonly')
+            self.inline_edit_widget.pack(fill=tk.BOTH, expand=True)
+            self.inline_edit_widget.set(current_value)
+            
+            def on_combobox_save(event=None):
+                # 直接保存
+                self.on_generic_inline_edit_save(event)
+            
+            def on_combobox_cancel(event=None):
+                # 直接取消
+                self.on_generic_inline_edit_cancel(event)
+            
+            # 绑定Combobox特定事件
+            self.inline_edit_widget.bind('<<ComboboxSelected>>', on_combobox_save)
+            
+            # 绑定基本事件
+            self.inline_edit_widget.bind('<Return>', on_combobox_save)
+            self.inline_edit_widget.bind('<Escape>', on_combobox_cancel)
+            
+            # 确保Combobox始终保持焦点
+            self.inline_edit_widget.focus_force()
+            
+            # 绑定根窗口点击事件，用于关闭编辑状态
+            def on_root_click(event):
+                # 检查点击的是否是编辑控件或其内部组件
+                target = event.widget
+                is_edit_widget = False
+                
+                # 遍历控件树，检查是否是编辑控件或其内部组件
+                while target:
+                    if target == self.inline_edit_widget or (hasattr(self, 'inline_edit_frame') and target == self.inline_edit_frame):
+                        is_edit_widget = True
+                        break
+                    target = target.master
+                
+                # 如果点击的不是编辑控件，关闭编辑状态
+                if not is_edit_widget:
+                    self.on_generic_inline_edit_save(None)
+            
+            self.root.bind('<Button-1>', on_root_click, add='+')
+        else:
+            # 默认使用Entry
+            self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+            self.inline_edit_widget.insert(0, current_value)
+            self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
+            
+            # 实时验证函数
+            def validate_edit(text):
+                # 获取处理器
+                handlers = self._inline_edit_handlers[tree_name]
+                validate = handlers.get('validate')
+                if validate:
+                    # 获取行数据用于验证
+                    get_row_data = handlers.get('get_row_data')
+                    if not get_row_data:
+                        def default_get_row_data(item):
+                            return {
+                                'item': item,
+                                'values': tree.item(item, 'values')
+                            }
+                        get_row_data = default_get_row_data
+                    row_data = get_row_data(item)
+                    row_data['tree_name'] = tree_name
+                    
+                    # 验证新值
+                    is_valid, _ = validate(text, column_name, row_data)
+                    # 设置文本颜色
+                    self.inline_edit_widget.config(foreground='black' if is_valid else 'red')
+                return "1"
+            
+            # 绑定实时验证
+            self.inline_edit_widget.config(validate="all", validatecommand=(self.root.register(validate_edit), "%P"))
+            
+            # 绑定事件
+            self.inline_edit_widget.bind('<Return>', on_widget_save)
+            self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+            self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+        
+        # 获取焦点
+        self.inline_edit_widget.focus_set()
+        
+        # 如果是Entry，全选文本
+        if column_type == 'entry':
+            self.inline_edit_widget.select_range(0, tk.END)
+    
+    def on_generic_inline_edit_save(self, event):
+        """通用的保存内联编辑内容方法
+        """
+        if not hasattr(self, 'inline_edit_widget') or not hasattr(self, 'inline_edit_data'):
+            return
+        
+        # 当下拉列表展开时，不保存编辑内容
+        if hasattr(self, '_combobox_is_posting') and self._combobox_is_posting:
+            return
+        
+        # 检查事件类型，判断是否是从焦点丢失调用
+        from_focus_out = event is None or (hasattr(event, 'type') and str(event.type) == 'FocusOut')
+        
+        # 获取新值
+        new_value = self.inline_edit_widget.get().strip()
+        
+        # 获取编辑数据
+        edit_data = self.inline_edit_data
+        item = edit_data['item']
+        column_index = edit_data['column_index']
+        column_name = edit_data['column_name']
+        original_value = edit_data['original_value']
+        tree = edit_data['tree']
+        tree_name = edit_data['tree_name']
+        
+        # 检查是否有注册的处理器
+        if tree_name not in self._inline_edit_handlers:
+            self._destroy_inline_edit_widgets()
+            return
+        
+        handlers = self._inline_edit_handlers[tree_name]
+        
+        # 如果值没有变化，直接清理
+        if new_value == original_value:
+            self._destroy_inline_edit_widgets()
+            return
+        
+        # 获取行数据
+        get_row_data = handlers.get('get_row_data')
+        if not get_row_data:
+            # 默认获取行数据的方法
+            def default_get_row_data(item):
+                return {
+                    'item': item,
+                    'values': tree.item(item, 'values')
+                }
+            get_row_data = default_get_row_data
+        
+        row_data = get_row_data(item)
+        
+        try:
+            # 验证数据 - 空值检查
+            if not new_value:
+                if not from_focus_out:
+                    self.show_error(_("error"), _("input_cannot_be_empty"))
+                    self.inline_edit_widget.focus_set()
+                return
+            
+            # 验证数据 - 自定义验证
+            validate = handlers.get('validate')
+            if validate:
+                is_valid, validation_error = validate(new_value, column_name, row_data)
+                if not is_valid:
+                    if not from_focus_out:
+                        self.show_error(_('error'), validation_error)
+                        self.inline_edit_widget.focus_set()
+                    return
+            
+            # 保存数据
+            save = handlers.get('save')
+            if save:
+                success, message = save(new_value, column_name, row_data, item)
+                if not success:
+                    if not from_focus_out:
+                        self.show_error(_('error'), message)
+                        self.inline_edit_widget.focus_set()
+                    return
+                
+                # 更新Treeview
+                values = list(tree.item(item, 'values'))
+                values[column_index] = new_value
+                tree.item(item, values=values)
+                
+                # 更新斑马条纹
+                self.update_table_zebra_stripes(tree)
+        except Exception as e:
+            if not from_focus_out:
+                self.show_error(_('error'), f"更新失败: {str(e)}")
+                self.inline_edit_widget.focus_set()
+        finally:
+            # 安全清理编辑控件，无论如何都会执行
+            self._destroy_inline_edit_widgets()
+    
+    def on_generic_inline_edit_cancel(self, event):
+        """通用的取消内联编辑方法
+        """
+        # 安全清理编辑控件
+        self._destroy_inline_edit_widgets()
     
     def on_ip_tree_double_click_inline(self, event):
         """IP地址表格双击内联编辑处理"""
-        # 获取双击的行和列
-        item = self.ipam_ip_tree.identify_row(event.y)
-        column = self.ipam_ip_tree.identify_column(event.x)
-        if item and column:
-            # 选中当前项
-            self.ipam_ip_tree.selection_set(item)
+        # 此方法已被通用的on_generic_tree_double_click替代
+        pass
+    
+    def _get_ip_row_data(self, item):
+        """获取IP地址表格行数据
+        
+        Args:
+            item: Treeview行ID
             
-            # 获取列索引
-            column_index = int(column.replace('#', '')) - 1
-            columns = ['ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date']
+        Returns:
+            dict: 行数据字典
+        """
+        values = self.ipam_ip_tree.item(item, 'values')
+        return {
+            'item': item,
+            'values': values,
+            'ip_address': values[0],
+            'status': values[1],
+            'hostname': values[2],
+            'description': values[3],
+            'allocated_at': values[4],
+            'expiry_date': values[5]
+        }
+    
+    def is_valid_ipv4(self, ip_address):
+        """验证IPv4地址格式
+        
+        Args:
+            ip_address: 要验证的IPv4地址
             
-            # 只允许编辑status、hostname和description列
-            if column_index in [1, 2, 3]:  # status, hostname, description
-                # 获取当前单元格的值
-                values = self.ipam_ip_tree.item(item, 'values')
-                current_value = values[column_index]
+        Returns:
+            bool: 是否为有效的IPv4地址
+        """
+        import re
+        ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+        return bool(re.match(ipv4_pattern, ip_address.strip()))
+    
+    def is_ip_in_network(self, ip_address, network):
+        """检查IP地址是否在指定的网络范围内
+        
+        Args:
+            ip_address: 要检查的IP地址
+            network: 网络地址（CIDR格式）
+            
+        Returns:
+            bool: IP地址是否在网络范围内
+        """
+        import ipaddress
+        try:
+            ip = ipaddress.ip_address(ip_address.strip())
+            net = ipaddress.ip_network(network.strip(), strict=False)
+            return ip in net
+        except ValueError:
+            return False
+    
+    def _validate_ip_edit(self, new_value, column_name, row_data):
+        """验证IP地址表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            
+        Returns:
+            tuple: (是否有效, 错误消息或None)
+        """
+        if not new_value:
+            return False, _('input_cannot_be_empty')
+        
+        # 获取选中的网络
+        network_items = self.ipam_network_tree.selection()
+        if not network_items:
+            return False, _('please_select_network')
+        network = self.ipam_network_tree.item(network_items[0], 'values')[0]
+        
+        if column_name == 'ip_address':
+            # 验证IP地址格式
+            if not self.is_valid_ipv4(new_value):
+                return False, _('invalid_ip_address')
+            
+            # 验证IP地址是否在选定的网络范围内
+            if not self.is_ip_in_network(new_value, network):
+                return False, _('ip_not_in_network')
+        elif column_name == 'status':
+            # 验证状态合法性
+            valid_statuses = [_('available'), _('allocated'), _('reserved')]
+            if new_value not in valid_statuses:
+                return False, _('invalid_status')
+        elif column_name == 'hostname':
+            # 主机名长度限制
+            if len(new_value) > 255:
+                return False, _('hostname_too_long')
+        elif column_name == 'description':
+            # 描述长度限制
+            if len(new_value) > 1000:
+                return False, _('description_too_long')
+        elif column_name == 'expiry_date':
+            # 验证日期格式（YYYY-MM-DD HH:MM:SS）
+            if not re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', new_value):
+                return False, _('invalid_date_format')
+        
+        return True, None
+    
+    def _save_ip_edit(self, new_value, column_name, row_data, item):
+        """保存IP地址表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            item: Treeview行ID
+            
+        Returns:
+            tuple: (是否成功, 消息)
+        """
+        # 获取选中的网络
+        network_items = self.ipam_network_tree.selection()
+        if not network_items:
+            return False, _('please_select_network')
+        network = self.ipam_network_tree.item(network_items[0], 'values')[0]
+        
+        try:
+            # 根据列名执行不同的更新操作
+            if column_name == 'status':
+                # 状态转换映射
+                status_map = {
+                    _('available'): 'available',
+                    _('allocated'): 'allocated',
+                    _('reserved'): 'reserved'
+                }
+                actual_status = status_map.get(new_value, new_value)
                 
-                # 获取单元格的坐标
-                x, y, width, height = self.ipam_ip_tree.bbox(item, column)
-                
-                # 安全销毁所有旧的编辑控件，防止内存泄漏
-                self._destroy_inline_edit_widgets()
-                
-                # 创建合适的编辑控件
-                if column_index == 1:  # status列，使用Combobox
-                    # 为Combobox创建一个特殊的框架，确保下拉列表正常显示
-                    self.inline_edit_frame = ttk.Frame(self.ipam_ip_tree)
-                    self.inline_edit_frame.place(x=x, y=y, width=width, height=height)
-                    
-                    self.inline_edit_widget = ttk.Combobox(self.inline_edit_frame, 
-                                                           values=[_('available'), _('allocated'), _('reserved')],
-                                                           width=width//10-2)
-                    self.inline_edit_widget.pack(fill=tk.BOTH, expand=True)
-                    self.inline_edit_widget.set(current_value)
-                    
-                    # 保存相关信息
-                    self.inline_edit_data = {
-                        'item': item,
-                        'column_index': column_index,
-                        'column_name': columns[column_index],
-                        'original_value': current_value,
-                        'ip_address': values[0],
-                        'has_frame': True  # 标记使用了框架
-                    }
-                    
-                    # 绑定事件
-                    def on_combobox_save(event):
-                        # 保存编辑
-                        self.on_inline_edit_save(None)
-                    
-                    self.inline_edit_widget.bind('<Return>', on_combobox_save)
-                    self.inline_edit_widget.bind('<Escape>', self.on_inline_edit_cancel)
-                    self.inline_edit_widget.bind('<<ComboboxSelected>>', on_combobox_save)
-                    
-                    # 获取焦点
-                    self.inline_edit_widget.focus_set()
-                else:  # hostname和description列，使用Entry
-                    self.inline_edit_widget = ttk.Entry(self.ipam_ip_tree, width=width//10-2)
-                    self.inline_edit_widget.insert(0, current_value)
-                    
-                    # 定位编辑控件
-                    self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
-                    
-                    # 保存相关信息
-                    self.inline_edit_data = {
-                        'item': item,
-                        'column_index': column_index,
-                        'column_name': columns[column_index],
-                        'original_value': current_value,
-                        'ip_address': values[0],
-                        'has_frame': False  # 标记未使用框架
-                    }
-                    
-                    # 延迟保存回调ID
-                    self._inline_edit_save_after_id = None
-                    
-                    def on_entry_focus_out(event):
-                        # 延迟保存，给用户按ESC取消的机会
-                        def delayed_save():
-                            self.on_inline_edit_save(None)
-                        
-                        if hasattr(self, '_inline_edit_save_after_id') and self._inline_edit_save_after_id:
-                            self.after_cancel(self._inline_edit_save_after_id)
-                        self._inline_edit_save_after_id = self.after(300, delayed_save)
-                    
-                    def on_entry_cancel(event):
-                        # 取消延迟保存
-                        if hasattr(self, '_inline_edit_save_after_id') and self._inline_edit_save_after_id:
-                            self.after_cancel(self._inline_edit_save_after_id)
-                        self.on_inline_edit_cancel(event)
-                    
-                    def on_entry_save(event):
-                        # 取消延迟保存
-                        if hasattr(self, '_inline_edit_save_after_id') and self._inline_edit_save_after_id:
-                            self.after_cancel(self._inline_edit_save_after_id)
-                        self.on_inline_edit_save(event)
-                    
-                    # 绑定事件
-                    self.inline_edit_widget.bind('<Return>', on_entry_save)
-                    self.inline_edit_widget.bind('<Escape>', on_entry_cancel)
-                    self.inline_edit_widget.bind('<FocusOut>', on_entry_focus_out)
-                    
-                    # 获取焦点
-                    self.inline_edit_widget.focus_set()
-                    # 全选文本
-                    self.inline_edit_widget.select_range(0, tk.END)
+                # 根据状态执行不同的操作
+                if actual_status == 'available':
+                    # 释放IP
+                    success, message = self.ipam.release_ip(row_data['ip_address'])
+                elif actual_status == 'allocated':
+                    # 分配IP
+                    success, message = self.ipam.allocate_ip(
+                        network, 
+                        row_data['ip_address'], 
+                        row_data['hostname'], 
+                        row_data['description']
+                    )
+                elif actual_status == 'reserved':
+                    # 保留IP
+                    success, message = self.ipam.reserve_ip(
+                        network, 
+                        row_data['ip_address'], 
+                        row_data['description']
+                    )
+                else:
+                    success = False
+                    message = f"未知状态: {actual_status}"
+            elif column_name == 'ip_address':
+                # 更新IP地址
+                # 1. 先释放旧IP
+                self.ipam.release_ip(row_data['ip_address'])
+                # 2. 再分配新IP
+                success, message = self.ipam.allocate_ip(
+                    network, 
+                    new_value, 
+                    row_data['hostname'], 
+                    row_data['description']
+                )
+            elif column_name == 'hostname' or column_name == 'description':
+                # 更新主机名或描述
+                success, message = self.ipam.update_ip_info(
+                    row_data['ip_address'], 
+                    hostname=new_value if column_name == 'hostname' else None,
+                    description=new_value if column_name == 'description' else None
+                )
+            elif column_name == 'expiry_date':
+                # 更新过期日期
+                success, message = self.ipam.update_ip_expiry(row_data['ip_address'], new_value)
+            else:
+                success = False
+                message = f"不支持编辑的列: {column_name}"
+            
+            return success, message
+        except Exception as e:
+            return False, f"更新失败: {str(e)}"
+    
+    def _get_requirements_row_data(self, item, tree_name):
+        """获取子网需求表或需求池表的行数据
+        
+        Args:
+            item: Treeview行ID
+            tree_name: 表格名称标识
+            
+        Returns:
+            dict: 行数据字典
+        """
+        tree = self.requirements_tree if tree_name == 'requirements' else self.pool_tree
+        values = tree.item(item, 'values')
+        return {
+            'item': item,
+            'values': values,
+            'index': values[0],
+            'name': values[1],
+            'hosts': values[2],
+            'tree_name': tree_name
+        }
+    
+    def _validate_requirements_edit(self, new_value, column_name, row_data):
+        """验证子网需求表或需求池表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            
+        Returns:
+            tuple: (是否有效, 错误消息或None)
+        """
+        if not new_value:
+            return False, _('input_cannot_be_empty')
+        
+        if column_name == 'hosts':
+            # 验证主机数量是否为正整数
+            try:
+                hosts = int(new_value)
+                if hosts <= 0:
+                    return False, _('host_count_must_be_greater_than_0')
+            except ValueError:
+                return False, _('invalid_number')
+        elif column_name == 'name':
+            # 验证子网名称是否已存在
+            tree_name = row_data['tree_name']
+            for check_tree_name in ['requirements', 'pool']:
+                tree = self.requirements_tree if check_tree_name == 'requirements' else self.pool_tree
+                for check_item in tree.get_children():
+                    # 排除当前编辑的行
+                    if check_tree_name == tree_name and check_item == row_data['item']:
+                        continue
+                    check_values = tree.item(check_item, 'values')
+                    if check_values[1] == new_value:
+                        return False, _('subnet_already_exists', name=new_value)
+        
+        return True, None
+    
+    def _save_requirements_edit(self, new_value, column_name, row_data, item, tree_name):
+        """保存子网需求表或需求池表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            item: Treeview行ID
+            tree_name: 表格名称标识
+            
+        Returns:
+            tuple: (是否成功, 消息)
+        """
+        try:
+            tree = self.requirements_tree if tree_name == 'requirements' else self.pool_tree
+            
+            # 更新Treeview
+            values = list(tree.item(item, 'values'))
+            column_index = 1 if column_name == 'name' else 2
+            values[column_index] = new_value
+            tree.item(item, values=values)
+            
+            # 更新斑马条纹
+            self.update_table_zebra_stripes(tree)
+            
+            # 保存当前状态
+            self.save_current_state(f"编辑{tree_name}表格记录")
+            
+            return True, "更新成功"
+        except Exception as e:
+            return False, f"更新失败: {str(e)}"
+    
+    def _get_network_row_data(self, item):
+        """获取网络管理表格行数据
+        
+        Args:
+            item: Treeview行ID
+            
+        Returns:
+            dict: 行数据字典
+        """
+        values = self.ipam_network_tree.item(item, 'values')
+        return {
+            'item': item,
+            'values': values,
+            'network': values[0],
+            'description': values[1],
+            'created_at': values[2],
+            'ip_count': values[3]
+        }
+    
+    def _validate_network_edit(self, new_value, column_name, row_data):
+        """验证网络管理表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            
+        Returns:
+            tuple: (是否有效, 错误消息或None)
+        """
+        if not new_value:
+            return False, _('input_cannot_be_empty')
+        
+        if column_name == 'description':
+            # 描述长度限制
+            if len(new_value) > 255:
+                return False, _('description_too_long')
+        
+        return True, None
+    
+    def _save_network_edit(self, new_value, column_name, row_data, item):
+        """保存网络管理表的编辑值
+        
+        Args:
+            new_value: 新编辑的值
+            column_name: 列名
+            row_data: 行数据字典
+            item: Treeview行ID
+            
+        Returns:
+            tuple: (是否成功, 消息)
+        """
+        try:
+            if column_name == 'description':
+                # 更新网络描述
+                success, message = self.ipam.update_network_description(row_data['network'], new_value)
+                return success, message
+            else:
+                return False, f"不支持编辑的列: {column_name}"
+        except Exception as e:
+            return False, f"更新失败: {str(e)}"
     
     def _validate_status(self, status_value):
         """验证状态值的合法性
@@ -11796,15 +12278,11 @@ class SubnetPlannerApp:
         self._destroy_inline_edit_widgets()
     
     def on_ip_menu_action(self, action):
-        """处理IP地址表格右键菜单的不同操作"""
+        """处理IP地址表格右键菜单的不同操作，支持多选"""
         selected_items = self.ipam_ip_tree.selection()
         if not selected_items:
             self.show_info(_('hint'), _('please_select_ip_address'))
             return
-        
-        # 获取选中的IP地址
-        ip_item = selected_items[0]
-        ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
         
         # 获取选中的网络
         network_items = self.ipam_network_tree.selection()
@@ -11814,21 +12292,37 @@ class SubnetPlannerApp:
         network = self.ipam_network_tree.item(network_items[0], 'values')[0]
         
         if action == 'restore':
-            # 恢复已释放的IP地址
-            # 获取IP的历史信息
-            ip_info = self.ipam.get_ip_info(ip_address)
-            if ip_info:
-                # 使用原有的主机名和描述进行恢复
-                hostname = ip_info.get('hostname', '')
-                description = ip_info.get('description', '')
-                success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
-                if success:
-                    self.show_info(_('success'), f"成功恢复IP地址 {ip_address}")
-                    self.refresh_ipam_ips(network)
-                else:
-                    self.show_error(_('error'), message)
+            # 恢复已释放的IP地址 - 支持多选
+            success_count = 0
+            error_count = 0
+            
+            for ip_item in selected_items:
+                ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                # 获取IP的历史信息
+                ip_info = self.ipam.get_ip_info(ip_address)
+                if ip_info:
+                    # 使用原有的主机名和描述进行恢复
+                    hostname = ip_info.get('hostname', '')
+                    description = ip_info.get('description', '')
+                    success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
+                    if success:
+                        success_count += 1
+                    else:
+                        error_count += 1
+            
+            # 显示结果
+            if success_count > 0:
+                self.show_info(_('success'), f"成功恢复 {success_count} 个IP地址")
+                self.refresh_ipam_ips(network)
+            if error_count > 0:
+                self.show_error(_('error'), f"恢复失败 {error_count} 个IP地址")
+                
         elif action == 'allocate':
-            # 重新分配IP地址
+            # 重新分配IP地址 - 只处理第一个选中的IP地址
+            # 因为不同的IP地址可能需要不同的主机名和描述
+            ip_item = selected_items[0]
+            ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            
             dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate', ip_address)
             if dialog_result:
                 hostname = dialog_result['hostname']
@@ -11840,8 +12334,13 @@ class SubnetPlannerApp:
                         self.refresh_ipam_ips(network)
                     else:
                         self.show_error(_('error'), message)
+                        
         elif action == 'reserve':
-            # 保留IP地址
+            # 保留IP地址 - 只处理第一个选中的IP地址
+            # 因为不同的IP地址可能需要不同的描述
+            ip_item = selected_items[0]
+            ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            
             dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve', ip_address)
             if dialog_result:
                 description = dialog_result['description']
@@ -11851,16 +12350,32 @@ class SubnetPlannerApp:
                     self.refresh_ipam_ips(network)
                 else:
                     self.show_error(_('error'), message)
+                    
         elif action == 'release':
-            # 释放IP地址
-            success, message = self.ipam.release_ip(ip_address)
-            if success:
-                self.show_info(_('success'), message)
+            # 释放IP地址 - 支持多选
+            success_count = 0
+            error_count = 0
+            
+            for ip_item in selected_items:
+                ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                success, message = self.ipam.release_ip(ip_address)
+                if success:
+                    success_count += 1
+                else:
+                    error_count += 1
+            
+            # 显示结果
+            if success_count > 0:
+                self.show_info(_('success'), f"成功释放 {success_count} 个IP地址")
                 self.refresh_ipam_ips(network)
-            else:
-                self.show_error(_('error'), message)
+            if error_count > 0:
+                self.show_error(_('error'), f"释放失败 {error_count} 个IP地址")
         elif action == 'edit':
-            # 编辑IP地址信息
+            # 编辑IP地址信息 - 只处理第一个选中的IP地址
+            # 因为编辑操作通常只针对单个IP地址
+            ip_item = selected_items[0]
+            ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            
             # 首先获取当前IP地址的信息
             ip_info = self.ipam.get_ip_info(ip_address)
             if ip_info:
@@ -11987,8 +12502,8 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         
-        # 显示IP地址分配对话框
-        dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate')
+        # 显示IP地址分配对话框，传递network参数
+        dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate', network=network)
         if not dialog_result:
             return
         
@@ -12124,26 +12639,20 @@ class SubnetPlannerApp:
             else:
                 self.show_error(_('error'), message)
 
-    def show_ip_address_dialog(self, title, action_type, ip_address=None):
+    def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None):
         """显示IP地址分配/保留对话框
         
         Args:
             title: 对话框标题
             action_type: 操作类型，'allocate', 'reserve', 'auto_allocate'
             ip_address: 可选，已选定的IP地址
+            network: 可选，当前选定的网络网段
         """
-        dialog = tk.Toplevel(self.root)
-        dialog.title(title)
-        dialog.transient(self.root)
-        dialog.withdraw()  # 先隐藏对话框，避免闪现
-        dialog.geometry("400x180")  # 调整对话框大小，宽度合适，高度足够
+        # 根据操作类型调整对话框大小
+        height = 140 if action_type == 'auto_allocate' else 180
         
-        # 居中主窗体，避免对话框在屏幕左上角闪现
-        center_window(dialog, self.root)
-        
-        # 显示对话框并设置grab_set
-        dialog.deiconify()
-        dialog.grab_set()
+        # 使用统一的create_dialog方法创建居中对话框
+        dialog = self.create_dialog(title, 400, height)
         
         # 创建主框架
         main_frame = ttk.Frame(dialog, padding="10")
@@ -12156,31 +12665,92 @@ class SubnetPlannerApp:
         main_frame.grid_columnconfigure(0, weight=0)
         main_frame.grid_columnconfigure(1, weight=1)
         
-        # IP地址输入
-        ttk.Label(main_frame, text=_('ip_address')).grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
-        ip_border, ip_entry = create_bordered_entry(main_frame)
-        ip_border.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
+        # 只有在非自动分配时才显示IP地址输入框
+        show_ip_input = action_type != 'auto_allocate'
+        ip_entry = None
         
         # 主机名输入
-        ttk.Label(main_frame, text=_('hostname')).grid(row=1, column=0, sticky="e", pady=5, padx=(0, 10))
+        hostname_row = 0 if not show_ip_input else 1
+        ttk.Label(main_frame, text=_('hostname')).grid(row=hostname_row, column=0, sticky="e", pady=5, padx=(0, 10))
         hostname_border, hostname_entry = create_bordered_entry(main_frame)
-        hostname_border.grid(row=1, column=1, sticky="ew", pady=5, padx=(0, 10))
+        hostname_border.grid(row=hostname_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
         # 描述输入
-        ttk.Label(main_frame, text=_('description')).grid(row=2, column=0, sticky="e", pady=5, padx=(0, 10))
+        desc_row = 1 if not show_ip_input else 2
+        ttk.Label(main_frame, text=_('description')).grid(row=desc_row, column=0, sticky="e", pady=5, padx=(0, 10))
         desc_border, description_entry = create_bordered_entry(main_frame)
-        desc_border.grid(row=2, column=1, sticky="ew", pady=5, padx=(0, 10))
+        desc_border.grid(row=desc_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
-        # 如果提供了IP地址，填充对话框
-        if ip_address:
-            ip_entry.insert(0, ip_address)
-            ip_entry.config(state='readonly')  # 设置为只读
+        # IP地址输入
+        if show_ip_input:
+            ttk.Label(main_frame, text=_('ip_address')).grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
+            ip_border, ip_entry = create_bordered_entry(main_frame)
+            ip_border.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
             
-            # 获取IP的历史信息
-            ip_info = self.ipam.get_ip_info(ip_address)
-            if ip_info:
-                hostname_entry.insert(0, ip_info.get('hostname', ''))
-                description_entry.insert(0, ip_info.get('description', ''))
+            # 如果提供了网段，自动填充前缀
+            if network and not ip_address:
+                try:
+                    import ipaddress
+                    ip_network = ipaddress.ip_network(network, strict=False)
+                    prefix = ""
+                    
+                    if ip_network.version == 4:
+                        # IPv4: 根据前缀长度动态提取网段
+                        # 使用用户选择的网段，而不是计算出的network_address
+                        # 例如，对于192.168.1.0/23，用户期望看到192.168.1.而不是192.168.0.
+                        user_network = network.split('/')[0]  # 提取IP部分，如192.168.1.0
+                        octets = user_network.split(".")
+                        prefix_len = ip_network.prefixlen
+                        
+                        # 根据前缀长度计算固定的字节数（整数部分）
+                        # 例如：/8 → 1字节固定，/16 → 2字节固定，/20 → 2字节固定，/23 → 2字节固定，/24 → 3字节固定
+                        fixed_octets = prefix_len // 8
+                        
+                        # 特殊处理：如果固定字节数为0，至少提取1字节
+                        fixed_octets = max(1, fixed_octets)
+                        
+                        # 只提取固定的字节数
+                        # 对于/8子网：提取前1段（如10.）
+                        # 对于/16子网：提取前2段（如192.168.）
+                        # 对于/20子网：提取前2段（如10.21.）
+                        # 对于/23子网：提取前2段（如10.0.）
+                        # 对于/24子网：提取前3段（如192.168.1.）
+                        # 对于/32子网：提取全部4段
+                        if fixed_octets == 4:
+                            # /32 子网直接使用完整地址
+                            prefix = user_network
+                        else:
+                            # 提取固定数量的网段并添加点号
+                            prefix = ".".join(octets[:fixed_octets]) + "."
+                    else:
+                        # IPv6: 提取前缀，例如 2001:db8::
+                        net_addr_str = str(ip_network.network_address)
+                        if "::" in net_addr_str:
+                            # 简化的IPv6地址
+                            prefix = net_addr_str
+                        else:
+                            # 完整的IPv6地址，提取前半部分
+                            parts = net_addr_str.split(":")
+                            prefix = ":".join(parts[:4]) + ":"
+                    
+                    # 预填充前缀到输入框
+                    ip_entry.insert(0, prefix)
+                    # 设置光标位置到前缀末尾
+                    ip_entry.icursor(len(prefix))
+                except Exception:
+                    # 如果网段解析失败，不填充前缀
+                    pass
+            
+            # 如果提供了IP地址，填充对话框
+            if ip_address:
+                ip_entry.insert(0, ip_address)
+                ip_entry.config(state='readonly')  # 设置为只读
+                
+                # 获取IP的历史信息
+                ip_info = self.ipam.get_ip_info(ip_address)
+                if ip_info:
+                    hostname_entry.insert(0, ip_info.get('hostname', ''))
+                    description_entry.insert(0, ip_info.get('description', ''))
         
         # 按钮框架
         button_frame = ttk.Frame(dialog)
@@ -12188,9 +12758,28 @@ class SubnetPlannerApp:
         
         # 确定按钮
         def on_ok():
-            ip = ip_entry.get().strip()
+            # 只有在显示IP输入框时才获取IP地址，自动分配时IP为空字符串
+            ip = ip_entry.get().strip() if ip_entry else ''
             hostname = hostname_entry.get().strip()
             description = description_entry.get().strip()
+            
+            # 验证IP地址是否在所选网络范围内
+            if ip and network:
+                try:
+                    import ipaddress
+                    # 解析网络和IP地址
+                    ip_network = ipaddress.ip_network(network, strict=False)
+                    ip_address_obj = ipaddress.ip_address(ip)
+                    
+                    # 检查IP地址是否在网络范围内
+                    if ip_address_obj not in ip_network:
+                        # 显示错误提示
+                        self.show_error(_('error'), "IP地址不在所选网络范围内")
+                        return
+                except Exception as e:
+                    # IP地址格式错误或网络解析失败
+                    self.show_error(_('error'), _('invalid_ip_address_format'))
+                    return
             
             # 保存输入值
             dialog.ip = ip
@@ -12308,8 +12897,8 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         
-        # 显示IP地址保留对话框
-        dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve')
+        # 显示IP地址保留对话框，传递network参数以自动填充前缀
+        dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve', network=network)
         if not dialog_result:
             return
         
