@@ -4017,15 +4017,8 @@ class SubnetPlannerApp:
                 self.show_error(_("error"), f"{_("subnet_planning_failed")}: {plan_result['error']}")
                 return
 
-            # 处理多个规划方案
-            if 'plans' in plan_result and len(plan_result['plans']) > 1:
-                # 显示方案选择对话框
-                selected_plan = self._show_plan_selection_dialog(plan_result['plans'])
-                if not selected_plan:
-                    return
-            else:
-                # 只有一个方案，直接使用
-                selected_plan = plan_result['plans'][0]
+            # 直接使用第一个规划方案
+            selected_plan = plan_result['plans'][0]
 
             # 清空结果表格
             self.clear_tree_items(self.allocated_tree)
@@ -4153,125 +4146,7 @@ class SubnetPlannerApp:
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
 
-    def _show_plan_selection_dialog(self, plans):
-        """
-        显示方案选择对话框
 
-        Args:
-            plans: 规划方案列表
-
-        Returns:
-            选中的方案，或者None如果用户取消
-        """
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_("select_plan"))
-        dialog.geometry("800x600")
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        # 创建主框架
-        main_frame = ttk.Frame(dialog, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # 创建方案列表框
-        plan_listbox = tk.Listbox(main_frame, width=50, height=10)
-        plan_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-
-        # 添加滚动条
-        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=plan_listbox.yview)
-        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
-        plan_listbox.config(yscrollcommand=scrollbar.set)
-
-        # 创建方案详情框架
-        detail_frame = ttk.LabelFrame(main_frame, text=_('plan_details'), padding="10")
-        detail_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-
-        # 创建详情文本框
-        detail_text = tk.Text(detail_frame, wrap=tk.WORD, height=20)
-        detail_text.pack(fill=tk.BOTH, expand=True)
-
-        # 填充方案列表
-        for i, plan in enumerate(plans):
-            plan_listbox.insert(tk.END, f"方案 {i+1}: {plan['name']} (评分: {plan['score']}/100)")
-
-        # 选择第一个方案
-        if plans:
-            plan_listbox.select_set(0)
-            # 显示第一个方案的详情
-            self._show_plan_details(plans[0], detail_text)
-
-        # 绑定列表框选择事件
-        def on_select(event):
-            selected_indices = plan_listbox.curselection()
-            if selected_indices:
-                index = selected_indices[0]
-                self._show_plan_details(plans[index], detail_text)
-
-        plan_listbox.bind('<<ListboxSelect>>', on_select)
-
-        # 创建按钮框架
-        button_frame = ttk.Frame(dialog, padding="10")
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X)
-
-        # 创建确定和取消按钮
-        def on_ok():
-            selected_indices = plan_listbox.curselection()
-            if selected_indices:
-                index = selected_indices[0]
-                dialog.selected_plan = plans[index]
-            else:
-                dialog.selected_plan = None
-            dialog.destroy()
-
-        def on_cancel():
-            dialog.selected_plan = None
-            dialog.destroy()
-
-        ok_button = ttk.Button(button_frame, text=_('ok'), command=on_ok)
-        ok_button.pack(side=tk.RIGHT, padx=5)
-
-        cancel_button = ttk.Button(button_frame, text=_('cancel'), command=on_cancel)
-        cancel_button.pack(side=tk.RIGHT, padx=5)
-
-        # 等待对话框关闭
-        dialog.wait_window()
-
-        return getattr(dialog, 'selected_plan', None)
-
-    def _show_plan_details(self, plan, text_widget):
-        """
-        显示方案详情
-
-        Args:
-            plan: 规划方案
-            text_widget: 文本控件
-        """
-        text_widget.delete(1.0, tk.END)
-
-        # 显示方案名称和评分
-        text_widget.insert(tk.END, f"方案名称: {plan['name']}\n")
-        text_widget.insert(tk.END, f"评分: {plan['score']}/100\n\n")
-
-        # 显示评分解释
-        text_widget.insert(tk.END, "评分解释:\n")
-        for explanation in plan.get('score_explanation', []):
-            text_widget.insert(tk.END, f"- {explanation}\n")
-        text_widget.insert(tk.END, "\n")
-
-        # 显示已分配子网
-        text_widget.insert(tk.END, "已分配子网:\n")
-        for i, subnet in enumerate(plan['allocated_subnets'], 1):
-            text_widget.insert(tk.END, f"{i}. {subnet['name']}: {subnet['cidr']} (需{subnet['required_hosts']}台，可用{subnet['available_hosts']}台)\n")
-        text_widget.insert(tk.END, "\n")
-
-        # 显示剩余子网
-        text_widget.insert(tk.END, f"剩余子网数量: {len(plan['remaining_subnets'])}\n")
-        if plan['remaining_subnets']:
-            text_widget.insert(tk.END, "剩余子网:\n")
-            for subnet in plan['remaining_subnets'][:5]:  # 只显示前5个
-                text_widget.insert(tk.END, f"- {subnet}\n")
-            if len(plan['remaining_subnets']) > 5:
-                text_widget.insert(tk.END, f"... 还有{len(plan['remaining_subnets']) - 5}个子网\n")
 
     def generate_planning_chart_data(self, plan_result):
         """生成规划图表数据并绘制"""
