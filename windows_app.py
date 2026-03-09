@@ -3467,16 +3467,17 @@ class SubnetPlannerApp:
         return result
 
     def show_info(self, title, message):
-        """显示信息对话框"""
-        return self.show_custom_dialog(title, message, "info")
+        """显示信息（使用信息栏）"""
+        return self.show_result(message, error=False)
 
     def show_error(self, title, message):
-        """显示错误对话框"""
-        return self.show_custom_dialog(title, message, "error")
+        """显示错误（使用信息栏）"""
+        return self.show_result(message, error=True)
 
     def show_warning(self, title, message):
-        """显示警告对话框"""
-        return self.show_custom_dialog(title, message, "warning")
+        """显示警告（使用信息栏）"""
+        # 警告也使用错误样式的信息栏
+        return self.show_result(message, error=True)
     
     def show_yes_no_dialog(self, title, message):
         """显示是/否确认对话框"""
@@ -9843,7 +9844,6 @@ class SubnetPlannerApp:
         ttk.Radiobutton(dialog, text="检查IP冲突", variable=operation_var, value="check_conflicts").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量修改IP信息", variable=operation_var, value="batch_modify").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量设置过期时间", variable=operation_var, value="batch_set_expiry").pack(pady=5, anchor=tk.W)
-        ttk.Radiobutton(dialog, text="批量更改状态", variable=operation_var, value="batch_change_status").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量导入IP数据", variable=operation_var, value="batch_import").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量自动分配IP", variable=operation_var, value="auto_allocate").pack(pady=5, anchor=tk.W)
         ttk.Radiobutton(dialog, text="批量设置标签", variable=operation_var, value="batch_set_tags").pack(pady=5, anchor=tk.W)
@@ -9889,22 +9889,29 @@ class SubnetPlannerApp:
                     conflicts = []
                     
                     for ip in ips:
-                        conflict_list = self.ipam.check_ip_conflict(ip['ip_address'])
-                        if len(conflict_list) > 1:
-                            conflicts.extend(conflict_list)
+                        # check_ip_conflict返回布尔值，True表示存在冲突
+                        is_conflict = self.ipam.check_ip_conflict(ip['ip_address'])
+                        if is_conflict:
+                            # 添加冲突信息
+                            conflicts.append({
+                                'network': network,
+                                'ip_address': ip['ip_address'],
+                                'status': ip['status'],
+                                'hostname': ip.get('hostname', '')
+                            })
                     
                     if not conflicts:
-                        self.show_info(_('hint'), "没有发现IP冲突")
+                        self.show_info(_('hint'), _('no_ip_conflicts_found'))
                         return
                     
                     # 显示冲突信息
-                    conflict_info = "发现以下IP冲突:\n"
+                    conflict_info = _('found_ip_conflicts') + ':\n'
                     for conflict in conflicts:
-                        conflict_info += f"网络: {conflict['network']}, IP: {conflict['ip_address']}, 状态: {conflict['status']}, 主机名: {conflict['hostname']}\n"
+                        conflict_info += f"{_('network')}: {conflict['network']}, {_('ip_address')}: {conflict['ip_address']}, {_('status')}: {conflict['status']}, {_('hostname')}: {conflict['hostname']}\n"
                     
                     self.show_info(_('hint'), conflict_info)
                 except Exception as e:
-                    self.show_error(_('error'), f"检查冲突失败: {str(e)}")
+                    self.show_error(_('error'), f"{_('check_conflict_failed')}: {str(e)}")
             
             elif operation == "batch_modify":
                 # 批量修改IP信息
@@ -9920,11 +9927,6 @@ class SubnetPlannerApp:
                 # 批量设置过期时间
                 dialog.destroy()
                 self.batch_set_expiry(network)
-            
-            elif operation == "batch_change_status":
-                # 批量更改状态
-                dialog.destroy()
-                self.batch_change_status(network)
             
             elif operation == "auto_allocate":
                 # 批量自动分配IP
@@ -10969,96 +10971,7 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text="确定", command=on_set_expiry).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
     
-    def batch_change_status(self, network):
-        """批量更改IP状态"""
-        # 创建批量更改状态对话框，使用统一的create_dialog方法
-        dialog = self.create_dialog("批量更改状态", 500, 300)
-        
-        # 获取网络中的IP地址
-        ips = self.ipam.get_network_ips(network)
-        
-        # IP地址选择
-        ttk.Label(dialog, text="选择要更改状态的IP地址:").pack(pady=10)
-        
-        # 创建列表框
-        list_frame = ttk.Frame(dialog)
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        listbox = tk.Listbox(list_frame, selectmode=tk.MULTIPLE, height=8)
-        listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=listbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        listbox.configure(yscrollcommand=scrollbar.set)
-        
-        # 填充IP地址
-        ip_list = []
-        for ip in ips:
-            ip_str = ip['ip_address']
-            hostname = ip.get('hostname', '')
-            status = ip.get('status', 'available')
-            listbox.insert(tk.END, f"{ip_str} - {hostname} (当前状态: {status})")
-            ip_list.append(ip_str)
-        
-        # 状态选择
-        ttk.Label(dialog, text="新状态:").pack(pady=10)
-        status_var = tk.StringVar(value="allocated")
-        status_frame = ttk.Frame(dialog)
-        status_frame.pack(pady=5)
-        ttk.Radiobutton(status_frame, text="已分配", variable=status_var, value="allocated").pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(status_frame, text="已保留", variable=status_var, value="reserved").pack(side=tk.LEFT, padx=10)
-        
-        def on_change_status():
-            selected_indices = listbox.curselection()
-            if not selected_indices:
-                self.show_info(_('hint'), "请选择要更改状态的IP地址")
-                return
-            
-            new_status = status_var.get()
-            
-            # 批量更改状态
-            success_count = 0
-            for index in selected_indices:
-                ip_str = ip_list[index]
-                # 获取当前IP信息
-                ip_data = self.ipam.networks[network]['ip_addresses'].get(ip_str)
-                if ip_data:
-                    old_status = ip_data.get('status')
-                    if old_status != new_status:
-                        ip_data['status'] = new_status
-                        # 更新索引
-                        if old_status in self.ipam.ip_by_status and network in self.ipam.ip_by_status[old_status]:
-                            if ip_str in self.ipam.ip_by_status[old_status][network]:
-                                self.ipam.ip_by_status[old_status][network].remove(ip_str)
-                        if new_status not in self.ipam.ip_by_status:
-                            self.ipam.ip_by_status[new_status] = {}
-                        if network not in self.ipam.ip_by_status[new_status]:
-                            self.ipam.ip_by_status[new_status][network] = []
-                        self.ipam.ip_by_status[new_status][network].append(ip_str)
-                        # 更新网络统计信息缓存
-                        if network in self.ipam.network_stats_cache:
-                            if old_status in self.ipam.network_stats_cache[network]:
-                                self.ipam.network_stats_cache[network][old_status] = max(0, self.ipam.network_stats_cache[network][old_status] - 1)
-                            if new_status in self.ipam.network_stats_cache[network]:
-                                self.ipam.network_stats_cache[network][new_status] += 1
-                        success_count += 1
-            
-            # 保存修改
-            self.ipam.save_data()
-            
-            if success_count > 0:
-                self.show_info(_('success'), f"成功更改 {success_count} 个IP地址的状态")
-                self.refresh_ipam_ips(network)
-            else:
-                self.show_info(_('hint'), "没有IP地址被修改")
-            
-            dialog.destroy()
-        
-        # 按钮
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="确定", command=on_change_status).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+
     
     def batch_import_ip(self, network):
         """批量导入IP数据"""
@@ -11443,33 +11356,79 @@ class SubnetPlannerApp:
         """IP地址表格右键菜单处理"""
         # 获取当前右键点击的行
         item = self.ipam_ip_tree.identify_row(event.y)
-        if item:
-            # 如果当前行不在选中的行中，将其添加到选中的行中
-            # 否则，保留当前的选中状态
-            if item not in self.ipam_ip_tree.selection():
-                # 使用selection_add而不是selection_set，保留之前的多选状态
-                self.ipam_ip_tree.selection_add(item)
-            
-            # 获取所有选中行的状态
-            selected_items = self.ipam_ip_tree.selection()
-            all_available = all(self.ipam_ip_tree.item(item, 'values')[1] == _('available') for item in selected_items)
-            any_allocated_or_reserved = any(self.ipam_ip_tree.item(item, 'values')[1] != _('available') for item in selected_items)
-            
-            # 重新创建右键菜单，根据选中行的状态动态调整菜单项
-            self.ip_tree_menu = tk.Menu(self.root, tearoff=0)
-            
-            # 根据选中行的状态显示不同的菜单项
-            if all_available:
-                # 所有选中行都是可用状态：显示恢复分配、分配和保留选项
-                self.ip_tree_menu.add_command(label=_('restore_allocation'), command=lambda: self.on_ip_menu_action('restore'))
-                self.ip_tree_menu.add_command(label=_('allocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
-                self.ip_tree_menu.add_command(label=_('reserve_address'), command=lambda: self.on_ip_menu_action('reserve'))
-            elif any_allocated_or_reserved:
-                # 有选中行是已分配或已保留状态：显示释放选项
-                self.ip_tree_menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
-            
-            # 显示右键菜单
-            self.ip_tree_menu.post(event.x_root, event.y_root)
+        if not item:
+            return
+        
+        # 先清理所有可能存在的菜单资源
+        self._cleanup_all_menus()
+        
+        # 选中当前行
+        self.ipam_ip_tree.selection_set(item)
+        
+        # 获取当前行的状态
+        row_values = self.ipam_ip_tree.item(item, 'values')
+        if not row_values or len(row_values) < 2:
+            return
+        
+        # 获取当前行的状态文本
+        current_status = row_values[1]
+        
+        # 创建一个临时菜单，使用系统默认样式
+        temp_menu = tk.Menu(self.root, tearoff=0)
+        
+        # 根据行状态动态添加菜单项
+        if current_status == _('available'):
+            # 可用状态：根据用户要求显示四个选项
+            temp_menu.add_command(label="恢复为已分配", command=lambda: self._execute_menu_action('quick_allocate'))
+            temp_menu.add_command(label="恢复为保留IP", command=lambda: self._execute_menu_action('quick_reserve'))
+            temp_menu.add_command(label="重新分配地址", command=lambda: self._execute_menu_action('allocate'))
+            temp_menu.add_command(label="重新保留地址", command=lambda: self._execute_menu_action('reserve'))
+        elif current_status == _('allocated'):
+            # 已分配状态：显示释放和转为保留选项
+            temp_menu.add_command(label=_('release_address'), command=lambda: self._execute_menu_action('release'))
+            temp_menu.add_command(label="转为保留IP", command=lambda: self._execute_menu_action('quick_reserve'))
+        elif current_status == _('reserved'):
+            # 保留状态：显示释放和转为已分配选项
+            temp_menu.add_command(label=_('release_address'), command=lambda: self._execute_menu_action('release'))
+            temp_menu.add_command(label="转为已分配", command=lambda: self._execute_menu_action('quick_allocate'))
+        
+        # 计算菜单位置，确保在屏幕范围内
+        x = event.x_root
+        y = event.y_root
+        
+        # 显示菜单
+        try:
+            # 使用root的tk_popup方法，确保菜单在正确位置
+            self.root.tk.call('tk_popup', temp_menu, x, y, 0)
+        except Exception as e:
+            print(f"菜单显示错误: {e}")
+            # 立即清理菜单
+            try:
+                temp_menu.destroy()
+            except Exception:
+                pass
+    
+    def _execute_menu_action(self, action):
+        """执行菜单操作，不使用实例变量保存菜单"""
+        # 直接执行操作，不通过实例变量菜单
+        self.on_ip_menu_action(action)
+    
+    def _cleanup_all_menus(self):
+        """清理所有可能存在的菜单资源"""
+        # 清理IP树菜单
+        if hasattr(self, 'ip_tree_menu'):
+            try:
+                if self.ip_tree_menu:
+                    self.ip_tree_menu.unpost()
+                    self.ip_tree_menu.destroy()
+            except Exception:
+                pass
+            finally:
+                delattr(self, 'ip_tree_menu')
+    
+    def __del__(self):
+        """销毁对象时清理所有资源"""
+        self._cleanup_all_menus()
     
     def _destroy_inline_edit_widgets(self):
         """安全销毁内联编辑控件，防止内存泄漏
@@ -11551,10 +11510,11 @@ class SubnetPlannerApp:
             event: 事件对象
         """
         # 检查是否有注册的配置和处理器
-        if tree_name not in self._inline_edit_configs or tree_name not in self._inline_edit_handlers:
+        if tree_name not in self._inline_edit_configs:
             return
-        
         config = self._inline_edit_configs[tree_name]
+        if tree_name not in self._inline_edit_handlers:
+            return
         
         # 获取双击的行和列
         region = tree.identify_region(event.x, event.y)
@@ -11847,9 +11807,11 @@ class SubnetPlannerApp:
         Returns:
             bool: 是否为有效的IPv4地址
         """
-        import re
-        ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-        return bool(re.match(ipv4_pattern, ip_address.strip()))
+        try:
+            ip = ipaddress.ip_address(ip_address.strip())
+            return isinstance(ip, ipaddress.IPv4Address)
+        except ValueError:
+            return False
     
     def is_ip_in_network(self, ip_address, network):
         """检查IP地址是否在指定的网络范围内
@@ -11912,7 +11874,9 @@ class SubnetPlannerApp:
                 return False, _('description_too_long')
         elif column_name == 'expiry_date':
             # 验证日期格式（YYYY-MM-DD HH:MM:SS）
-            if not re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', new_value):
+            try:
+                datetime.datetime.strptime(new_value, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
                 return False, _('invalid_date_format')
         
         return True, None
@@ -12370,6 +12334,88 @@ class SubnetPlannerApp:
                 self.refresh_ipam_ips(network)
             if error_count > 0:
                 self.show_error(_('error'), f"释放失败 {error_count} 个IP地址")
+        elif action == 'quick_allocate':
+            # 快速分配IP地址 - 直接修改状态为已分配，不显示对话框，支持多选
+            success_count = 0
+            error_count = 0
+            
+            for ip_item in selected_items:
+                ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                try:
+                    # 先获取当前IP的信息，保留原有信息
+                    ip_info = self.ipam.get_ip_info(ip_address)
+                    if ip_info:
+                        # 使用原有信息（如果有），否则使用默认值
+                        hostname = ip_info.get('hostname', 'Unnamed')
+                        description = ip_info.get('description', '快速分配')
+                        expiry_date = ip_info.get('expiry_date')
+                    else:
+                        # 如果没有原有信息，使用默认值
+                        hostname = 'Unnamed'
+                        description = '快速分配'
+                        expiry_date = None
+                    
+                    # 快速分配，使用获取或默认的信息
+                    success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+                    if success:
+                        success_count += 1
+                    else:
+                        # 如果分配失败，尝试先释放再分配
+                        self.ipam.release_ip(ip_address)
+                        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+                        if success:
+                            success_count += 1
+                        else:
+                            error_count += 1
+                except Exception as e:
+                    print(f"快速分配失败: {e}")
+                    error_count += 1
+            
+            # 显示结果
+            if success_count > 0:
+                self.show_info(_('success'), f"成功恢复 {success_count} 个IP地址为已分配")
+                self.refresh_ipam_ips(network)
+            if error_count > 0:
+                self.show_error(_('error'), f"恢复失败 {error_count} 个IP地址")
+        elif action == 'quick_reserve':
+            # 快速保留IP地址 - 直接修改状态为保留，不显示对话框，支持多选
+            success_count = 0
+            error_count = 0
+            
+            for ip_item in selected_items:
+                ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                try:
+                    # 先获取当前IP的信息，保留原有信息
+                    ip_info = self.ipam.get_ip_info(ip_address)
+                    if ip_info:
+                        # 使用原有信息（如果有），否则使用默认值
+                        description = ip_info.get('description', '快速保留')
+                    else:
+                        # 如果没有原有信息，使用默认值
+                        description = '快速保留'
+                    
+                    # 快速保留，使用获取或默认的信息
+                    success, message = self.ipam.reserve_ip(network, ip_address, description)
+                    if success:
+                        success_count += 1
+                    else:
+                        # 如果保留失败，尝试先释放再保留
+                        self.ipam.release_ip(ip_address)
+                        success, message = self.ipam.reserve_ip(network, ip_address, description)
+                        if success:
+                            success_count += 1
+                        else:
+                            error_count += 1
+                except Exception as e:
+                    print(f"快速保留失败: {e}")
+                    error_count += 1
+            
+            # 显示结果
+            if success_count > 0:
+                self.show_info(_('success'), f"成功恢复 {success_count} 个IP地址为保留IP")
+                self.refresh_ipam_ips(network)
+            if error_count > 0:
+                self.show_error(_('error'), f"恢复失败 {error_count} 个IP地址")
         elif action == 'edit':
             # 编辑IP地址信息 - 只处理第一个选中的IP地址
             # 因为编辑操作通常只针对单个IP地址
@@ -12921,6 +12967,9 @@ class SubnetPlannerApp:
             self.show_error(_('error'), message)
 
 if __name__ == "__main__":
+    # 导入窗口工具模块
+    from window_utils import setup_window_settings
+    
     # 创建主窗口
     root = tk.Tk()
     
@@ -12939,25 +12988,8 @@ if __name__ == "__main__":
     WINDOW_WIDTH = int(BASE_WIDTH)
     WINDOW_HEIGHT = int(BASE_HEIGHT)
     
-    print(f"📏 窗口尺寸: {WINDOW_WIDTH}x{WINDOW_HEIGHT}")
-
-    # 获取屏幕尺寸
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-
-    # 计算窗口居中的坐标
-    window_x = (screen_width - WINDOW_WIDTH) // 2
-    window_y = (screen_height - WINDOW_HEIGHT) // 2
-
-    # 设置窗口大小和位置
-    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{window_x}+{window_y}")
-
-    # 设置窗口固定宽度，高度可调整
-    root.minsize(BASE_WIDTH, BASE_HEIGHT)
-    root.maxsize(10000, 10000)  # 设置最大宽度为1100，最大高度设为一个很大的值
-
-    # 只允许调整窗口高度，不允许调整宽度
-    root.resizable(width=False, height=True)
+    # 调用窗口设置函数
+    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=True, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=1100, max_height=10000)
     
     # 创建应用实例
     app = SubnetPlannerApp(root)
