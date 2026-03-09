@@ -5406,14 +5406,17 @@ class SubnetPlannerApp:
 
         # IPv6地址验证函数
         def validate_ipv6(text):
-            """验证IPv6地址格式"""
+            """验证IPv6地址格式，使用标准库ipaddress模块"""
             text = text.strip()
-            # IPv6地址正则表达式（简化版，支持压缩格式）
-            ipv6_pattern = r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
-            is_valid = bool(re.match(ipv6_pattern, text)) if text else True
-            # 设置文本颜色
+            is_valid = True
+            
+            if text:
+                try:
+                    ipaddress.IPv6Address(text)
+                except ValueError:
+                    is_valid = False
+            
             self.ipv6_info_entry.config(foreground='black' if is_valid else 'red')
-            # 始终返回"1"，允许所有输入，只做视觉提示
             return "1"
 
         # 配置验证
