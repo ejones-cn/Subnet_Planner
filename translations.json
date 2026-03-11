@@ -1947,29 +1947,29 @@
     "ko": "시각화"
   },
   "network_management": {
-    "zh": "网络管理",
-    "zh_tw": "網路管理",
+    "zh": "网段管理",
+    "zh_tw": "網段管理",
     "en": "Network Management",
     "ja": "ネットワーク管理",
     "ko": "네트워크 관리"
   },
   "network_cidr": {
-    "zh": "网络CIDR",
-    "zh_tw": "網路CIDR",
-    "en": "Network CIDR",
-    "ja": "ネットワークCIDR",
-    "ko": "네트워크 CIDR"
+    "zh": "CIDR",
+    "zh_tw": "CIDR",
+    "en": "CIDR",
+    "ja": "CIDR",
+    "ko": "CIDR"
   },
   "add_network": {
-    "zh": "添加网络",
-    "zh_tw": "新增網路",
+    "zh": "添加网段",
+    "zh_tw": "新增網段",
     "en": "Add Network",
     "ja": "ネットワークを追加",
     "ko": "네트워크 추가"
   },
   "remove_network": {
-    "zh": "移除网络",
-    "zh_tw": "移除網路",
+    "zh": "移除网段",
+    "zh_tw": "移除網段",
     "en": "Remove Network",
     "ja": "ネットワークを削除",
     "ko": "네트워크 제거"

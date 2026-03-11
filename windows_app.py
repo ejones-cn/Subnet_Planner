@@ -31,6 +31,13 @@ from openpyxl.styles import Font, Alignment  # type: ignore
 from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
+# 尝试导入DateEntry，如果失败则设置为None
+DateEntry = None
+try:
+    from tkcalendar import DateEntry
+except ImportError:
+    print("Warning: tkcalendar module not found, date picker will be disabled")
+
 # 本地模块
 from version import get_version
 
@@ -3793,8 +3800,29 @@ class SubnetPlannerApp:
         
         # 检查是否有正在编辑的状态（新机制）
         if hasattr(self, 'inline_edit_widget') and hasattr(self, 'inline_edit_data'):
-            # 保存当前编辑
-            self.on_generic_inline_edit_save(None)
+            # 检查点击是否在DateEntry的日历弹出窗口内
+            should_save = True
+            try:
+                if hasattr(self.inline_edit_widget, '_top_cal'):
+                    top_cal = self.inline_edit_widget._top_cal
+                    if top_cal:
+                        # 不再依赖ismapped，直接检查坐标
+                        x = event.x_root
+                        y = event.y_root
+                        try:
+                            tx = top_cal.winfo_rootx()
+                            ty = top_cal.winfo_rooty()
+                            tw = top_cal.winfo_width()
+                            th = top_cal.winfo_height()
+                            if tw > 0 and th > 0 and tx <= x <= tx + tw and ty <= y <= ty + th:
+                                should_save = False
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            
+            if should_save:
+                self.on_generic_inline_edit_save(None)
         
         # 获取点击位置的信息
         tree = event.widget
@@ -9068,7 +9096,8 @@ class SubnetPlannerApp:
         self.register_inline_edit_config('ipam_ip', {
             'editable_columns': [0, 1, 2, 3, 5],  # 允许编辑IP地址、状态、主机名、描述和过期日期
             'column_types': {
-                1: 'combobox'  # 状态列使用下拉框
+                1: 'combobox',  # 状态列使用下拉框
+                5: 'datepicker'  # 过期日期列使用日期选择器
             },
             'combobox_values': {
                 1: [_('available'), _('allocated'), _('reserved')]  # 状态选项
@@ -9239,13 +9268,34 @@ class SubnetPlannerApp:
                 # 如果解析失败，使用原始时间戳
                 formatted_allocated_at = allocated_at
             
+            # 格式化过期日期，只显示日期部分
+            expiry_date = ip.get('expiry_date', '')
+            formatted_expiry_date = expiry_date
+            try:
+                from datetime import datetime
+                if expiry_date:
+                    if 'T' in expiry_date:
+                        # ISO格式: 2023-12-31T23:59:59
+                        dt = datetime.fromisoformat(expiry_date)
+                    elif ' ' in expiry_date:
+                        # 普通格式: 2023-12-31 23:59:59
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+                    else:
+                        # 只有日期部分: 2023-12-31
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d")
+                    # 格式化为只显示日期部分
+                    formatted_expiry_date = dt.strftime("%Y-%m-%d")
+            except:
+                # 如果解析失败，使用原始日期
+                pass
+            
             self.ipam_ip_tree.insert('', tk.END, values=(
                 ip['ip_address'],
                 status_text,
                 ip.get('hostname', ''),
                 ip.get('description', ''),
                 formatted_allocated_at,
-                ip.get('expiry_date', '')
+                formatted_expiry_date
             ))
         
         # 更新斑马纹样式
@@ -9674,13 +9724,51 @@ class SubnetPlannerApp:
             elif status_text == 'allocated':
                 status_text = _('allocated')
             
+            # 格式化分配时间，只显示到秒
+            allocated_at = ip.get('allocated_at', '')
+            try:
+                # 尝试解析ISO格式的时间戳
+                from datetime import datetime
+                if 'T' in allocated_at:
+                    # ISO格式: 2023-12-31T23:59:59.123456
+                    dt = datetime.fromisoformat(allocated_at)
+                else:
+                    # 普通格式: 2023-12-31 23:59:59.123456
+                    dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
+                # 格式化为只显示到秒
+                formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                # 如果解析失败，使用原始时间戳
+                formatted_allocated_at = allocated_at
+            
+            # 格式化过期日期，只显示日期部分
+            expiry_date = ip.get('expiry_date', '')
+            formatted_expiry_date = expiry_date
+            try:
+                from datetime import datetime
+                if expiry_date:
+                    if 'T' in expiry_date:
+                        # ISO格式: 2023-12-31T23:59:59
+                        dt = datetime.fromisoformat(expiry_date)
+                    elif ' ' in expiry_date:
+                        # 普通格式: 2023-12-31 23:59:59
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+                    else:
+                        # 只有日期部分: 2023-12-31
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d")
+                    # 格式化为只显示日期部分
+                    formatted_expiry_date = dt.strftime("%Y-%m-%d")
+            except:
+                # 如果解析失败，使用原始日期
+                pass
+            
             self.ipam_ip_tree.insert('', tk.END, values=(
                 ip['ip_address'],
                 status_text,
                 ip.get('hostname', ''),
                 ip.get('description', ''),
-                ip.get('allocated_at', ''),
-                ip.get('expiry_date', '')
+                formatted_allocated_at,
+                formatted_expiry_date
             ))
         
 
@@ -9749,13 +9837,34 @@ class SubnetPlannerApp:
                 # 如果解析失败，使用原始时间戳
                 formatted_allocated_at = allocated_at
             
+            # 格式化过期日期，只显示日期部分
+            expiry_date = ip.get('expiry_date', '')
+            formatted_expiry_date = expiry_date
+            try:
+                from datetime import datetime
+                if expiry_date:
+                    if 'T' in expiry_date:
+                        # ISO格式: 2023-12-31T23:59:59
+                        dt = datetime.fromisoformat(expiry_date)
+                    elif ' ' in expiry_date:
+                        # 普通格式: 2023-12-31 23:59:59
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+                    else:
+                        # 只有日期部分: 2023-12-31
+                        dt = datetime.strptime(expiry_date, "%Y-%m-%d")
+                    # 格式化为只显示日期部分
+                    formatted_expiry_date = dt.strftime("%Y-%m-%d")
+            except:
+                # 如果解析失败，使用原始日期
+                pass
+            
             self.ipam_ip_tree.insert('', tk.END, values=(
                 ip['ip_address'],
                 status_text,
                 ip.get('hostname', ''),
                 ip.get('description', ''),
                 formatted_allocated_at,
-                ip.get('expiry_date', '')
+                formatted_expiry_date
             ))
     
     def _sort_ip_list(self, ips):
@@ -10866,7 +10975,7 @@ class SubnetPlannerApp:
                         ip_data['description'] = description
                     # 更新过期日期
                     if expiry_date:
-                        ip_data['expiry_date'] = expiry_date
+                        ip_data['expiry_date'] = self._format_expiry_date(expiry_date)
                     success_count += 1
             
             # 保存修改
@@ -10951,7 +11060,7 @@ class SubnetPlannerApp:
                 # 获取当前IP信息
                 ip_data = self.ipam.networks[network]['ip_addresses'].get(ip_str)
                 if ip_data:
-                    ip_data['expiry_date'] = expiry_date
+                    ip_data['expiry_date'] = self._format_expiry_date(expiry_date)
                     success_count += 1
             
             # 保存修改
@@ -11183,7 +11292,7 @@ class SubnetPlannerApp:
         dialog.title(_('add_network'))
         dialog.transient(self.root)
         dialog.withdraw()  # 先隐藏对话框，避免闪现
-        dialog.geometry("500x150")
+        dialog.geometry("400x200")
         
         # 居中主窗体
         center_window(dialog, self.root)
@@ -11197,18 +11306,18 @@ class SubnetPlannerApp:
         form_frame.pack(fill=tk.BOTH, expand=True)
         
         # 配置网格布局
-        form_frame.grid_columnconfigure(1, weight=1)
-        form_frame.grid_columnconfigure(3, weight=2)
+        form_frame.grid_columnconfigure(0, weight=0)  # 标签列
+        form_frame.grid_columnconfigure(1, weight=1)  # 输入框列，占据剩余空间
         
         # 网络CIDR输入
-        ttk.Label(form_frame, text=_('network_cidr')).grid(row=0, column=0, sticky="e", pady=10, padx=(0, 10))
-        network_border, network_entry = create_bordered_entry(form_frame)
-        network_border.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
+        ttk.Label(form_frame, text=_('network_cidr'), width=8).grid(row=0, column=0, sticky="w", pady=(10, 5), padx=(0, 10))
+        network_border, network_entry = create_bordered_entry(form_frame, width=25)
+        network_border.grid(row=0, column=1, sticky="ew", pady=(10, 5))
         
         # 描述输入
-        ttk.Label(form_frame, text=_('description')).grid(row=0, column=2, sticky="e", pady=10, padx=(0, 10))
-        desc_border, description_entry = create_bordered_entry(form_frame)
-        desc_border.grid(row=0, column=3, sticky="ew", pady=10)
+        ttk.Label(form_frame, text=_('description'), width=8).grid(row=1, column=0, sticky="w", pady=(5, 15), padx=(0, 10))
+        desc_border, description_entry = create_bordered_entry(form_frame, width=25)
+        desc_border.grid(row=1, column=1, sticky="ew", pady=(5, 15))
         
         def on_add():
             network = network_entry.get().strip()
@@ -11258,9 +11367,17 @@ class SubnetPlannerApp:
         
         # 按钮
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="确定", command=on_add).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="取消", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        button_frame.pack(pady=10, fill=tk.X, padx=20)
+        
+        # 配置按钮框架的网格布局，使按钮居中对齐
+        button_frame.grid_columnconfigure(0, weight=1)
+        button_frame.grid_columnconfigure(1, weight=0)
+        button_frame.grid_columnconfigure(2, weight=0)
+        button_frame.grid_columnconfigure(3, weight=1)
+        
+        # 添加按钮到网格布局
+        ttk.Button(button_frame, text="确定", command=on_add, width=10).grid(row=0, column=1, padx=5)
+        ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10).grid(row=0, column=2, padx=5)
     
     def remove_ipam_network(self):
         """移除网络"""
@@ -11442,7 +11559,22 @@ class SubnetPlannerApp:
         except Exception:
             pass
         try:
+            if hasattr(self, '_inline_edit_save_timer') and self._inline_edit_save_timer:
+                self.root.after_cancel(self._inline_edit_save_timer)
+                delattr(self, '_inline_edit_save_timer')
+        except Exception:
+            pass
+        try:
             if hasattr(self, 'inline_edit_widget'):
+                # 对于DateEntry，先关闭日历窗口再销毁
+                if isinstance(self.inline_edit_widget, DateEntry):
+                    try:
+                        if hasattr(self.inline_edit_widget, '_top_cal'):
+                            top_cal = self.inline_edit_widget._top_cal
+                            if top_cal:
+                                top_cal.withdraw()
+                    except Exception:
+                        pass
                 self.inline_edit_widget.destroy()
                 delattr(self, 'inline_edit_widget')
         except Exception:
@@ -11621,6 +11753,10 @@ class SubnetPlannerApp:
                     if target == self.inline_edit_widget or (hasattr(self, 'inline_edit_frame') and target == self.inline_edit_frame):
                         is_edit_widget = True
                         break
+                    # 检查是否是日期选择器的日历窗口
+                    if str(target).endswith('.toplevel') and 'dateentry' in str(target):
+                        is_edit_widget = True
+                        break
                     target = target.master
                 
                 # 如果点击的不是编辑控件，关闭编辑状态
@@ -11628,6 +11764,132 @@ class SubnetPlannerApp:
                     self.on_generic_inline_edit_save(None)
             
             self.root.bind('<Button-1>', on_root_click, add='+')
+        elif column_type == 'datepicker':
+            # 检查DateEntry是否可用
+            if DateEntry is not None:
+                try:
+                    # 日期选择器类型，使用tkcalendar的DateEntry控件
+                    self.inline_edit_widget = DateEntry(
+                        tree, 
+                        width=width//10-2, 
+                        background='white', 
+                        foreground='black', 
+                        borderwidth=1,
+                        date_pattern='yyyy-MM-dd',  # 设置日期格式
+                        showweeknumbers=False,  # 不显示周数
+                        showothermonthdays=False  # 不显示其他月份的日期
+                    )
+                    
+                    # 设置初始日期
+                    if current_value and current_value != 'None':
+                        try:
+                            # 支持多种日期格式解析
+                            date_obj = None
+                            date_str = current_value
+                            
+                            # 如果有时间部分，只取日期部分
+                            if ' ' in date_str:
+                                date_str = date_str.split(' ')[0]
+                            
+                            # 支持多种日期格式
+                            date_formats = ['%Y-%m-%d', '%Y/%m/%d', '%Y%m%d', '%m-%d-%Y', '%m/%d/%Y']
+                            for fmt in date_formats:
+                                try:
+                                    date_obj = datetime.datetime.strptime(date_str, fmt)
+                                    break
+                                except ValueError:
+                                    continue
+                            
+                            if date_obj:
+                                # 设置DateEntry的日期
+                                self.inline_edit_widget.set_date(date_obj)
+                        except Exception:
+                            pass
+                    else:
+                        # 如果没有当前值，使用今天的日期
+                        today = datetime.datetime.now().date()
+                        self.inline_edit_widget.set_date(today)
+                    
+                    # 放置控件
+                    self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
+                    
+                    # 解除DateEntry和Calendar内部的FocusOut绑定，防止日历关闭
+                    try:
+                        self.inline_edit_widget.unbind('<FocusOut>')
+                    except Exception:
+                        pass
+                    try:
+                        if hasattr(self.inline_edit_widget, '_calendar'):
+                            self.inline_edit_widget._calendar.unbind('<FocusOut>')
+                    except Exception:
+                        pass
+                    
+                    # 绑定必要的事件，避免复杂的焦点管理
+                    def on_date_save(event):
+                        # 延迟执行保存，让tkcalendar内部的_select方法先完成
+                        self.root.after(10, lambda: self.on_generic_inline_edit_save(None))
+                    
+                    # 只绑定必要的事件，避免焦点管理问题
+                    self.inline_edit_widget.bind('<Return>', on_date_save)
+                    self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+                    self.inline_edit_widget.bind('<<DateEntrySelected>>', on_date_save)
+                    
+                    # 确保日期选择器始终保持焦点
+                    self.inline_edit_widget.focus_force()
+                    
+                    # 添加根窗口点击事件，用于关闭编辑状态
+                    def on_root_click(event):
+                        if event.widget == self.inline_edit_widget:
+                            return
+                        try:
+                            if hasattr(self.inline_edit_widget, '_top_cal'):
+                                top_cal = self.inline_edit_widget._top_cal
+                                if top_cal:
+                                    x = event.x_root
+                                    y = event.y_root
+                                    try:
+                                        tx = top_cal.winfo_rootx()
+                                        ty = top_cal.winfo_rooty()
+                                        tw = top_cal.winfo_width()
+                                        th = top_cal.winfo_height()
+                                        if tw > 0 and th > 0 and tx <= x <= tx + tw and ty <= y <= ty + th:
+                                            return
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+                        self.on_generic_inline_edit_save(None)
+                    
+                    self.root.bind('<Button-1>', on_root_click, add='+')
+                    
+                except Exception as e:
+                    # 如果日期选择器创建失败，使用普通的Entry控件替代
+                    self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+                    self.inline_edit_widget.insert(0, current_value)
+                    self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
+                    
+                    # 绑定事件
+                    self.inline_edit_widget.bind('<Return>', on_widget_save)
+                    self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+                    self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+                    
+                    # 设置焦点
+                    self.inline_edit_widget.focus_set()
+                    self.inline_edit_widget.select_range(0, tk.END)
+            else:
+                # 如果DateEntry不可用，使用普通的Entry控件替代
+                self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+                self.inline_edit_widget.insert(0, current_value)
+                self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
+                
+                # 绑定事件
+                self.inline_edit_widget.bind('<Return>', on_widget_save)
+                self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+                self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+                
+                # 设置焦点
+                self.inline_edit_widget.focus_set()
+                self.inline_edit_widget.select_range(0, tk.END)
         else:
             # 默认使用Entry
             self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
@@ -11679,6 +11941,21 @@ class SubnetPlannerApp:
         if not hasattr(self, 'inline_edit_widget') or not hasattr(self, 'inline_edit_data'):
             return
         
+        # 检查DateEntry控件是否还存在
+        if isinstance(self.inline_edit_widget, DateEntry):
+            try:
+                # 尝试获取控件值，如果控件已被销毁会抛出异常
+                _ = self.inline_edit_widget.winfo_exists()
+            except tk.TclError:
+                # 控件已被销毁，清理状态并返回
+                self._destroy_inline_edit_widgets()
+                return
+        
+        # 清理定时器，避免重复执行
+        if hasattr(self, '_inline_edit_save_timer') and self._inline_edit_save_timer:
+            self.root.after_cancel(self._inline_edit_save_timer)
+            delattr(self, '_inline_edit_save_timer')
+        
         # 当下拉列表展开时，不保存编辑内容
         if hasattr(self, '_combobox_is_posting') and self._combobox_is_posting:
             return
@@ -11687,7 +11964,12 @@ class SubnetPlannerApp:
         from_focus_out = event is None or (hasattr(event, 'type') and str(event.type) == 'FocusOut')
         
         # 获取新值
-        new_value = self.inline_edit_widget.get().strip()
+        if isinstance(self.inline_edit_widget, DateEntry):
+            # 对于DateEntry控件，直接获取格式化的日期字符串
+            new_value = self.inline_edit_widget.get().strip()
+        else:
+            # 普通控件
+            new_value = self.inline_edit_widget.get().strip()
         
         # 获取编辑数据
         edit_data = self.inline_edit_data
@@ -11726,10 +12008,12 @@ class SubnetPlannerApp:
         try:
             # 验证数据 - 空值检查
             if not new_value:
-                if not from_focus_out:
-                    self.show_error(_("error"), _("input_cannot_be_empty"))
-                    self.inline_edit_widget.focus_set()
-                return
+                # 允许过期日期列为空，所以跳过空值检查
+                if column_name != 'expiry_date':
+                    if not from_focus_out:
+                        self.show_error(_("error"), _("input_cannot_be_empty"))
+                        self.inline_edit_widget.focus_set()
+                    return
             
             # 验证数据 - 自定义验证
             validate = handlers.get('validate')
@@ -11831,6 +12115,26 @@ class SubnetPlannerApp:
         except ValueError:
             return False
     
+    def _format_expiry_date(self, date_str: str) -> str:
+        """格式化过期日期，确保包含时间部分
+        
+        Args:
+            date_str: 日期字符串（YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS）
+            
+        Returns:
+            str: 格式化后的日期字符串（YYYY-MM-DD HH:MM:SS）
+        """
+        if not date_str:
+            return None
+        
+        date_str = date_str.strip()
+        
+        # 如果只有日期部分（长度为10），添加时间部分为23:59:59
+        if len(date_str) == 10:
+            return f"{date_str} 23:59:59"
+        
+        return date_str
+    
     def _validate_ip_edit(self, new_value, column_name, row_data):
         """验证IP地址表的编辑值
         
@@ -11842,8 +12146,12 @@ class SubnetPlannerApp:
         Returns:
             tuple: (是否有效, 错误消息或None)
         """
+        # 允许过期日期列为空
         if not new_value:
-            return False, _('input_cannot_be_empty')
+            if column_name == 'expiry_date':
+                return True, None
+            else:
+                return False, _('input_cannot_be_empty')
         
         # 获取选中的网络
         network_items = self.ipam_network_tree.selection()
@@ -11873,9 +12181,16 @@ class SubnetPlannerApp:
             if len(new_value) > 1000:
                 return False, _('description_too_long')
         elif column_name == 'expiry_date':
-            # 验证日期格式（YYYY-MM-DD HH:MM:SS）
+            # 验证日期格式（支持YYYY-MM-DD和YYYY-MM-DD HH:MM:SS）
             try:
-                datetime.datetime.strptime(new_value, '%Y-%m-%d %H:%M:%S')
+                if len(new_value) == 10:
+                    # 格式：YYYY-MM-DD
+                    datetime.datetime.strptime(new_value, '%Y-%m-%d')
+                elif len(new_value) == 19:
+                    # 格式：YYYY-MM-DD HH:MM:SS
+                    datetime.datetime.strptime(new_value, '%Y-%m-%d %H:%M:%S')
+                else:
+                    return False, _('invalid_date_format')
             except ValueError:
                 return False, _('invalid_date_format')
         
@@ -11952,7 +12267,8 @@ class SubnetPlannerApp:
                 )
             elif column_name == 'expiry_date':
                 # 更新过期日期
-                success, message = self.ipam.update_ip_expiry(row_data['ip_address'], new_value)
+                formatted_date = self._format_expiry_date(new_value) if new_value else None
+                success, message = self.ipam.update_ip_expiry(row_data['ip_address'], formatted_date)
             else:
                 success = False
                 message = f"不支持编辑的列: {column_name}"

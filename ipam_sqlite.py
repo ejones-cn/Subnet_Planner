@@ -643,7 +643,91 @@ class IPAMSQLite:
             return True, "IP地址信息更新成功"
         except Exception as e:
             return False, f"更新IP地址信息失败: {str(e)}"
+
+    def update_ip_expiry(self, ip_address: str, expiry_date: str):
+        """更新IP地址过期日期
+        
+        Args:
+            ip_address: IP地址
+            expiry_date: 过期日期（格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS，传入None则清除过期日期）
+            
+        Returns:
+            tuple: (bool, str) - (是否更新成功, 错误信息)
+        """
+        # 验证日期格式
+        if expiry_date is not None:
+            validated_date = self._validate_expiry_date(expiry_date)
+            if validated_date is None:
+                return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+            expiry_date = validated_date
+        
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                
+                # 检查IP地址是否存在
+                cursor.execute('SELECT id, network_id, hostname, description FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+                ip_row = cursor.fetchone()
+                if not ip_row:
+                    return False, "IP地址不存在"
+                
+                ip_id, network_id, hostname, description = ip_row
+                
+                # 更新IP地址过期日期
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cursor.execute('''
+                UPDATE ip_addresses 
+                SET expiry_date = ?, updated_at = ?
+                WHERE id = ?
+                ''', (expiry_date, now, ip_id))
+                
+                # 记录更新历史
+                cursor.execute('''
+                INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
+                performed_by, performed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (network_id, ip_address, 'update', hostname, description, 'admin', now))
+                
+                conn.commit()
+                return True, "IP地址过期日期更新成功"
+        except Exception as e:
+            return False, f"更新IP地址过期日期失败: {str(e)}"
     
+    def _validate_expiry_date(self, expiry_date: str) -> Optional[str]:
+        """验证并标准化过期日期格式
+        
+        Args:
+            expiry_date: 过期日期字符串
+            
+        Returns:
+            Optional[str]: 标准化后的日期字符串（YYYY-MM-DD HH:MM:SS），验证失败返回None
+        """
+        if not expiry_date:
+            return None
+        
+        expiry_date = expiry_date.strip()
+        
+        # 支持的日期格式列表
+        date_formats = [
+            "%Y-%m-%d %H:%M:%S",    # 2023-12-31 23:59:59
+            "%Y-%m-%dT%H:%M:%S",    # 2023-12-31T23:59:59
+            "%Y-%m-%d",             # 2023-12-31
+            "%Y/%m/%d %H:%M:%S",    # 2023/12/31 23:59:59
+            "%Y/%m/%d",             # 2023/12/31
+        ]
+        
+        for fmt in date_formats:
+            try:
+                dt = datetime.strptime(expiry_date, fmt)
+                # 如果只有日期部分（格式为%Y-%m-%d或%Y/%m/%d），添加时间部分为23:59:59
+                if fmt in ["%Y-%m-%d", "%Y/%m/%d"]:
+                    return dt.strftime("%Y-%m-%d") + " 23:59:59"
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                continue
+        
+        return None
+
     def cleanup_available_ips(self):
         """清理所有可用状态的IP地址
         
@@ -778,7 +862,45 @@ class IPAMSQLite:
             return True, "IP地址保留成功"
         except Exception as e:
             return False, f"保留IP地址失败: {str(e)}"
-    
+
+    def update_network_description(self, network: str, description: str):
+        """更新网络描述
+        
+        Args:
+            network: 网络地址（CIDR格式）
+            description: 新的描述信息
+        
+        Returns:
+            tuple: (bool, str) - (是否更新成功, 错误信息)
+        """
+        try:
+            if not network:
+                return False, "网络地址不能为空"
+            
+            try:
+                ip_network = ipaddress.ip_network(network, strict=False)
+                network_str = str(ip_network)
+            except ValueError as e:
+                return False, f"网络格式错误: {str(e)}"
+            
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                
+                # 检查网络是否存在
+                cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
+                network_row = cursor.fetchone()
+                if not network_row:
+                    return False, "网络不存在"
+                
+                # 更新网络描述
+                cursor.execute('UPDATE networks SET description = ?, updated_at = datetime("now") WHERE id = ?', 
+                             (description, network_row[0]))
+                
+                conn.commit()
+            return True, "网络描述更新成功"
+        except Exception as e:
+            return False, f"更新网络描述失败: {str(e)}"
+
     def remove_network(self, network: str):
         """移除网络
         
