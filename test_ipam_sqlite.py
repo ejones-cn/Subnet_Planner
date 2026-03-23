@@ -25,7 +25,7 @@ for network in networks:
     print(f"  网络 {network['network']} 有 {len(ips)} 个IP地址")
     if len(ips) > 0:
         for i, ip in enumerate(ips[:3]):  # 只显示前3个
-            print(f"    {i+1}. {ip['ip_address']} - {ip['status']} - {ip['hostname']}")
+            print(f"    {i + 1}. {ip['ip_address']} - {ip['status']} - {ip['hostname']}")
         if len(ips) > 3:
             print(f"    ... 还有 {len(ips) - 3} 个IP地址")
 

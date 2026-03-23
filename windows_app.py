@@ -40,8 +40,7 @@ except ImportError:
 
 # 本地模块
 from version import get_version
-
-__version__ = get_version()
+from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
 from ip_subnet_calculator import format_large_number
 from ip_subnet_calculator import (
     split_subnet,
@@ -57,25 +56,8 @@ from ip_subnet_calculator import (
 )
 from export_utils import ExportUtils
 from chart_utils import draw_text_with_stroke, draw_distribution_chart
-from version import get_version
-from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
-
-# IPAM模块
 from ipam_sqlite import IPAMSQLite
-
-# 初始化IPAM
-def init_ipam():
-    """初始化IPAM模块"""
-    return IPAMSQLite()
-
-def get_ipam():
-    """获取IPAM实例"""
-    return init_ipam()
-
-# 可视化模块
 from visualization import NetworkTopologyVisualizer, IPAllocationVisualizer
-
-# 样式管理器 - 统一导入,避免运行时导入
 from style_manager import (
     init_style_manager,
     update_styles,
@@ -86,6 +68,20 @@ from style_manager import (
     get_move_button_font,
     get_style_manager,
 )
+
+__version__ = get_version()
+
+
+# 初始化IPAM
+def init_ipam():
+    """初始化IPAM模块"""
+    return IPAMSQLite()
+
+
+def get_ipam():
+    """获取IPAM实例"""
+    return init_ipam()
+
 
 # 全局变量定义
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
@@ -116,6 +112,7 @@ def create_bordered_entry(parent, border_color="#a9a9a9", **kwargs):
     
     return border_frame, entry
 
+
 def center_window(window, parent=None):
     """居中显示窗口
     
@@ -142,6 +139,7 @@ def center_window(window, parent=None):
         y = (window.winfo_screenheight() // 2) - (height // 2)
     
     window.geometry(f"{width}x{height}+{x}+{y}")
+
 
 if sys.platform == 'win32':
     try:
@@ -750,6 +748,43 @@ class SubnetPlannerApp:
             best_length -= 1
 
         return "..."
+
+    def _format_datetime(self, datetime_str, output_format="%Y-%m-%d %H:%M:%S"):
+        """格式化日期时间字符串
+        
+        Args:
+            datetime_str: 日期时间字符串，支持多种格式
+            output_format: 输出格式，默认为"%Y-%m-%d %H:%M:%S"
+        
+        Returns:
+            str: 格式化后的日期时间字符串，如果解析失败则返回原始字符串
+        """
+        if not datetime_str:
+            return datetime_str
+        
+        try:
+            if 'T' in datetime_str:
+                # ISO格式: 2023-12-31T23:59:59.123456
+                # 替换T为空格，然后使用strptime解析
+                dt_str = datetime_str.replace('T', ' ')
+                if '.' in dt_str:
+                    dt = datetime.datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S.%f")
+                else:
+                    dt = datetime.datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+            elif ' ' in datetime_str:
+                # 普通格式: 2023-12-31 23:59:59.123456 或 2023-12-31 23:59:59
+                if '.' in datetime_str:
+                    dt = datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                else:
+                    dt = datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+            else:
+                # 只有日期部分: 2023-12-31
+                dt = datetime.datetime.strptime(datetime_str, "%Y-%m-%d")
+            
+            return dt.strftime(output_format)
+        except (ValueError, TypeError):
+            # 只捕获预期的异常类型，避免捕获KeyboardInterrupt等
+            return datetime_str
 
     def __init__(self, main_window):
         # 应用程序信息
@@ -8909,7 +8944,7 @@ class SubnetPlannerApp:
         
         # 网络列表 - 在table_container上创建
         self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='headings', height=8, selectmode='extended')
-        self.ipam_network_tree.heading('network', text=_('network'))
+        self.ipam_network_tree.heading('network', text='网段地址')
         self.ipam_network_tree.heading('description', text=_('description'))
         self.ipam_network_tree.heading('created_at', text=_('created_at'))
         self.ipam_network_tree.heading('ip_count', text=_('ip_count'))
@@ -8932,8 +8967,9 @@ class SubnetPlannerApp:
         # 为网络管理表添加内联编辑功能
         # 注册网络管理表的内联编辑配置
         self.register_inline_edit_config('ipam_network', {
-            'editable_columns': [1],  # 只允许编辑描述列
+            'editable_columns': [0, 1],  # 允许编辑网段地址和描述列
             'column_types': {
+                0: 'entry',  # 网段地址列使用文本框
                 1: 'entry'  # 描述列使用文本框
             }
         })
@@ -9157,7 +9193,7 @@ class SubnetPlannerApp:
             column = i % 2 * 2
             ttk.Label(stats_info_frame, text=label).grid(row=row, column=column, sticky="e", pady=3, padx=(0, 10))
             self.stats_labels[key] = ttk.Label(stats_info_frame, text="0")
-            self.stats_labels[key].grid(row=row, column=column+1, sticky="w", pady=3)
+            self.stats_labels[key].grid(row=row, column=column + 1, sticky="w", pady=3)
         
         # 添加可视化图表
         chart_frame = ttk.LabelFrame(stats_frame, text="IP地址使用情况", padding="10")
@@ -9193,20 +9229,7 @@ class SubnetPlannerApp:
         for network in networks:
             # 格式化时间戳，只显示到秒
             created_at = network['created_at']
-            try:
-                # 尝试解析ISO格式的时间戳
-                from datetime import datetime
-                if 'T' in created_at:
-                    # ISO格式: 2023-12-31T23:59:59.123456
-                    dt = datetime.fromisoformat(created_at)
-                else:
-                    # 普通格式: 2023-12-31 23:59:59.123456
-                    dt = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S.%f")
-                # 格式化为只显示到秒
-                formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                # 如果解析失败，使用原始时间戳
-                formatted_time = created_at
+            formatted_time = self._format_datetime(created_at)
             
             self.ipam_network_tree.insert('', tk.END, values=(
                 network['network'],
@@ -9253,41 +9276,11 @@ class SubnetPlannerApp:
             
             # 格式化分配时间，只显示到秒
             allocated_at = ip.get('allocated_at', '')
-            try:
-                # 尝试解析ISO格式的时间戳
-                from datetime import datetime
-                if 'T' in allocated_at:
-                    # ISO格式: 2023-12-31T23:59:59.123456
-                    dt = datetime.fromisoformat(allocated_at)
-                else:
-                    # 普通格式: 2023-12-31 23:59:59.123456
-                    dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
-                # 格式化为只显示到秒
-                formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                # 如果解析失败，使用原始时间戳
-                formatted_allocated_at = allocated_at
+            formatted_allocated_at = self._format_datetime(allocated_at)
             
             # 格式化过期日期，只显示日期部分
             expiry_date = ip.get('expiry_date', '')
-            formatted_expiry_date = expiry_date
-            try:
-                from datetime import datetime
-                if expiry_date:
-                    if 'T' in expiry_date:
-                        # ISO格式: 2023-12-31T23:59:59
-                        dt = datetime.fromisoformat(expiry_date)
-                    elif ' ' in expiry_date:
-                        # 普通格式: 2023-12-31 23:59:59
-                        dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        # 只有日期部分: 2023-12-31
-                        dt = datetime.strptime(expiry_date, "%Y-%m-%d")
-                    # 格式化为只显示日期部分
-                    formatted_expiry_date = dt.strftime("%Y-%m-%d")
-            except:
-                # 如果解析失败，使用原始日期
-                pass
+            formatted_expiry_date = self._format_datetime(expiry_date, "%Y-%m-%d")
             
             self.ipam_ip_tree.insert('', tk.END, values=(
                 ip['ip_address'],
@@ -9561,7 +9554,7 @@ class SubnetPlannerApp:
                 # 生成一个随机IP地址并检查是否可用
                 import random
                 max_attempts = 100
-                for _ in range(max_attempts):
+                for attempt in range(max_attempts):
                     # 生成网络内的随机IP
                     if ip_network.version == 4:
                         # IPv4
@@ -9639,7 +9632,7 @@ class SubnetPlannerApp:
                 return bool(re.search(keyword, text))
             else:
                 return keyword in text
-        except:
+        except Exception:
             return False
     
     def _get_localized_status(self, status):
@@ -9694,7 +9687,7 @@ class SubnetPlannerApp:
             desc_match = self._match_search_pattern(ip.get('description', ''), ' '.join(keywords), search_mode)
             # 检查状态（同时支持中文和英文）
             status_match = self._match_search_pattern(ip['status'], ' '.join(keywords), search_mode) or \
-                          self._match_search_pattern(localized_status, ' '.join(keywords), search_mode)
+                self._match_search_pattern(localized_status, ' '.join(keywords), search_mode)
             
             if search_scope == _('all'):
                 match = ip_match or hostname_match or desc_match or status_match
@@ -9726,41 +9719,11 @@ class SubnetPlannerApp:
             
             # 格式化分配时间，只显示到秒
             allocated_at = ip.get('allocated_at', '')
-            try:
-                # 尝试解析ISO格式的时间戳
-                from datetime import datetime
-                if 'T' in allocated_at:
-                    # ISO格式: 2023-12-31T23:59:59.123456
-                    dt = datetime.fromisoformat(allocated_at)
-                else:
-                    # 普通格式: 2023-12-31 23:59:59.123456
-                    dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
-                # 格式化为只显示到秒
-                formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                # 如果解析失败，使用原始时间戳
-                formatted_allocated_at = allocated_at
+            formatted_allocated_at = self._format_datetime(allocated_at)
             
             # 格式化过期日期，只显示日期部分
             expiry_date = ip.get('expiry_date', '')
-            formatted_expiry_date = expiry_date
-            try:
-                from datetime import datetime
-                if expiry_date:
-                    if 'T' in expiry_date:
-                        # ISO格式: 2023-12-31T23:59:59
-                        dt = datetime.fromisoformat(expiry_date)
-                    elif ' ' in expiry_date:
-                        # 普通格式: 2023-12-31 23:59:59
-                        dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
-                    else:
-                        # 只有日期部分: 2023-12-31
-                        dt = datetime.strptime(expiry_date, "%Y-%m-%d")
-                    # 格式化为只显示日期部分
-                    formatted_expiry_date = dt.strftime("%Y-%m-%d")
-            except:
-                # 如果解析失败，使用原始日期
-                pass
+            formatted_expiry_date = self._format_datetime(expiry_date, "%Y-%m-%d")
             
             self.ipam_ip_tree.insert('', tk.END, values=(
                 ip['ip_address'],
@@ -9833,7 +9796,7 @@ class SubnetPlannerApp:
                     dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
                 # 格式化为只显示到秒
                 formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except:
+            except (ValueError, TypeError):
                 # 如果解析失败，使用原始时间戳
                 formatted_allocated_at = allocated_at
             
@@ -9854,7 +9817,7 @@ class SubnetPlannerApp:
                         dt = datetime.strptime(expiry_date, "%Y-%m-%d")
                     # 格式化为只显示日期部分
                     formatted_expiry_date = dt.strftime("%Y-%m-%d")
-            except:
+            except (ValueError, TypeError):
                 # 如果解析失败，使用原始日期
                 pass
             
@@ -9874,7 +9837,7 @@ class SubnetPlannerApp:
             try:
                 import ipaddress
                 return ipaddress.ip_address(ip_item['ip_address'])
-            except:
+            except ValueError:
                 return ip_item['ip_address']
         return sorted(ips, key=ip_key)
     
@@ -10115,7 +10078,7 @@ class SubnetPlannerApp:
                             # 批量分配IP
                             success_count = 0
                             for i, ip_str in enumerate(available_ips[:count]):
-                                hostname = f"{prefix}{i+1}"
+                                hostname = f"{prefix}{i + 1}"
                                 result = self.ipam.allocate_ip(network, ip_str, hostname, desc, expiry_date)
                                 if result[0]:
                                     success_count += 1
@@ -10656,6 +10619,7 @@ class SubnetPlannerApp:
             
             # 取消按钮
             scan_cancelled = [False]  # 使用列表作为可变对象
+            
             def cancel_scan():
                 scan_cancelled[0] = True
                 progress_dialog.destroy()
@@ -10758,7 +10722,7 @@ class SubnetPlannerApp:
                     sock.close()
                     if result == 0:
                         return ip_str
-                except:
+                except (socket.error, socket.timeout):
                     pass
                 finally:
                     # 更新进度
@@ -10852,7 +10816,7 @@ class SubnetPlannerApp:
                                 # 设置socket超时，避免DNS解析卡住
                                 socket.setdefaulttimeout(0.3)  # 进一步缩短超时时间
                                 hostname, _, _ = socket.gethostbyaddr(result)
-                            except:
+                            except (socket.error, socket.herror, socket.gaierror):
                                 hostname = f"host-{result.replace('.', '-')}"
                             finally:
                                 # 恢复默认超时
@@ -10864,7 +10828,7 @@ class SubnetPlannerApp:
                                 'hostname': hostname,
                                 'description': "自动扫描发现"
                             })
-                    except:
+                    except Exception:
                         pass
                 
                 # 标记扫描完成
@@ -11275,11 +11239,11 @@ class SubnetPlannerApp:
             legend_y = 20
             for i, (color, label, value) in enumerate(zip(colors, labels, values)):
                 # 绘制颜色方块
-                self.stats_canvas.create_rectangle(legend_x, legend_y + i*20, legend_x + 15, legend_y + 15 + i*20, fill=color, outline="#333333")
+                self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 15, legend_y + 15 + i * 20, fill=color, outline="#333333")
                 # 绘制图例文本
                 percentage = (value / total) * 100 if total > 0 else 0
                 legend_text = f"{label}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i*20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#333333")
+                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i * 20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#333333")
         except Exception as e:
             print(f"绘制饼图失败: {e}")
     
@@ -11567,7 +11531,7 @@ class SubnetPlannerApp:
         try:
             if hasattr(self, 'inline_edit_widget'):
                 # 对于DateEntry，先关闭日历窗口再销毁
-                if isinstance(self.inline_edit_widget, DateEntry):
+                if DateEntry is not None and isinstance(self.inline_edit_widget, DateEntry):
                     try:
                         if hasattr(self.inline_edit_widget, '_top_cal'):
                             top_cal = self.inline_edit_widget._top_cal
@@ -11719,7 +11683,7 @@ class SubnetPlannerApp:
             
             self.inline_edit_widget = ttk.Combobox(self.inline_edit_frame, 
                                                    values=combobox_values,
-                                                   width=width//10-2,
+                                                   width=width // 10 - 2,
                                                    state='readonly')
             self.inline_edit_widget.pack(fill=tk.BOTH, expand=True)
             self.inline_edit_widget.set(current_value)
@@ -11771,7 +11735,7 @@ class SubnetPlannerApp:
                     # 日期选择器类型，使用tkcalendar的DateEntry控件
                     self.inline_edit_widget = DateEntry(
                         tree, 
-                        width=width//10-2, 
+                        width=width // 10 - 2, 
                         background='white', 
                         foreground='black', 
                         borderwidth=1,
@@ -11864,7 +11828,7 @@ class SubnetPlannerApp:
                     
                 except Exception as e:
                     # 如果日期选择器创建失败，使用普通的Entry控件替代
-                    self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+                    self.inline_edit_widget = ttk.Entry(tree, width=width // 10 - 2)
                     self.inline_edit_widget.insert(0, current_value)
                     self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
                     
@@ -11878,7 +11842,7 @@ class SubnetPlannerApp:
                     self.inline_edit_widget.select_range(0, tk.END)
             else:
                 # 如果DateEntry不可用，使用普通的Entry控件替代
-                self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+                self.inline_edit_widget = ttk.Entry(tree, width=width // 10 - 2)
                 self.inline_edit_widget.insert(0, current_value)
                 self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
                 
@@ -11892,7 +11856,7 @@ class SubnetPlannerApp:
                 self.inline_edit_widget.select_range(0, tk.END)
         else:
             # 默认使用Entry
-            self.inline_edit_widget = ttk.Entry(tree, width=width//10-2)
+            self.inline_edit_widget = ttk.Entry(tree, width=width // 10 - 2)
             self.inline_edit_widget.insert(0, current_value)
             self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
             
@@ -11942,10 +11906,10 @@ class SubnetPlannerApp:
             return
         
         # 检查DateEntry控件是否还存在
-        if isinstance(self.inline_edit_widget, DateEntry):
+        if DateEntry is not None and isinstance(self.inline_edit_widget, DateEntry):
             try:
                 # 尝试获取控件值，如果控件已被销毁会抛出异常
-                _ = self.inline_edit_widget.winfo_exists()
+                exists = self.inline_edit_widget.winfo_exists()
             except tk.TclError:
                 # 控件已被销毁，清理状态并返回
                 self._destroy_inline_edit_widgets()
@@ -11964,7 +11928,7 @@ class SubnetPlannerApp:
         from_focus_out = event is None or (hasattr(event, 'type') and str(event.type) == 'FocusOut')
         
         # 获取新值
-        if isinstance(self.inline_edit_widget, DateEntry):
+        if DateEntry is not None and isinstance(self.inline_edit_widget, DateEntry):
             # 对于DateEntry控件，直接获取格式化的日期字符串
             new_value = self.inline_edit_widget.get().strip()
         else:
@@ -12400,7 +12364,14 @@ class SubnetPlannerApp:
         if not new_value:
             return False, _('input_cannot_be_empty')
         
-        if column_name == 'description':
+        if column_name == 'network':
+            # 验证网段地址格式
+            try:
+                import ipaddress
+                ipaddress.ip_network(new_value, strict=False)
+            except ValueError:
+                return False, "无效的网段地址格式，请使用CIDR格式（如192.168.1.0/24）"
+        elif column_name == 'description':
             # 描述长度限制
             if len(new_value) > 255:
                 return False, _('description_too_long')
@@ -12420,7 +12391,17 @@ class SubnetPlannerApp:
             tuple: (是否成功, 消息)
         """
         try:
-            if column_name == 'description':
+            if column_name == 'network':
+                # 更新网段地址
+                old_network = row_data['network']
+                success, message = self.ipam.update_network(old_network, new_value)
+                if success:
+                    # 刷新网段管理表（更新IP数量）
+                    self.refresh_ipam_networks()
+                    # 刷新地址管理表
+                    self.refresh_ipam_ips(new_value)
+                return success, message
+            elif column_name == 'description':
                 # 更新网络描述
                 success, message = self.ipam.update_network_description(row_data['network'], new_value)
                 return success, message
@@ -12814,7 +12795,7 @@ class SubnetPlannerApp:
                 try:
                     ip_parts = [int(part) for part in values[0].split('.')]
                     return ip_parts
-                except:
+                except (ValueError, AttributeError):
                     return values[0]
             elif column == 'allocated_at':
                 # 时间排序
@@ -13237,7 +13218,7 @@ class SubnetPlannerApp:
             for i in range(3):
                 subnet = network.subnets(new_prefix=network.prefixlen + 1)[i]
                 allocated_subnets.append({
-                    "name": f"子网{i+1}",
+                    "name": f"子网{i + 1}",
                     "cidr": str(subnet)
                 })
         except Exception:
@@ -13281,6 +13262,7 @@ class SubnetPlannerApp:
             self.ipam_ip_description_entry.delete(0, tk.END)
         else:
             self.show_error(_('error'), message)
+
 
 if __name__ == "__main__":
     # 导入窗口工具模块
