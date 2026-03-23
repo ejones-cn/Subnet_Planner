@@ -329,6 +329,7 @@ def _register_all_processors() -> None:
     for pattern, translation_key in simple_patterns:
         _error_processor_registry.register(SimpleErrorProcessor(pattern, translation_key))
 
+
 def format_large_number(num, use_scientific=True):
     """格式化大数值，可选择使用科学计数法或千位分隔符
     

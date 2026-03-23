@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import os
 
 def check_line_length(filename=None, max_length=100) -> list:
     """检查文件中行长度超过指定值的行
@@ -13,7 +14,19 @@ def check_line_length(filename=None, max_length=100) -> list:
     """
     # 设置默认文件名
     if filename is None:
-        filename = 'ipam_sqlite.py'
+        # 从当前目录自动检测Python文件
+        python_files = [f for f in os.listdir('.') if f.endswith('.py')]
+        if python_files:
+            # 优先选择 ipam_sqlite.py，如果不存在则选择第一个Python文件
+            if 'ipam_sqlite.py' in python_files:
+                filename = 'ipam_sqlite.py'
+            else:
+                filename = python_files[0]
+            print(f'自动检测到Python文件: {filename}')
+        else:
+            # 如果没有找到Python文件，使用默认值
+            filename = 'ipam_sqlite.py'
+            print(f'未检测到Python文件，使用默认值: {filename}')
     
     violations = []
     try:
