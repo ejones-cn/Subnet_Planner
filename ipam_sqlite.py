@@ -40,7 +40,7 @@ class IPAMSQLite:
         cursor = conn.cursor()
         
         # 创建networks表
-        cursor.execute('''
+        _ = cursor.execute('''
         CREATE TABLE IF NOT EXISTS networks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             network_address TEXT UNIQUE NOT NULL,
@@ -51,7 +51,7 @@ class IPAMSQLite:
         ''')
         
         # 创建ip_addresses表
-        cursor.execute('''
+        _ = cursor.execute('''
         CREATE TABLE IF NOT EXISTS ip_addresses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             network_id INTEGER NOT NULL,
@@ -69,7 +69,7 @@ class IPAMSQLite:
         ''')
         
         # 创建allocation_history表
-        cursor.execute('''
+        _ = cursor.execute('''
         CREATE TABLE IF NOT EXISTS allocation_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             network_id INTEGER NOT NULL,
@@ -84,7 +84,7 @@ class IPAMSQLite:
         ''')
         
         # 创建backups表
-        cursor.execute('''
+        _ = cursor.execute('''
         CREATE TABLE IF NOT EXISTS backups (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             backup_name TEXT NOT NULL,
@@ -97,13 +97,13 @@ class IPAMSQLite:
         ''')
         
         # 创建索引
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_network_id ON ip_addresses(network_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_status ON ip_addresses(status)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_ip_address ON ip_addresses(ip_address)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_expiry_date ON ip_addresses(expiry_date)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_network_id ON allocation_history(network_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_action ON allocation_history(action)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_performed_at ON allocation_history(performed_at)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_network_id ON ip_addresses(network_id)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_status ON ip_addresses(status)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_ip_address ON ip_addresses(ip_address)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_addresses_expiry_date ON ip_addresses(expiry_date)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_network_id ON allocation_history(network_id)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_action ON allocation_history(action)')
+        _ = cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_performed_at ON allocation_history(performed_at)')
         
         conn.commit()
         conn.close()
@@ -587,7 +587,7 @@ class IPAMSQLite:
             cursor = conn.cursor()
             
             # 获取IP地址信息用于历史记录
-            cursor.execute('SELECT ip_address, network_id FROM ip_addresses WHERE id = ?', (ip_id,))
+            _ = cursor.execute('SELECT ip_address, network_id FROM ip_addresses WHERE id = ?', (ip_id,))
             ip_row = cursor.fetchone()
             if not ip_row:
                 conn.close()
@@ -597,11 +597,11 @@ class IPAMSQLite:
             network_id = ip_row[1]
             
             # 删除IP地址记录
-            cursor.execute('DELETE FROM ip_addresses WHERE id = ?', (ip_id,))
+            _ = cursor.execute('DELETE FROM ip_addresses WHERE id = ?', (ip_id,))
             
             # 记录删除历史
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute('''
+            _ = cursor.execute('''
             INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
             VALUES (?, ?, ?, ?, ?)
             ''', (network_id, ip_address, 'delete_conflict', 'admin', now))
@@ -1103,13 +1103,13 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 
                 # 检查网络是否存在
-                cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
+                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 network_row = cursor.fetchone()
                 if not network_row:
                     return False, "网络不存在"
                 
                 # 更新网络描述
-                cursor.execute('UPDATE networks SET description = ?, updated_at = datetime("now") WHERE id = ?', 
+                _ = cursor.execute('UPDATE networks SET description = ?, updated_at = datetime("now") WHERE id = ?', 
                              (description, network_row[0]))
                 
                 conn.commit()
@@ -1149,19 +1149,19 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 
                 # 检查旧网络是否存在
-                cursor.execute('SELECT id FROM networks WHERE network_address = ?', (old_network_str,))
+                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (old_network_str,))
                 network_row = cursor.fetchone()
                 if not network_row:
                     return False, "旧网络不存在"
                 
                 # 检查新网络是否已存在
-                cursor.execute('SELECT id FROM networks WHERE network_address = ? AND id != ?', (new_network_str, network_row[0]))
+                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ? AND id != ?', (new_network_str, network_row[0]))
                 existing_row = cursor.fetchone()
                 if existing_row:
                     return False, "新网络地址已存在"
                 
                 # 更新网络地址
-                cursor.execute('UPDATE networks SET network_address = ?, updated_at = datetime("now") WHERE id = ?', 
+                _ = cursor.execute('UPDATE networks SET network_address = ?, updated_at = datetime("now") WHERE id = ?', 
                              (new_network_str, network_row[0]))
                 
                 conn.commit()
