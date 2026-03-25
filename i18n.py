@@ -55,6 +55,9 @@ class Translator:
         Returns:
             检测到的语言代码，如果无法检测则返回默认语言 "zh"
         """
+        # 强制使用中文作为默认语言
+        return 'zh'
+        
         try:
             # 尝试使用 locale 模块检测系统语言
             import locale

@@ -13,7 +13,7 @@ import platform
 import zipfile
 import csv
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 import ipaddress
 
@@ -122,7 +122,7 @@ class IPAMSQLite:
         
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
-                data: Dict[str, Any] = json.load(f)
+                data: dict[str, Any] = json.load(f)
         except Exception as e:
             return False, f"读取JSON文件失败: {str(e)}"
         
@@ -134,7 +134,7 @@ class IPAMSQLite:
             _ = conn.execute('BEGIN TRANSACTION')
             
             # 迁移networks
-            networks_map: Dict[str, int] = {}  # 用于映射网络地址到ID
+            networks_map: dict[str, int] = {}  # 用于映射网络地址到ID
             for network_str, network_data in data.get('networks', {}).items():
                 created_at: str = network_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 _ = cursor.execute('''
@@ -573,6 +573,45 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"释放IP地址失败: {str(e)}"
     
+    def delete_ip_by_id(self, ip_id: int) -> tuple[bool, str]:
+        """根据ID删除IP地址记录
+        
+        Args:
+            ip_id: IP地址记录ID
+            
+        Returns:
+            tuple[bool, str]: (是否删除成功, 错误信息)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 获取IP地址信息用于历史记录
+            cursor.execute('SELECT ip_address, network_id FROM ip_addresses WHERE id = ?', (ip_id,))
+            ip_row = cursor.fetchone()
+            if not ip_row:
+                conn.close()
+                return False, "IP地址记录不存在"
+            
+            ip_address = ip_row[0]
+            network_id = ip_row[1]
+            
+            # 删除IP地址记录
+            cursor.execute('DELETE FROM ip_addresses WHERE id = ?', (ip_id,))
+            
+            # 记录删除历史
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute('''
+            INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
+            VALUES (?, ?, ?, ?, ?)
+            ''', (network_id, ip_address, 'delete_conflict', 'admin', now))
+            
+            conn.commit()
+            conn.close()
+            return True, "IP地址记录删除成功"
+        except Exception as e:
+            return False, f"删除IP地址记录失败: {str(e)}"
+    
     def get_ip_info(self, ip_address: str) -> Dict[str, Any] | None:
         """获取IP地址信息
         
@@ -699,6 +738,63 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址过期日期失败: {str(e)}"
     
+    def batch_update_ip_expiry(self, ip_addresses: List[str], expiry_date: str | None) -> tuple[bool, str, int]:
+        """批量更新IP地址过期日期
+        
+        Args:
+            ip_addresses: IP地址列表
+            expiry_date: 过期日期（格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS，传入None则清除过期日期）
+            
+        Returns:
+            tuple: (bool, str, int) - (是否更新成功, 错误信息, 更新的IP数量)
+        """
+        # 验证日期格式
+        if expiry_date is not None:
+            validated_date = self._validate_expiry_date(expiry_date)
+            if validated_date is None:
+                return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式", 0
+            expiry_date = validated_date
+        
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                updated_count = 0
+                
+                for ip_address in ip_addresses:
+                    # 检查IP地址是否存在
+                    _ = cursor.execute('SELECT id, network_id, hostname, description FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+                    ip_row = cursor.fetchone()
+                    if not ip_row:
+                        continue
+                    
+                    ip_id, network_id, hostname, description = ip_row
+                    
+                    # 更新IP地址过期日期
+                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    _ = cursor.execute('''
+                    UPDATE ip_addresses 
+                    SET expiry_date = ?, updated_at = ?
+                    WHERE id = ?
+                    ''', (expiry_date, now, ip_id))
+                    
+                    # 记录更新历史
+                    _ = cursor.execute('''
+                    INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
+                    performed_by, performed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (network_id, ip_address, 'batch_update', hostname, description, 'admin', now))
+                    
+                    updated_count += 1
+                
+                conn.commit()
+                
+                if updated_count > 0:
+                    return True, f"成功更新 {updated_count} 个IP地址的过期日期", updated_count
+                else:
+                    return True, "没有IP地址被更新", 0
+        except Exception as e:
+            return False, f"批量更新IP地址过期日期失败: {str(e)}", 0
+    
     def _validate_expiry_date(self, expiry_date: str | None) -> str | None:
         """验证并标准化过期日期格式
         
@@ -794,6 +890,122 @@ class IPAMSQLite:
             return 'available'
         except Exception:
             return 'available'
+    
+    def get_expired_ips(self) -> List[Dict[str, Any]]:
+        """获取所有过期的IP地址
+        
+        Returns:
+            list[dict]: 过期IP地址列表
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 获取所有过期的IP地址，包括allocated和reserved状态
+            _ = cursor.execute('''
+            SELECT id, network_id, ip_address, status, hostname, description, allocated_at, expiry_date 
+            FROM ip_addresses 
+            WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
+            ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+            
+            expired_ips = []
+            for row in cursor.fetchall():
+                expired_ips.append({
+                    'id': row[0],
+                    'network_id': row[1],
+                    'ip_address': row[2],
+                    'status': row[3],
+                    'hostname': row[4],
+                    'description': row[5],
+                    'allocated_at': row[6],
+                    'expiry_date': row[7]
+                })
+            
+            conn.close()
+            return expired_ips
+        except Exception:
+            return []
+    
+    def auto_release_expired_ips(self) -> tuple[bool, str, int]:
+        """自动释放过期的IP地址
+        
+        Returns:
+            tuple[bool, str, int]: (是否成功, 错误信息, 释放的IP数量)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 获取过期的IP地址
+            expired_ips = self.get_expired_ips()
+            released_count = 0
+            
+            for ip in expired_ips:
+                # 释放IP地址
+                _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', 
+                             ('available', datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ip['id']))
+                
+                # 记录释放历史
+                _ = cursor.execute('''
+                INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
+                performed_by, performed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (ip['network_id'], ip['ip_address'], 'auto_release', ip['hostname'], 
+                      ip['description'], 'system', datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                
+                released_count += 1
+            
+            conn.commit()
+            conn.close()
+            
+            if released_count > 0:
+                return True, f"成功释放 {released_count} 个过期IP地址", released_count
+            else:
+                return True, "没有过期IP地址需要释放", 0
+        except Exception as e:
+            return False, f"自动释放过期IP地址失败: {str(e)}", 0
+    
+    def get_expiring_ips(self, days_ahead: int = 7) -> List[Dict[str, Any]]:
+        """获取即将过期的IP地址
+        
+        Args:
+            days_ahead: 提前多少天提醒
+        
+        Returns:
+            list[dict]: 即将过期的IP地址列表
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 计算日期范围
+            now = datetime.now()
+            future_date = now + datetime.timedelta(days=days_ahead)
+            
+            # 获取即将过期的IP地址
+            _ = cursor.execute('''
+            SELECT id, network_id, ip_address, status, hostname, description, allocated_at, expiry_date 
+            FROM ip_addresses 
+            WHERE expiry_date BETWEEN ? AND ? AND status IN ('allocated', 'reserved')
+            ''', (now.strftime("%Y-%m-%d %H:%M:%S"), future_date.strftime("%Y-%m-%d %H:%M:%S")))
+            
+            expiring_ips = []
+            for row in cursor.fetchall():
+                expiring_ips.append({
+                    'id': row[0],
+                    'network_id': row[1],
+                    'ip_address': row[2],
+                    'status': row[3],
+                    'hostname': row[4],
+                    'description': row[5],
+                    'allocated_at': row[6],
+                    'expiry_date': row[7]
+                })
+            
+            conn.close()
+            return expiring_ips
+        except Exception:
+            return []
     
     def reserve_ip(self, network_str: str, ip_address: str, description: str = "") -> tuple[bool, str]:
         """保留IP地址
@@ -1030,8 +1242,8 @@ class IPAMSQLite:
             _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE status = ?', ('reserved',))
             reserved_ips = cursor.fetchone()[0]
             
-            # 获取过期IP数
-            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE expiry_date < ?', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+            # 获取过期IP数，包括allocated和reserved状态
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE expiry_date < ? AND status IN ("allocated", "reserved")', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             expired_ips = cursor.fetchone()[0]
             
             # 获取IPv4和IPv6网络数
@@ -1074,13 +1286,37 @@ class IPAMSQLite:
                 'ipv6_networks': 0
             }
     
+    def check_ip_conflict(self, ip_address: str) -> bool:
+        """检查IP地址是否存在冲突
+        
+        Args:
+            ip_address: IP地址
+            
+        Returns:
+            bool: True表示存在冲突，False表示无冲突
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            
+            # 查询IP地址的分配情况，统计非available状态的记录数
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE ip_address = ? AND status != ?', (ip_address, 'available'))
+            count = cursor.fetchone()[0]
+            
+            conn.close()
+            
+            # 如果IP地址被分配多次（ count > 1 ），则存在冲突
+            return count > 1
+        except Exception:
+            return False
+
     def backup_data(self, backup_name: str | None = None, backup_type: str = 'auto', frequency: str = 'hourly', compress: bool = False, encrypt: bool = False):
         """备份IPAM数据
         
         Args:
             backup_name: 可选的备份名称，如果不提供则使用时间戳
             backup_type: 备份类型，可选值：'auto'（自动备份）、'manual'（手动备份）、'before_import'（导入前备份）、'before_operation'（操作前备份）
-            frequency: 备份频率，可选值：'hourly'（每小时）、'daily'（每天）、'weekly'（每周）
+            frequency: 备份频率，可选值：'hourly'（每小时）、'daily'（每天）、'weekly'（每周）、'monthly'（每月）
             compress: 是否压缩备份文件
             encrypt: 是否加密备份文件
             
@@ -1090,29 +1326,50 @@ class IPAMSQLite:
         try:
             # 检查是否需要自动备份
             if backup_type == 'auto':
-                last_backup_file = os.path.join(self.backup_dir, f'last_{frequency}_backup.txt')
-                if os.path.exists(last_backup_file):
+                # 使用统一的备份配置文件
+                backup_config_file = os.path.join(self.backup_dir, 'backup_config.json')
+                last_backup_time = None
+                last_backup_frequency = None
+                
+                # 加载配置文件
+                if os.path.exists(backup_config_file):
                     try:
-                        with open(last_backup_file, 'r', encoding='utf-8') as f:
-                            last_backup_time = f.read().strip()
-                        if last_backup_time:
-                            last_backup = datetime.fromisoformat(last_backup_time)
-                            # 根据频率确定备份间隔
-                            if frequency == 'hourly':
-                                if (datetime.now() - last_backup).total_seconds() < 3600:  # 1小时
-                                    return None  # 不需要备份
-                            elif frequency == 'daily':
-                                if (datetime.now() - last_backup).total_seconds() < 86400:  # 24小时
-                                    return None  # 不需要备份
-                            elif frequency == 'weekly':
-                                if (datetime.now() - last_backup).total_seconds() < 604800:  # 7天
-                                    return None  # 不需要备份
+                        with open(backup_config_file, 'r', encoding='utf-8') as f:
+                            config = json.load(f)
+                            last_backup_time = config.get('last_backup_time')
+                            last_backup_frequency = config.get('last_backup_frequency')
                     except Exception:
                         pass
                 
-                # 更新最后备份时间
-                with open(last_backup_file, 'w', encoding='utf-8') as f:
-                    f.write(datetime.now().isoformat())
+                # 检查备份间隔
+                if last_backup_time:
+                    try:
+                        last_backup = datetime.fromisoformat(last_backup_time)
+                        # 根据当前频率确定备份间隔
+                        if frequency == 'hourly':
+                            if (datetime.now() - last_backup).total_seconds() < 3600:  # 1小时
+                                return None  # 不需要备份
+                        elif frequency == 'daily':
+                            if (datetime.now() - last_backup).total_seconds() < 86400:  # 24小时
+                                return None  # 不需要备份
+                        elif frequency == 'weekly':
+                            if (datetime.now() - last_backup).total_seconds() < 604800:  # 7天
+                                return None  # 不需要备份
+                        elif frequency == 'monthly':
+                            if (datetime.now() - last_backup).total_seconds() < 2592000:  # 30天
+                                return None  # 不需要备份
+                    except Exception:
+                        pass
+                
+                # 更新最后备份时间和频率
+                config = {
+                    'last_backup_time': datetime.now().isoformat(),
+                    'last_backup_frequency': frequency
+                }
+                
+                # 保存配置文件
+                with open(backup_config_file, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, ensure_ascii=False, indent=2)
             
             # 生成备份文件名
             if backup_name:
@@ -1394,12 +1651,13 @@ class IPAMSQLite:
         except Exception:
             return False
     
-    def export_data(self, export_file: str, format: str = 'json') -> bool:
+    def export_data(self, export_file: str, format: str = 'json', networks: list = None) -> bool:
         """导出IPAM数据
         
         Args:
             export_file: 导出文件路径
             format: 导出格式，可选值：'json'、'csv'
+            networks: 要导出的网络列表，如果为None则导出所有网络
         
         Returns:
             bool: 是否导出成功
@@ -1411,7 +1669,14 @@ class IPAMSQLite:
             if format == 'json':
                 # 导出为JSON格式
                 # 获取网络数据
-                _ = cursor.execute('SELECT network_address, description, created_at, updated_at FROM networks')
+                if networks:
+                    # 只获取指定的网络
+                    placeholders = ','.join(['?'] * len(networks))
+                    _ = cursor.execute(f'SELECT network_address, description, created_at, updated_at FROM networks WHERE network_address IN ({placeholders})', networks)
+                else:
+                    # 获取所有网络
+                    _ = cursor.execute('SELECT network_address, description, created_at, updated_at FROM networks')
+                
                 networks_rows = cursor.fetchall()
                 
                 export_networks = {}
@@ -1439,8 +1704,26 @@ class IPAMSQLite:
                         }
                 
                 # 获取分配历史
-                _ = cursor.execute('SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history')
-                history_rows = cursor.fetchall()
+                if networks:
+                    # 只获取指定网络的历史
+                    network_ids = []
+                    for network in networks:
+                        _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network,))
+                        network_row = cursor.fetchone()
+                        if network_row:
+                            network_ids.append(network_row[0])
+                    
+                    if network_ids:
+                        placeholders = ','.join(['?'] * len(network_ids))
+                        _ = cursor.execute(f'SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history WHERE network_id IN ({placeholders})', network_ids)
+                    else:
+                        history_rows = []
+                else:
+                    # 获取所有历史
+                    _ = cursor.execute('SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history')
+                
+                if not networks or network_ids:
+                    history_rows = cursor.fetchall()
                 
                 allocation_history = []
                 for row in history_rows:
@@ -1477,7 +1760,7 @@ class IPAMSQLite:
                 with open(export_file, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
                     # 写入表头
-                    writer.writerow(['Network', 'IP Address', 'Status', 'Hostname', 'Description', 'Allocated At', 'Allocated By'])
+                    writer.writerow(['Network', 'IP Address', 'Status', 'Hostname', 'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
                     
                     # 写入数据
                     for network_str, network_data in export_networks.items():
@@ -1489,7 +1772,8 @@ class IPAMSQLite:
                                 ip_data.get('hostname', ''),
                                 ip_data.get('description', ''),
                                 ip_data.get('allocated_at', ''),
-                                ip_data.get('allocated_by', '')
+                                ip_data.get('allocated_by', ''),
+                                ip_data.get('expiry_date', '')
                             ])
             else:
                 return False
@@ -1539,44 +1823,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def get_expired_ips(self) -> List[Dict[str, Any]]:
-        """获取过期的IP地址
-        
-        Returns:
-            list[dict]: 过期IP地址列表
-        """
-        try:
-            conn = sqlite3.connect(self.db_file)
-            cursor = conn.cursor()
-            
-            # 获取过期IP地址
-            _ = cursor.execute('''
-            SELECT i.id, i.network_id, i.ip_address, i.status, i.hostname, i.description, i.allocated_at, i.allocated_by, i.expiry_date, n.network_address
-            FROM ip_addresses i
-            JOIN networks n ON i.network_id = n.id
-            WHERE i.expiry_date < ? AND i.status = 'allocated'
-            ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
-            
-            expired_ips = []
-            for row in cursor.fetchall():
-                ip_id, network_id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, network_address = row
-                expired_ips.append({
-                    'id': ip_id,
-                    'network_id': network_id,
-                    'network': network_address,
-                    'ip_address': ip_address,
-                    'status': status,
-                    'hostname': hostname,
-                    'description': description,
-                    'allocated_at': allocated_at,
-                    'allocated_by': allocated_by,
-                    'expiry_date': expiry_date
-                })
-            
-            conn.close()
-            return expired_ips
-        except Exception:
-            return []
+
     
     def get_network_by_id(self, network_id: int) -> Dict[str, Any] | None:
         """通过ID获取网络信息
@@ -1649,6 +1896,69 @@ class IPAMSQLite:
             return None
         except Exception:
             return None
+    
+    def list_backups(self) -> List[Dict[str, Any]]:
+        """列出所有备份文件
+        
+        Returns:
+            list[dict]: 备份文件列表，每个元素包含备份文件的信息
+        """
+        try:
+            backups = []
+            
+            # 检查备份目录是否存在
+            if not os.path.exists(self.backup_dir):
+                return backups
+            
+            # 遍历备份目录中的所有文件
+            for filename in os.listdir(self.backup_dir):
+                if (filename.startswith('ipam_backup_') or filename.startswith('ipam_bak_')) and (filename.endswith('.json') or filename.endswith('.zip')):
+                    file_path = os.path.join(self.backup_dir, filename)
+                    
+                    # 获取文件修改时间
+                    file_mtime = os.path.getmtime(file_path)
+                    backup_time = datetime.fromtimestamp(file_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    # 尝试从备份文件中读取网络数和IP数
+                    network_count = 0
+                    ip_count = 0
+                    
+                    try:
+                        if filename.endswith('.zip'):
+                            # 处理压缩备份文件
+                            with zipfile.ZipFile(file_path, 'r') as zipf:
+                                if 'ipam_data.json' in zipf.namelist():
+                                    with zipf.open('ipam_data.json') as f:
+                                        data = json.load(f)
+                                        network_count = data.get('network_count', 0)
+                                        ip_count = data.get('ip_count', 0)
+                        else:
+                            # 处理普通JSON备份文件
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                data = json.load(f)
+                                network_count = data.get('network_count', 0)
+                                ip_count = data.get('ip_count', 0)
+                    except Exception:
+                        # 如果无法读取文件内容，使用默认值
+                        pass
+                    
+                    # 添加备份信息到列表，使用与windows_app.py期望的格式一致
+                    backups.append({
+                        'filename': filename,
+                        'file_path': file_path,
+                        'info': {
+                            'backup_time': backup_time,
+                            'network_count': network_count,
+                            'ip_count': ip_count
+                        }
+                    })
+            
+            # 按备份时间降序排序
+            backups.sort(key=lambda x: x['info']['backup_time'], reverse=True)
+            
+            return backups
+        except Exception:
+            return []
 
 
 if __name__ == "__main__":

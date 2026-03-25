@@ -1540,6 +1540,484 @@
     "zh_tw": "下載CSV範本",
     "ko": "CSV 템플릿 다운로드"
   },
+  "download_template": {
+    "zh": "下载模板",
+    "en": "Download Template",
+    "ja": "テンプレートをダウンロード",
+    "zh_tw": "下載範本",
+    "ko": "템플릿 다운로드"
+  },
+  "download_template_failed": {
+    "zh": "下载模板失败",
+    "en": "Download template failed",
+    "ja": "テンプレートのダウンロードに失敗",
+    "zh_tw": "下載範本失敗",
+    "ko": "템플릿 다운로드 실패"
+  },
+  "download_template_success": {
+    "zh": "模板下载成功",
+    "en": "Template download successful",
+    "ja": "テンプレートのダウンロードに成功",
+    "zh_tw": "範本下載成功",
+    "ko": "템플릿 다운로드 성공"
+  },
+  "file_name": {
+    "zh": "文件名",
+    "en": "File Name",
+    "ja": "ファイル名",
+    "zh_tw": "文件名",
+    "ko": "파일 이름"
+  },
+  "backup_time": {
+    "zh": "备份时间",
+    "en": "Backup Time",
+    "ja": "バックアップ時間",
+    "zh_tw": "備份時間",
+    "ko": "백업 시간"
+  },
+  "network_count": {
+    "zh": "网络数",
+    "en": "Network Count",
+    "ja": "ネットワーク数",
+    "zh_tw": "網路數",
+    "ko": "네트워크 수"
+  },
+
+  "backup": {
+    "zh": "备份",
+    "en": "Backup",
+    "ja": "バックアップ",
+    "zh_tw": "備份",
+    "ko": "백업"
+  },
+  "restore": {
+    "zh": "恢复",
+    "en": "Restore",
+    "ja": "復元",
+    "zh_tw": "復原",
+    "ko": "복원"
+  },
+  "auto_backup_frequency": {
+    "zh": "自动备份周期",
+    "en": "Auto Backup Frequency",
+    "ja": "自動バックアップ頻度",
+    "zh_tw": "自動備份週期",
+    "ko": "자동 백업 빈도"
+  },
+  "disabled": {
+    "zh": "禁用",
+    "en": "Disabled",
+    "ja": "無効",
+    "zh_tw": "禁用",
+    "ko": "비활성화"
+  },
+  "hourly": {
+    "zh": "每小时",
+    "en": "Hourly",
+    "ja": "毎時",
+    "zh_tw": "每小時",
+    "ko": "매시간"
+  },
+  "daily": {
+    "zh": "每日",
+    "en": "Daily",
+    "ja": "毎日",
+    "zh_tw": "每日",
+    "ko": "매일"
+  },
+  "weekly": {
+    "zh": "每周",
+    "en": "Weekly",
+    "ja": "毎週",
+    "zh_tw": "每週",
+    "ko": "매주"
+  },
+  "monthly": {
+    "zh": "每月",
+    "en": "Monthly",
+    "ja": "毎月",
+    "zh_tw": "每月",
+    "ko": "매월"
+  },
+  "auto_backup_frequency_set_to": {
+    "zh": "自动备份周期已设置为",
+    "en": "Auto backup frequency has been set to",
+    "ja": "自動バックアップ頻度が設定されました",
+    "zh_tw": "自動備份週期已設定為",
+    "ko": "자동 백업 빈도가 설정되었습니다"
+  },
+  "save_config_failed": {
+    "zh": "保存配置失败",
+    "en": "Failed to save configuration",
+    "ja": "設定の保存に失敗しました",
+    "zh_tw": "儲存設定失敗",
+    "ko": "구성 저장 실패"
+  },
+  "please_select_backup_to_restore": {
+    "zh": "请选择要恢复的备份",
+    "en": "Please select a backup to restore",
+    "ja": "復元するバックアップを選択してください",
+    "zh_tw": "請選擇要復原的備份",
+    "ko": "복원할 백업을 선택하십시오"
+  },
+  "confirm_restore_backup": {
+    "zh": "确定要恢复备份",
+    "en": "Are you sure you want to restore backup",
+    "ja": "バックアップを復元してもよろしいですか",
+    "zh_tw": "確定要復原備份",
+    "ko": "백업을 복원하시겠습니까"
+  },
+  "question_mark": {
+    "zh": "吗？",
+    "en": "?",
+    "ja": "？",
+    "zh_tw": "嗎？",
+    "ko": "?"
+  },
+  "data_restore_success": {
+    "zh": "数据恢复成功",
+    "en": "Data restore successful",
+    "ja": "データの復元に成功しました",
+    "zh_tw": "資料復原成功",
+    "ko": "데이터 복원 성공"
+  },
+  "data_restore_failed": {
+    "zh": "数据恢复失败",
+    "en": "Data restore failed",
+    "ja": "データの復元に失敗しました",
+    "zh_tw": "資料復原失敗",
+    "ko": "데이터 복원 실패"
+  },
+  "please_select_backup_to_delete": {
+    "zh": "请选择要删除的备份",
+    "en": "Please select a backup to delete",
+    "ja": "削除するバックアップを選択してください",
+    "zh_tw": "請選擇要刪除的備份",
+    "ko": "삭제할 백업을 선택하십시오"
+  },
+  "confirm_delete_backup": {
+    "zh": "确定要删除备份",
+    "en": "Are you sure you want to delete backup",
+    "ja": "バックアップを削除してもよろしいですか",
+    "zh_tw": "確定要刪除備份",
+    "ko": "백업을 삭제하시겠습니까"
+  },
+  "confirm_delete_multiple_backups": {
+    "zh": "确定要删除 {count} 个备份文件吗？",
+    "en": "Are you sure you want to delete {count} backup files?",
+    "ja": "{count} 個のバックアップファイルを削除してもよろしいですか？",
+    "zh_tw": "確定要刪除 {count} 個備份檔案嗎？",
+    "ko": "{count} 개의 백업 파일을 삭제하시겠습니까?"
+  },
+  "delete_failed": {
+    "zh": "删除 {name} 失败",
+    "en": "Failed to delete {name}",
+    "ja": "{name} の削除に失敗しました",
+    "zh_tw": "刪除 {name} 失敗",
+    "ko": "{name} 삭제 실패"
+  },
+  "successfully_deleted_backups": {
+    "zh": "成功删除 {count} 个备份文件",
+    "en": "Successfully deleted {count} backup files",
+    "ja": "{count} 個のバックアップファイルを正常に削除しました",
+    "zh_tw": "成功刪除 {count} 個備份檔案",
+    "ko": "{count} 개의 백업 파일이 성공적으로 삭제되었습니다"
+  },
+  "auto_scan_network": {
+    "zh": "自动扫描网络",
+    "en": "Auto Scan Network",
+    "ja": "ネットワーク自動スキャン",
+    "zh_tw": "自動掃描網路",
+    "ko": "자동 네트워크 스캔"
+  },
+  "network_address_cidr_format": {
+    "zh": "网络地址 (CIDR格式)",
+    "en": "Network Address (CIDR format)",
+    "ja": "ネットワークアドレス (CIDR形式)",
+    "zh_tw": "網路位址 (CIDR格式)",
+    "ko": "네트워크 주소 (CIDR 형식)"
+  },
+  "thread_count": {
+    "zh": "线程数",
+    "en": "Thread Count",
+    "ja": "スレッド数",
+    "zh_tw": "執行緒數",
+    "ko": "스레드 수"
+  },
+  "timeout_ms": {
+    "zh": "超时时间 (毫秒)",
+    "en": "Timeout (milliseconds)",
+    "ja": "タイムアウト (ミリ秒)",
+    "zh_tw": "逾時時間 (毫秒)",
+    "ko": "타임아웃 (밀리초)"
+  },
+  "please_enter_network_address": {
+    "zh": "请输入网络地址",
+    "en": "Please enter network address",
+    "ja": "ネットワークアドレスを入力してください",
+    "zh_tw": "請輸入網路位址",
+    "ko": "네트워크 주소를 입력하십시오"
+  },
+  "network_format_error": {
+    "zh": "网络格式错误",
+    "en": "Network format error",
+    "ja": "ネットワーク形式エラー",
+    "zh_tw": "網路格式錯誤",
+    "ko": "네트워크 형식 오류"
+  },
+  "network_scan": {
+    "zh": "网络扫描",
+    "en": "Network Scan",
+    "ja": "ネットワークスキャン",
+    "zh_tw": "網路掃描",
+    "ko": "네트워크 스캔"
+  },
+  "scanning_network": {
+    "zh": "正在扫描网络",
+    "en": "Scanning network",
+    "ja": "ネットワークをスキャン中",
+    "zh_tw": "正在掃描網路",
+    "ko": "네트워크 스캔 중"
+  },
+  "preparing_to_scan": {
+    "zh": "准备开始扫描...",
+    "en": "Preparing to scan...",
+    "ja": "スキャンの準備中...",
+    "zh_tw": "準備開始掃描...",
+    "ko": "스캔 준비 중..."
+  },
+  "data_addition_progress": {
+    "zh": "数据添加进度",
+    "en": "Data Addition Progress",
+    "ja": "データ追加の進行状況",
+    "zh_tw": "資料添加進度",
+    "ko": "데이터 추가 진행 상황"
+  },
+  "preparing_to_add_data": {
+    "zh": "准备添加数据...",
+    "en": "Preparing to add data...",
+    "ja": "データ追加の準備中...",
+    "zh_tw": "準備添加資料...",
+    "ko": "데이터 추가 준비 중..."
+  },
+  "start_scan": {
+    "zh": "开始扫描",
+    "en": "Start Scan",
+    "ja": "スキャン開始",
+    "zh_tw": "開始掃描",
+    "ko": "스캔 시작"
+  },
+  "check_expired_ips": {
+    "zh": "检查过期",
+    "en": "Check Expired",
+    "ja": "期限切れを確認",
+    "zh_tw": "檢查過期",
+    "ko": "만료 확인"
+  },
+  "check_conflicts": {
+    "zh": "检查冲突",
+    "en": "Check Conflicts",
+    "ja": "衝突を確認",
+    "zh_tw": "檢查衝突",
+    "ko": "충돌 확인"
+  },
+  "ip_usage_statistics": {
+    "zh": "IP地址使用情况",
+    "en": "IP Usage Statistics",
+    "ja": "IP使用状況",
+    "zh_tw": "IP位址使用情況",
+    "ko": "IP 사용 현황"
+  },
+  "backup_name_optional": {
+    "zh": "备份名称 (可选):",
+    "en": "Backup Name (Optional):",
+    "ja": "バックアップ名（オプション）：",
+    "zh_tw": "備份名稱 (可選):",
+    "ko": "백업 이름 (선택 사항):"
+  },
+  "backup_file_list": {
+    "zh": "备份文件列表",
+    "en": "Backup File List",
+    "ja": "バックアップファイルリスト",
+    "zh_tw": "備份檔案列表",
+    "ko": "백업 파일 목록"
+  },
+  "no_data_available": {
+    "zh": "暂无数据",
+    "en": "No Data Available",
+    "ja": "データがありません",
+    "zh_tw": "暫無數據",
+    "ko": "데이터 없음"
+  },
+  "release_selected": {
+    "zh": "释放选中",
+    "en": "Release Selected",
+    "ja": "選択を解放",
+    "zh_tw": "釋放選中",
+    "ko": "선택 해제"
+  },
+  "release_all": {
+    "zh": "全部释放",
+    "en": "Release All",
+    "ja": "すべてを解放",
+    "zh_tw": "全部釋放",
+    "ko": "모두 해제"
+  },
+  "batch_set_expiry_date": {
+    "zh": "过期设置",
+    "en": "Expiry Settings",
+    "ja": "有効期限設定",
+    "zh_tw": "過期設定",
+    "ko": "만료 설정"
+  },
+
+  "expired": {
+    "zh": "已过期",
+    "en": "Expired",
+    "ja": "期限切れ",
+    "zh_tw": "已過期",
+    "ko": "만료됨"
+  },
+  "expiring_soon": {
+    "zh": "即将过期",
+    "en": "Expiring Soon",
+    "ja": "もうすぐ期限切れ",
+    "zh_tw": "即將過期",
+    "ko": "곧 만료됨"
+  },
+  "not_expired": {
+    "zh": "未过期",
+    "en": "Not Expired",
+    "ja": "有効",
+    "zh_tw": "未過期",
+    "ko": "만료되지 않음"
+  },
+  "date_format_yyyy_mm_dd": {
+    "zh": "格式: YYYY-MM-DD",
+    "en": "Format: YYYY-MM-DD",
+    "ja": "形式: YYYY-MM-DD",
+    "zh_tw": "格式: YYYY-MM-DD",
+    "ko": "형식: YYYY-MM-DD"
+  },
+  "please_enter_expiry_date": {
+    "zh": "请输入过期日期",
+    "en": "Please enter expiry date",
+    "ja": "有効期限を入力してください",
+    "zh_tw": "請輸入過期日期",
+    "ko": "만료 날짜를 입력하십시오"
+  },
+  "restore_to_allocated": {
+    "zh": "恢复为已分配",
+    "en": "Restore to Allocated",
+    "ja": "割り当て済みに戻す",
+    "zh_tw": "恢復為已分配",
+    "ko": "할당된 상태로 복원"
+  },
+  "restore_to_reserved": {
+    "zh": "恢复为保留IP",
+    "en": "Restore to Reserved",
+    "ja": "予約済みに戻す",
+    "zh_tw": "恢復為保留IP",
+    "ko": "예약된 상태로 복원"
+  },
+  "reallocate_address": {
+    "zh": "重新分配地址",
+    "en": "Reallocate Address",
+    "ja": "アドレスを再割り当て",
+    "zh_tw": "重新分配位址",
+    "ko": "주소 재할당"
+  },
+  "reserve_address_again": {
+    "zh": "重新保留地址",
+    "en": "Re-reserve Address",
+    "ja": "アドレスを再予約",
+    "zh_tw": "重新保留位址",
+    "ko": "주소 재예약"
+  },
+  "convert_to_reserved": {
+    "zh": "转为保留IP",
+    "en": "Convert to Reserved",
+    "ja": "予約済みに変換",
+    "zh_tw": "轉為保留IP",
+    "ko": "예약된 상태로 변환"
+  },
+  "convert_to_allocated": {
+    "zh": "转为已分配",
+    "en": "Convert to Allocated",
+    "ja": "割り当て済みに変換",
+    "zh_tw": "轉為已分配",
+    "ko": "할당된 상태로 변환"
+  },
+  "clear_expiry_date": {
+    "zh": "清除过期日期",
+    "en": "Clear Expiry Date",
+    "ja": "有効期限をクリア",
+    "zh_tw": "清除過期日期",
+    "ko": "만료 날짜 지우기"
+  },
+  "successfully_released_ips": {
+    "zh": "成功释放 {count} 个IP地址",
+    "en": "Successfully released {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを正常に解放しました",
+    "zh_tw": "成功釋放 {count} 個IP位址",
+    "ko": "{count} 개의 IP 주소가 성공적으로 해제되었습니다"
+  },
+  "successfully_restored_ips_allocated": {
+    "zh": "成功恢复 {count} 个IP地址为已分配",
+    "en": "Successfully restored {count} IP addresses to allocated",
+    "ja": "{count} 個のIPアドレスを割り当て済みに正常に戻しました",
+    "zh_tw": "成功恢復 {count} 個IP位址為已分配",
+    "ko": "{count} 개의 IP 주소가 할당된 상태로 성공적으로 복원되었습니다"
+  },
+  "successfully_restored_ips_reserved": {
+    "zh": "成功恢复 {count} 个IP地址为保留IP",
+    "en": "Successfully restored {count} IP addresses to reserved",
+    "ja": "{count} 個のIPアドレスを予約済みに正常に戻しました",
+    "zh_tw": "成功恢復 {count} 個IP位址為保留IP",
+    "ko": "{count} 개의 IP 주소가 예약된 상태로 성공적으로 복원되었습니다"
+  },
+  "failed_to_restore_ips": {
+    "zh": "恢复失败 {count} 个IP地址",
+    "en": "Failed to restore {count} IP addresses",
+    "ja": "{count} 個のIPアドレスの復元に失敗しました",
+    "zh_tw": "恢復失敗 {count} 個IP位址",
+    "ko": "{count} 개의 IP 주소 복원 실패"
+  },
+  "ip_already_available_no_need_to_release": {
+    "zh": "所选IP地址已经是可用状态，无需释放",
+    "en": "Selected IP address is already available, no need to release",
+    "ja": "選択したIPアドレスは既に利用可能な状態です。解放する必要はありません",
+    "zh_tw": "所選IP位址已經是可用狀態，無需釋放",
+    "ko": "선택한 IP 주소는 이미 사용 가능한 상태입니다. 해제할 필요가 없습니다"
+  },
+  "expired_ips_detected": {
+    "zh": "过期IP检测",
+    "en": "Expired IPs Detected",
+    "ja": "期限切れIPの検出",
+    "zh_tw": "過期IP檢測",
+    "ko": "만료된 IP 감지"
+  },
+  "found_expired_ips": {
+    "zh": "发现 {count} 个过期IP地址，是否自动释放？",
+    "en": "Found {count} expired IP addresses, automatically release?",
+    "ja": "期限切れのIPアドレス {count} 個を検出しました。自動的に解放しますか？",
+    "zh_tw": "發現 {count} 個過期IP位址，是否自動釋放？",
+    "ko": "만료된 IP 주소 {count} 개를 발견했습니다. 자동으로 해제하시겠습니까?"
+  },
+  "please_select_ips_to_set_expiry": {
+    "zh": "请选择要设置过期日期的IP地址",
+    "en": "Please select IP addresses to set expiry date",
+    "ja": "有効期限を設定するIPアドレスを選択してください",
+    "zh_tw": "請選擇要設定過期日期的IP位址",
+    "ko": "만료 날짜를 설정할 IP 주소를 선택하십시오"
+  },
+  "batch_allocate_success": {
+    "zh": "批量分配成功 {count} 个IP地址",
+    "en": "Successfully allocated {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを一括割り当てしました",
+    "zh_tw": "批次分配成功 {count} 個IP位址",
+    "ko": "{count} 개의 IP 주소를 일괄 할당했습니다"
+  },
   "address_class": {
     "zh": "网络类别",
     "en": "Network Class",
@@ -1616,14 +2094,7 @@
     "ja": "移動または交換する記録を選択してください",
     "zh_tw": "請選擇要移動或交換的記錄",
     "ko": "이동하거나 교체할 레코드를 선택하십시오"
-  },
-  "import_data": {
-    "zh": "导入数据",
-    "en": "Import Data",
-    "ja": "データを取込",
-    "zh_tw": "匯入數據",
-    "ko": "데이터 가져오기"
-  },
+,
   "data_import_summary": {
     "zh": "共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效",
     "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
@@ -1897,6 +2368,13 @@
     "ja": "割り当て時間",
     "ko": "할당 시간"
   },
+  "allocated_at": {
+    "zh": "分配时间",
+    "zh_tw": "分配時間",
+    "en": "Allocated At",
+    "ja": "割り当て時間",
+    "ko": "할당 시간"
+  },
   "expiry_date": {
     "zh": "过期日期",
     "zh_tw": "過期日期",
@@ -1987,13 +2465,6 @@
     "en": "IP Count",
     "ja": "IP数",
     "ko": "IP 수"
-  },
-  "ip_address_management": {
-    "zh": "地址管理",
-    "zh_tw": "位址管理",
-    "en": "Address Management",
-    "ja": "アドレス管理",
-    "ko": "주소 관리"
   },
   "allocation_history": {
     "zh": "分配历史",
@@ -2170,12 +2641,117 @@
     "zh_tw": "發現以下IP衝突",
     "ko": "다음 IP 충돌이 발견되었습니다"
   },
+  "ip_conflicts": {
+    "zh": "IP冲突",
+    "en": "IP Conflicts",
+    "ja": "IP衝突",
+    "zh_tw": "IP衝突",
+    "ko": "IP 충돌"
+  },
+  "total_conflicts": {
+    "zh": "总冲突数",
+    "en": "Total Conflicts",
+    "ja": "総衝突数",
+    "zh_tw": "總衝突數",
+    "ko": "총 충돌 수"
+  },
+  "handle_conflict": {
+    "zh": "处理冲突",
+    "en": "Handle Conflict",
+    "ja": "衝突を処理",
+    "zh_tw": "處理衝突",
+    "ko": "충돌 처리"
+  },
+  "please_select_conflict": {
+    "zh": "请选择要处理的冲突",
+    "en": "Please select a conflict to handle",
+    "ja": "処理する衝突を選択してください",
+    "zh_tw": "請選擇要處理的衝突",
+    "ko": "처리할 충돌을 선택하세요"
+  },
+  "handling_conflict": {
+    "zh": "正在处理冲突",
+    "en": "Handling conflict",
+    "ja": "衝突を処理中",
+    "zh_tw": "正在處理衝突",
+    "ko": "충돌 처리 중"
+  },
   "check_conflict_failed": {
     "zh": "检查冲突失败",
     "en": "Failed to check conflicts",
     "ja": "衝突チェックに失敗しました",
     "zh_tw": "檢查衝突失敗",
     "ko": "충돌 확인에 실패했습니다"
+  },
+  "resolve_conflict": {
+    "zh": "解决冲突",
+    "en": "Resolve Conflict",
+    "ja": "衝突を解決",
+    "zh_tw": "解決衝突",
+    "ko": "충돌 해결"
+  },
+  "conflict_resolution_hint": {
+    "zh": "该IP地址存在冲突记录。请选择要执行的操作：",
+    "en": "This IP address has conflicting records. Please select an action:",
+    "ja": "このIPアドレスには衝突する記録があります。実行する操作を選択してください：",
+    "zh_tw": "該IP位址存在衝突記錄。請選擇要執行的操作：",
+    "ko": "이 IP 주소에 충돌하는 레코드가 있습니다. 수행할 작업을 선택하세요:"
+  },
+  "select_action": {
+    "zh": "选择操作",
+    "en": "Select Action",
+    "ja": "操作を選択",
+    "zh_tw": "選擇操作",
+    "ko": "작업 선택"
+  },
+  "keep_this_record": {
+    "zh": "保留此记录",
+    "en": "Keep this record",
+    "ja": "この記録を保持",
+    "zh_tw": "保留此記錄",
+    "ko": "이 레코드 유지"
+  },
+  "delete_this_record": {
+    "zh": "删除此记录",
+    "en": "Delete this record",
+    "ja": "この記録を削除",
+    "zh_tw": "刪除此記錄",
+    "ko": "이 레코드 삭제"
+  },
+  "release_this_ip": {
+    "zh": "释放此IP",
+    "en": "Release this IP",
+    "ja": "このIPを解放",
+    "zh_tw": "釋放此IP",
+    "ko": "이 IP 해제"
+  },
+  "selected_ip": {
+    "zh": "选中的IP",
+    "en": "Selected IP",
+    "ja": "選択されたIP",
+    "zh_tw": "選中的IP",
+    "ko": "선택된 IP"
+  },
+  "conflict_resolved": {
+    "zh": "冲突已解决",
+    "en": "Conflict resolved",
+    "ja": "衝突が解決されました",
+    "zh_tw": "衝突已解決",
+    "ko": "충돌 해결됨"
+  },
+  "deleted_records": {
+    "zh": "已删除 {count} 条记录",
+    "en": "Deleted {count} records",
+    "ja": "{count} 件の記録を削除しました",
+    "zh_tw": "已刪除 {count} 條記錄",
+    "ko": "{count} 개의 레코드가 삭제되었습니다"
+  },
+  "resolve_conflict_failed": {
+    "zh": "解决冲突失败",
+    "en": "Failed to resolve conflict",
+    "ja": "衝突の解決に失敗しました",
+    "zh_tw": "解決衝突失敗",
+    "ko": "충돌 해결 실패"
   },
   "updating_styles": {
     "zh": "更新样式",
@@ -3353,13 +3929,7 @@
     "zh_tw": "圖表繪製失敗",
     "ko": "차트 플로팅 실패"
   },
-  "contains": {
-    "zh": "包含",
-    "en": "contains",
-    "ja": "含む",
-    "zh_tw": "包含",
-    "ko": "포함하다."
-  },
+
   "partial overlap": {
     "zh": "部分重叠",
     "en": "partial overlap",
@@ -3542,13 +4112,7 @@
     "zh_tw": "值表示",
     "ko": "값 표현"
   },
-  "reserved": {
-    "zh": "保留",
-    "en": "Reserved",
-    "ja": "予約",
-    "zh_tw": "保留",
-    "ko": "예약됨"
-  },
+
   "available": {
     "zh": "可用",
     "en": "Available",
@@ -3556,13 +4120,7 @@
     "zh_tw": "可用",
     "ko": "사용 가능"
   },
-  "allocated": {
-    "zh": "已分配",
-    "en": "Allocated",
-    "ja": "割り当て済み",
-    "zh_tw": "已分配",
-    "ko": "할당됨"
-  },
+
   "timestamp": {
     "zh": "时间戳",
     "en": "Timestamp",

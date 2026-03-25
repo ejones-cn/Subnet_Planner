@@ -1,7 +1,7 @@
 {
   "networks": {
     "192.168.1.0/24": {
-      "description": "办公室网络",
+      "description": "办公室网段",
       "ip_addresses": {
         "192.168.1.10": {
           "status": "allocated",
@@ -55,39 +55,39 @@
       "created_at": "2026-02-25T17:16:34.629053"
     },
     "10.0.0.0/24": {
-      "description": "服务器网络",
+      "description": "服务器网段",
       "ip_addresses": {
         "10.0.0.10": {
           "status": "allocated",
           "hostname": "Server-001",
           "description": "文件服务器",
-          "allocated_at": "2026-02-25T17:16:34.633017",
+          "allocated_at": "2026-03-23 11:03:12",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.0.11": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "Server-002",
           "description": "数据库服务器",
-          "allocated_at": "2026-02-25T17:16:34.633606",
+          "allocated_at": "2026-03-09 22:29:49",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-03-21 23:59:59"
         },
         "10.0.0.12": {
           "status": "allocated",
           "hostname": "Server-003",
           "description": "Web服务器",
-          "allocated_at": "2026-02-25T17:16:34.634147",
+          "allocated_at": "2026-03-09 22:29:49",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.0.1": {
-          "status": "reserved",
+          "status": "available",
           "hostname": "",
           "description": "路由器",
           "allocated_at": "2026-02-25T17:16:34.634678",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-03-20 23:59:59"
         },
         "10.0.0.254": {
           "status": "reserved",
@@ -99,35 +99,35 @@
         },
         "10.0.0.2": {
           "status": "allocated",
-          "hostname": "23e",
-          "description": "",
-          "allocated_at": "2026-02-27T19:08:32.125875",
+          "hostname": null,
+          "description": "23",
+          "allocated_at": "2026-03-11 18:09:44",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2028-10-12 23:59:59"
         },
         "10.0.0.3": {
           "status": "allocated",
-          "hostname": "爱你的",
-          "description": "",
-          "allocated_at": "2026-02-27T19:29:44.717779",
+          "hostname": "None1",
+          "description": "221",
+          "allocated_at": "2026-03-20 09:34:11",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.0.4": {
-          "status": "allocated",
-          "hostname": "324",
+          "status": "reserved",
+          "hostname": null,
           "description": "",
-          "allocated_at": "2026-02-27T19:30:21.274724",
+          "allocated_at": "2026-03-09 22:39:54",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-04-16 23:59:59"
         },
         "10.0.0.5": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "324",
           "description": "",
           "allocated_at": "2026-02-27T19:31:18.207493",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-04-17 23:59:59"
         }
       },
       "created_at": "2026-02-25T17:16:34.632547"
@@ -139,15 +139,15 @@
           "status": "allocated",
           "hostname": "路由器",
           "description": "",
-          "allocated_at": "2026-02-25T17:57:36.199381",
+          "allocated_at": "2026-03-25 16:07:57",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.1.2": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "34",
           "description": "右地",
-          "allocated_at": "2026-02-27T19:17:39.089236",
+          "allocated_at": "2026-03-25 16:08:00",
           "allocated_by": "admin",
           "expiry_date": null
         }
@@ -166,10 +166,10 @@
           "expiry_date": null
         },
         "10.0.2.2": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "员工",
           "description": "",
-          "allocated_at": "2026-02-26T09:54:30.354178",
+          "allocated_at": "2026-03-25 14:10:58",
           "allocated_by": "admin",
           "expiry_date": null
         },
@@ -179,21 +179,21 @@
           "description": "",
           "allocated_at": "2026-02-26T16:09:10.703044",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-04-09 23:59:59"
         },
         "10.0.2.4": {
           "status": "allocated",
-          "hostname": "员工",
-          "description": "",
-          "allocated_at": "2026-02-26T16:09:18.273516",
+          "hostname": null,
+          "description": "55",
+          "allocated_at": "2026-03-09 22:37:16",
           "allocated_by": "admin",
-          "expiry_date": null
+          "expiry_date": "2026-03-25 23:59:59"
         },
         "10.0.2.5": {
           "status": "allocated",
           "hostname": "员工",
           "description": "员工",
-          "allocated_at": "2026-02-26T16:09:51.300544",
+          "allocated_at": "2026-03-09 21:19:22",
           "allocated_by": "admin",
           "expiry_date": null
         },
@@ -201,7 +201,7 @@
           "status": "allocated",
           "hostname": "员工",
           "description": "员工",
-          "allocated_at": "2026-02-26T16:09:51.733645",
+          "allocated_at": "2026-03-09 23:15:15",
           "allocated_by": "admin",
           "expiry_date": null
         },
@@ -297,50 +297,50 @@
       "description": "测试",
       "ip_addresses": {
         "10.0.3.1": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "fds",
-          "description": "",
-          "allocated_at": "2026-02-27T19:34:55.591997",
+          "description": null,
+          "allocated_at": "2026-03-09 03:40:00",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.2": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "",
           "description": "as",
-          "allocated_at": "2026-02-27T19:35:01.202500",
+          "allocated_at": "2026-03-09 22:38:51",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.3": {
-          "status": "allocated",
+          "status": "available",
           "hostname": "fd",
           "description": "",
-          "allocated_at": "2026-02-27T19:35:05.030629",
+          "allocated_at": "2026-03-09 22:41:42",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.4": {
-          "status": "allocated",
-          "hostname": "e43r",
-          "description": "",
-          "allocated_at": "2026-02-27T19:35:08.431052",
+          "status": "reserved",
+          "hostname": null,
+          "description": "None1",
+          "allocated_at": "2026-03-09 22:39:36",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.5": {
-          "status": "allocated",
+          "status": "reserved",
           "hostname": "",
           "description": "dsfa",
-          "allocated_at": "2026-02-27T19:35:12.102049",
+          "allocated_at": "2026-03-10 10:42:22",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.6": {
-          "status": "allocated",
-          "hostname": "",
-          "description": "qew3r",
-          "allocated_at": "2026-02-27T19:35:14.656633",
+          "status": "reserved",
+          "hostname": "None1",
+          "description": "None1",
+          "allocated_at": "2026-03-09 21:30:42",
           "allocated_by": "admin",
           "expiry_date": null
         },
@@ -348,23 +348,23 @@
           "status": "allocated",
           "hostname": ".3.-3",
           "description": "",
-          "allocated_at": "2026-02-26T17:22:17.999742",
+          "allocated_at": "2026-03-09 21:30:42",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.8": {
-          "status": "allocated",
+          "status": "available",
           "hostname": ".3.-4",
           "description": "",
-          "allocated_at": "2026-02-26T17:22:18.001541",
+          "allocated_at": "2026-03-11 17:18:44",
           "allocated_by": "admin",
           "expiry_date": null
         },
         "10.0.3.9": {
-          "status": "allocated",
-          "hostname": ".3.-5",
+          "status": "available",
+          "hostname": ".3.-4",
           "description": "",
-          "allocated_at": "2026-02-26T17:22:18.003291",
+          "allocated_at": "2026-03-11 17:18:34",
           "allocated_by": "admin",
           "expiry_date": null
         },
@@ -8638,9 +8638,5085 @@
       "description": "",
       "performed_by": null,
       "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-08 23:21:57"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-08 23:53:20"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-08 23:53:25"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": "435",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:09:53"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": null,
+      "description": "qew3r4",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:09:55"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": "324",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:10:44"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": "324",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:11:23"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:14:17"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:14:23"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": "3241",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:15:13"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": null,
+      "description": "None",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:15:27"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:18:28"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:18:34"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:20:48"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "reserve",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:20:52"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 00:20:58"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:39:50"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:39:52"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "update",
+      "hostname": "fds",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:39:54"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:39:57"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "allocate",
+      "hostname": "fds",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:40:00"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "update",
+      "hostname": "fds",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 03:40:09"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:08:42"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": null,
+      "description": "None",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:08:47"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "update",
+      "hostname": "爱你的44",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:45:05"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "update",
+      "hostname": null,
+      "description": "22",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:45:08"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "update",
+      "hostname": "e43r1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:45:23"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:46:15"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "allocate",
+      "hostname": "324",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:46:18"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "update",
+      "hostname": null,
+      "description": "3",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 04:46:21"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:19:20"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:19:22"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:19:38"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:19:42"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:23:03"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:26:15"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:26:21"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.2",
+      "action": "allocate",
+      "hostname": "",
+      "description": "as",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:29:09"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:29:15"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:35"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:35"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:35"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:35"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "allocate",
+      "hostname": "e43r1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:42"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": null,
+      "description": "None",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:42"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:30:42"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:34:31"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 21:35:54"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:37"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:37"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:37"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "allocate",
+      "hostname": null,
+      "description": "3",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:29:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:36:13"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:36:13"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:36:29"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:37:16"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:37:46"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:37:58"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:38:10"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.2",
+      "action": "allocate",
+      "hostname": "",
+      "description": "as",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:38:51"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "allocate",
+      "hostname": "e43r1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:38:55"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:38:57"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:39:20"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:39:25"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "allocate",
+      "hostname": "e43r1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:39:36"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "allocate",
+      "hostname": null,
+      "description": "3",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:39:54"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:39:57"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.3",
+      "action": "allocate",
+      "hostname": "fd",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:41:31"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:41:34"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.3",
+      "action": "allocate",
+      "hostname": "fd",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:41:42"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:41:50"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:49:25"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:49:41"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "reserve",
+      "hostname": null,
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 22:49:45"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "reserve",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:12:29"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:14:53"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:14:58"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:01"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:03"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "reserve",
+      "hostname": null,
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:05"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:07"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:10"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "reserve",
+      "hostname": null,
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:12"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:15"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:15"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:54"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:54"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "reserve",
+      "hostname": null,
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-09 23:15:56"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:41:52"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:41:52"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "reserve",
+      "hostname": null,
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:41:56"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:02"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "reserve",
+      "hostname": null,
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:05"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:07"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:08"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:12"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": "",
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 10:42:22"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "reserve",
+      "hostname": null,
+      "description": "dsfa",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 12:05:50"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "update",
+      "hostname": null,
+      "description": "55",
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 12:07:03"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 15:43:44"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "update",
+      "hostname": "e43r13",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-10 15:44:30"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "update",
+      "hostname": null,
+      "description": "None1",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:05:20"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:17:03"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": null,
+      "description": "None1",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:16"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "update",
+      "hostname": "None1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:18"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "reserve",
+      "hostname": null,
+      "description": "None1",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:23"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.4",
+      "action": "reserve",
+      "hostname": null,
+      "description": "None1",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:26"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:28"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:34"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:39"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:44"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:18:52"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:19:36"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:19:41"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:19:49"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:19:53"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:21:50"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:24:42"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:24:51"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:25:22"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:25:27"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:25:40"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:27:00"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:27:06"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:29:13"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:29:34"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:29:41"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:30:03"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:30:09"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:30:46"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:31:05"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:35:55"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "update",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:36:41"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "update",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:36:44"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:41:03"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:41:36"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:15"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:20"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:24"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:54"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:42:57"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:43:04"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "update",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:43:07"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "update",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:43:16"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:47:53"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:48:10"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:48:15"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:49:48"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:50:05"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:57:21"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:57:28"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 17:59:28"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.4",
+      "action": "update",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:00:59"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:01:19"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:04:43"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "allocate",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:05:23"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:05:36"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "allocate",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:09:44"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:09:52"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "update",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:10:02"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:14:57"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:15:03"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:15:07"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:15:12"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:16:31"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "update",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:16:41"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "update",
+      "hostname": "None1",
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:16:43"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:16:48"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "reserve",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:16:53"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:17:13"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": "23e",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:17:18"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:30:14"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:46:27"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:46:32"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:46:51"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "update",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:50:13"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:50:28"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:50:33"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "update",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:51:08"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "update",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 18:51:16"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-11 19:03:23"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:13:16"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:13:23"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.5",
+      "action": "update",
+      "hostname": "324",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:13:47"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "update",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:13:58"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "update",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:18:16"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:18:25"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "reserve",
+      "hostname": null,
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:18:28"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.2",
+      "action": "update",
+      "hostname": null,
+      "description": "23",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:29:30"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:31:56"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:31:59"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "reserve",
+      "hostname": null,
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:32:02"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:43"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:46"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "reserve",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:49"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:51"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "reserve",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:53"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:55"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "reserve",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:33:59"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:34:01"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:34:04"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:34:07"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "reserve",
+      "hostname": null,
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:34:09"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.3",
+      "action": "allocate",
+      "hostname": "None1",
+      "description": "221",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:34:11"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "update",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 09:39:58"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.10",
+      "action": "allocate",
+      "hostname": "PC-001",
+      "description": "总经理办公室",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.629632"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.11",
+      "action": "allocate",
+      "hostname": "PC-002",
+      "description": "技术部经理",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630196"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.20",
+      "action": "allocate",
+      "hostname": "PC-003",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.630650"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.21",
+      "action": "allocate",
+      "hostname": "PC-004",
+      "description": "技术部员工",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631075"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.631513"
+    },
+    {
+      "network": "192.168.1.0/24",
+      "ip_address": "192.168.1.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.632064"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633017"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "allocate",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.633606"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.12",
+      "action": "allocate",
+      "hostname": "Server-003",
+      "description": "Web服务器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634147"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.1",
+      "action": "reserve",
+      "hostname": "",
+      "description": "路由器",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.634678"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.254",
+      "action": "reserve",
+      "hostname": "",
+      "description": "网关",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:16:34.635849"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T17:57:36.199381"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "allocate",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-25T18:01:10.997758"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.254",
+      "action": "release",
+      "hostname": "网关",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:26:50.962245"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.1",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:14.637199"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T09:54:30.354178"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:10.703044"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:18.273516"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.5",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.300544"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.6",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.733645"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.7",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "员工",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:09:51.931952"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.8",
+      "action": "allocate",
+      "hostname": "在地-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.754741"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "allocate",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.756553"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.10",
+      "action": "allocate",
+      "hostname": "在地-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.758098"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.11",
+      "action": "allocate",
+      "hostname": "在地-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.759914"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.12",
+      "action": "allocate",
+      "hostname": "在地-7",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.761400"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.13",
+      "action": "allocate",
+      "hostname": "在地-8",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.763500"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.14",
+      "action": "allocate",
+      "hostname": "在地-9",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.766417"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.15",
+      "action": "allocate",
+      "hostname": "在地-10",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.768851"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.16",
+      "action": "allocate",
+      "hostname": "在地-11",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.770752"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.17",
+      "action": "allocate",
+      "hostname": "在地-12",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.772469"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "allocate",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.774286"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "allocate",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.775996"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "allocate",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:16:48.778071"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.9",
+      "action": "release",
+      "hostname": "在地-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:17:32.896922"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.18",
+      "action": "release",
+      "hostname": "在地-13",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.763698"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.19",
+      "action": "release",
+      "hostname": "在地-14",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.767706"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.20",
+      "action": "release",
+      "hostname": "在地-15",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T16:18:54.771099"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.860070"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.862125"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.863998"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.865683"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.867403"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:20:15.869129"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "release",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.593145"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "release",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.595200"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "release",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.597048"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "release",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.598905"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "release",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.600750"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "release",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:21:47.602437"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.5",
+      "action": "allocate",
+      "hostname": ".3.-1",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.995424"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.6",
+      "action": "allocate",
+      "hostname": ".3.-2",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.997858"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.7",
+      "action": "allocate",
+      "hostname": ".3.-3",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:17.999742"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.8",
+      "action": "allocate",
+      "hostname": ".3.-4",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.001541"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.9",
+      "action": "allocate",
+      "hostname": ".3.-5",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.003291"
+    },
+    {
+      "network": "10.0.3.0/24",
+      "ip_address": "10.0.3.10",
+      "action": "allocate",
+      "hostname": ".3.-6",
+      "description": "",
+      "performed_by": null,
+      "timestamp": "2026-02-26T17:22:18.005030"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 11:04:31"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.3",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-20 11:04:40"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.10",
+      "action": "allocate",
+      "hostname": "Server-001",
+      "description": "文件服务器",
+      "performed_by": "admin",
+      "timestamp": "2026-03-23 11:03:12"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "update",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 10:56:12"
+    },
+    {
+      "network": "10.0.0.0/24",
+      "ip_address": "10.0.0.11",
+      "action": "auto_release",
+      "hostname": "Server-002",
+      "description": "数据库服务器",
+      "performed_by": "system",
+      "timestamp": "2026-03-25 12:00:23"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "batch_update",
+      "hostname": null,
+      "description": "55",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 13:50:37"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "batch_update",
+      "hostname": null,
+      "description": "55",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 13:50:48"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.4",
+      "action": "update",
+      "hostname": null,
+      "description": "55",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 13:51:54"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 14:10:44"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "allocate",
+      "hostname": "员工",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 14:10:58"
+    },
+    {
+      "network": "10.0.2.0/23",
+      "ip_address": "10.0.2.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 15:35:11"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:14"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:25"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:33"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:49"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:54"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.1",
+      "action": "allocate",
+      "hostname": "路由器",
+      "description": "",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:07:57"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "allocate",
+      "hostname": "34",
+      "description": "右地",
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:08:00"
+    },
+    {
+      "network": "10.0.1.0/24",
+      "ip_address": "10.0.1.2",
+      "action": "release",
+      "hostname": null,
+      "description": null,
+      "performed_by": "admin",
+      "timestamp": "2026-03-25 16:08:05"
     }
   ],
-  "backup_time": "2026-03-08 22:14:10",
+  "backup_time": "2026-03-25 16:13:48",
   "backup_name": null,
   "backup_type": "auto",
   "backup_frequency": "weekly",
@@ -8651,7 +13727,7 @@
   "system_info": {
     "python_version": "3.13.12 (tags/v3.13.12:1cbe481, Feb  3 2026, 18:22:25) [MSC v.1944 64 bit (AMD64)]",
     "platform": "Windows-11-10.0.26200-SP0",
-    "timestamp": "2026-03-08 22:14:10"
+    "timestamp": "2026-03-25 16:13:48"
   },
   "backup_options": {
     "compress": false,

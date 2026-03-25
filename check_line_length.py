@@ -2,6 +2,7 @@
 import sys
 import os
 
+
 def check_line_length(filename=None, max_length=100) -> list:
     """检查文件中行长度超过指定值的行
     
@@ -48,6 +49,7 @@ def check_line_length(filename=None, max_length=100) -> list:
     except PermissionError:
         print(f'错误：没有权限读取文件 {filename}')
     return violations
+
 
 if __name__ == '__main__':
     filename = sys.argv[1] if len(sys.argv) > 1 else 'ipam_sqlite.py'
