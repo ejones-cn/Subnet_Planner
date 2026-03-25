@@ -110,52 +110,67 @@ def create_conflicts():
         cursor = conn.cursor()
         
         # 确保网络存在
-        network = '192.168.1.0/24'
+        network1 = '192.168.1.0/24'
+        network2 = '10.0.0.0/24'
+        
+        # 插入网络1
         _ = cursor.execute('''
             INSERT OR IGNORE INTO networks (network_address, description, created_at)
             VALUES (?, ?, ?)
-        ''', (network, '测试网络', datetime.now().isoformat()))
+        ''', (network1, '测试网络1', datetime.now().isoformat()))
+        
+        # 插入网络2
+        _ = cursor.execute('''
+            INSERT OR IGNORE INTO networks (network_address, description, created_at)
+            VALUES (?, ?, ?)
+        ''', (network2, '测试网络2', datetime.now().isoformat()))
         
         # 获取网络ID
-        _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network,))
-        network_id = cursor.fetchone()[0]
+        _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network1,))
+        network1_id = cursor.fetchone()[0]
+        
+        _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network2,))
+        network2_id = cursor.fetchone()[0]
         
         # 创建冲突的IP地址
-        conflict_ips = [
-            '192.168.1.100',
-            '192.168.1.101',
-            '192.168.1.102',
-            '10.0.0.1',
-            '10.0.0.2',
-            '10.0.0.3'
-        ]
+        conflict_ips = {
+            network1_id: ['192.168.1.100', '192.168.1.101', '192.168.1.102'],
+            network2_id: ['10.0.0.1', '10.0.0.2', '10.0.0.3']
+        }
         
         # 为每个IP地址创建多个分配记录
-        for ip in conflict_ips:
-            now = datetime.now().isoformat()
-            # 第一条记录
-            _ = cursor.execute('''
-                INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, allocated_at, allocated_by, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (network_id, ip, 'allocated', f'Host-{ip}', '第一次分配', now, 'admin', now, now))
-            
-            # 第二条记录（冲突）
-            _ = cursor.execute('''
-                INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, allocated_at, allocated_by, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (network_id, ip, 'allocated', f'Conflict-{ip}', '第二次分配（冲突）', now, 'admin', now, now))
+        for net_id, ips in conflict_ips.items():
+            for ip in ips:
+                now = datetime.now().isoformat()
+                # 第一条记录
+                _ = cursor.execute('''
+                    INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, allocated_at, allocated_by, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (net_id, ip, 'allocated', f'Host-{ip}', '第一次分配', now, 'admin', now, now))
+                
+                # 第二条记录（冲突）
+                _ = cursor.execute('''
+                    INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, allocated_at, allocated_by, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (net_id, ip, 'allocated', f'Conflict-{ip}', '第二次分配（冲突）', now, 'admin', now, now))
         
         # 提交事务
         conn.commit()
         conn.close()
         
-        print(f"成功创建冲突数据！在网络 {network} 中为以下IP地址创建了冲突：")
-        for ip in conflict_ips:
+        print("成功创建冲突数据！")
+        print(f"在网络 {network1} 中为以下IP地址创建了冲突：")
+        for ip in conflict_ips[network1_id]:
+            print(f"- {ip}")
+        print(f"在网络 {network2} 中为以下IP地址创建了冲突：")
+        for ip in conflict_ips[network2_id]:
             print(f"- {ip}")
         print("现在可以使用检查冲突功能来验证这些冲突。")
         
     except Exception as e:
         print(f"创建冲突数据失败: {e}")
+
+
 
 if __name__ == "__main__":
     create_conflicts()

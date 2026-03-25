@@ -33,13 +33,6 @@ from openpyxl.styles import Font, Alignment  # type: ignore
 from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
-# 尝试导入DateEntry，如果失败则设置为None
-DateEntry = None
-try:
-    from tkcalendar import DateEntry
-except ImportError:
-    print("Warning: tkcalendar module not found, date picker will be disabled")
-
 # 本地模块
 from version import get_version
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
@@ -70,6 +63,13 @@ from style_manager import (
     get_move_button_font,
     get_style_manager,
 )
+
+# 尝试导入DateEntry，如果失败则设置为None
+DateEntry = None
+try:
+    from tkcalendar import DateEntry
+except ImportError:
+    print("Warning: tkcalendar module not found, date picker will be disabled")
 
 __version__ = get_version()
 

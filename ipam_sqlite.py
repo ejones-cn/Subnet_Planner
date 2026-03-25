@@ -12,7 +12,7 @@ import sys
 import platform
 import zipfile
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import ipaddress
@@ -980,7 +980,7 @@ class IPAMSQLite:
             
             # 计算日期范围
             now = datetime.now()
-            future_date = now + datetime.timedelta(days=days_ahead)
+            future_date = now + timedelta(days=days_ahead)
             
             # 获取即将过期的IP地址
             _ = cursor.execute('''
@@ -1651,7 +1651,7 @@ class IPAMSQLite:
         except Exception:
             return False
     
-    def export_data(self, export_file: str, format: str = 'json', networks: list = None) -> bool:
+    def export_data(self, export_file: str, format: str = 'json', networks: list[str] | None = None) -> bool:
         """导出IPAM数据
         
         Args:
@@ -1666,65 +1666,65 @@ class IPAMSQLite:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
             
+            # 初始化变量
+            export_networks = {}
+            history_rows = []
+            network_ids = []
+            
+            # 获取网络数据
+            if networks:
+                # 只获取指定的网络
+                placeholders = ','.join(['?'] * len(networks))
+                _ = cursor.execute(f'SELECT network_address, description, created_at, updated_at FROM networks WHERE network_address IN ({placeholders})', networks)
+            else:
+                # 获取所有网络
+                _ = cursor.execute('SELECT network_address, description, created_at, updated_at FROM networks')
+            
+            networks_rows = cursor.fetchall()
+            
+            for row in networks_rows:
+                network_address, description, created_at, _ = row
+                export_networks[network_address] = {
+                    'description': description,
+                    'ip_addresses': {},
+                    'created_at': created_at
+                }
+                
+                # 获取该网络的IP地址
+                _ = cursor.execute('SELECT ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, created_at, updated_at FROM ip_addresses WHERE network_id = (SELECT id FROM networks WHERE network_address = ?)', (network_address,))
+                ips_rows = cursor.fetchall()
+                
+                for ip_row in ips_rows:
+                    ip_address, status, hostname, ip_description, allocated_at, allocated_by, expiry_date, _, _ = ip_row
+                    export_networks[network_address]['ip_addresses'][ip_address] = {
+                        'status': status,
+                        'hostname': hostname,
+                        'description': ip_description,
+                        'allocated_at': allocated_at,
+                        'allocated_by': allocated_by,
+                        'expiry_date': expiry_date
+                    }
+            
+            # 获取分配历史
+            if networks:
+                # 只获取指定网络的历史
+                for network in networks:
+                    _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network,))
+                    network_row = cursor.fetchone()
+                    if network_row:
+                        network_ids.append(network_row[0])
+                
+                if network_ids:
+                    placeholders = ','.join(['?'] * len(network_ids))
+                    _ = cursor.execute(f'SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history WHERE network_id IN ({placeholders})', network_ids)
+                    history_rows = cursor.fetchall()
+            else:
+                # 获取所有历史
+                _ = cursor.execute('SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history')
+                history_rows = cursor.fetchall()
+            
             if format == 'json':
                 # 导出为JSON格式
-                # 获取网络数据
-                if networks:
-                    # 只获取指定的网络
-                    placeholders = ','.join(['?'] * len(networks))
-                    _ = cursor.execute(f'SELECT network_address, description, created_at, updated_at FROM networks WHERE network_address IN ({placeholders})', networks)
-                else:
-                    # 获取所有网络
-                    _ = cursor.execute('SELECT network_address, description, created_at, updated_at FROM networks')
-                
-                networks_rows = cursor.fetchall()
-                
-                export_networks = {}
-                for row in networks_rows:
-                    network_address, description, created_at, _ = row
-                    export_networks[network_address] = {
-                        'description': description,
-                        'ip_addresses': {},
-                        'created_at': created_at
-                    }
-                    
-                    # 获取该网络的IP地址
-                    _ = cursor.execute('SELECT ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, created_at, updated_at FROM ip_addresses WHERE network_id = (SELECT id FROM networks WHERE network_address = ?)', (network_address,))
-                    ips_rows = cursor.fetchall()
-                    
-                    for ip_row in ips_rows:
-                        ip_address, status, hostname, ip_description, allocated_at, allocated_by, expiry_date, _, _ = ip_row
-                        export_networks[network_address]['ip_addresses'][ip_address] = {
-                            'status': status,
-                            'hostname': hostname,
-                            'description': ip_description,
-                            'allocated_at': allocated_at,
-                            'allocated_by': allocated_by,
-                            'expiry_date': expiry_date
-                        }
-                
-                # 获取分配历史
-                if networks:
-                    # 只获取指定网络的历史
-                    network_ids = []
-                    for network in networks:
-                        _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network,))
-                        network_row = cursor.fetchone()
-                        if network_row:
-                            network_ids.append(network_row[0])
-                    
-                    if network_ids:
-                        placeholders = ','.join(['?'] * len(network_ids))
-                        _ = cursor.execute(f'SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history WHERE network_id IN ({placeholders})', network_ids)
-                    else:
-                        history_rows = []
-                else:
-                    # 获取所有历史
-                    _ = cursor.execute('SELECT network_id, ip_address, action, hostname, description, performed_by, performed_at FROM allocation_history')
-                
-                if not networks or network_ids:
-                    history_rows = cursor.fetchall()
-                
                 allocation_history = []
                 for row in history_rows:
                     network_id, ip_address, action, hostname, description, performed_by, performed_at = row
@@ -1825,7 +1825,7 @@ class IPAMSQLite:
     
 
     
-    def get_network_by_id(self, network_id: int) -> Dict[str, Any] | None:
+    def get_network_by_id(self, network_id: int) -> dict[str, Any] | None:
         """通过ID获取网络信息
         
         Args:
@@ -1855,7 +1855,7 @@ class IPAMSQLite:
         except Exception:
             return None
     
-    def get_ip_by_id(self, ip_id: int) -> Dict[str, Any] | None:
+    def get_ip_by_id(self, ip_id: int) -> dict[str, Any] | None:
         """通过ID获取IP地址信息
         
         Args:
@@ -1897,7 +1897,7 @@ class IPAMSQLite:
         except Exception:
             return None
     
-    def list_backups(self) -> List[Dict[str, Any]]:
+    def list_backups(self) -> list[dict[str, Any]]:
         """列出所有备份文件
         
         Returns:
