@@ -13,7 +13,7 @@ import platform
 import zipfile
 import csv
 from datetime import datetime, timedelta
-from typing import Any
+
 
 import ipaddress
 
@@ -187,7 +187,7 @@ class IPAMSQLite:
             conn.close()
             return False, f"数据迁移失败: {str(e)}"
     
-    def get_most_specific_network(self, ip_address: str) -> dict[str, Any] | None:
+    def get_most_specific_network(self, ip_address: str) -> dict[str, str | int] | None:
         """获取IP地址最具体的归属网络
         
         Args:
@@ -205,7 +205,7 @@ class IPAMSQLite:
         conn.close()
         
         target_ip = ipaddress.ip_address(ip_address)
-        most_specific_network: dict[str, Any] | None = None
+        most_specific_network: dict[str, str | int] | None = None
         max_prefix_len = 0
         
         for network in network_rows:
@@ -391,7 +391,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"分配IP地址失败: {str(e)}"
     
-    def get_network_ips(self, network_str: str) -> list[dict[str, Any]]:
+    def get_network_ips(self, network_str: str) -> list[dict[str, str | int | None]]:
         """获取网络及其所有子网络的IP地址
         
         Args:
@@ -413,7 +413,7 @@ class IPAMSQLite:
             conn.close()
             
             # 过滤出属于目标网络的IP地址
-            relevant_ips: list[dict[str, Any]] = []
+            relevant_ips: list[dict[str, str | int | None]] = []
             for ip in ips:
                 try:
                     ip_obj = ipaddress.ip_address(ip[2])
@@ -438,11 +438,11 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def get_all_networks(self) -> list[dict[str, Any]]:
+    def get_all_networks(self) -> list[dict[str, str | int]]:
         """获取所有网络
         
         Returns:
-            list[dict[str, Any]]: 网络列表
+            list[dict[str, str | int]]: 网络列表
         """
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
@@ -465,7 +465,7 @@ class IPAMSQLite:
             except Exception:
                 pass
         
-        network_list: list[dict[str, Any]] = []
+        network_list: list[dict[str, str | int]] = []
         for network in network_rows:
             # 计算网络及其子网络的IP数量
             ip_count = self.get_network_ip_count(network[1], ip_objects)
@@ -620,14 +620,14 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"删除IP地址记录失败: {str(e)}"
     
-    def get_ip_info(self, ip_address: str) -> dict[str, Any] | None:
+    def get_ip_info(self, ip_address: str) -> dict[str, str | int] | None:
         """获取IP地址信息
         
         Args:
             ip_address: IP地址
         
         Returns:
-            dict[str, Any] or None: IP地址信息，包含hostname, description等字段，失败返回None
+            dict[str, str | int] or None: IP地址信息，包含hostname, description等字段，失败返回None
         """
         conn = None
         try:
@@ -899,11 +899,11 @@ class IPAMSQLite:
         except Exception:
             return 'available'
     
-    def get_expired_ips(self) -> list[dict[str, Any]]:
+    def get_expired_ips(self) -> list[dict[str, str | int | None]]:
         """获取所有过期的IP地址
         
         Returns:
-            list[dict[str, Any]]: 过期IP地址列表
+            list[dict[str, str | int | None]]: 过期IP地址列表
         """
         try:
             conn = sqlite3.connect(self.db_file)
@@ -916,7 +916,7 @@ class IPAMSQLite:
             WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
-            expired_ips: list[dict[str, Any]] = []
+            expired_ips: list[dict[str, str | int | None]] = []
             for row in cursor.fetchall():
                 expired_ips.append({
                     'id': row[0],
@@ -973,14 +973,14 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"自动释放过期IP地址失败: {str(e)}", 0
     
-    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, Any]]:
+    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, str | int | None]]:
         """获取即将过期的IP地址
         
         Args:
             days_ahead: 提前多少天提醒
         
         Returns:
-            list[dict[str, Any]]: 即将过期的IP地址列表
+            list[dict[str, str | int | None]]: 即将过期的IP地址列表
         """
         try:
             conn = sqlite3.connect(self.db_file)
@@ -997,7 +997,7 @@ class IPAMSQLite:
             WHERE expiry_date BETWEEN ? AND ? AND status IN ('allocated', 'reserved')
             ''', (now.strftime("%Y-%m-%d %H:%M:%S"), future_date.strftime("%Y-%m-%d %H:%M:%S")))
             
-            expiring_ips: list[dict[str, Any]] = []
+            expiring_ips: list[dict[str, str | int | None]] = []
             for row in cursor.fetchall():
                 expiring_ips.append({
                     'id': row[0],
@@ -1224,7 +1224,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"移除网络失败: {str(e)}"
     
-    def get_overall_stats(self) -> Dict[str, int]:
+    def get_overall_stats(self) -> dict[str, int]:
         """获取整体统计信息
         
         Returns:
