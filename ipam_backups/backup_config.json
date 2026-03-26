@@ -1,4 +1,5 @@
 {
   "last_backup_time": "2026-03-26T16:29:09.496691",
-  "last_backup_frequency": "daily"
+  "last_backup_frequency": "daily",
+  "auto_backup_frequency": "每周"
 }

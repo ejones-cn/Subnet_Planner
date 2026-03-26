@@ -13,7 +13,7 @@ import platform
 import zipfile
 import csv
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import ipaddress
 
@@ -108,7 +108,7 @@ class IPAMSQLite:
         conn.commit()
         conn.close()
     
-    def migrate_from_json(self, json_file: str = "ipam_data.json") -> Tuple[bool, str]:
+    def migrate_from_json(self, json_file: str = "ipam_data.json") -> tuple[bool, str]:
         """从JSON文件迁移数据
         
         Args:
@@ -122,7 +122,7 @@ class IPAMSQLite:
         
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
-                data: dict[str, Any] = json.load(f)
+                data = json.load(f)
         except Exception as e:
             return False, f"读取JSON文件失败: {str(e)}"
         
@@ -166,15 +166,15 @@ class IPAMSQLite:
             
             # 迁移allocation_history
             for history_item in data.get('allocation_history', []):
-                network_id: int | None = networks_map.get(history_item.get('network'))
-                if not network_id:
+                history_network_id: int | None = networks_map.get(history_item.get('network'))
+                if not history_network_id:
                     continue
                 
                 _ = cursor.execute('''
                 INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
                 performed_by, performed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (network_id, history_item.get('ip_address'), history_item.get('action'),
+                ''', (history_network_id, history_item.get('ip_address'), history_item.get('action'),
                       history_item.get('hostname'), history_item.get('description'),
                       history_item.get('performed_by'), history_item.get('timestamp')))
             
@@ -187,7 +187,7 @@ class IPAMSQLite:
             conn.close()
             return False, f"数据迁移失败: {str(e)}"
     
-    def get_most_specific_network(self, ip_address: str) -> Optional[Dict[str, Any]]:
+    def get_most_specific_network(self, ip_address: str) -> dict[str, Any] | None:
         """获取IP地址最具体的归属网络
         
         Args:
@@ -226,7 +226,7 @@ class IPAMSQLite:
         
         return most_specific_network
     
-    def add_network(self, network_str: str, description: str = "") -> Tuple[bool, str]:
+    def add_network(self, network_str: str, description: str = "") -> tuple[bool, str]:
         """添加网络
         
         Args:
@@ -290,7 +290,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"添加网络失败: {str(e)}"
     
-    def allocate_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: Optional[str] = None) -> Tuple[bool, str]:
+    def allocate_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None) -> tuple[bool, str]:
         """分配IP地址
         
         Args:
@@ -391,7 +391,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"分配IP地址失败: {str(e)}"
     
-    def get_network_ips(self, network_str: str) -> List[Dict[str, Any]]:
+    def get_network_ips(self, network_str: str) -> list[dict[str, Any]]:
         """获取网络及其所有子网络的IP地址
         
         Args:
@@ -438,7 +438,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def get_all_networks(self) -> List[Dict[str, Any]]:
+    def get_all_networks(self) -> list[dict[str, Any]]:
         """获取所有网络
         
         Returns:
@@ -481,7 +481,7 @@ class IPAMSQLite:
         
         return network_list
     
-    def get_network_ip_count(self, network_address: str, ip_objects: Optional[List[ipaddress.IPv4Address | ipaddress.IPv6Address]] = None) -> int:
+    def get_network_ip_count(self, network_address: str, ip_objects: list[ipaddress.IPv4Address | ipaddress.IPv6Address] | None = None) -> int:
         """计算网络及其所有子网络的IP数量
         
         Args:
@@ -525,7 +525,7 @@ class IPAMSQLite:
         except Exception:
             return 0
     
-    def release_ip(self, ip_address: str) -> Tuple[bool, str]:
+    def release_ip(self, ip_address: str) -> tuple[bool, str]:
         """释放IP地址
         
         Args:
@@ -581,7 +581,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"释放IP地址失败: {str(e)}"
     
-    def delete_ip_by_id(self, ip_id: int) -> Tuple[bool, str]:
+    def delete_ip_by_id(self, ip_id: int) -> tuple[bool, str]:
         """根据ID删除IP地址记录
         
         Args:
@@ -620,7 +620,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"删除IP地址记录失败: {str(e)}"
     
-    def get_ip_info(self, ip_address: str) -> Optional[Dict[str, Any]]:
+    def get_ip_info(self, ip_address: str) -> dict[str, Any] | None:
         """获取IP地址信息
         
         Args:
@@ -652,7 +652,7 @@ class IPAMSQLite:
             if conn:
                 conn.close()
     
-    def update_ip_info(self, ip_address: str, hostname: str, description: str) -> Tuple[bool, str]:
+    def update_ip_info(self, ip_address: str, hostname: str, description: str) -> tuple[bool, str]:
         """更新IP地址信息
         
         Args:
@@ -697,7 +697,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址信息失败: {str(e)}"
 
-    def update_ip_expiry(self, ip_address: str, expiry_date: Optional[str]) -> Tuple[bool, str]:
+    def update_ip_expiry(self, ip_address: str, expiry_date: str | None) -> tuple[bool, str]:
         """更新IP地址过期日期
         
         Args:
@@ -746,7 +746,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址过期日期失败: {str(e)}"
     
-    def batch_update_ip_expiry(self, ip_addresses: List[str], expiry_date: Optional[str]) -> Tuple[bool, str, int]:
+    def batch_update_ip_expiry(self, ip_addresses: list[str], expiry_date: str | None) -> tuple[bool, str, int]:
         """批量更新IP地址过期日期
         
         Args:
@@ -803,7 +803,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"批量更新IP地址过期日期失败: {str(e)}", 0
     
-    def _validate_expiry_date(self, expiry_date: Optional[str]) -> Optional[str]:
+    def _validate_expiry_date(self, expiry_date: str | None) -> str | None:
         """验证并标准化过期日期格式
         
         Args:
@@ -838,7 +838,7 @@ class IPAMSQLite:
         
         return None
 
-    def cleanup_available_ips(self) -> Tuple[bool, str]:
+    def cleanup_available_ips(self) -> tuple[bool, str]:
         """清理所有可用状态的IP地址
         
         Returns:
@@ -899,7 +899,7 @@ class IPAMSQLite:
         except Exception:
             return 'available'
     
-    def get_expired_ips(self) -> List[Dict[str, Any]]:
+    def get_expired_ips(self) -> list[dict[str, Any]]:
         """获取所有过期的IP地址
         
         Returns:
@@ -934,7 +934,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def auto_release_expired_ips(self) -> Tuple[bool, str, int]:
+    def auto_release_expired_ips(self) -> tuple[bool, str, int]:
         """自动释放过期的IP地址
         
         Returns:
@@ -973,7 +973,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"自动释放过期IP地址失败: {str(e)}", 0
     
-    def get_expiring_ips(self, days_ahead: int = 7) -> List[Dict[str, Any]]:
+    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, Any]]:
         """获取即将过期的IP地址
         
         Args:
@@ -1015,7 +1015,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def reserve_ip(self, network_str: str, ip_address: str, description: str = "") -> Tuple[bool, str]:
+    def reserve_ip(self, network_str: str, ip_address: str, description: str = "") -> tuple[bool, str]:
         """保留IP地址
         
         Args:
@@ -1087,7 +1087,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"保留IP地址失败: {str(e)}"
 
-    def update_network_description(self, network_str: str, description: str) -> Tuple[bool, str]:
+    def update_network_description(self, network_str: str, description: str) -> tuple[bool, str]:
         """更新网络描述
         
         Args:
@@ -1125,7 +1125,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新网络描述失败: {str(e)}"
     
-    def update_network(self, old_network: str, new_network: str) -> Tuple[bool, str]:
+    def update_network(self, old_network: str, new_network: str) -> tuple[bool, str]:
         """更新网络地址
         
         Args:
@@ -1177,7 +1177,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新网络地址失败: {str(e)}"
 
-    def remove_network(self, network_str: str) -> Tuple[bool, str]:
+    def remove_network(self, network_str: str) -> tuple[bool, str]:
         """移除网络
         
         Args:
