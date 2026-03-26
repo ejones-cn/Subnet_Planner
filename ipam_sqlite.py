@@ -13,7 +13,7 @@ import platform
 import zipfile
 import csv
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import ipaddress
 
@@ -34,7 +34,7 @@ class IPAMSQLite:
             os.makedirs(self.backup_dir)
         self.init_db()
     
-    def init_db(self):
+    def init_db(self) -> None:
         """初始化数据库"""
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
@@ -108,7 +108,7 @@ class IPAMSQLite:
         conn.commit()
         conn.close()
     
-    def migrate_from_json(self, json_file: str = "ipam_data.json") -> tuple[bool, str]:
+    def migrate_from_json(self, json_file: str = "ipam_data.json") -> Tuple[bool, str]:
         """从JSON文件迁移数据
         
         Args:
@@ -136,11 +136,11 @@ class IPAMSQLite:
             # 迁移networks
             networks_map: dict[str, int] = {}  # 用于映射网络地址到ID
             for network_str, network_data in data.get('networks', {}).items():
-                created_at: str = network_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                network_created_at: str = network_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 _ = cursor.execute('''
                 INSERT OR IGNORE INTO networks (network_address, description, created_at, updated_at)
                 VALUES (?, ?, ?, ?)
-                ''', (network_str, network_data.get('description', ''), created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                ''', (network_str, network_data.get('description', ''), network_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             
             # 获取所有网络的ID
             _ = cursor.execute('SELECT id, network_address FROM networks')
@@ -154,7 +154,7 @@ class IPAMSQLite:
                     continue
                 
                 for ip_str, ip_data in network_data.get('ip_addresses', {}).items():
-                    created_at: str = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    ip_created_at: str = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                     _ = cursor.execute('''
                     INSERT OR IGNORE INTO ip_addresses (network_id, ip_address, status, hostname, description, 
                     allocated_at, allocated_by, expiry_date, created_at, updated_at)
@@ -162,7 +162,7 @@ class IPAMSQLite:
                     ''', (network_id, ip_str, ip_data.get('status', 'available'), 
                           ip_data.get('hostname', ''), ip_data.get('description', ''),
                           ip_data.get('allocated_at'), ip_data.get('allocated_by'),
-                          ip_data.get('expiry_date'), created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                          ip_data.get('expiry_date'), ip_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             
             # 迁移allocation_history
             for history_item in data.get('allocation_history', []):
@@ -187,7 +187,7 @@ class IPAMSQLite:
             conn.close()
             return False, f"数据迁移失败: {str(e)}"
     
-    def get_most_specific_network(self, ip_address: str) -> dict[str, Any] | None:
+    def get_most_specific_network(self, ip_address: str) -> Optional[Dict[str, Any]]:
         """获取IP地址最具体的归属网络
         
         Args:
@@ -226,7 +226,7 @@ class IPAMSQLite:
         
         return most_specific_network
     
-    def add_network(self, network_str: str, description: str = "") -> tuple[bool, str]:
+    def add_network(self, network_str: str, description: str = "") -> Tuple[bool, str]:
         """添加网络
         
         Args:
@@ -290,7 +290,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"添加网络失败: {str(e)}"
     
-    def allocate_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None) -> tuple[bool, str]:
+    def allocate_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: Optional[str] = None) -> Tuple[bool, str]:
         """分配IP地址
         
         Args:
@@ -391,14 +391,14 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"分配IP地址失败: {str(e)}"
     
-    def get_network_ips(self, network_str: str) -> list[dict[str, Any]]:
+    def get_network_ips(self, network_str: str) -> List[Dict[str, Any]]:
         """获取网络及其所有子网络的IP地址
         
         Args:
             network_str: 网络地址（CIDR格式）
         
         Returns:
-            list[dict]: IP地址列表
+            list[dict[str, Any]]: IP地址列表
         """
         try:
             ip_network = ipaddress.ip_network(network_str, strict=False)
@@ -413,7 +413,7 @@ class IPAMSQLite:
             conn.close()
             
             # 过滤出属于目标网络的IP地址
-            relevant_ips = []
+            relevant_ips: list[dict[str, Any]] = []
             for ip in ips:
                 try:
                     ip_obj = ipaddress.ip_address(ip[2])
@@ -438,11 +438,11 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def get_all_networks(self) -> list[dict[str, Any]]:
+    def get_all_networks(self) -> List[Dict[str, Any]]:
         """获取所有网络
         
         Returns:
-            list[dict]: 网络列表
+            list[dict[str, Any]]: 网络列表
         """
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
@@ -465,7 +465,7 @@ class IPAMSQLite:
             except Exception:
                 pass
         
-        network_list = []
+        network_list: list[dict[str, Any]] = []
         for network in network_rows:
             # 计算网络及其子网络的IP数量
             ip_count = self.get_network_ip_count(network[1], ip_objects)
@@ -481,7 +481,7 @@ class IPAMSQLite:
         
         return network_list
     
-    def get_network_ip_count(self, network_address: str, ip_objects: list[ipaddress.IPv4Address | ipaddress.IPv6Address] | None = None) -> int:
+    def get_network_ip_count(self, network_address: str, ip_objects: Optional[List[ipaddress.IPv4Address | ipaddress.IPv6Address]] = None) -> int:
         """计算网络及其所有子网络的IP数量
         
         Args:
@@ -525,7 +525,7 @@ class IPAMSQLite:
         except Exception:
             return 0
     
-    def release_ip(self, ip_address: str) -> tuple[bool, str]:
+    def release_ip(self, ip_address: str) -> Tuple[bool, str]:
         """释放IP地址
         
         Args:
@@ -542,38 +542,46 @@ class IPAMSQLite:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
             
-            # 查找IP地址
+            # 查找所有该IP地址的记录
             _ = cursor.execute('SELECT id, network_id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
-            ip_row = cursor.fetchone()
-            if not ip_row:
+            ip_rows = cursor.fetchall()
+            
+            if not ip_rows:
                 conn.close()
                 return False, "IP地址不存在"
             
-            ip_id = ip_row[0]
-            network_id = ip_row[1]
-            status = ip_row[2]
-            
-            if status == 'available':
+            # 检查是否有可释放的IP地址
+            allocatable_rows = [row for row in ip_rows if row[2] != 'available']
+            if not allocatable_rows:
                 conn.close()
                 return False, "IP地址未被分配或已被释放"
             
-            # 释放IP地址
+            # 释放所有未释放的IP地址记录
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', ('available', now, ip_id))
+            released_count = 0
             
-            # 记录释放历史
-            _ = cursor.execute('''
-            INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (network_id, ip_address, 'release', 'admin', now))
+            for ip_row in allocatable_rows:
+                ip_id = ip_row[0]
+                network_id = ip_row[1]
+                
+                # 释放IP地址
+                _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', ('available', now, ip_id))
+                
+                # 记录释放历史
+                _ = cursor.execute('''
+                INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (network_id, ip_address, 'release', 'admin', now))
+                
+                released_count += 1
             
             conn.commit()
             conn.close()
-            return True, "IP地址释放成功"
+            return True, f"成功释放 {released_count} 个IP地址记录"
         except Exception as e:
             return False, f"释放IP地址失败: {str(e)}"
     
-    def delete_ip_by_id(self, ip_id: int) -> tuple[bool, str]:
+    def delete_ip_by_id(self, ip_id: int) -> Tuple[bool, str]:
         """根据ID删除IP地址记录
         
         Args:
@@ -612,14 +620,14 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"删除IP地址记录失败: {str(e)}"
     
-    def get_ip_info(self, ip_address: str) -> dict[str, Any] | None:
+    def get_ip_info(self, ip_address: str) -> Optional[Dict[str, Any]]:
         """获取IP地址信息
         
         Args:
             ip_address: IP地址
         
         Returns:
-            dict or None: IP地址信息，包含hostname, description等字段，失败返回None
+            dict[str, Any] or None: IP地址信息，包含hostname, description等字段，失败返回None
         """
         conn = None
         try:
@@ -644,7 +652,7 @@ class IPAMSQLite:
             if conn:
                 conn.close()
     
-    def update_ip_info(self, ip_address: str, hostname: str, description: str) -> tuple[bool, str]:
+    def update_ip_info(self, ip_address: str, hostname: str, description: str) -> Tuple[bool, str]:
         """更新IP地址信息
         
         Args:
@@ -689,7 +697,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址信息失败: {str(e)}"
 
-    def update_ip_expiry(self, ip_address: str, expiry_date: str | None):
+    def update_ip_expiry(self, ip_address: str, expiry_date: Optional[str]) -> Tuple[bool, str]:
         """更新IP地址过期日期
         
         Args:
@@ -697,7 +705,7 @@ class IPAMSQLite:
             expiry_date: 过期日期（格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS，传入None则清除过期日期）
             
         Returns:
-            tuple: (bool, str) - (是否更新成功, 错误信息)
+            tuple[bool, str]: (是否更新成功, 错误信息)
         """
         # 验证日期格式
         if expiry_date is not None:
@@ -738,7 +746,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址过期日期失败: {str(e)}"
     
-    def batch_update_ip_expiry(self, ip_addresses: list[str], expiry_date: str | None) -> tuple[bool, str, int]:
+    def batch_update_ip_expiry(self, ip_addresses: List[str], expiry_date: Optional[str]) -> Tuple[bool, str, int]:
         """批量更新IP地址过期日期
         
         Args:
@@ -795,7 +803,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"批量更新IP地址过期日期失败: {str(e)}", 0
     
-    def _validate_expiry_date(self, expiry_date: str | None) -> str | None:
+    def _validate_expiry_date(self, expiry_date: Optional[str]) -> Optional[str]:
         """验证并标准化过期日期格式
         
         Args:
@@ -830,7 +838,7 @@ class IPAMSQLite:
         
         return None
 
-    def cleanup_available_ips(self) -> tuple[bool, str]:
+    def cleanup_available_ips(self) -> Tuple[bool, str]:
         """清理所有可用状态的IP地址
         
         Returns:
@@ -891,11 +899,11 @@ class IPAMSQLite:
         except Exception:
             return 'available'
     
-    def get_expired_ips(self) -> list[dict[str, Any]]:
+    def get_expired_ips(self) -> List[Dict[str, Any]]:
         """获取所有过期的IP地址
         
         Returns:
-            list[dict]: 过期IP地址列表
+            list[dict[str, Any]]: 过期IP地址列表
         """
         try:
             conn = sqlite3.connect(self.db_file)
@@ -908,7 +916,7 @@ class IPAMSQLite:
             WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
-            expired_ips = []
+            expired_ips: list[dict[str, Any]] = []
             for row in cursor.fetchall():
                 expired_ips.append({
                     'id': row[0],
@@ -926,7 +934,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def auto_release_expired_ips(self) -> tuple[bool, str, int]:
+    def auto_release_expired_ips(self) -> Tuple[bool, str, int]:
         """自动释放过期的IP地址
         
         Returns:
@@ -965,14 +973,14 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"自动释放过期IP地址失败: {str(e)}", 0
     
-    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, Any]]:
+    def get_expiring_ips(self, days_ahead: int = 7) -> List[Dict[str, Any]]:
         """获取即将过期的IP地址
         
         Args:
             days_ahead: 提前多少天提醒
         
         Returns:
-            list[dict]: 即将过期的IP地址列表
+            list[dict[str, Any]]: 即将过期的IP地址列表
         """
         try:
             conn = sqlite3.connect(self.db_file)
@@ -989,7 +997,7 @@ class IPAMSQLite:
             WHERE expiry_date BETWEEN ? AND ? AND status IN ('allocated', 'reserved')
             ''', (now.strftime("%Y-%m-%d %H:%M:%S"), future_date.strftime("%Y-%m-%d %H:%M:%S")))
             
-            expiring_ips = []
+            expiring_ips: list[dict[str, Any]] = []
             for row in cursor.fetchall():
                 expiring_ips.append({
                     'id': row[0],
@@ -1007,7 +1015,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def reserve_ip(self, network_str: str, ip_address: str, description: str = "") -> tuple[bool, str]:
+    def reserve_ip(self, network_str: str, ip_address: str, description: str = "") -> Tuple[bool, str]:
         """保留IP地址
         
         Args:
@@ -1079,7 +1087,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"保留IP地址失败: {str(e)}"
 
-    def update_network_description(self, network_str: str, description: str) -> tuple[bool, str]:
+    def update_network_description(self, network_str: str, description: str) -> Tuple[bool, str]:
         """更新网络描述
         
         Args:
@@ -1117,7 +1125,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新网络描述失败: {str(e)}"
     
-    def update_network(self, old_network: str, new_network: str) -> tuple[bool, str]:
+    def update_network(self, old_network: str, new_network: str) -> Tuple[bool, str]:
         """更新网络地址
         
         Args:
@@ -1169,7 +1177,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新网络地址失败: {str(e)}"
 
-    def remove_network(self, network_str: str) -> tuple[bool, str]:
+    def remove_network(self, network_str: str) -> Tuple[bool, str]:
         """移除网络
         
         Args:
@@ -1216,11 +1224,11 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"移除网络失败: {str(e)}"
     
-    def get_overall_stats(self) -> dict[str, int]:
+    def get_overall_stats(self) -> Dict[str, int]:
         """获取整体统计信息
         
         Returns:
-            dict: 整体统计信息
+            dict[str, int]: 整体统计信息
         """
         try:
             conn = sqlite3.connect(self.db_file)
@@ -1310,7 +1318,7 @@ class IPAMSQLite:
         except Exception:
             return False
 
-    def backup_data(self, backup_name: str | None = None, backup_type: str = 'auto', frequency: str = 'hourly', compress: bool = False, encrypt: bool = False):
+    def backup_data(self, backup_name: Optional[str] = None, backup_type: str = 'auto', frequency: str = 'hourly', compress: bool = False, encrypt: bool = False) -> Optional[str]:
         """备份IPAM数据
         
         Args:
@@ -1321,7 +1329,7 @@ class IPAMSQLite:
             encrypt: 是否加密备份文件
             
         Returns:
-            str: 备份文件路径
+            str | None: 备份文件路径，不需要备份时返回None
         """
         try:
             # 检查是否需要自动备份
@@ -1651,7 +1659,7 @@ class IPAMSQLite:
         except Exception:
             return False
     
-    def export_data(self, export_file: str, format: str = 'json', networks: list[str] | None = None) -> bool:
+    def export_data(self, export_file: str, format: str = 'json', networks: Optional[List[str]] = None) -> bool:
         """导出IPAM数据
         
         Args:
@@ -1783,7 +1791,7 @@ class IPAMSQLite:
         except Exception:
             return False
     
-    def get_allocation_history(self, limit: int = 100) -> list[dict[str, Any]]:
+    def get_allocation_history(self, limit: int = 100) -> List[Dict[str, Any]]:
         """获取分配历史记录
         
         Args:
@@ -1825,7 +1833,7 @@ class IPAMSQLite:
     
 
     
-    def get_network_by_id(self, network_id: int) -> dict[str, Any] | None:
+    def get_network_by_id(self, network_id: int) -> Optional[Dict[str, Any]]:
         """通过ID获取网络信息
         
         Args:
@@ -1855,7 +1863,7 @@ class IPAMSQLite:
         except Exception:
             return None
     
-    def get_ip_by_id(self, ip_id: int) -> dict[str, Any] | None:
+    def get_ip_by_id(self, ip_id: int) -> Optional[Dict[str, Any]]:
         """通过ID获取IP地址信息
         
         Args:
@@ -1897,7 +1905,7 @@ class IPAMSQLite:
         except Exception:
             return None
     
-    def list_backups(self) -> list[dict[str, Any]]:
+    def list_backups(self) -> List[Dict[str, Any]]:
         """列出所有备份文件
         
         Returns:

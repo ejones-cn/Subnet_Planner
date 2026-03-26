@@ -9054,14 +9054,13 @@ class SubnetPlannerApp:
         ip_button_frame.grid_columnconfigure(7, weight=1)
         
         # 一行按钮，按要求排序
-        ttk.Button(ip_button_frame, text=_('allocate_address'), command=self.allocate_ip).grid(row=0, column=0, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('reserve_address'), command=self.reserve_ip).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('batch_allocate'), command=self.batch_allocate_ip).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('auto_allocate'), command=self.auto_allocate_ip).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('release_address'), command=self.release_ip_address).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('check_expired_ips'), command=self.check_expired_ips).grid(row=0, column=6, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('batch_set_expiry_date'), command=self.batch_set_expiry_date).grid(row=0, column=7, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('allocate_reserve_address'), command=self.allocate_reserve_ip).grid(row=0, column=0, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('batch_allocate'), command=self.batch_allocate_ip).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('auto_allocate'), command=self.auto_allocate_ip).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('release_address'), command=self.release_ip_address).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('check_expired_ips'), command=self.check_expired_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('batch_set_expiry_date'), command=self.batch_set_expiry_date).grid(row=0, column=6, padx=2, pady=2, sticky="ew")
         
         # IP地址列表 - 使用LabelFrame，和IPv6查询结果表保持一致
         # padding=(10, 0, 0, 10) 表示左边距10，上边距0，右边距0，下边距10
@@ -12984,6 +12983,51 @@ class SubnetPlannerApp:
         # 应用过滤
         self.apply_filter()
     
+    def allocate_reserve_ip(self):
+        """分配/保留IP地址"""
+        selected_items = self.ipam_network_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_network'))
+            return
+        
+        network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
+        # 显示IP地址分配/保留对话框，传递network参数
+        dialog_result = self.show_ip_address_dialog(_('allocate_reserve_address'), 'allocate_reserve', network=network)
+        if not dialog_result:
+            return
+        
+        ip_address = dialog_result['ip']
+        hostname = dialog_result['hostname']
+        description = dialog_result['description']
+        expiry_date = dialog_result.get('expiry_date', '')
+        action = dialog_result.get('action', 'allocate')
+        
+        if not ip_address:
+            self.show_info(_('hint'), _('please_enter_ip_address'))
+            return
+        
+        # 根据用户选择的操作类型执行相应的操作
+        if action == 'allocate':
+            if not hostname:
+                self.show_info(_('hint'), _('please_enter_hostname'))
+                return
+            # 调用IPAM模块分配IP地址
+            success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+        else:  # reserve
+            # 调用IPAM模块保留IP地址
+            success, message = self.ipam.reserve_ip(network, ip_address, description)
+        
+        if success:
+            # 显示成功消息
+            self.show_info(_('success'), message)
+            # 刷新IP地址列表
+            self.refresh_ipam_ips(network)
+            self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+        else:
+            # 显示错误消息
+            self.show_error(_('error'), message)
+    
     def allocate_ip(self):
         """分配IP地址"""
         selected_items = self.ipam_network_tree.selection()
@@ -13441,7 +13485,7 @@ class SubnetPlannerApp:
         dialog = self.create_dialog(title, 400, height)
         
         # 创建主框架
-        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame = ttk.Frame(dialog, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 配置网格布局
@@ -13558,8 +13602,8 @@ class SubnetPlannerApp:
         button_frame = ttk.Frame(dialog)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
         
-        # 确定按钮
-        def on_ok():
+        # 通用的验证和保存函数
+        def validate_and_save(action):
             # 只有在显示IP输入框时才获取IP地址，自动分配时IP为空字符串
             ip = ip_entry.get().strip() if ip_entry else ''
             hostname = hostname_entry.get().strip()
@@ -13578,27 +13622,39 @@ class SubnetPlannerApp:
                     if ip_address_obj not in ip_network:
                         # 显示错误提示
                         self.show_error(_('error'), "IP地址不在所选网络范围内")
-                        return
+                        return False
                 except Exception as e:
                     # IP地址格式错误或网络解析失败
                     self.show_error(_('error'), _('invalid_ip_address_format'))
-                    return
+                    return False
             
             # 保存输入值
             dialog.ip = ip
             dialog.hostname = hostname
             dialog.description = description
             dialog.expiry_date = expiry_date
+            dialog.action = action
             dialog.result = True
             dialog.destroy()
+            return True
         
         # 取消按钮
         def on_cancel():
             dialog.result = False
             dialog.destroy()
         
-        ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text=_('cancel'), command=on_cancel).pack(side=tk.RIGHT, padx=5)
+        # 根据操作类型显示不同的按钮
+        if action_type == 'allocate_reserve':
+            # 分配/保留对话框：显示"分配地址"和"保留地址"按钮
+            ttk.Button(button_frame, text=_('reserve_address'), command=lambda: validate_and_save('reserve')).pack(side=tk.RIGHT, padx=(5, 15))
+            ttk.Button(button_frame, text=_('allocate_address'), command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
+        else:
+            # 其他对话框：显示"确定"和"取消"按钮
+            def on_ok():
+                validate_and_save('allocate' if action_type == 'allocate' else 'reserve')
+            
+            ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.RIGHT, padx=(5, 15))
+            ttk.Button(button_frame, text=_('cancel'), command=on_cancel).pack(side=tk.RIGHT, padx=5)
         
         # 等待对话框关闭
         dialog.wait_window()
@@ -13609,7 +13665,8 @@ class SubnetPlannerApp:
                 'ip': getattr(dialog, 'ip', ''),
                 'hostname': getattr(dialog, 'hostname', ''),
                 'description': getattr(dialog, 'description', ''),
-                'expiry_date': getattr(dialog, 'expiry_date', '')
+                'expiry_date': getattr(dialog, 'expiry_date', ''),
+                'action': getattr(dialog, 'action', 'allocate')
             }
         else:
             return None

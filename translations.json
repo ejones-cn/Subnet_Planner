@@ -2094,7 +2094,7 @@
     "ja": "移動または交換する記録を選択してください",
     "zh_tw": "請選擇要移動或交換的記錄",
     "ko": "이동하거나 교체할 레코드를 선택하십시오"
-,
+  },
   "data_import_summary": {
     "zh": "共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效",
     "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
@@ -2255,6 +2255,13 @@
     "en": "Reserve Address",
     "ja": "アドレスを予約",
     "ko": "주소 예약"
+  },
+  "allocate_reserve_address": {
+    "zh": "分配/保留",
+    "zh_tw": "分配/保留",
+    "en": "Allocate/Reserve",
+    "ja": "割り当て/予約",
+    "ko": "할당/예약"
   },
   "restore_allocation": {
     "zh": "恢复分配",
