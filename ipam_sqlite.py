@@ -120,7 +120,7 @@ class IPAMSQLite:
         
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+                data: dict[str, object] = json.load(f)
         except Exception as e:
             return False, f"读取JSON文件失败: {str(e)}"
         
@@ -133,12 +133,12 @@ class IPAMSQLite:
             
             # 迁移networks
             networks_map: dict[str, int] = {}  # 用于映射网络地址到ID
-            data_dict = data if isinstance(data, dict) else {}
-            networks_data = data_dict.get('networks', {})
+            data_dict: dict[str, object] = data
+            networks_data: dict[str, object] = data_dict.get('networks', {}) if isinstance(data_dict.get('networks'), dict) else {}
             if isinstance(networks_data, dict):
                 for net_str, net_data in networks_data.items():
                     if isinstance(net_str, str) and isinstance(net_data, dict):
-                        network_created_at = net_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                        network_created_at: str = net_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                         if isinstance(network_created_at, str):
                             _ = cursor.execute('''
                             INSERT OR IGNORE INTO networks (network_address, description, created_at, updated_at)
@@ -147,7 +147,7 @@ class IPAMSQLite:
             
             # 获取所有网络的ID
             _ = cursor.execute('SELECT id, network_address FROM networks')
-            rows = cursor.fetchall()
+            rows: list[tuple[int, str]] = cursor.fetchall()
             for row in rows:
                 if isinstance(row, tuple) and len(row) >= 2:
                     networks_map[str(row[1])] = int(row[0])
@@ -160,11 +160,11 @@ class IPAMSQLite:
                         if not network_id:
                             continue
                         
-                        ip_addresses_data = net_data.get('ip_addresses', {})
+                        ip_addresses_data: dict[str, object] = net_data.get('ip_addresses', {}) if isinstance(net_data.get('ip_addresses'), dict) else {}
                         if isinstance(ip_addresses_data, dict):
                             for ip_str, ip_data in ip_addresses_data.items():
                                 if isinstance(ip_str, str) and isinstance(ip_data, dict):
-                                    ip_created_at = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                                    ip_created_at: str = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                                     if isinstance(ip_created_at, str):
                                         _ = cursor.execute('''
                                         INSERT OR IGNORE INTO ip_addresses (network_id, ip_address, status, hostname, description, 
@@ -176,11 +176,11 @@ class IPAMSQLite:
                                               ip_data.get('expiry_date'), ip_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             
             # 迁移allocation_history
-            allocation_history_data = data_dict.get('allocation_history', [])
+            allocation_history_data: list[object] = data_dict.get('allocation_history', []) if isinstance(data_dict.get('allocation_history'), list) else []
             if isinstance(allocation_history_data, list):
                 for history_item in allocation_history_data:
                     if isinstance(history_item, dict):
-                        network = history_item.get('network')
+                        network: str | None = history_item.get('network')
                         if isinstance(network, str):
                             history_network_id = networks_map.get(network)
                             if history_network_id:
@@ -214,7 +214,7 @@ class IPAMSQLite:
         cursor = conn.cursor()
         
         _ = cursor.execute('SELECT id, network_address, description, created_at, updated_at FROM networks')
-        network_rows = cursor.fetchall()
+        network_rows: list[tuple[int, str, str | None, str | None, str | None]] = cursor.fetchall()
         
         conn.close()
         
@@ -289,23 +289,34 @@ class IPAMSQLite:
             _ = cursor.execute('SELECT id, network_id, ip_address FROM ip_addresses')
             ips = cursor.fetchall()
             
+            def _validate_ip_item(ip_item: object) -> bool:
+                """验证IP项是否为有效的元组"""
+                return isinstance(ip_item, tuple) and len(ip_item) >= 3
+
+            def _validate_network_row(network_row: object) -> bool:
+                """验证网络行是否为有效的元组"""
+                return isinstance(network_row, tuple) and len(network_row) >= 1
+
             for ip_item in ips:
                 try:
-                    if isinstance(ip_item, tuple) and len(ip_item) >= 3:
-                        ip_id: int = int(ip_item[0])
-                        current_network_id: int = int(ip_item[1])
-                        ip_address: str = str(ip_item[2])
-                        ip_obj = ipaddress.ip_address(ip_address)
-                        if ip_obj in ip_network:
-                            # 检查是否是更具体的网络
-                            _ = cursor.execute('SELECT network_address FROM networks WHERE id = ?', (current_network_id,))
-                            current_network_row = cursor.fetchone()
-                            if current_network_row and isinstance(current_network_row, tuple) and len(current_network_row) >= 1:
-                                current_network_address: str = str(current_network_row[0])
-                                current_network_obj = ipaddress.ip_network(current_network_address)
-                                if ip_network.prefixlen > current_network_obj.prefixlen:
-                                    # 更新归属关系
-                                    _ = cursor.execute('UPDATE ip_addresses SET network_id = ? WHERE id = ?', (network_id, ip_id))
+                    if not _validate_ip_item(ip_item):
+                        continue
+                    ip_id: int = int(ip_item[0])
+                    current_network_id: int = int(ip_item[1])
+                    ip_address: str = str(ip_item[2])
+                    ip_obj = ipaddress.ip_address(ip_address)
+                    if ip_obj not in ip_network:
+                        continue
+                    # 检查是否是更具体的网络
+                    _ = cursor.execute('SELECT network_address FROM networks WHERE id = ?', (current_network_id,))
+                    current_network_row = cursor.fetchone()
+                    if not current_network_row or not _validate_network_row(current_network_row):
+                        continue
+                    current_network_address: str = str(current_network_row[0])
+                    current_network_obj = ipaddress.ip_network(current_network_address)
+                    if ip_network.prefixlen > current_network_obj.prefixlen:
+                        # 更新归属关系
+                        _ = cursor.execute('UPDATE ip_addresses SET network_id = ? WHERE id = ?', (network_id, ip_id))
                 except Exception:
                     pass
             
@@ -351,7 +362,7 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 network_row = cursor.fetchone()
-                if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
+                if not isinstance(network_row, tuple) or len(network_row) < 1:
                     conn.close()
                     return False, "网络不存在"
                 network_id = int(network_row[0])
@@ -368,7 +379,7 @@ class IPAMSQLite:
                 
                 # 检查IP地址是否已存在
                 _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
-                ip_row = cursor.fetchone()
+                ip_row: tuple[int, str] | None = cursor.fetchone()
                 
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
@@ -434,7 +445,7 @@ class IPAMSQLite:
             
             # 获取所有IP地址
             _ = cursor.execute('SELECT id, network_id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, created_at, updated_at FROM ip_addresses')
-            ips = cursor.fetchall()
+            ips: list[tuple[int, int, str, str, str | None, str | None, str | None, str | None, str | None, str | None, str | None]] = cursor.fetchall()
             
             conn.close()
             
