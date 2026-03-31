@@ -996,25 +996,70 @@ class SubnetPlannerApp:
                 if os.path.exists(backup_config_file):
                     with open(backup_config_file, 'r', encoding='utf-8') as f:
                         config = json.load(f)
-                        # 将中文选项转换为英文频率值
-                        frequency_map = {
-                            "禁用": None,
-                            "每小时": "hourly",
-                            "每日": "daily",
-                            "每周": "weekly",
-                            "每月": "monthly"
-                        }
-                        return frequency_map.get(config.get('auto_backup_frequency', '每日'), 'weekly')
+                        # 直接获取英文频率值
+                        frequency = config.get('auto_backup_frequency', 'daily')
+                        # 验证频率值是否有效
+                        valid_frequencies = [None, 'hourly', 'daily', 'weekly', 'monthly']
+                        if frequency in valid_frequencies:
+                            return frequency
+                        # 向后兼容：处理旧格式的中文值
+                        else:
+                            frequency_map = {
+                                "禁用": None,
+                                "每小时": "hourly",
+                                "每日": "daily",
+                                "每周": "weekly",
+                                "每月": "monthly"
+                            }
+                            return frequency_map.get(frequency, 'weekly')
             except Exception:
                 pass
             return 'weekly'
         
         # 启动时执行自动备份检查
         try:
+            from datetime import datetime
             # 执行自动备份，使用配置的频率
             frequency = load_auto_backup_config()
             if frequency:
-                self.ipam.backup_data(backup_type='auto', frequency=frequency)
+                # 获取最后一次备份时间
+                last_backup_time = self.ipam.get_last_backup_time()
+                current_time = datetime.now()
+                
+                # 根据频率检查是否需要备份
+                should_backup = False
+                if not last_backup_time:
+                    # 没有备份记录，执行备份
+                    should_backup = True
+                else:
+                    try:
+                        # 验证 last_backup_time 类型
+                        if isinstance(last_backup_time, str):
+                            # 尝试从 ISO 格式字符串转换
+                            last_backup_time = datetime.fromisoformat(last_backup_time)
+                        elif not isinstance(last_backup_time, datetime):
+                            # 处理无效类型，执行备份
+                            should_backup = True
+                        else:
+                            # 计算时间差
+                            time_diff = current_time - last_backup_time
+                            
+                            # 验证频率值
+                            valid_frequencies = {'hourly': 3600, 'daily': 86400, 'weekly': 604800, 'monthly': 2592000}
+                            if frequency in valid_frequencies:
+                                # 根据频率判断是否需要备份
+                                if time_diff.total_seconds() >= valid_frequencies[frequency]:
+                                    should_backup = True
+                            else:
+                                # 无效频率值，执行备份
+                                should_backup = True
+                    except Exception as e:
+                        # 发生异常，执行备份
+                        print(f"自动备份时间检查异常: {e}")
+                        should_backup = True
+                
+                if should_backup:
+                    self.ipam.backup_data(backup_type='auto', frequency=frequency)
         except Exception as e:
             print(f"自动备份检查失败: {e}")
         
@@ -2677,7 +2722,7 @@ class SubnetPlannerApp:
     def add_subnet_requirement(self):
         """添加子网需求"""
         # 创建临时窗口
-        temp_window = self.create_dialog(_('add_subnet_requirement'), 320, 220)
+        temp_window = self.create_dialog(_('add_subnet_requirement'), 320, 200)
 
         # 创建主内容框架，设置合适的内边距
         main_frame = ttk.Frame(temp_window, padding="20")
@@ -2859,6 +2904,9 @@ class SubnetPlannerApp:
         dialog.title(title)
         dialog.resizable(resizable, resizable)
         dialog.transient(parent_window)
+        
+        # 为对话框设置与主窗口相同的置顶属性，确保在主窗口置顶时对话框也能保持在前面
+        dialog.attributes('-topmost', self.is_pinned)
         
         if modal:
             dialog.grab_set()
@@ -9320,14 +9368,27 @@ class SubnetPlannerApp:
             expiry_date = ip.get('expiry_date', '')
             formatted_expiry_date = self._format_datetime(expiry_date, "%Y-%m-%d")
             
-            self.ipam_ip_tree.insert('', tk.END, values=(
-                ip['ip_address'],
-                status_text,
-                ip.get('hostname', ''),
-                ip.get('description', ''),
-                formatted_allocated_at,
-                formatted_expiry_date
-            ))
+            # 使用记录ID作为树项的ID
+            record_id = ip.get('id', None)
+            if record_id:
+                self.ipam_ip_tree.insert('', tk.END, iid=str(record_id), values=(
+                    ip['ip_address'],
+                    status_text,
+                    ip.get('hostname', ''),
+                    ip.get('description', ''),
+                    formatted_allocated_at,
+                    formatted_expiry_date
+                ))
+            else:
+                # 如果没有ID，使用默认的自动生成ID
+                self.ipam_ip_tree.insert('', tk.END, values=(
+                    ip['ip_address'],
+                    status_text,
+                    ip.get('hostname', ''),
+                    ip.get('description', ''),
+                    formatted_allocated_at,
+                    formatted_expiry_date
+                ))
         
         # 更新斑马纹样式
         self.update_table_zebra_stripes(self.ipam_ip_tree)
@@ -9359,13 +9420,8 @@ class SubnetPlannerApp:
         
         if success_count > 0:
             self.show_info(_('success'), f"{_('successfully_released_ips', count=success_count)}")
-            # 刷新网络列表，更新IP数量
-            self.refresh_ipam_networks()
-            # 刷新当前显示的IP列表
-            selected_network_items = self.ipam_network_tree.selection()
-            if selected_network_items:
-                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
-                self.refresh_ipam_ips(network)
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             # 检查是否所有选中的IP地址都是可用状态
             all_available = True
@@ -9541,8 +9597,8 @@ class SubnetPlannerApp:
                 
                 if success_count > 0:
                     self.show_info(_('success'), _('batch_allocate_success', count=success_count))
-                    self.refresh_ipam_ips(network)
-                    self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+                    # 刷新IPAM数据并恢复选中状态
+                    self.refresh_ipam_with_selection()
                 else:
                     self.show_error(_('error'), _('batch_allocate_failed'))
                 
@@ -9633,7 +9689,8 @@ class SubnetPlannerApp:
                         # 分配这个IP地址
                         if self.ipam.allocate_ip(network, ip_str, hostname, description):
                             self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
-                            self.refresh_ipam_ips(network)
+                            # 刷新IPAM数据并恢复选中状态
+                            self.refresh_ipam_with_selection()
                             # 清空输入框
                             self.ipam_ip_entry.delete(0, tk.END)
                             self.ipam_ip_entry.insert(0, ip_str)
@@ -10698,7 +10755,14 @@ class SubnetPlannerApp:
                         deleted_count = 0
                         for item, file_path, filename in selected_backups:
                             try:
-                                os.remove(file_path)
+                                # 尝试删除物理文件
+                                try:
+                                    os.remove(file_path)
+                                except:
+                                    # 文件不存在时忽略错误
+                                    pass
+                                # 从数据库中删除备份记录
+                                self.ipam.delete_backup(file_path)
                                 backup_tree.delete(item)
                                 deleted_count += 1
                             except Exception as e:
@@ -10712,16 +10776,35 @@ class SubnetPlannerApp:
             # 配置文件路径 - 使用与备份系统相同的配置文件
             backup_config_file = os.path.join(os.path.dirname(__file__), 'ipam_backups', 'backup_config.json')
             
+            # 频率映射（英文到本地化）
+            def get_frequency_map():
+                return {
+                    'disabled': _('disabled'),
+                    'hourly': _('hourly'),
+                    'daily': _('daily'),
+                    'weekly': _('weekly'),
+                    'monthly': _('monthly')
+                }
+            
+            # 反向频率映射（本地化到英文）
+            def get_reverse_frequency_map():
+                frequency_map = get_frequency_map()
+                return {v: k for k, v in frequency_map.items()}
+            
             # 加载配置
             def load_config():
                 try:
                     if os.path.exists(backup_config_file):
                         with open(backup_config_file, 'r', encoding='utf-8') as f:
                             config = json.load(f)
-                            return config.get('auto_backup_frequency', '每日')
+                            # 获取英文频率值
+                            english_frequency = config.get('auto_backup_frequency', 'daily')
+                            # 转换为本地化值
+                            frequency_map = get_frequency_map()
+                            return frequency_map.get(english_frequency, _('daily'))
                 except Exception:
                     pass
-                return '每日'
+                return _('daily')
             
             # 保存配置
             def save_config(frequency):
@@ -10735,8 +10818,12 @@ class SubnetPlannerApp:
                         except Exception:
                             pass
                     
-                    # 更新自动备份周期设置
-                    config['auto_backup_frequency'] = frequency
+                    # 将本地化频率值转换为英文
+                    reverse_map = get_reverse_frequency_map()
+                    english_frequency = reverse_map.get(frequency, 'daily')
+                    
+                    # 更新自动备份周期设置（使用英文值）
+                    config['auto_backup_frequency'] = english_frequency
                     
                     # 确保备份目录存在
                     backup_dir = os.path.dirname(backup_config_file)
@@ -11354,7 +11441,7 @@ class SubnetPlannerApp:
         dialog = self.create_dialog(_('add_network'), 400, 200)
         
         # 对话框内容
-        form_frame = ttk.Frame(dialog, padding="20")
+        form_frame = ttk.Frame(dialog, padding="15")
         form_frame.pack(fill=tk.BOTH, expand=True)
         
         # 配置网格布局
@@ -11362,14 +11449,14 @@ class SubnetPlannerApp:
         form_frame.grid_columnconfigure(1, weight=1)  # 输入框列，占据剩余空间
         
         # 网络CIDR输入
-        ttk.Label(form_frame, text=_('network_cidr'), width=8).grid(row=0, column=0, sticky="w", pady=(10, 5), padx=(0, 10))
-        network_border, network_entry = create_bordered_entry(form_frame, width=25)
-        network_border.grid(row=0, column=1, sticky="ew", pady=(10, 5))
+        ttk.Label(form_frame, text=_('network_cidr')).grid(row=0, column=0, sticky="e", pady=10, padx=(0, 15))
+        network_border, network_entry = create_bordered_entry(form_frame, width=12)
+        network_border.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
         
         # 描述输入
-        ttk.Label(form_frame, text=_('description'), width=8).grid(row=1, column=0, sticky="w", pady=(5, 15), padx=(0, 10))
-        desc_border, description_entry = create_bordered_entry(form_frame, width=25)
-        desc_border.grid(row=1, column=1, sticky="ew", pady=(5, 15))
+        ttk.Label(form_frame, text=_('description')).grid(row=1, column=0, sticky="e", pady=10, padx=(0, 15))
+        desc_border, description_entry = create_bordered_entry(form_frame, width=12)
+        desc_border.grid(row=1, column=1, sticky="ew", pady=10, padx=(0, 10))
         
         def on_add():
             network = network_entry.get().strip()
@@ -11417,9 +11504,9 @@ class SubnetPlannerApp:
                 else:
                     self.show_error(_('error'), message)
         
-        # 按钮
+        # 按钮框架
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10, fill=tk.X, padx=20)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
         
         # 配置按钮框架的网格布局，使按钮居中对齐
         button_frame.grid_columnconfigure(0, weight=1)
@@ -11596,38 +11683,67 @@ class SubnetPlannerApp:
         if not item:
             return
         
-        # 先清理所有可能存在的菜单资源
-        self._cleanup_all_menus()
+        # 处理多选逻辑
+        # 如果当前行已经被选中，保持现有的选择
+        # 如果当前行未被选中，选中当前行
+        selected_items = self.ipam_ip_tree.selection()
+        if item not in selected_items:
+            # 选中当前点击的行
+            self.ipam_ip_tree.selection_set(item)
+            selected_items = [item]
         
-        # 选中当前行
-        self.ipam_ip_tree.selection_set(item)
+        # 收集所有选中行的状态
+        statuses = set()
+        for item in selected_items:
+            row_values = self.ipam_ip_tree.item(item, 'values')
+            if row_values and len(row_values) >= 2:
+                statuses.add(row_values[1])
         
-        # 获取当前行的状态
-        row_values = self.ipam_ip_tree.item(item, 'values')
-        if not row_values or len(row_values) < 2:
+        if not statuses:
             return
         
-        # 获取当前行的状态文本
-        current_status = row_values[1]
+        # 创建一个菜单，使用系统默认样式
+        menu = tk.Menu(self.root, tearoff=0)
         
-        # 创建一个临时菜单，使用系统默认样式
-        temp_menu = tk.Menu(self.root, tearoff=0)
+        # 根据选中行的状态动态添加菜单项
+        # 释放地址 - 只要有非可用状态的项目就显示
+        has_commands = False
+        if any(status != _('available') for status in statuses):
+            menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
+            has_commands = True
         
-        # 根据行状态动态添加菜单项
-        if current_status == _('available'):
-            # 可用状态：根据用户要求显示四个选项
-            temp_menu.add_command(label=_('restore_to_allocated'), command=lambda: self._execute_menu_action('quick_allocate'))
-            temp_menu.add_command(label=_('restore_to_reserved'), command=lambda: self._execute_menu_action('quick_reserve'))
-            temp_menu.add_command(label=_('reallocate_address'), command=lambda: self._execute_menu_action('allocate'))
-            temp_menu.add_command(label=_('reserve_address_again'), command=lambda: self._execute_menu_action('reserve'))
-        elif current_status == _('allocated'):
-            # 已分配状态：显示释放和转为保留选项
-            temp_menu.add_command(label=_('release_address'), command=lambda: self._execute_menu_action('release'))
-            temp_menu.add_command(label=_('convert_to_reserved'), command=lambda: self._execute_menu_action('quick_reserve'))
-        elif current_status == _('reserved'):
-            # 保留状态：显示释放和转为已分配选项
-            temp_menu.add_command(label=_('release_address'), command=lambda: self._execute_menu_action('release'))
-            temp_menu.add_command(label=_('convert_to_allocated'), command=lambda: self._execute_menu_action('quick_allocate'))
+        # 检查是否需要添加快速操作菜单项
+        has_quick_actions = False
+        
+        # 快速分配 - 可用或保留状态可以转为已分配
+        if _('available') in statuses or _('reserved') in statuses:
+            if has_commands:
+                menu.add_separator()
+            menu.add_command(label=_('convert_to_allocated'), command=lambda: self.on_ip_menu_action('quick_allocate'))
+            has_quick_actions = True
+            has_commands = True
+        
+        # 快速保留 - 可用或已分配状态可以转为保留
+        if _('available') in statuses or _('allocated') in statuses:
+            if has_commands and not has_quick_actions:
+                menu.add_separator()
+            menu.add_command(label=_('convert_to_reserved'), command=lambda: self.on_ip_menu_action('quick_reserve'))
+            has_quick_actions = True
+            has_commands = True
+        
+        # 如果只选中了一行，添加需要用户输入的操作
+        if len(selected_items) == 1:
+            # 获取当前行的状态
+            row_values = self.ipam_ip_tree.item(selected_items[0], 'values')
+            current_status = row_values[1]
+            
+            if current_status == _('available'):
+                # 可用状态：添加需要用户输入的操作
+                if has_commands:
+                    menu.add_separator()
+                menu.add_command(label=_('reallocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
+                menu.add_command(label=_('reserve_address_again'), command=lambda: self.on_ip_menu_action('reserve'))
+                has_commands = True
         
         # 计算菜单位置，确保在屏幕范围内
         x = event.x_root
@@ -11635,18 +11751,14 @@ class SubnetPlannerApp:
         
         # 显示菜单
         try:
-            # 使用root的tk_popup方法，确保菜单在正确位置
-            self.root.tk.call('tk_popup', temp_menu, x, y, 0)
+            # 使用post方法显示菜单
+            menu.post(x, y)
         except Exception as e:
             print(f"菜单显示错误: {e}")
-            # 立即清理菜单
-            try:
-                temp_menu.destroy()
-            except Exception:
-                pass
     
     def _execute_menu_action(self, action):
         """执行菜单操作，不使用实例变量保存菜单"""
+        print(f"执行菜单操作: {action}")
         # 直接执行操作，不通过实例变量菜单
         self.on_ip_menu_action(action)
     
@@ -12190,17 +12302,30 @@ class SubnetPlannerApp:
         Returns:
             dict: 行数据字典
         """
-        values = self.ipam_ip_tree.item(item, 'values')
-        return {
-            'item': item,
-            'values': values,
-            'ip_address': values[0],
-            'status': values[1],
-            'hostname': values[2],
-            'description': values[3],
-            'allocated_at': values[4],
-            'expiry_date': values[5]
-        }
+        try:
+            values = self.ipam_ip_tree.item(item, 'values')
+            return {
+                'item': item,
+                'values': values,
+                'ip_address': values[0],
+                'status': values[1],
+                'hostname': values[2],
+                'description': values[3],
+                'allocated_at': values[4],
+                'expiry_date': values[5]
+            }
+        except (tk.TclError, IndexError):
+            # 树项不存在或数据格式错误
+            return {
+                'item': item,
+                'values': [],
+                'ip_address': '',
+                'status': '',
+                'hostname': '',
+                'description': '',
+                'allocated_at': '',
+                'expiry_date': ''
+            }
     
     def is_valid_ipv4(self, ip_address):
         """验证IPv4地址格式
@@ -12380,15 +12505,38 @@ class SubnetPlannerApp:
                 )
             elif column_name == 'hostname' or column_name == 'description':
                 # 更新主机名或描述
-                success, message = self.ipam.update_ip_info(
-                    row_data['ip_address'], 
-                    hostname=new_value if column_name == 'hostname' else None,
-                    description=new_value if column_name == 'description' else None
-                )
+                # 获取记录ID（树项的ID）
+                record_id = item
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 从row_data中获取当前值，确保使用最新数据
+                    hostname = new_value if column_name == 'hostname' else row_data.get('hostname', '')
+                    description = new_value if column_name == 'description' else row_data.get('description', '')
+                    # 获取过期日期
+                    expiry_date = row_data.get('expiry_date', None)
+                    # 使用update_ip_record方法更新特定记录
+                    success, message = self.ipam.update_ip_record(record_id_int, hostname, description, expiry_date)
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    success, message = self.ipam.update_ip_info(
+                        row_data['ip_address'], 
+                        hostname=new_value if column_name == 'hostname' else None,
+                        description=new_value if column_name == 'description' else None
+                    )
             elif column_name == 'expiry_date':
                 # 更新过期日期
                 formatted_date = self._format_expiry_date(new_value) if new_value else None
-                success, message = self.ipam.update_ip_expiry(row_data['ip_address'], formatted_date)
+                # 获取记录ID（树项的ID）
+                record_id = item
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 使用记录ID更新过期日期
+                    success, message = self.ipam.update_ip_expiry(row_data['ip_address'], formatted_date, record_id_int)
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    success, message = self.ipam.update_ip_expiry(row_data['ip_address'], formatted_date)
             else:
                 success = False
                 message = f"不支持编辑的列: {column_name}"
@@ -12552,10 +12700,8 @@ class SubnetPlannerApp:
                 old_network = row_data['network']
                 success, message = self.ipam.update_network(old_network, new_value)
                 if success:
-                    # 刷新网段管理表（更新IP数量）
-                    self.refresh_ipam_networks()
-                    # 刷新地址管理表
-                    self.refresh_ipam_ips(new_value)
+                    # 刷新IPAM数据并恢复选中状态
+                    self.refresh_ipam_with_selection()
                 return success, message
             elif column_name == 'description':
                 # 更新网络描述
@@ -12715,22 +12861,41 @@ class SubnetPlannerApp:
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
-                # 获取IP的历史信息
-                ip_info = self.ipam.get_ip_info(ip_address)
-                if ip_info:
-                    # 使用原有的主机名和描述进行恢复
-                    hostname = ip_info.get('hostname', '')
-                    description = ip_info.get('description', '')
-                    success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
-                    if success:
-                        success_count += 1
-                    else:
-                        error_count += 1
+                # 获取记录ID（树项的ID）
+                record_id = ip_item
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 根据记录ID获取IP的历史信息
+                    ip_info = self.ipam.get_ip_record_by_id(record_id_int)
+                    if ip_info:
+                        # 使用原有的主机名和描述进行恢复
+                        hostname = ip_info.get('hostname', '') or ''
+                        description = ip_info.get('description', '') or ''
+                        expiry_date = ip_info.get('expiry_date')
+                        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+                        if success:
+                            success_count += 1
+                        else:
+                            error_count += 1
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    ip_info = self.ipam.get_ip_info(ip_address)
+                    if ip_info:
+                        # 使用原有的主机名和描述进行恢复
+                        hostname = ip_info.get('hostname', '')
+                        description = ip_info.get('description', '')
+                        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
+                        if success:
+                            success_count += 1
+                        else:
+                            error_count += 1
             
             # 显示结果
             if success_count > 0:
                 self.show_info(_('success'), f"成功恢复 {success_count} 个IP地址")
-                self.refresh_ipam_ips(network)
+                # 刷新IPAM数据并恢复选中状态
+                self.refresh_ipam_with_selection()
             if error_count > 0:
                 self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
                 
@@ -12739,16 +12904,32 @@ class SubnetPlannerApp:
             # 因为不同的IP地址可能需要不同的主机名和描述
             ip_item = selected_items[0]
             ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            # 获取记录ID（树项的ID）
+            record_id = ip_item
             
-            dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate', ip_address)
+            dialog_result = self.show_ip_address_dialog(_('allocate_address'), 'allocate', ip_address, record_id=record_id)
             if dialog_result:
                 hostname = dialog_result['hostname']
                 description = dialog_result['description']
                 if hostname or description:
-                    success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
+                    try:
+                        # 尝试将树项ID转换为整数
+                        record_id_int = int(record_id)
+                        # 根据记录ID获取当前记录信息
+                        ip_info = self.ipam.get_ip_record_by_id(record_id_int)
+                        expiry_date = ip_info.get('expiry_date') if ip_info else None
+                        # 先释放特定记录
+                        self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                        # 再分配新记录
+                        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date, record_id_int)
+                    except ValueError:
+                        # 如果树项ID不是整数，使用默认方法
+                        success, message = self.ipam.allocate_ip(network, ip_address, hostname, description)
+                    
                     if success:
                         self.show_info(_('success'), message)
-                        self.refresh_ipam_ips(network)
+                        # 刷新IPAM数据并恢复选中状态
+                        self.refresh_ipam_with_selection()
                     else:
                         self.show_error(_('error'), message)
                         
@@ -12757,14 +12938,27 @@ class SubnetPlannerApp:
             # 因为不同的IP地址可能需要不同的描述
             ip_item = selected_items[0]
             ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            # 获取记录ID（树项的ID）
+            record_id = ip_item
             
-            dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve', ip_address)
+            dialog_result = self.show_ip_address_dialog(_('reserve_address'), 'reserve', ip_address, record_id=record_id)
             if dialog_result:
                 description = dialog_result['description']
-                success, message = self.ipam.reserve_ip(network, ip_address, description)
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 先释放特定记录
+                    self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                    # 再保留新记录
+                    success, message = self.ipam.reserve_ip(network, ip_address, description, record_id_int)
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    success, message = self.ipam.reserve_ip(network, ip_address, description)
+                
                 if success:
                     self.show_info(_('success'), message)
-                    self.refresh_ipam_ips(network)
+                    # 刷新IPAM数据并恢复选中状态
+                    self.refresh_ipam_with_selection()
                 else:
                     self.show_error(_('error'), message)
                     
@@ -12775,7 +12969,17 @@ class SubnetPlannerApp:
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
-                success, message = self.ipam.release_ip(ip_address)
+                # 获取记录ID（树项的ID）
+                record_id = ip_item
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 使用specific策略释放特定记录
+                    success, message = self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认策略
+                    success, message = self.ipam.release_ip(ip_address)
+                
                 if success:
                     success_count += 1
                 else:
@@ -12784,7 +12988,8 @@ class SubnetPlannerApp:
             # 显示结果
             if success_count > 0:
                 self.show_info(_('success'), f"{_('successfully_released_ips', count=success_count)}")
-                self.refresh_ipam_ips(network)
+                # 刷新IPAM数据并恢复选中状态
+                self.refresh_ipam_with_selection()
             if error_count > 0:
                 self.show_error(_('error'), f"释放失败 {error_count} 个IP地址")
         elif action == 'quick_allocate':
@@ -12794,13 +12999,17 @@ class SubnetPlannerApp:
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                # 获取记录ID（树项的ID）
+                record_id = ip_item
                 try:
-                    # 先获取当前IP的信息，保留原有信息
-                    ip_info = self.ipam.get_ip_info(ip_address)
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 根据记录ID获取当前记录信息
+                    ip_info = self.ipam.get_ip_record_by_id(record_id_int)
                     if ip_info:
                         # 使用原有信息（如果有），否则使用默认值
-                        hostname = ip_info.get('hostname', 'Unnamed')
-                        description = ip_info.get('description', '快速分配')
+                        hostname = ip_info.get('hostname', 'Unnamed') or 'Unnamed'
+                        description = ip_info.get('description', '快速分配') or '快速分配'
                         expiry_date = ip_info.get('expiry_date')
                     else:
                         # 如果没有原有信息，使用默认值
@@ -12808,18 +13017,45 @@ class SubnetPlannerApp:
                         description = '快速分配'
                         expiry_date = None
                     
-                    # 快速分配，使用获取或默认的信息
+                    # 先释放特定记录
+                    self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                    # 再快速分配，使用获取或默认的信息
                     success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
                     if success:
                         success_count += 1
                     else:
-                        # 如果分配失败，尝试先释放再分配
-                        self.ipam.release_ip(ip_address)
+                        error_count += 1
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    try:
+                        # 先获取当前IP的信息，保留原有信息
+                        ip_info = self.ipam.get_ip_info(ip_address)
+                        if ip_info:
+                            # 使用原有信息（如果有），否则使用默认值
+                            hostname = ip_info.get('hostname', 'Unnamed')
+                            description = ip_info.get('description', '快速分配')
+                            expiry_date = ip_info.get('expiry_date')
+                        else:
+                            # 如果没有原有信息，使用默认值
+                            hostname = 'Unnamed'
+                            description = '快速分配'
+                            expiry_date = None
+                        
+                        # 快速分配，使用获取或默认的信息
                         success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
                         if success:
                             success_count += 1
                         else:
-                            error_count += 1
+                            # 如果分配失败，尝试先释放再分配
+                            self.ipam.release_ip(ip_address)
+                            success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+                            if success:
+                                success_count += 1
+                            else:
+                                error_count += 1
+                    except Exception as e:
+                        print(f"快速分配失败: {e}")
+                        error_count += 1
                 except Exception as e:
                     print(f"快速分配失败: {e}")
                     error_count += 1
@@ -12827,7 +13063,8 @@ class SubnetPlannerApp:
             # 显示结果
             if success_count > 0:
                 self.show_info(_('success'), f"{_('successfully_restored_ips_allocated', count=success_count)}")
-                self.refresh_ipam_ips(network)
+                # 刷新IPAM数据并恢复选中状态
+                self.refresh_ipam_with_selection()
             if error_count > 0:
                 self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
         elif action == 'quick_reserve':
@@ -12837,28 +13074,55 @@ class SubnetPlannerApp:
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+                # 获取记录ID（树项的ID）
+                record_id = ip_item
                 try:
-                    # 先获取当前IP的信息，保留原有信息
-                    ip_info = self.ipam.get_ip_info(ip_address)
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 根据记录ID获取当前记录信息
+                    ip_info = self.ipam.get_ip_record_by_id(record_id_int)
                     if ip_info:
                         # 使用原有信息（如果有），否则使用默认值
-                        description = ip_info.get('description', '快速保留')
+                        description = ip_info.get('description', '快速保留') or '快速保留'
                     else:
                         # 如果没有原有信息，使用默认值
                         description = '快速保留'
                     
-                    # 快速保留，使用获取或默认的信息
+                    # 先释放特定记录
+                    self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                    # 再快速保留，使用获取或默认的信息
                     success, message = self.ipam.reserve_ip(network, ip_address, description)
                     if success:
                         success_count += 1
                     else:
-                        # 如果保留失败，尝试先释放再保留
-                        self.ipam.release_ip(ip_address)
+                        error_count += 1
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认方法
+                    try:
+                        # 先获取当前IP的信息，保留原有信息
+                        ip_info = self.ipam.get_ip_info(ip_address)
+                        if ip_info:
+                            # 使用原有信息（如果有），否则使用默认值
+                            description = ip_info.get('description', '快速保留')
+                        else:
+                            # 如果没有原有信息，使用默认值
+                            description = '快速保留'
+                        
+                        # 快速保留，使用获取或默认的信息
                         success, message = self.ipam.reserve_ip(network, ip_address, description)
                         if success:
                             success_count += 1
                         else:
-                            error_count += 1
+                            # 如果保留失败，尝试先释放再保留
+                            self.ipam.release_ip(ip_address)
+                            success, message = self.ipam.reserve_ip(network, ip_address, description)
+                            if success:
+                                success_count += 1
+                            else:
+                                error_count += 1
+                    except Exception as e:
+                        print(f"快速保留失败: {e}")
+                        error_count += 1
                 except Exception as e:
                     print(f"快速保留失败: {e}")
                     error_count += 1
@@ -12866,7 +13130,8 @@ class SubnetPlannerApp:
             # 显示结果
             if success_count > 0:
                 self.show_info(_('success'), f"{_('successfully_restored_ips_reserved', count=success_count)}")
-                self.refresh_ipam_ips(network)
+                # 刷新IPAM数据并恢复选中状态
+                self.refresh_ipam_with_selection()
             if error_count > 0:
                 self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
         elif action == 'edit':
@@ -12874,9 +13139,20 @@ class SubnetPlannerApp:
             # 因为编辑操作通常只针对单个IP地址
             ip_item = selected_items[0]
             ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
+            # 获取记录ID（树项的ID）
+            record_id = ip_item
             
             # 首先获取当前IP地址的信息
-            ip_info = self.ipam.get_ip_info(ip_address)
+            try:
+                # 尝试将树项ID转换为整数
+                record_id_int = int(record_id)
+                # 根据记录ID获取特定记录的信息
+                ip_info = self.ipam.get_ip_record_by_id(record_id_int)
+            except ValueError:
+                # 如果树项ID不是整数，使用默认方法
+                ip_info = self.ipam.get_ip_info(ip_address)
+                record_id_int = None
+            
             if ip_info:
                 # 显示编辑对话框
                 dialog = self.create_dialog(_('edit_ip'), 400, 200, resizable=False, modal=True)
@@ -12905,10 +13181,16 @@ class SubnetPlannerApp:
                     hostname = hostname_entry.get().strip()
                     description = description_entry.get().strip()
                     # 更新IP地址信息
-                    success, message = self.ipam.update_ip_info(ip_address, hostname, description)
+                    if record_id_int:
+                        # 使用记录ID更新特定记录
+                        success, message = self.ipam.update_ip_record(record_id_int, hostname, description)
+                    else:
+                        # 使用默认方法更新
+                        success, message = self.ipam.update_ip_info(ip_address, hostname, description)
                     if success:
                         self.show_info(_('success'), message)
-                        self.refresh_ipam_ips(network)
+                        # 刷新IPAM数据并恢复选中状态
+                        self.refresh_ipam_with_selection()
                         dialog.destroy()
                     else:
                         self.show_error(_('error'), message)
@@ -13021,9 +13303,8 @@ class SubnetPlannerApp:
         if success:
             # 显示成功消息
             self.show_info(_('success'), message)
-            # 刷新IP地址列表
-            self.refresh_ipam_ips(network)
-            self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             # 显示错误消息
             self.show_error(_('error'), message)
@@ -13058,8 +13339,8 @@ class SubnetPlannerApp:
         success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
         if success:
             self.show_info(_('success'), message)
-            self.refresh_ipam_ips(network)
-            self.refresh_ipam_networks()  # 刷新网络列表，更新IP数量
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             self.show_error(_('error'), message)
     
@@ -13084,7 +13365,17 @@ class SubnetPlannerApp:
             status = self.ipam_ip_tree.item(item, 'values')[1]
             # 只有状态为"已分配"或"已保留"的IP地址才能被释放
             if status in [_('allocated'), _('reserved')]:
-                success, message = self.ipam.release_ip(ip_address)
+                # 获取记录ID（树项的ID）
+                record_id = item
+                try:
+                    # 尝试将树项ID转换为整数
+                    record_id_int = int(record_id)
+                    # 使用specific策略释放特定记录
+                    success, message = self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                except ValueError:
+                    # 如果树项ID不是整数，使用默认策略
+                    success, message = self.ipam.release_ip(ip_address)
+                
                 if success:
                     success_count += 1
                 else:
@@ -13096,28 +13387,8 @@ class SubnetPlannerApp:
         
         if success_count > 0:
             self.show_info(_('success'), f"{_('successfully_released_ips', count=success_count)}")
-            # 刷新网络列表，更新IP数量
-            self.refresh_ipam_networks()
-            # 重新选择之前的网络并刷新IP列表
-            if selected_network:
-                # 重新选择之前的网络
-                for item in self.ipam_network_tree.get_children():
-                    network = self.ipam_network_tree.item(item, 'values')[0]
-                    if network == selected_network:
-                        self.ipam_network_tree.selection_set(item)
-                        break
-                # 刷新该网络的IP列表
-                self.refresh_ipam_ips(selected_network)
-            elif self.ipam_ip_tree.get_children():
-                # 如果有IP地址显示，刷新当前显示的内容
-                # 这里不调用apply_filter，因为它会要求选择网络
-                # 而是直接清空并重新加载当前显示的IP
-                for item in self.ipam_ip_tree.get_children():
-                    self.ipam_ip_tree.delete(item)
-                # 重新加载IP地址
-                networks = self.ipam.get_all_networks()
-                if networks:
-                    self.refresh_ipam_ips(networks[0]['network'])
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             # 检查是否所有选中的IP地址都是可用状态
             all_available = True
@@ -13134,44 +13405,170 @@ class SubnetPlannerApp:
 
     def cleanup_available_ips(self):
         """清理所有可用状态的IP地址"""
-        # 保存当前选中的网络
-        selected_network = None
-        selected_network_items = self.ipam_network_tree.selection()
-        if selected_network_items:
-            selected_network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+        # 获取可用IP地址
+        available_ips = self.ipam.get_available_ips()
         
-        # 确认清理
-        confirm = self.show_yes_no_dialog(_('confirmation'), _('confirm_cleanup_available_ips'))
-        if confirm:
-            success, message = self.ipam.cleanup_available_ips()
-            if success:
-                self.show_info(_('success'), message)
-                # 刷新网络列表，更新IP数量
-                self.refresh_ipam_networks()
-                # 重新选择之前的网络并刷新IP列表
-                if selected_network:
-                    # 重新选择之前的网络
-                    for item in self.ipam_network_tree.get_children():
-                        network = self.ipam_network_tree.item(item, 'values')[0]
-                        if network == selected_network:
-                            self.ipam_network_tree.selection_set(item)
-                            break
-                    # 刷新该网络的IP列表
-                    self.refresh_ipam_ips(selected_network)
-                elif self.ipam_ip_tree.get_children():
-                    # 如果有IP地址显示，刷新当前显示的内容
-                    # 这里不调用apply_filter，因为它会要求选择网络
-                    # 而是直接清空并重新加载当前显示的IP
-                    for item in self.ipam_ip_tree.get_children():
-                        self.ipam_ip_tree.delete(item)
-                    # 重新加载IP地址
-                    networks = self.ipam.get_all_networks()
-                    if networks:
-                        self.refresh_ipam_ips(networks[0]['network'])
-                else:
-                    # 如果没有网络，清空IP地址列表
-                    for item in self.ipam_ip_tree.get_children():
-                        self.ipam_ip_tree.delete(item)
+        if available_ips:
+            # 显示可用IP地址列表对话框
+            self.show_available_ips_dialog(available_ips)
+        else:
+            self.show_info(_('info'), _('no_available_ips_found'))
+    
+    def show_available_ips_dialog(self, available_ips):
+        """显示可用IP地址列表对话框
+        
+        Args:
+            available_ips: 可用IP地址列表
+        """
+        # 创建对话框
+        dialog = self.create_dialog(_('available_ips_detected'), 800, 400, resizable=True, modal=True)
+        
+        # 设置字体
+        font_family, font_size = get_current_font_settings()
+        
+        # 创建框架
+        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建滚动条
+        scrollbar = ttk.Scrollbar(main_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 创建树状视图
+        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
+        tree.pack(fill=tk.BOTH, expand=True)
+        
+        # 配置列
+        tree.heading('#0', text='')
+        tree.heading('network', text=_('network'))
+        tree.heading('ip_address', text=_('ip_address'))
+        tree.heading('status', text=_('status'))
+        tree.heading('hostname', text=_('hostname'))
+        tree.heading('description', text=_('description'))
+        tree.heading('expiry_date', text=_('expiry_date'))
+        
+        tree.column('#0', width=0, stretch=tk.NO)
+        tree.column('network', width=150)
+        tree.column('ip_address', width=120)
+        tree.column('status', width=80)
+        tree.column('hostname', width=120)
+        tree.column('description', width=150)
+        tree.column('expiry_date', width=150)
+        
+        # 添加数据
+        for ip in available_ips:
+            # 获取网络信息
+            network_info = self.ipam.get_network_by_id(ip['network_id'])
+            network = network_info['network_address'] if network_info else ''
+            
+            tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'], 
+                                           ip['hostname'] or '', ip['description'] or '', 
+                                           ip['expiry_date'] or ''))
+        
+        # 配置滚动条
+        scrollbar.config(command=tree.yview)
+        
+        # 创建按钮框架
+        button_frame = ttk.Frame(dialog, padding=10)
+        button_frame.pack(fill=tk.X)
+        
+        # 创建清理选中按钮
+        cleanup_selected_button = ttk.Button(button_frame, text=_('cleanup_selected'), 
+                                           command=lambda: self.cleanup_selected_available_ips(tree, dialog, available_ips))
+        cleanup_selected_button.pack(side=tk.LEFT, padx=5)
+        
+        # 创建全部清理按钮
+        cleanup_all_button = ttk.Button(button_frame, text=_('cleanup_all'), 
+                                      command=lambda: self.cleanup_all_available_ips(dialog, available_ips))
+        cleanup_all_button.pack(side=tk.LEFT, padx=5)
+        
+        # 创建取消按钮
+        cancel_button = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
+        cancel_button.pack(side=tk.RIGHT, padx=5)
+    
+    def cleanup_selected_available_ips(self, tree, dialog, available_ips):
+        """清理选中的可用IP地址
+        
+        Args:
+            tree: 树状视图控件
+            dialog: 对话框
+            available_ips: 可用IP地址列表
+        """
+        selected_items = tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_ip_address'))
+            return
+        
+        # 获取选中的IP地址
+        selected_ips = []
+        for item in selected_items:
+            ip_address = tree.item(item, 'values')[1]
+            # 查找对应的IP对象
+            for ip in available_ips:
+                if ip['ip_address'] == ip_address:
+                    selected_ips.append(ip)
+                    break
+        
+        # 清理选中的IP地址
+        cleaned_count = 0
+        try:
+            conn = sqlite3.connect(self.ipam.db_file)
+            cursor = conn.cursor()
+            
+            # 记录清理历史
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            for ip in selected_ips:
+                if 'id' in ip and 'network_id' in ip and 'ip_address' in ip:
+                    # 记录清理历史
+                    cursor.execute('''
+                    INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', (ip['network_id'], ip['ip_address'], 'cleanup', 'admin', now))
+                    
+                    # 删除可用状态的IP地址
+                    cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip['id'], 'available'))
+                    cleaned_count += 1
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            self.show_error(_('error'), f"清理IP地址失败: {str(e)}")
+            return
+        
+        if cleaned_count > 0:
+            self.show_info(_('success'), f"{_('successfully_cleaned_ips', count=cleaned_count)}")
+            # 刷新网络列表和IP列表
+            self.refresh_ipam_networks()
+            selected_network_items = self.ipam_network_tree.selection()
+            if selected_network_items:
+                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+                self.refresh_ipam_ips(network)
+        
+        # 关闭对话框
+        dialog.destroy()
+    
+    def cleanup_all_available_ips(self, dialog, available_ips):
+        """清理所有可用IP地址
+        
+        Args:
+            dialog: 对话框
+            available_ips: 可用IP地址列表
+        """
+        # 清理所有可用IP
+        success, message = self.ipam.cleanup_available_ips()
+        if success:
+            self.show_info(_('success'), message)
+            # 刷新网络列表和IP列表
+            self.refresh_ipam_networks()
+            selected_network_items = self.ipam_network_tree.selection()
+            if selected_network_items:
+                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
+                self.refresh_ipam_ips(network)
+        else:
+            self.show_error(_('error'), message)
+        
+        # 关闭对话框
+        dialog.destroy()
     
     def check_expired_ips(self):
         """检查过期IP地址并处理"""
@@ -13231,7 +13628,14 @@ class SubnetPlannerApp:
             network_info = self.ipam.get_network_by_id(ip['network_id'])
             network = network_info['network_address'] if network_info else ''
             
-            tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'], 
+            # 使用记录ID作为树项的ID
+            record_id = ip.get('id', None)
+            if record_id:
+                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], ip['status'], 
+                                                               ip['hostname'] or '', ip['description'] or '', 
+                                                               ip['expiry_date'] or ''))
+            else:
+                tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'], 
                                            ip['hostname'] or '', ip['description'] or '', 
                                            ip['expiry_date'] or ''))
         
@@ -13281,20 +13685,31 @@ class SubnetPlannerApp:
         
         # 释放选中的IP地址
         released_count = 0
-        for ip in selected_ips:
-            # 释放IP地址
-            success, message = self.ipam.release_ip(ip['ip_address'])
-            if success:
-                released_count += 1
+        for item in selected_items:
+            try:
+                # 尝试将树项ID转换为整数（记录ID）
+                record_id_int = int(item)
+                # 获取IP地址
+                ip_address = tree.item(item, 'values')[1]
+                # 使用specific策略释放特定记录
+                success, message = self.ipam.release_ip(ip_address, release_strategy="specific", record_id=record_id_int)
+                if success:
+                    released_count += 1
+            except ValueError:
+                # 如果树项ID不是整数，使用默认方法
+                ip_address = tree.item(item, 'values')[1]
+                # 查找对应的IP对象
+                for ip in expired_ips:
+                    if ip['ip_address'] == ip_address:
+                        success, message = self.ipam.release_ip(ip['ip_address'])
+                        if success:
+                            released_count += 1
+                        break
         
         if released_count > 0:
             self.show_info(_('success'), f"{_('successfully_released_ips', count=released_count)}")
-            # 刷新网络列表和IP列表
-            self.refresh_ipam_networks()
-            selected_network_items = self.ipam_network_tree.selection()
-            if selected_network_items:
-                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
-                self.refresh_ipam_ips(network)
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         
         # 关闭对话框
         dialog.destroy()
@@ -13310,29 +13725,53 @@ class SubnetPlannerApp:
         success, msg, released_count = self.ipam.auto_release_expired_ips()
         if success:
             self.show_info(_('success'), msg)
-            # 刷新网络列表和IP列表
-            self.refresh_ipam_networks()
-            selected_network_items = self.ipam_network_tree.selection()
-            if selected_network_items:
-                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
-                self.refresh_ipam_ips(network)
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             self.show_error(_('error'), msg)
         
         # 关闭对话框
         dialog.destroy()
     
+    def refresh_ipam_with_selection(self):
+        """刷新IPAM数据并恢复选中状态
+        
+        保存当前选中的网络，刷新网络列表和IP列表，然后重新选中之前的网络
+        """
+        # 保存当前选中的所有网络
+        selected_networks = []
+        selected_network_items = self.ipam_network_tree.selection()
+        for item in selected_network_items:
+            network = self.ipam_network_tree.item(item, 'values')[0]
+            selected_networks.append(network)
+        
+        # 刷新网络列表
+        self.refresh_ipam_networks()
+        
+        # 重新选中之前的所有网络
+        if selected_networks:
+            # 查找并选中之前的所有网络
+            for item in self.ipam_network_tree.get_children():
+                network = self.ipam_network_tree.item(item, 'values')[0]
+                if network in selected_networks:
+                    self.ipam_network_tree.selection_add(item)
+            # 刷新第一个选中网络的IP列表
+            self.refresh_ipam_ips(selected_networks[0])
+        else:
+            # 如果没有选中的网络，刷新第一个网络的IP列表
+            network_items = self.ipam_network_tree.get_children()
+            if network_items:
+                network = self.ipam_network_tree.item(network_items[0], 'values')[0]
+                self.ipam_network_tree.selection_set(network_items[0])
+                self.refresh_ipam_ips(network)
+
     def auto_release_expired_ips(self):
         """手动触发自动释放过期IP地址"""
         success, msg, released_count = self.ipam.auto_release_expired_ips()
         if success:
             self.show_info(_('success'), msg)
-            # 刷新网络列表和IP列表
-            self.refresh_ipam_networks()
-            selected_network_items = self.ipam_network_tree.selection()
-            if selected_network_items:
-                network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
-                self.refresh_ipam_ips(network)
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
         else:
             self.show_error(_('error'), msg)
     
@@ -13400,11 +13839,20 @@ class SubnetPlannerApp:
             self.show_info(_('hint'), _('please_select_ips_to_set_expiry'))
             return
         
-        # 获取选中的IP地址
+        # 获取选中的记录ID和IP地址
+        record_ids = []
         ip_addresses = []
         for item in selected_items:
-            ip_address = self.ipam_ip_tree.item(item, 'values')[0]
-            ip_addresses.append(ip_address)
+            try:
+                # 尝试将树项ID转换为整数（记录ID）
+                record_id_int = int(item)
+                record_ids.append(record_id_int)
+                ip_address = self.ipam_ip_tree.item(item, 'values')[0]
+                ip_addresses.append(ip_address)
+            except ValueError:
+                # 如果树项ID不是整数，使用IP地址
+                ip_address = self.ipam_ip_tree.item(item, 'values')[0]
+                ip_addresses.append(ip_address)
         
         # 创建对话框
         dialog = self.create_dialog(_('batch_set_expiry_date'), 400, 200)
@@ -13417,6 +13865,24 @@ class SubnetPlannerApp:
             date_var = tk.StringVar()
             date_entry = DateEntry(dialog, textvariable=date_var, date_pattern='yyyy-MM-dd')
             date_entry.pack(pady=10)
+            
+            # 修复日历弹窗在主窗口置顶时被遮挡的问题
+            def set_calendar_topmost():
+                # 查找日历弹窗并设置置顶属性
+                for window in dialog.winfo_children():
+                    if hasattr(window, 'winfo_children'):
+                        for child in window.winfo_children():
+                            if child.winfo_class() == 'Toplevel':
+                                # 为日历弹窗设置置顶属性，与主窗口保持一致
+                                child.attributes('-topmost', self.is_pinned)
+            
+            # 绑定事件，使用ButtonRelease-1避免干扰内部处理
+            def on_date_entry_release(event):
+                # 延迟执行，等待日历弹窗创建
+                dialog.after(100, set_calendar_topmost)
+            
+            # 绑定释放事件
+            date_entry.bind('<ButtonRelease-1>', on_date_entry_release)
         else:
             # 使用普通Entry输入日期
             date_var = tk.StringVar()
@@ -13432,7 +13898,7 @@ class SubnetPlannerApp:
                 return
             
             # 批量更新过期日期
-            success, msg, updated_count = self.ipam.batch_update_ip_expiry(ip_addresses, expiry_date)
+            success, msg, updated_count = self.ipam.batch_update_ip_expiry(ip_addresses, expiry_date, record_ids)
             if success:
                 self.show_info(_('success'), msg)
                 # 刷新IP列表
@@ -13448,7 +13914,7 @@ class SubnetPlannerApp:
         # 清除过期日期按钮
         def clear_expiry():
             # 批量清除过期日期
-            success, msg, updated_count = self.ipam.batch_update_ip_expiry(ip_addresses, None)
+            success, msg, updated_count = self.ipam.batch_update_ip_expiry(ip_addresses, None, record_ids)
             if success:
                 self.show_info(_('success'), msg)
                 # 刷新IP列表
@@ -13469,7 +13935,7 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text=_('clear_expiry_date'), command=clear_expiry).grid(row=0, column=1, padx=10)
         ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).grid(row=0, column=2, padx=10)
 
-    def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None):
+    def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None, record_id=None):
         """显示IP地址分配/保留对话框
         
         Args:
@@ -13477,6 +13943,7 @@ class SubnetPlannerApp:
             action_type: 操作类型，'allocate', 'reserve', 'auto_allocate'
             ip_address: 可选，已选定的IP地址
             network: 可选，当前选定的网络网段
+            record_id: 可选，记录ID，用于获取特定记录的信息
         """
         # 根据操作类型调整对话框大小
         height = 200 if action_type == 'auto_allocate' else 240
@@ -13513,7 +13980,7 @@ class SubnetPlannerApp:
         
         # 过期日期输入
         expiry_row = 2 if not show_ip_input else 3
-        ttk.Label(main_frame, text=_('expiry_date') + ':').grid(row=expiry_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        ttk.Label(main_frame, text=_('expiry_date')).grid(row=expiry_row, column=0, sticky="e", pady=5, padx=(0, 10))
         
         if DateEntry:
             # 使用DateEntry选择日期
@@ -13593,7 +14060,20 @@ class SubnetPlannerApp:
                 ip_entry.config(state='readonly')  # 设置为只读
                 
                 # 获取IP的历史信息
-                ip_info = self.ipam.get_ip_info(ip_address)
+                ip_info = None
+                if record_id:
+                    try:
+                        # 尝试根据记录ID获取特定记录的信息
+                        record_id_int = int(record_id)
+                        ip_info = self.ipam.get_ip_record_by_id(record_id_int)
+                    except ValueError:
+                        # 如果记录ID无效，使用默认方法
+                        pass
+                
+                # 如果没有通过记录ID获取到信息，使用默认方法
+                if not ip_info:
+                    ip_info = self.ipam.get_ip_info(ip_address)
+                
                 if ip_info:
                     hostname_entry.insert(0, ip_info.get('hostname', ''))
                     description_entry.insert(0, ip_info.get('description', ''))
@@ -13675,27 +14155,18 @@ class SubnetPlannerApp:
         """设置可视化页面"""
         # 配置主框架布局
         self.visualization_frame.grid_rowconfigure(0, weight=1)
-        self.visualization_frame.grid_rowconfigure(1, weight=1)
         self.visualization_frame.grid_columnconfigure(0, weight=1)
-        self.visualization_frame.grid_columnconfigure(1, weight=1)
 
-        # 网络拓扑图区域
+        # 网络拓扑图区域（扩展到整个页面）
         topology_frame = ttk.LabelFrame(self.visualization_frame, text=_("network_topology"), padding="10")
-        topology_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5, columnspan=2)
+        topology_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
         # 创建拓扑可视化器
         self.topology_visualizer = NetworkTopologyVisualizer(topology_frame)
 
-        # IP地址分配可视化区域
-        ip_allocation_frame = ttk.LabelFrame(self.visualization_frame, text=_("ip_allocation_visualization"), padding="10")
-        ip_allocation_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5, columnspan=2)
-
-        # 创建IP分配可视化器
-        self.ip_allocation_visualizer = IPAllocationVisualizer(ip_allocation_frame)
-
         # 控制区域
         control_frame = ttk.Frame(self.visualization_frame, padding="10")
-        control_frame.grid(row=2, column=0, sticky="ew", padx=5, pady=5, columnspan=2)
+        control_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
         # 网络选择
         ttk.Label(control_frame, text=_("select_network") + ":").pack(side=tk.LEFT, padx=5)
@@ -13708,6 +14179,8 @@ class SubnetPlannerApp:
 
         # 初始化数据
         self.refresh_visualization_networks()
+        # 绘制初始网络拓扑
+        self.refresh_visualization()
 
     def refresh_visualization_networks(self):
         """刷新可视化网络列表"""
@@ -13727,28 +14200,122 @@ class SubnetPlannerApp:
             return
         
         # 刷新网络拓扑图
-        # 这里简化处理，使用IPAM中的网络作为示例
+        # 从IPAM中获取实际的子网数据
         allocated_subnets = []
-        # 生成示例子网数据
         try:
             import ipaddress
-            network = ipaddress.ip_network(selected_network)
-            # 生成一些示例子网
-            for i in range(3):
-                subnet = network.subnets(new_prefix=network.prefixlen + 1)[i]
-                allocated_subnets.append({
-                    "name": f"子网{i + 1}",
-                    "cidr": str(subnet)
-                })
-        except Exception:
-            pass
+            parent_network = ipaddress.ip_network(selected_network)
+            
+            # 从IPAM获取所有网络
+            all_networks = self.ipam.get_all_networks()
+            
+            # 筛选出属于当前父网络的子网
+            for network in all_networks:
+                try:
+                    subnet = ipaddress.ip_network(network['network'])
+                    # 检查是否是父网络的子网
+                    if subnet.subnet_of(parent_network) and subnet != parent_network:
+                        allocated_subnets.append({
+                            "name": network.get('description', f"子网{len(allocated_subnets) + 1}"),
+                            "cidr": network['network']
+                        })
+                except Exception:
+                    pass
+            
+            print(f"从IPAM获取的子网数量: {len(allocated_subnets)}")
+        except Exception as e:
+            print(f"获取子网时出错: {e}")
         
         # 绘制拓扑图
-        self.topology_visualizer.draw_topology(selected_network, allocated_subnets)
+        # 查找选中网络的描述
+        parent_description = "父网段"
+        for network in all_networks:
+            if network['network'] == selected_network:
+                parent_description = network.get('description', "父网段")
+                break
         
-        # 刷新IP地址分配可视化
-        ip_list = self.ipam.get_network_ips(selected_network)
-        self.ip_allocation_visualizer.draw_ip_allocation(selected_network, ip_list)
+        # 获取父网络的IP统计信息
+        parent_ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
+        try:
+            # 计算网段的总IP数
+            import ipaddress
+            parent_network = ipaddress.ip_network(selected_network)
+            network_total = 2 ** (32 - parent_network.prefixlen) if parent_network.version == 4 else 2 ** (128 - parent_network.prefixlen)
+            
+            # 获取父网络的IP地址列表
+            parent_ips = self.ipam.get_network_ips(selected_network)
+            registered = len(parent_ips)
+            allocated = sum(1 for ip in parent_ips if ip.get('status') == 'allocated')
+            reserved = sum(1 for ip in parent_ips if ip.get('status') == 'reserved')
+            available = sum(1 for ip in parent_ips if ip.get('status') == 'available')
+            
+            parent_ip_info = {
+                "total": network_total,
+                "allocated": allocated,
+                "reserved": reserved,
+                "available": available,
+                "registered": registered,
+                "network_total": network_total
+            }
+        except Exception as e:
+            print(f"获取父网络IP统计信息时出错: {e}")
+        
+        # 转换为新的网络数据格式
+        network_data = [
+            {
+                "id": "parent",
+                "name": parent_description,
+                "cidr": selected_network,
+                "level": 0,
+                "type": "network",
+                "device_type": "router",
+                "ip_info": parent_ip_info,
+                "children": [f"subnet{i+1}" for i in range(len(allocated_subnets))]
+            }
+        ]
+        
+        # 添加子节点
+        for i, subnet in enumerate(allocated_subnets):
+            # 从IPAM获取实际的IP使用情况
+            ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
+            try:
+                # 计算网段的总IP数
+                import ipaddress
+                subnet_network = ipaddress.ip_network(subnet["cidr"])
+                network_total = 2 ** (32 - subnet_network.prefixlen) if subnet_network.version == 4 else 2 ** (128 - subnet_network.prefixlen)
+                
+                # 获取子网的IP地址列表
+                subnet_ips = self.ipam.get_network_ips(subnet["cidr"])
+                registered = len(subnet_ips)
+                allocated = sum(1 for ip in subnet_ips if ip.get('status') == 'allocated')
+                reserved = sum(1 for ip in subnet_ips if ip.get('status') == 'reserved')
+                available = sum(1 for ip in subnet_ips if ip.get('status') == 'available')
+                
+                ip_info = {
+                    "total": network_total,
+                    "allocated": allocated,
+                    "reserved": reserved,
+                    "available": available,
+                    "registered": registered,
+                    "network_total": network_total
+                }
+            except Exception as e:
+                print(f"获取IP统计信息时出错: {e}")
+            
+            network_data.append({
+                "id": f"subnet{i+1}",
+                "name": subnet["name"],
+                "cidr": subnet["cidr"],
+                "level": 1,
+                "type": "client",
+                "device_type": "switch",
+                "ip_info": ip_info,
+                "children": []
+            })
+        
+        print(f"网络数据长度: {len(network_data)}")
+        print(f"父节点子节点数量: {len(network_data[0]['children'])}")
+        self.topology_visualizer.draw_topology(network_data)
     
     def reserve_ip(self):
         """保留IP地址"""
@@ -13775,7 +14342,8 @@ class SubnetPlannerApp:
         success, message = self.ipam.reserve_ip(network, ip_address, description)
         if success:
             self.show_info(_('success'), message)
-            self.refresh_ipam_ips(network)
+            # 刷新IPAM数据并恢复选中状态
+            self.refresh_ipam_with_selection()
             # 清空输入框
             self.ipam_ip_entry.delete(0, tk.END)
             self.ipam_ip_description_entry.delete(0, tk.END)

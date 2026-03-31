@@ -56,6 +56,41 @@
     "ja": "利用可能なすべてのIPアドレスをクリーンアップしてもよろしいですか？",
     "ko": "사용 가능한 모든 IP 주소를 정리하시겠습니까?"
   },
+  "available_ips_detected": {
+    "zh": "检测到可用IP地址",
+    "zh_tw": "檢測到可用IP位址",
+    "en": "Available IP Addresses Detected",
+    "ja": "利用可能なIPアドレスが検出されました",
+    "ko": "사용 가능한 IP 주소 감지"
+  },
+  "no_available_ips_found": {
+    "zh": "未找到可用IP地址",
+    "zh_tw": "未找到可用IP位址",
+    "en": "No available IP addresses found",
+    "ja": "利用可能なIPアドレスが見つかりませんでした",
+    "ko": "사용 가능한 IP 주소를 찾을 수 없습니다"
+  },
+  "cleanup_selected": {
+    "zh": "清理选中",
+    "zh_tw": "清理選中",
+    "en": "Cleanup Selected",
+    "ja": "選択したものをクリーンアップ",
+    "ko": "선택한 항목 정리"
+  },
+  "cleanup_all": {
+    "zh": "全部清理",
+    "zh_tw": "全部清理",
+    "en": "Cleanup All",
+    "ja": "すべてをクリーンアップ",
+    "ko": "모두 정리"
+  },
+  "successfully_cleaned_ips": {
+    "zh": "成功清理了{count}个IP地址",
+    "zh_tw": "成功清理了{count}個IP位址",
+    "en": "Successfully cleaned up {count} IP addresses",
+    "ja": "{count}個のIPアドレスを正常にクリーンアップしました",
+    "ko": "{count}개의 IP 주소를 성공적으로 정리했습니다"
+  },
   "export": {
     "zh": "导出",
     "zh_tw": "匯出",
