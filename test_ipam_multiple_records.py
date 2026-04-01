@@ -111,8 +111,11 @@ class TestIPAMMultipleRecords(unittest.TestCase):
         
         # 更新记录
         record_id = records[0]['id']
-        result_update, msg_update = self.ipam.update_ip_record(record_id, "host_updated", "更新后的描述")
-        self.assertTrue(result_update, f"更新失败: {msg_update}")
+        if isinstance(record_id, int):
+            result_update, msg_update = self.ipam.update_ip_record(record_id, "host_updated", "更新后的描述")
+            self.assertTrue(result_update, f"更新失败: {msg_update}")
+        else:
+            self.fail("record_id 类型错误")
         
         # 检查更新结果
         updated_records = self.ipam.get_all_ip_records(ip_address)

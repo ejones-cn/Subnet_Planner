@@ -10758,8 +10758,8 @@ class SubnetPlannerApp:
                                 # 尝试删除物理文件
                                 try:
                                     os.remove(file_path)
-                                except:
-                                    # 文件不存在时忽略错误
+                                except (FileNotFoundError, PermissionError):
+                                    # 文件不存在或权限不足时忽略错误
                                     pass
                                 # 从数据库中删除备份记录
                                 self.ipam.delete_backup(file_path)
@@ -11702,8 +11702,10 @@ class SubnetPlannerApp:
         if not statuses:
             return
         
-        # 创建一个菜单，使用系统默认样式
-        menu = tk.Menu(self.root, tearoff=0)
+        # 直接创建一个新的菜单实例，不保存引用
+        # 使用系统默认样式，设置父窗口为 IP 树
+        # 设置菜单的背景色为白色，前景色为黑色，确保不透明
+        menu = tk.Menu(self.ipam_ip_tree, tearoff=0, bg='white', fg='black', activebackground='#0078D7', activeforeground='white')
         
         # 根据选中行的状态动态添加菜单项
         # 释放地址 - 只要有非可用状态的项目就显示
@@ -11751,10 +11753,26 @@ class SubnetPlannerApp:
         
         # 显示菜单
         try:
+            # 强制更新UI，确保菜单能够正确渲染
+            self.root.update_idletasks()
             # 使用post方法显示菜单
             menu.post(x, y)
+            # 再次强制更新UI
+            self.root.update_idletasks()
         except Exception as e:
             print(f"菜单显示错误: {e}")
+    
+    def _cleanup_ip_menu(self):
+        """清理IP树菜单资源"""
+        if hasattr(self, 'ip_tree_menu'):
+            try:
+                if self.ip_tree_menu:
+                    self.ip_tree_menu.unpost()
+                    self.ip_tree_menu.destroy()
+            except Exception:
+                pass
+            finally:
+                delattr(self, 'ip_tree_menu')
     
     def _execute_menu_action(self, action):
         """执行菜单操作，不使用实例变量保存菜单"""
@@ -11765,15 +11783,7 @@ class SubnetPlannerApp:
     def _cleanup_all_menus(self):
         """清理所有可能存在的菜单资源"""
         # 清理IP树菜单
-        if hasattr(self, 'ip_tree_menu'):
-            try:
-                if self.ip_tree_menu:
-                    self.ip_tree_menu.unpost()
-                    self.ip_tree_menu.destroy()
-            except Exception:
-                pass
-            finally:
-                delattr(self, 'ip_tree_menu')
+        self._cleanup_ip_menu()
     
     def __del__(self):
         """销毁对象时清理所有资源"""
@@ -13631,13 +13641,13 @@ class SubnetPlannerApp:
             # 使用记录ID作为树项的ID
             record_id = ip.get('id', None)
             if record_id:
-                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], ip['status'], 
-                                                               ip['hostname'] or '', ip['description'] or '', 
-                                                               ip['expiry_date'] or ''))
+                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], ip['status'],
+                                                                    ip['hostname'] or '', ip['description'] or '',
+                                                                    ip['expiry_date'] or ''))
             else:
-                tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'], 
-                                           ip['hostname'] or '', ip['description'] or '', 
-                                           ip['expiry_date'] or ''))
+                tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'],
+                                                ip['hostname'] or '', ip['description'] or '',
+                                                ip['expiry_date'] or ''))
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
@@ -14201,7 +14211,7 @@ class SubnetPlannerApp:
         
         # 刷新网络拓扑图
         # 从IPAM中获取实际的子网数据
-        allocated_subnets = []
+        network_tree = {}
         try:
             import ipaddress
             parent_network = ipaddress.ip_network(selected_network)
@@ -14209,83 +14219,83 @@ class SubnetPlannerApp:
             # 从IPAM获取所有网络
             all_networks = self.ipam.get_all_networks()
             
-            # 筛选出属于当前父网络的子网
+            # 筛选出属于当前父网络的子网，并按前缀长度排序（长在前，短在后）
+            relevant_networks = []
             for network in all_networks:
                 try:
                     subnet = ipaddress.ip_network(network['network'])
                     # 检查是否是父网络的子网
-                    if subnet.subnet_of(parent_network) and subnet != parent_network:
-                        allocated_subnets.append({
-                            "name": network.get('description', f"子网{len(allocated_subnets) + 1}"),
-                            "cidr": network['network']
+                    if subnet.subnet_of(parent_network):
+                        relevant_networks.append({
+                            "name": network.get('description', f"子网{len(relevant_networks) + 1}"),
+                            "cidr": network['network'],
+                            "network_obj": subnet
                         })
                 except Exception:
                     pass
             
-            print(f"从IPAM获取的子网数量: {len(allocated_subnets)}")
+            # 按前缀长度排序，长的在前（子网在前）
+            relevant_networks.sort(key=lambda x: x['network_obj'].prefixlen, reverse=True)
+            
+            # 构建网络树结构
+            network_tree = {}
+            for net in relevant_networks:
+                cidr = net['cidr']
+                network_tree[cidr] = {
+                    "name": net['name'],
+                    "cidr": cidr,
+                    "children": []
+                }
+            
+            # 建立父子关系
+            for net in relevant_networks:
+                current_cidr = net['cidr']
+                current_subnet = net['network_obj']
+                
+                # 找到直接父网络
+                parent_cidr = None
+                max_prefix_len = -1
+                
+                for other_cidr, other_net in network_tree.items():
+                    if other_cidr == current_cidr:
+                        continue
+                    try:
+                        other_subnet = ipaddress.ip_network(other_cidr)
+                        if current_subnet.subnet_of(other_subnet):
+                            if other_subnet.prefixlen > max_prefix_len:
+                                max_prefix_len = other_subnet.prefixlen
+                                parent_cidr = other_cidr
+                    except Exception:
+                        pass
+                
+                if parent_cidr:
+                    network_tree[parent_cidr]['children'].append(current_cidr)
+            
+            print(f"从IPAM获取的网络数量: {len(relevant_networks)}")
         except Exception as e:
             print(f"获取子网时出错: {e}")
         
-        # 绘制拓扑图
-        # 查找选中网络的描述
-        parent_description = "父网段"
-        for network in all_networks:
-            if network['network'] == selected_network:
-                parent_description = network.get('description', "父网段")
-                break
+        # 生成网络数据
+        network_data = []
+        node_id_counter = 1
         
-        # 获取父网络的IP统计信息
-        parent_ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
-        try:
-            # 计算网段的总IP数
-            import ipaddress
-            parent_network = ipaddress.ip_network(selected_network)
-            network_total = 2 ** (32 - parent_network.prefixlen) if parent_network.version == 4 else 2 ** (128 - parent_network.prefixlen)
+        # 递归生成网络数据
+        def generate_network_data(cidr, level=0):
+            nonlocal node_id_counter
             
-            # 获取父网络的IP地址列表
-            parent_ips = self.ipam.get_network_ips(selected_network)
-            registered = len(parent_ips)
-            allocated = sum(1 for ip in parent_ips if ip.get('status') == 'allocated')
-            reserved = sum(1 for ip in parent_ips if ip.get('status') == 'reserved')
-            available = sum(1 for ip in parent_ips if ip.get('status') == 'available')
+            net_info = network_tree.get(cidr)
+            if not net_info:
+                return None
             
-            parent_ip_info = {
-                "total": network_total,
-                "allocated": allocated,
-                "reserved": reserved,
-                "available": available,
-                "registered": registered,
-                "network_total": network_total
-            }
-        except Exception as e:
-            print(f"获取父网络IP统计信息时出错: {e}")
-        
-        # 转换为新的网络数据格式
-        network_data = [
-            {
-                "id": "parent",
-                "name": parent_description,
-                "cidr": selected_network,
-                "level": 0,
-                "type": "network",
-                "device_type": "router",
-                "ip_info": parent_ip_info,
-                "children": [f"subnet{i+1}" for i in range(len(allocated_subnets))]
-            }
-        ]
-        
-        # 添加子节点
-        for i, subnet in enumerate(allocated_subnets):
-            # 从IPAM获取实际的IP使用情况
+            # 获取IP统计信息
             ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
             try:
-                # 计算网段的总IP数
                 import ipaddress
-                subnet_network = ipaddress.ip_network(subnet["cidr"])
+                subnet_network = ipaddress.ip_network(cidr)
                 network_total = 2 ** (32 - subnet_network.prefixlen) if subnet_network.version == 4 else 2 ** (128 - subnet_network.prefixlen)
                 
                 # 获取子网的IP地址列表
-                subnet_ips = self.ipam.get_network_ips(subnet["cidr"])
+                subnet_ips = self.ipam.get_network_ips(cidr)
                 registered = len(subnet_ips)
                 allocated = sum(1 for ip in subnet_ips if ip.get('status') == 'allocated')
                 reserved = sum(1 for ip in subnet_ips if ip.get('status') == 'reserved')
@@ -14302,19 +14312,37 @@ class SubnetPlannerApp:
             except Exception as e:
                 print(f"获取IP统计信息时出错: {e}")
             
-            network_data.append({
-                "id": f"subnet{i+1}",
-                "name": subnet["name"],
-                "cidr": subnet["cidr"],
-                "level": 1,
-                "type": "client",
-                "device_type": "switch",
+            node_id = f"node_{node_id_counter}"
+            node_id_counter += 1
+            
+            # 生成子节点
+            children = []
+            for child_cidr in net_info['children']:
+                child_node = generate_network_data(child_cidr, level + 1)
+                if child_node:
+                    children.append(child_node['id'])
+                    network_data.append(child_node)
+            
+            return {
+                "id": node_id,
+                "name": net_info['name'],
+                "cidr": cidr,
+                "level": level,
+                "type": "network" if level == 0 else "client",
+                "device_type": "router" if level == 0 else "switch",
                 "ip_info": ip_info,
-                "children": []
-            })
+                "children": children
+            }
+        
+        # 生成根节点
+        root_node = generate_network_data(selected_network, 0)
+        if root_node:
+            network_data.insert(0, root_node)
         
         print(f"网络数据长度: {len(network_data)}")
-        print(f"父节点子节点数量: {len(network_data[0]['children'])}")
+        if network_data:
+            print(f"根节点子节点数量: {len(network_data[0]['children'])}")
+        
         self.topology_visualizer.draw_topology(network_data)
     
     def reserve_ip(self):

@@ -44,10 +44,12 @@ from i18n import _ as translate
 # 模块版本
 __version__ = "1.0.0"
 
+
 # 模块接口定义
 class VisualizationError(Exception):
     """可视化模块异常"""
     pass
+
 
 # 定义颜色常量
 NODE_COLOR = "#4a7eb4"
@@ -79,6 +81,7 @@ DEVICE_SHAPES = {
     "server": "rectangle",
     "client": "triangle"
 }
+
 
 class NetworkTopologyVisualizer:
     """网络拓扑可视化类"""
@@ -225,17 +228,17 @@ class NetworkTopologyVisualizer:
             )
         elif shape == "diamond":
             return self.canvas.create_polygon(
-                x + width/2, y,
-                x + width, y + height/2,
-                x + width/2, y + height,
-                x, y + height/2,
+                x + width / 2, y,
+                x + width, y + height / 2,
+                x + width / 2, y + height,
+                x, y + height / 2,
                 fill=fill,
                 outline=outline,
                 width=border_width
             )
         elif shape == "triangle":
             return self.canvas.create_polygon(
-                x + width/2, y,
+                x + width / 2, y,
                 x + width, y + height,
                 x, y + height,
                 fill=fill,
@@ -290,7 +293,7 @@ class NetworkTopologyVisualizer:
         
         # 创建节点文本
         text_id = self.canvas.create_text(
-            x + NODE_WIDTH/2, y + NODE_HEIGHT/4,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT / 4,
             text=name,
             font=(font_family, font_size, "bold"),
             fill=TEXT_COLOR
@@ -302,9 +305,9 @@ class NetworkTopologyVisualizer:
             subnet_text = subnet_text[:17] + "..."
         
         subnet_id = self.canvas.create_text(
-            x + NODE_WIDTH/2, y + NODE_HEIGHT/2,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2,
             text=subnet_text,
-            font=(font_family, font_size-2),
+            font=(font_family, font_size - 2),
             fill=TEXT_COLOR
         )
         
@@ -318,9 +321,9 @@ class NetworkTopologyVisualizer:
             ip_info_text = f"{used_ips}/{total_ips}"
         
         ip_info_id = self.canvas.create_text(
-            x + NODE_WIDTH/2, y + NODE_HEIGHT*3/4,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 3 / 4,
             text=ip_info_text,
-            font=(font_family, font_size-3),
+            font=(font_family, font_size - 3),
             fill=TEXT_COLOR
         )
         
@@ -356,9 +359,9 @@ class NetworkTopologyVisualizer:
             
             # 计算连接线坐标
             x1 = source["x"] + NODE_WIDTH
-            y1 = source["y"] + NODE_HEIGHT/2
+            y1 = source["y"] + NODE_HEIGHT / 2
             x2 = target["x"]
-            y2 = target["y"] + NODE_HEIGHT/2
+            y2 = target["y"] + NODE_HEIGHT / 2
             
             # 创建连接线
             link_id = self.canvas.create_line(
@@ -500,7 +503,7 @@ class NetworkTopologyVisualizer:
             if self.tooltip_timer:
                 try:
                     self.canvas.after_cancel(self.tooltip_timer)
-                except:
+                except Exception:
                     pass
                 self.tooltip_timer = None
             
@@ -555,7 +558,7 @@ class NetworkTopologyVisualizer:
         tk.Label(
             frame, 
             text=str(node["subnet"]), 
-            font=(font_family, font_size-1), 
+            font=(font_family, font_size - 1), 
             fg="#ddd", 
             bg="#333"
         ).pack(anchor=tk.W)
@@ -572,35 +575,35 @@ class NetworkTopologyVisualizer:
             tk.Label(
                 frame, 
                 text=f"已分配: {allocated}", 
-                font=(font_family, font_size-1), 
+                font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
                 text=f"已保留: {reserved}", 
-                font=(font_family, font_size-1), 
+                font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
                 text=f"已释放: {available}", 
-                font=(font_family, font_size-1), 
+                font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
                 text=f"剩余IP: {remaining}", 
-                font=(font_family, font_size-1), 
+                font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
                 text=f"总IP: {total}", 
-                font=(font_family, font_size-1), 
+                font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
@@ -611,7 +614,7 @@ class NetworkTopologyVisualizer:
         if self.tooltip_timer:
             try:
                 self.canvas.after_cancel(self.tooltip_timer)
-            except:
+            except Exception:
                 pass
             self.tooltip_timer = None
         
@@ -619,7 +622,7 @@ class NetworkTopologyVisualizer:
         if self.tooltip:
             try:
                 self.tooltip.destroy()
-            except:
+            except Exception:
                 pass
             self.tooltip = None
     
@@ -651,7 +654,7 @@ class NetworkTopologyVisualizer:
         if self.update_timer:
             try:
                 self.canvas.after_cancel(self.update_timer)
-            except:
+            except Exception:
                 pass
             self.update_timer = None
     
@@ -719,7 +722,7 @@ class IPAllocationVisualizer:
         
         # 绘制标题
         self.canvas.create_text(
-            width/2, 20,
+            width / 2, 20,
             text=f"{translate('ip_allocation_visualization')}: {network}",
             font=(font_family, font_size, "bold"),
             fill=TEXT_COLOR
@@ -739,7 +742,7 @@ class IPAllocationVisualizer:
             
             # 绘制IP地址条
             self.canvas.create_rectangle(
-                50, y, width-50, y+25,
+                50, y, width - 50, y + 25,
                 fill=color,
                 outline="#34495e",
                 width=1
@@ -747,9 +750,9 @@ class IPAllocationVisualizer:
             
             # 绘制IP地址文本
             self.canvas.create_text(
-                70, y+12,
+                70, y + 12,
                 text=ip_info["ip_address"],
-                font=(font_family, font_size-1),
+                font=(font_family, font_size - 1),
                 fill=TEXT_COLOR,
                 anchor=tk.W
             )
@@ -761,18 +764,18 @@ class IPAllocationVisualizer:
                     hostname = hostname[:17] + "..."
                 
                 self.canvas.create_text(
-                    200, y+12,
+                    200, y + 12,
                     text=hostname,
-                    font=(font_family, font_size-1),
+                    font=(font_family, font_size - 1),
                     fill=TEXT_COLOR,
                     anchor=tk.W
                 )
             
             # 绘制状态
             self.canvas.create_text(
-                width-70, y+12,
+                width - 70, y + 12,
                 text=ip_info["status"],
-                font=(font_family, font_size-1),
+                font=(font_family, font_size - 1),
                 fill=TEXT_COLOR,
                 anchor=tk.E
             )

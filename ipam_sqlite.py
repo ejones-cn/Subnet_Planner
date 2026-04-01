@@ -135,16 +135,15 @@ class IPAMSQLite:
             # 迁移networks
             networks_map: dict[str, int] = {}  # 用于映射网络地址到ID
             networks_data: dict[str, Any] = data.get('networks', {})
-            if isinstance(networks_data, dict):
-                for net_str, net_data in networks_data.items():
-                    if isinstance(net_str, str) and isinstance(net_data, dict):
-                        network_created_at = net_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                        network_created_at_str = str(network_created_at)
-                        description = str(net_data.get('description', ''))
-                        _ = cursor.execute('''
-                        INSERT OR IGNORE INTO networks (network_address, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?)
-                        ''', (net_str, description, network_created_at_str, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            for net_str, net_data in networks_data.items():
+                if net_str and isinstance(net_data, dict):
+                    network_created_at = net_data.get('created_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    network_created_at_str = str(network_created_at)
+                    description = str(net_data.get('description', ''))
+                    _ = cursor.execute('''
+                    INSERT OR IGNORE INTO networks (network_address, description, created_at, updated_at)
+                    VALUES (?, ?, ?, ?)
+                    ''', (net_str, description, network_created_at_str, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             
             # 获取所有网络的ID
             _ = cursor.execute('SELECT id, network_address FROM networks')
@@ -160,12 +159,12 @@ class IPAMSQLite:
                         if not network_id:
                             continue
                         
-                        ip_addresses_data: dict[str, object] = net_data.get('ip_addresses', {}) if isinstance(net_data.get('ip_addresses'), dict) else {}
+                        ip_addresses_data: dict[str, dict[str, Any]] = net_data.get('ip_addresses', {}) if isinstance(net_data.get('ip_addresses'), dict) else {}
                         if ip_addresses_data:
                             for ip_str, ip_data in ip_addresses_data.items():
                                 if ip_str and ip_data:
-                                    ip_created_at: str = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                                    if isinstance(ip_created_at, str):
+                                    ip_created_at = ip_data.get('allocated_at', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                                    if ip_created_at:
                                         _ = cursor.execute('''
                                         INSERT OR IGNORE INTO ip_addresses (network_id, ip_address, status, hostname, description, 
                                         allocated_at, allocated_by, expiry_date, created_at, updated_at)
@@ -176,7 +175,7 @@ class IPAMSQLite:
                                               ip_data.get('expiry_date'), ip_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             
             # 迁移allocation_history
-            allocation_history_data_raw = data_dict.get('allocation_history')
+            allocation_history_data_raw = data.get('allocation_history')
             allocation_history_data: list[object] = allocation_history_data_raw if isinstance(allocation_history_data_raw, list) else []
             if allocation_history_data:
                 for history_item in allocation_history_data:
@@ -225,7 +224,7 @@ class IPAMSQLite:
         
         for network_row in network_rows:
             try:
-                if isinstance(network_row, tuple) and len(network_row) >= 5:
+                if len(network_row) >= 5:
                     network_id: int = int(network_row[0])
                     network_address: str = str(network_row[1])
                     description: str = str(network_row[2]) if network_row[2] else ''
@@ -484,7 +483,7 @@ class IPAMSQLite:
             relevant_ips: list[dict[str, str | int | None]] = []
             for ip_item in ips:
                 try:
-                    if isinstance(ip_item, tuple) and len(ip_item) >= 11:
+                    if len(ip_item) >= 11:
                         ip_id: int = int(ip_item[0])
                         network_id: int = int(ip_item[1])
                         ip_address: str = str(ip_item[2])
@@ -710,7 +709,7 @@ class IPAMSQLite:
             released_count: int = 0
             
             for ip_row_item in rows_to_release:
-                if isinstance(ip_row_item, tuple) and len(ip_row_item) >= 3:
+                if len(ip_row_item) >= 3:
                     ip_id: int = int(ip_row_item[0])
                     network_id: int = int(ip_row_item[1])
                     
@@ -915,12 +914,12 @@ class IPAMSQLite:
             
             ip_address = str(record[0])
             network_id = int(record[1])
-            status = str(record[2])
+            _ = str(record[2])
             
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             # 更新记录
-            cursor.execute('''
+            _ = cursor.execute('''
             UPDATE ip_addresses 
             SET hostname = ?, description = ?, expiry_date = ?, updated_at = ?
             WHERE id = ?
@@ -932,7 +931,7 @@ class IPAMSQLite:
                 return False, "记录不存在或未更新"
             
             # 记录更新历史
-            cursor.execute('''
+            _ = cursor.execute('''
             INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
             performed_by, performed_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1049,7 +1048,7 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"更新IP地址过期日期失败: {str(e)}"
     
-    def batch_update_ip_expiry(self, ip_addresses: list[str], expiry_date: str | None, record_ids: list[int] = None) -> tuple[bool, str, int]:
+    def batch_update_ip_expiry(self, ip_addresses: list[str], expiry_date: str | None, record_ids: list[int] | None = None) -> tuple[bool, str, int]:
         """批量更新IP地址过期日期
         
         Args:
@@ -1082,9 +1081,9 @@ class IPAMSQLite:
                         if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 3:
                             continue
                         
-                        network_id: int = int(ip_row[0])
-                        hostname: str = str(ip_row[1]) if ip_row[1] else ''
-                        description: str = str(ip_row[2]) if ip_row[2] else ''
+                        network_id_val: int = int(ip_row[0])
+                        hostname_val: str = str(ip_row[1]) if ip_row[1] else ''
+                        description_val: str = str(ip_row[2]) if ip_row[2] else ''
                         
                         # 更新IP地址过期日期
                         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1099,7 +1098,7 @@ class IPAMSQLite:
                         INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
                         performed_by, performed_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (network_id, ip_address, 'batch_update', hostname, description, 'admin', now))
+                        ''', (network_id_val, ip_address, 'batch_update', hostname_val, description_val, 'admin', now))
                         
                         updated_count += 1
                 else:
@@ -1112,9 +1111,9 @@ class IPAMSQLite:
                             continue
                         
                         ip_id: int = int(ip_row[0])
-                        network_id: int = int(ip_row[1])
-                        hostname: str = str(ip_row[2]) if ip_row[2] else ''
-                        description: str = str(ip_row[3]) if ip_row[3] else ''
+                        net_id: int = int(ip_row[1])
+                        host_name: str = str(ip_row[2]) if ip_row[2] else ''
+                        desc: str = str(ip_row[3]) if ip_row[3] else ''
                         
                         # 更新IP地址过期日期
                         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1129,7 +1128,7 @@ class IPAMSQLite:
                         INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, 
                         performed_by, performed_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (network_id, ip_address, 'batch_update', hostname, description, 'admin', now))
+                        ''', (net_id, ip_address, 'batch_update', host_name, desc, 'admin', now))
                         
                         updated_count += 1
                 
@@ -1177,7 +1176,7 @@ class IPAMSQLite:
         
         return None
 
-    def get_available_ips(self) -> list[dict]:
+    def get_available_ips(self) -> list[dict[str, Any]]:
         """获取所有可用状态的IP地址
         
         Returns:
@@ -1212,7 +1211,7 @@ class IPAMSQLite:
                 })
             
             return result
-        except Exception as e:
+        except Exception:
             return []
 
     def cleanup_available_ips(self) -> tuple[bool, str]:
@@ -1840,7 +1839,7 @@ class IPAMSQLite:
                 'ipv6_networks': 0
             }
     
-    def list_backups(self) -> list[dict]:
+    def list_backups(self) -> list[dict[str, Any]]:
         """获取所有备份记录
         
         Returns:
@@ -1857,10 +1856,10 @@ class IPAMSQLite:
             conn.close()
             
             # 转换为列表字典格式，符合windows_app.py中的预期
-            backup_list: list[dict] = []
+            backup_list: list[dict[str, Any]] = []
             for backup_row in backup_rows:
                 if isinstance(backup_row, tuple) and len(backup_row) >= 6:
-                    backup_id: int = int(backup_row[0])
+                    _ = int(backup_row[0])  # backup_id 未使用
                     backup_name: str = str(backup_row[1])
                     backup_path: str = str(backup_row[2])
                     backup_time: str = str(backup_row[3])
@@ -1913,7 +1912,7 @@ class IPAMSQLite:
             
             # 复制数据库文件
             import shutil
-            shutil.copy2(self.db_file, backup_path)
+            _ = shutil.copy2(self.db_file, backup_path)
             
             # 获取网络和IP数量
             conn = sqlite3.connect(self.db_file)
@@ -2007,7 +2006,7 @@ class IPAMSQLite:
                 backup_time_str = result[0]
                 try:
                     return datetime.strptime(backup_time_str, "%Y-%m-%d %H:%M:%S")
-                except:
+                except (ValueError, TypeError):
                     return None
             return None
         except Exception as e:
