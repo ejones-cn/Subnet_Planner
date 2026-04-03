@@ -11702,16 +11702,47 @@ class SubnetPlannerApp:
         if not statuses:
             return
         
-        # 直接创建一个新的菜单实例，不保存引用
-        # 使用系统默认样式，设置父窗口为 IP 树
-        # 设置菜单的背景色为白色，前景色为黑色，确保不透明
-        menu = tk.Menu(self.ipam_ip_tree, tearoff=0, bg='white', fg='black', activebackground='#0078D7', activeforeground='white')
+        # 清理之前的弹出菜单
+        self._cleanup_ip_popup_menu()
+        
+        # 创建阴影窗口（使用PIL创建半透明模糊阴影）
+        self._ip_shadow_windows = []
+        try:
+            shadow = tk.Toplevel(self.ipam_ip_tree)
+            shadow.withdraw()
+            shadow.configure(bg='', relief='flat', borderwidth=0)
+            shadow.overrideredirect(True)
+            self._ip_shadow_windows.append(shadow)
+        except tk.TclError as e:
+            print(f"阴影窗口创建失败: {e}")
+            return
+        
+        # 创建弹出菜单窗口（带有灰色边框）
+        popup = tk.Toplevel(self.ipam_ip_tree)
+        popup.withdraw()
+        popup.configure(bg='#a0a0a0', highlightthickness=0)  # 灰色背景作为边框
+        popup.overrideredirect(True)
+        
+        # 保存引用
+        self._ip_popup_menu = popup
+        
+        # 创建菜单框架（带有1像素内边距，显示灰色边框）
+        menu_frame = tk.Frame(popup, bg='#f0f0f0', relief='flat', borderwidth=0)
+        menu_frame.pack(fill='both', expand=True, padx=1, pady=1)
         
         # 根据选中行的状态动态添加菜单项
         # 释放地址 - 只要有非可用状态的项目就显示
         has_commands = False
         if any(status != _('available') for status in statuses):
-            menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
+            btn = tk.Button(menu_frame, text=_('release_address'),
+                          command=lambda: self._on_ip_popup_action('release', popup, self._ip_shadow_windows),
+                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
+                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
+                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
+                          cursor='hand2')
+            btn.pack(fill='x')
+            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
+            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
             has_commands = True
         
         # 检查是否需要添加快速操作菜单项
@@ -11720,16 +11751,32 @@ class SubnetPlannerApp:
         # 快速分配 - 可用或保留状态可以转为已分配
         if _('available') in statuses or _('reserved') in statuses:
             if has_commands:
-                menu.add_separator()
-            menu.add_command(label=_('convert_to_allocated'), command=lambda: self.on_ip_menu_action('quick_allocate'))
+                tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
+            btn = tk.Button(menu_frame, text=_('convert_to_allocated'),
+                          command=lambda: self._on_ip_popup_action('quick_allocate', popup, self._ip_shadow_windows),
+                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
+                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
+                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
+                          cursor='hand2')
+            btn.pack(fill='x')
+            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
+            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
             has_quick_actions = True
             has_commands = True
         
         # 快速保留 - 可用或已分配状态可以转为保留
         if _('available') in statuses or _('allocated') in statuses:
             if has_commands and not has_quick_actions:
-                menu.add_separator()
-            menu.add_command(label=_('convert_to_reserved'), command=lambda: self.on_ip_menu_action('quick_reserve'))
+                tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
+            btn = tk.Button(menu_frame, text=_('convert_to_reserved'),
+                          command=lambda: self._on_ip_popup_action('quick_reserve', popup, self._ip_shadow_windows),
+                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
+                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
+                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
+                          cursor='hand2')
+            btn.pack(fill='x')
+            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
+            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
             has_quick_actions = True
             has_commands = True
         
@@ -11742,25 +11789,207 @@ class SubnetPlannerApp:
             if current_status == _('available'):
                 # 可用状态：添加需要用户输入的操作
                 if has_commands:
-                    menu.add_separator()
-                menu.add_command(label=_('reallocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
-                menu.add_command(label=_('reserve_address_again'), command=lambda: self.on_ip_menu_action('reserve'))
-                has_commands = True
+                    tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
+                btn = tk.Button(menu_frame, text=_('reallocate_address'),
+                              command=lambda: self._on_ip_popup_action('allocate', popup, self._ip_shadow_windows),
+                              bg='#f0f0f0', fg='black', relief='flat', anchor='w',
+                              font=('微软雅黑', 10), bd=0, padx=8, pady=4,
+                              highlightthickness=0, activebackground='#0078d7', activeforeground='white',
+                              cursor='hand2')
+                btn.pack(fill='x')
+                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
+                btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
+                btn = tk.Button(menu_frame, text=_('reserve_address_again'),
+                              command=lambda: self._on_ip_popup_action('reserve', popup, self._ip_shadow_windows),
+                              bg='#f0f0f0', fg='black', relief='flat', anchor='w',
+                              font=('微软雅黑', 10), bd=0, padx=8, pady=4,
+                              highlightthickness=0, activebackground='#0078d7', activeforeground='white',
+                              cursor='hand2')
+                btn.pack(fill='x')
+                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
+                btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
         
-        # 计算菜单位置，确保在屏幕范围内
+        # 绑定点击事件，当点击菜单外部时关闭菜单
+        popup.bind('<Button-1>', lambda e: None)
+        popup.bind('<Escape>', lambda: popup.destroy())
+        
+        # 计算菜单位置
         x = event.x_root
         y = event.y_root
         
-        # 显示菜单
+        # 先显示弹出菜单，然后获取其尺寸
+        popup.update_idletasks()
+        popup.geometry(f'+{x}+{y}')
+        popup.deiconify()
+        
+        # 获取菜单的尺寸
+        popup.update_idletasks()
+        menu_width = popup.winfo_width()
+        menu_height = popup.winfo_height()
+        
+        # 显示半透明模糊阴影
+        shadow = self._ip_shadow_windows[0]
+        
         try:
-            # 强制更新UI，确保菜单能够正确渲染
-            self.root.update_idletasks()
-            # 使用post方法显示菜单
-            menu.post(x, y)
-            # 再次强制更新UI
-            self.root.update_idletasks()
+            from PIL import Image, ImageDraw, ImageFilter, ImageTk
+            
+            # 1. 创建阴影图像
+            blur_radius = 5
+            shadow_padding = blur_radius + 2
+            shadow_width = menu_width + shadow_padding * 2
+            shadow_height = menu_height + shadow_padding * 2
+            
+            # 创建透明背景的图像
+            shadow_img = Image.new('RGBA', (shadow_width, shadow_height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(shadow_img)
+            
+            # 2. 在中间绘制半透明的黑色矩形
+            shadow_alpha = 60  # 透明度 0-255
+            shadow_rect = [
+                (shadow_padding, shadow_padding),
+                (shadow_padding + menu_width, shadow_padding + menu_height)
+            ]
+            draw.rectangle(shadow_rect, fill=(0, 0, 0, shadow_alpha))
+            
+            # 3. 应用高斯模糊
+            shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+            
+            # 4. 转换为Tkinter可用格式
+            shadow_photo = ImageTk.PhotoImage(shadow_img)
+            
+            # 5. 在阴影窗口中显示
+            shadow_label = tk.Label(shadow, image=shadow_photo, bg='', bd=0)
+            shadow_label.image = shadow_photo  # 保持引用
+            shadow_label.pack()
+            
+            # 6. 定位阴影（稍微偏移一点）
+            shadow.geometry(f'{shadow_width}x{shadow_height}+{x-2}+{y-2}')
+            shadow.deiconify()
+            shadow.lower(popup)
+            
         except Exception as e:
-            print(f"菜单显示错误: {e}")
+            # 如果失败，回退到简单的灰色阴影
+            shadow.configure(bg='#c0c0c0')
+            shadow.geometry(f'{menu_width}x{menu_height}+{x+2}+{y+2}')
+            shadow.deiconify()
+            shadow.lower(popup)
+        
+        # 保存当前菜单和阴影的引用，用于点击外部关闭
+        self._current_ip_popup = popup
+        self._current_ip_shadows = self._ip_shadow_windows
+        self._ip_popup_click_bind_id = None
+        
+        # 点击外部关闭菜单的函数
+        def close_menu(event):
+            try:
+                # 如果event是None（ESC键调用），直接关闭
+                if event is None:
+                    for s in self._current_ip_shadows:
+                        try:
+                            s.destroy()
+                        except:
+                            pass
+                    try:
+                        self._current_ip_popup.destroy()
+                    except:
+                        pass
+                    # 移除绑定
+                    if self._ip_popup_click_bind_id:
+                        try:
+                            self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
+                        except:
+                            pass
+                    return
+                
+                # 检查点击是否在菜单内部
+                x, y = event.x_root, event.y_root
+                popup_x = self._current_ip_popup.winfo_x()
+                popup_y = self._current_ip_popup.winfo_y()
+                popup_w = self._current_ip_popup.winfo_width()
+                popup_h = self._current_ip_popup.winfo_height()
+                
+                if not (popup_x <= x <= popup_x + popup_w and popup_y <= y <= popup_y + popup_h):
+                    # 点击在菜单外部，关闭菜单
+                    for s in self._current_ip_shadows:
+                        try:
+                            s.destroy()
+                        except:
+                            pass
+                    try:
+                        self._current_ip_popup.destroy()
+                    except:
+                        pass
+                    # 移除绑定
+                    if self._ip_popup_click_bind_id:
+                        try:
+                            self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
+                        except:
+                            pass
+            except:
+                pass
+        
+        # 绑定全局点击事件
+        self._ip_popup_click_bind_id = self.root.bind('<Button-1>', close_menu, add='+')
+        
+        # 绑定ESC键关闭
+        popup.bind('<Escape>', lambda e: close_menu(None))
+    
+    def _on_ip_popup_action(self, action, popup, shadows):
+        """处理弹出菜单的操作"""
+        # 先关闭菜单和阴影
+        try:
+            for s in self._current_ip_shadows:
+                try:
+                    s.destroy()
+                except:
+                    pass
+        except:
+            pass
+        try:
+            self._current_ip_popup.destroy()
+        except:
+            pass
+        # 移除事件绑定
+        if self._ip_popup_click_bind_id:
+            try:
+                self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
+            except:
+                pass
+        # 执行菜单操作
+        self.on_ip_menu_action(action)
+    
+    def _cleanup_ip_popup_menu(self):
+        """清理弹出菜单"""
+        # 清理事件绑定
+        if hasattr(self, '_ip_popup_click_bind_id') and self._ip_popup_click_bind_id:
+            try:
+                self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
+            except:
+                pass
+            self._ip_popup_click_bind_id = None
+        
+        # 清理阴影窗口
+        if hasattr(self, '_ip_shadow_windows') and self._ip_shadow_windows:
+            for shadow in self._ip_shadow_windows:
+                try:
+                    shadow.destroy()
+                except:
+                    pass
+            self._ip_shadow_windows = []
+        
+        # 清理当前菜单引用
+        if hasattr(self, '_current_ip_shadows'):
+            self._current_ip_shadows = []
+        if hasattr(self, '_current_ip_popup'):
+            self._current_ip_popup = None
+        
+        # 清理菜单窗口
+        if hasattr(self, '_ip_popup_menu') and self._ip_popup_menu:
+            try:
+                self._ip_popup_menu.destroy()
+            except:
+                pass
+            self._ip_popup_menu = None
     
     def _cleanup_ip_menu(self):
         """清理IP树菜单资源"""
