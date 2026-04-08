@@ -2532,42 +2532,54 @@ class SubnetPlannerApp:
             update_index: 是否更新序号列（适用于包含序号的表格）
         """
         try:
-            # 只更新行标签，样式已在初始化时配置
-            children = tree.get_children()
-            for index, item in enumerate(children, start=1):
-                tag = "even" if index % 2 == 0 else "odd"
+            # 递归处理所有可见的子节点
+            def process_children(parent, start_index=1):
+                index = start_index
+                children = tree.get_children(parent)
+                for item in children:
+                    tag = "even" if index % 2 == 0 else "odd"
 
-                # 获取当前行的标签，保留原有标签
-                current_tags = list(tree.item(item, "tags"))
-                
-                # 如果没有当前标签，创建空列表
-                if not current_tags:
-                    current_tags = []
-                
-                # 如果当前标签是字符串而不是列表，转换为列表
-                if isinstance(current_tags, str):
-                    current_tags = [current_tags]
-                
-                # 保存特殊标签
-                special_tags = [t for t in current_tags if t not in ["even", "odd"]]
-                
-                # 重新构建标签列表，特殊标签在前，斑马条纹标签在后
-                new_tags = special_tags.copy()
-                if tag not in new_tags:
-                    new_tags.append(tag)
+                    # 获取当前行的标签，保留原有标签
+                    current_tags = list(tree.item(item, "tags"))
+                    
+                    # 如果没有当前标签，创建空列表
+                    if not current_tags:
+                        current_tags = []
+                    
+                    # 如果当前标签是字符串而不是列表，转换为列表
+                    if isinstance(current_tags, str):
+                        current_tags = [current_tags]
+                    
+                    # 保存特殊标签
+                    special_tags = [t for t in current_tags if t not in ["even", "odd"]]
+                    
+                    # 重新构建标签列表，特殊标签在前，斑马条纹标签在后
+                    new_tags = special_tags.copy()
+                    if tag not in new_tags:
+                        new_tags.append(tag)
 
-                if update_index:
-                    # 更新序号列
-                    values = list(tree.item(item, "values"))
-                    if values and values[0] != index:  # 只有当序号不一致时才更新
-                        values[0] = index
-                        tree.item(item, values=values, tags=tuple(new_tags))
+                    if update_index:
+                        # 更新序号列
+                        values = list(tree.item(item, "values"))
+                        if values and values[0] != index:  # 只有当序号不一致时才更新
+                            values[0] = index
+                            tree.item(item, values=values, tags=tuple(new_tags))
+                        else:
+                            # 只更新斑马条纹标签，减少不必要的UI更新
+                            tree.item(item, tags=tuple(new_tags))
                     else:
-                        # 只更新斑马条纹标签，减少不必要的UI更新
+                        # 只更新斑马条纹标签
                         tree.item(item, tags=tuple(new_tags))
-                else:
-                    # 只更新斑马条纹标签
-                    tree.item(item, tags=tuple(new_tags))
+                    
+                    # 只有当节点被展开时，才递归处理其子节点
+                    if tree.item(item, 'open'):
+                        index = process_children(item, index + 1)
+                    else:
+                        index += 1
+                return index
+            
+            # 从根节点开始处理
+            process_children('')
         except AttributeError:
             # 忽略属性不存在的错误
             pass
@@ -9024,15 +9036,28 @@ class SubnetPlannerApp:
         table_container.grid_columnconfigure(0, weight=1)
         
         # 网络列表 - 在table_container上创建
-        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='headings', height=8, selectmode='extended')
-        self.ipam_network_tree.heading('network', text='网段地址')
+        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='tree headings', height=8, selectmode='extended')
+        
+        # 启用层次关系线
+        style = ttk.Style()
+        style.configure('Treeview', indent=10)
+        
+        # 设置Treeview的样式为"vista"
+        try:
+            style.theme_use('vista')
+        except Exception:
+            # 如果vista主题不可用，使用默认主题
+            pass
+        # 设置列标题
+        self.ipam_network_tree.heading('#0', text=_('network_segment'))  # 树状结构列的标题
+        self.ipam_network_tree.heading('network', text=_('network_address'))
         self.ipam_network_tree.heading('description', text=_('description'))
         self.ipam_network_tree.heading('created_at', text=_('created_at'))
         self.ipam_network_tree.heading('ip_count', text=_('ip_count'))
         
         # 调整列宽，提高空间利用率
-        self.ipam_network_tree.column('network', width=120, minwidth=100, stretch=True)
-        self.ipam_network_tree.column('description', width=200, minwidth=150, stretch=True)
+        self.ipam_network_tree.column('network', width=0, stretch=False)  # 隐藏重复的网段地址列
+        self.ipam_network_tree.column('description', width=250, minwidth=150, stretch=True)
         self.ipam_network_tree.column('created_at', width=150, minwidth=120, stretch=True)
         self.ipam_network_tree.column('ip_count', width=70, minwidth=60, stretch=True)
         
@@ -9046,11 +9071,10 @@ class SubnetPlannerApp:
         self.ipam_network_tree.bind('<<TreeviewSelect>>', self.on_ipam_network_select)
         # 绑定鼠标点击事件用于取消选择
         self.ipam_network_tree.bind('<Button-1>', self.on_ipam_network_click)
-        
         # 为网络管理表添加内联编辑功能
         # 注册网络管理表的内联编辑配置
         self.register_inline_edit_config('ipam_network', {
-            'editable_columns': [0, 1],  # 允许编辑网段地址和描述列
+            'editable_columns': [0, 1],  # 网段地址列和描述列
             'column_types': {
                 0: 'entry',  # 网段地址列使用文本框
                 1: 'entry'  # 描述列使用文本框
@@ -9064,8 +9088,11 @@ class SubnetPlannerApp:
             'save': self._save_network_edit
         })
         
-        # 绑定双击事件
-        self.ipam_network_tree.bind('<Double-1>', lambda event: self.on_generic_tree_double_click(self.ipam_network_tree, 'ipam_network', event))
+        # 绑定双击事件用于内联编辑
+        self.ipam_network_tree.bind('<Double-1>', lambda event: self.on_ipam_network_double_click(event))
+        # 绑定展开/收缩事件，用于刷新斑马纹
+        self.ipam_network_tree.bind('<<TreeviewOpen>>', lambda event: self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree)))
+        self.ipam_network_tree.bind('<<TreeviewClose>>', lambda event: self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree)))
         
         # 配置Treeview样式，包括斑马条纹
         self.configure_treeview_styles(self.ipam_network_tree)
@@ -9314,27 +9341,136 @@ class SubnetPlannerApp:
         self.add_ipam_sample_data()
     
     def refresh_ipam_networks(self):
-        """刷新IPAM网络列表"""
+        """刷新IPAM网络列表，实现分层显示"""
         # 清空现有网络列表
         for item in self.ipam_network_tree.get_children():
             self.ipam_network_tree.delete(item)
         
         # 获取所有网络
         networks = self.ipam.get_all_networks()
-        for network in networks:
-            # 格式化时间戳，只显示到秒
-            created_at = network['created_at']
-            formatted_time = self._format_datetime(created_at)
-            
-            self.ipam_network_tree.insert('', tk.END, values=(
-                network['network'],
-                network['description'],
-                formatted_time,
-                network['ip_count']
-            ))
+        
+        # 构建网段层次结构
+        full_hierarchy, top_level_networks = self._build_network_hierarchy(networks)
+        
+        # 递归插入网段到Treeview
+        self._insert_networks_recursively('', top_level_networks, full_hierarchy)
         
         # 更新斑马纹样式
         self.update_table_zebra_stripes(self.ipam_network_tree)
+    
+    def _build_network_hierarchy(self, networks):
+        """构建网段层次结构
+        
+        Args:
+            networks: 网段列表
+            
+        Returns:
+            tuple: (full_hierarchy, top_level_networks)
+                full_hierarchy: 完整的网段层次结构
+                top_level_networks: 只包含顶层网络的层次结构
+        """
+        import ipaddress
+        
+        # 先将所有网段转换为ipaddress对象并排序
+        network_objects = []
+        for network in networks:
+            try:
+                net_obj = ipaddress.ip_network(network['network'], strict=False)
+                network_objects.append((net_obj, network))
+            except ValueError:
+                # 跳过无效的网段
+                pass
+        
+        # 按网络大小排序，大网络在前
+        network_objects.sort(key=lambda x: (x[0].prefixlen, x[0].network_address))
+        
+        # 构建层次结构
+        hierarchy = {}
+        # 首先将所有网络添加到层次结构中
+        for net_obj, network_data in network_objects:
+            network_str = str(net_obj)
+            hierarchy[network_str] = {'data': network_data, 'children': []}
+        
+        # 然后构建父子关系
+        for net_obj, network_data in network_objects:
+            network_str = str(net_obj)
+            
+            # 查找父网络
+            parent = None
+            for existing_net, existing_data in hierarchy.items():
+                try:
+                    existing_net_obj = ipaddress.ip_network(existing_net, strict=False)
+                    # 检查子网段是否完全包含在父网段中
+                    if net_obj.prefixlen > existing_net_obj.prefixlen:
+                        # 检查网络地址是否在父网段范围内
+                        if net_obj.network_address in existing_net_obj:
+                            # 找到一个父网络，检查是否是最直接的父网络
+                            if parent is None:
+                                parent = existing_net
+                            else:
+                                # 检查哪个父网络更具体（prefixlen更大）
+                                parent_obj = ipaddress.ip_network(parent, strict=False)
+                                if existing_net_obj.prefixlen > parent_obj.prefixlen:
+                                    parent = existing_net
+                except ValueError:
+                    pass
+            
+            # 添加到层次结构
+            if parent:
+                hierarchy[parent]['children'].append(network_str)
+        
+        # 过滤掉作为子节点的网络，只保留顶层网络
+        top_level_networks = {}
+        for network_str, network_data in hierarchy.items():
+            # 检查是否是顶层网络（没有被其他网络作为子节点）
+            is_top_level = True
+            for existing_net, existing_data in hierarchy.items():
+                if network_str in existing_data['children']:
+                    is_top_level = False
+                    break
+            if is_top_level:
+                top_level_networks[network_str] = network_data
+        
+        return hierarchy, top_level_networks
+    
+    def _insert_networks_recursively(self, parent_item, network_hierarchy, full_hierarchy):
+        """递归插入网段到Treeview
+        
+        Args:
+            parent_item: 父Treeview项ID
+            network_hierarchy: 当前层次的网段层次结构
+            full_hierarchy: 完整的网段层次结构
+        """
+        # 对网段进行排序，确保显示顺序一致
+        sorted_networks = sorted(network_hierarchy.keys())
+        
+        for network_str in sorted_networks:
+            network_data = network_hierarchy[network_str]['data']
+            children = network_hierarchy[network_str]['children']
+            
+            # 格式化时间戳，只显示到秒
+            created_at = network_data['created_at']
+            formatted_time = self._format_datetime(created_at)
+            
+            # 插入网段
+            item = self.ipam_network_tree.insert(parent_item, tk.END, text=network_data['network'], values=(
+                network_data['network'],
+                network_data['description'],
+                formatted_time,
+                network_data['ip_count']
+            ))
+            
+            # 递归插入子网段
+            if children:
+                # 构建子网段的层次结构
+                child_hierarchy = {}
+                for child_net in children:
+                    # 从完整的层次结构中查找子网段的完整数据
+                    if child_net in full_hierarchy:
+                        child_hierarchy[child_net] = full_hierarchy[child_net]
+                
+                # 递归插入子网络
+                self._insert_networks_recursively(item, child_hierarchy, full_hierarchy)
 
     def refresh_ipam_ips(self, network):
         """刷新IP地址列表"""
@@ -11681,8 +11817,19 @@ class SubnetPlannerApp:
         if networks:
             return
         
-        # 添加办公室网络
-        self.ipam.add_network('192.168.1.0/24', '办公室网络')
+        # 添加大网段
+        self.ipam.add_network('10.0.0.0/8', '集团网段')
+        self.ipam.add_network('192.168.0.0/16', '办公网段')
+        
+        # 添加中网段
+        self.ipam.add_network('10.0.0.0/16', '总部网段')
+        self.ipam.add_network('192.168.1.0/24', '办公室网段')
+        
+        # 添加小网段
+        self.ipam.add_network('10.0.0.0/24', '服务器网段')
+        self.ipam.add_network('10.0.1.0/24', '人事部网段')
+        self.ipam.add_network('10.0.2.0/24', '员工无线网段')
+        
         # 为办公室网络分配一些IP地址
         self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.10', 'PC-001', '总经理办公室')
         self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.11', 'PC-002', '技术部经理')
@@ -11691,8 +11838,6 @@ class SubnetPlannerApp:
         self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.1', '路由器')
         self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.254', '网关')
         
-        # 添加服务器网络
-        self.ipam.add_network('10.0.0.0/24', '服务器网络')
         # 为服务器网络分配一些IP地址
         self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.10', 'Server-001', '文件服务器')
         self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.11', 'Server-002', '数据库服务器')
@@ -11700,14 +11845,59 @@ class SubnetPlannerApp:
         self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.1', '路由器')
         self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.254', '网关')
         
+        # 为人事部网络分配一些IP地址
+        self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.10', 'HR-001', '人事主管')
+        self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.11', 'HR-002', '人事专员')
+        
         # 刷新IPAM数据
         self.refresh_ipam_networks()
     
     def on_ipam_network_click(self, event):
         """网络点击事件处理（用于取消选择）"""
+        # 获取点击的列
+        column = self.ipam_network_tree.identify_column(event.x)
+        
         # 获取点击的项
         clicked_item = self.ipam_network_tree.identify_row(event.y)
         selected_items = self.ipam_network_tree.selection()
+        
+        # 打印调试信息
+
+        
+        # 如果点击的是第一列（树状结构列），检查是否点击了展开/折叠图标
+        if column == '#0' and clicked_item:
+            # 检查当前项是否有子节点（即是否有展开/折叠图标）
+            children = self.ipam_network_tree.get_children(clicked_item)
+            if not children:
+                # 没有子节点，不阻止焦点转移
+                return
+            
+            # 获取点击的x坐标相对于Treeview的位置
+            x = event.x
+            
+            # 获取当前项的深度（缩进级别）
+            depth = 0
+            parent = self.ipam_network_tree.parent(clicked_item)
+            while parent:
+                depth += 1
+                parent = self.ipam_network_tree.parent(parent)
+            
+            # 计算展开/折叠图标的位置，每个深度级别增加20像素的缩进
+            icon_x_start = depth * 20
+            icon_x_end = icon_x_start + 10
+            
+            # 检查点击的x坐标是否在展开/折叠图标的范围内
+            if icon_x_start <= x < icon_x_end:
+                # 点击的是展开/折叠图标
+                # 切换节点的展开/折叠状态
+                if self.ipam_network_tree.item(clicked_item, 'open'):
+                    self.ipam_network_tree.item(clicked_item, open=False)
+                else:
+                    self.ipam_network_tree.item(clicked_item, open=True)
+                # 刷新斑马纹
+                self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree))
+                # 阻止默认的选择行为
+                return 'break'
         
         # 检查是否点击了已选中的项
         if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
@@ -11720,6 +11910,119 @@ class SubnetPlannerApp:
             # 移除status_bar引用，因为该属性不存在
             # 阻止默认选择行为
             return 'break'
+        
+        # 如果点击的是未选中的项，手动选中该行
+        if clicked_item and clicked_item not in selected_items:
+            # 清除之前的选择
+            self.ipam_network_tree.selection_clear()
+            # 选中点击的项
+            self.ipam_network_tree.selection_add(clicked_item)
+            # 触发选择事件
+            self.on_ipam_network_select(None)
+        
+        # 允许默认的选择行为
+        return
+    
+    def on_ipam_network_double_click(self, event):
+        """网络双击事件处理（用于内联编辑）"""
+        try:
+            # 获取双击的行和列
+            item = self.ipam_network_tree.identify_row(event.y)
+            column = self.ipam_network_tree.identify_column(event.x)
+            
+            if not item or not column:
+                return
+            
+            # 获取列索引
+            column_index = int(column[1:]) - 1
+            
+            # 确保内联编辑数据结构已初始化
+            self._init_inline_edit_data()
+            
+            # 检查是否是可编辑列
+            config = self._inline_edit_configs.get('ipam_network', {})
+            if column_index not in config.get('editable_columns', []):
+                return
+            
+            # 获取当前单元格的值
+            values = self.ipam_network_tree.item(item, 'values')
+            current_value = values[column_index]
+            
+            # 获取单元格的坐标
+            try:
+                x, y, width, height = self.ipam_network_tree.bbox(item, column)
+            except tk.TclError:
+                return
+            
+            # 安全销毁所有旧的编辑控件，防止内存泄漏
+            self._destroy_inline_edit_widgets()
+            
+            # 获取列名
+            columns = self.ipam_network_tree["columns"]
+            column_name = columns[column_index] if column_index < len(columns) else f"column_{column_index}"
+            
+            # 保存相关信息
+            self.inline_edit_data = {
+                'item': item,
+                'column_index': column_index,
+                'column_name': column_name,
+                'original_value': current_value,
+                'tree': self.ipam_network_tree,
+                'tree_name': 'ipam_network'
+            }
+            
+            # 绑定事件 - 先定义事件处理函数
+            def on_widget_save(event):
+                # 直接保存
+                self.on_generic_inline_edit_save(None)
+            
+            def on_widget_focus_out(event):
+                # 直接保存，与子网规划表保持一致的行为
+                self.on_generic_inline_edit_save(None)
+            
+            def on_widget_cancel(event):
+                # 直接取消
+                self.on_generic_inline_edit_cancel(event)
+            
+            # 根据列类型创建编辑控件
+            column_type = config.get('column_types', {}).get(column_index, 'entry')
+            
+            if column_type == 'combobox':
+                # 为Combobox创建一个特殊的框架，确保下拉列表正常显示
+                self.inline_edit_frame = ttk.Frame(self.ipam_network_tree)
+                self.inline_edit_frame.place(x=x, y=y, width=width, height=height)
+                
+                # 获取下拉框值
+                combobox_values = config.get('combobox_values', {}).get(column_index, [])
+                
+                self.inline_edit_widget = ttk.Combobox(self.inline_edit_frame, 
+                                                       values=combobox_values,
+                                                       width=width // 10 - 2,
+                                                       font=(self.font_family, self.font_size))
+                self.inline_edit_widget.current(combobox_values.index(current_value) if current_value in combobox_values else 0)
+            else:
+                # 创建Entry控件
+                self.inline_edit_widget = ttk.Entry(self.ipam_network_tree, 
+                                                   width=width // 10 - 2,
+                                                   font=(self.font_family, self.font_size))
+                self.inline_edit_widget.insert(0, current_value)
+            
+            # 放置编辑控件
+            if hasattr(self, 'inline_edit_frame') and self.inline_edit_frame:
+                self.inline_edit_widget.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
+            else:
+                self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
+            
+            # 绑定事件
+            self.inline_edit_widget.bind('<Return>', on_widget_save)
+            self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+            self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+            
+            # 获取焦点并全选文本
+            self.inline_edit_widget.focus_set()
+            self.inline_edit_widget.select_range(0, tk.END)
+        except Exception as e:
+            print(f"双击事件处理错误: {str(e)}")
         
     def on_ipam_network_select(self, event):
         """网络选择事件处理"""
@@ -11801,7 +12104,7 @@ class SubnetPlannerApp:
                     prefix_parts = network_address.split('.')[:1]
                     prefix = '.'.join(prefix_parts) + '.'
                 
-                print(f"网络选择事件触发: {network}, 前缀: {prefix}")
+
             except Exception as e:
                 print(f"网络选择处理失败: {str(e)}")
                 pass

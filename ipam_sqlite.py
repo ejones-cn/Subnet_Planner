@@ -1849,6 +1849,7 @@ class IPAMSQLite:
             list[dict]: 备份记录列表
         """
         try:
+            # 从backups表中获取所有备份记录
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
             
@@ -1860,6 +1861,9 @@ class IPAMSQLite:
             
             # 转换为列表字典格式，符合windows_app.py中的预期
             backup_list: list[dict[str, Any]] = []
+            backup_paths = set()
+            
+            # 添加数据库中的备份记录
             for backup_row in backup_rows:
                 if isinstance(backup_row, tuple) and len(backup_row) >= 6:
                     _ = int(backup_row[0])  # backup_id 未使用
@@ -1877,6 +1881,40 @@ class IPAMSQLite:
                             'ip_count': ip_count
                         }
                     })
+                    backup_paths.add(backup_path)
+            
+            # 检查备份目录中的实际文件，确保所有备份文件都能在列表中显示
+            if os.path.exists(self.backup_dir):
+                for filename in os.listdir(self.backup_dir):
+                    if filename.endswith('.db'):
+                        backup_path = os.path.join(self.backup_dir, filename)
+                        if backup_path not in backup_paths:
+                            # 对于没有数据库记录的备份文件，尝试从文件名提取时间戳
+                            # 文件名格式：backup_20260408_183506.db
+                            import re
+                            match = re.match(r'backup_([0-9]{8})_([0-9]{6})\.db', filename)
+                            if match:
+                                date_part = match.group(1)
+                                time_part = match.group(2)
+                                backup_time = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                            else:
+                                # 如果文件名格式不符合预期，使用文件修改时间
+                                mtime = os.path.getmtime(backup_path)
+                                backup_time = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                            
+                            # 添加到备份列表
+                            backup_list.append({
+                                'filename': filename,
+                                'file_path': backup_path,
+                                'info': {
+                                    'backup_time': backup_time,
+                                    'network_count': 0,
+                                    'ip_count': 0
+                                }
+                            })
+            
+            # 按备份时间排序
+            backup_list.sort(key=lambda x: x['info']['backup_time'], reverse=True)
             
             return backup_list
         except Exception as e:
