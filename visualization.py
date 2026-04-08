@@ -51,26 +51,26 @@ class VisualizationError(Exception):
     pass
 
 
-# 定义颜色常量
-NODE_COLOR = "#4a7eb4"
+# 定义颜色常量 - 优雅配色方案
+NODE_COLOR = "#4a6fa5"
 NODE_BORDER_COLOR = "#2c3e50"
-LINK_COLOR = "#7f8c8d"
-TEXT_COLOR = "#ecf0f1"
-BACKGROUND_COLOR = "#34495e"
-HIGHLIGHT_COLOR = "#e74c3c"
+LINK_COLOR = "#6c757d"
+TEXT_COLOR = "#ffffff"
+BACKGROUND_COLOR = "#2c3e50"
+HIGHLIGHT_COLOR = "#3498db"
 
 # 定义节点大小
-NODE_WIDTH = 150
-NODE_HEIGHT = 80
-NODE_SPACING = 200
+NODE_WIDTH = 180
+NODE_HEIGHT = 90
+NODE_SPACING = 220
 
-# 定义网段类型颜色
+# 定义网段类型颜色 - 优雅渐变色彩
 SUBNET_TYPE_COLORS = {
-    "default": "#4a7eb4",
-    "server": "#e74c3c",
-    "client": "#27ae60",
-    "network": "#f39c12",
-    "management": "#9b59b6"
+    "default": "#4a6fa5",      # 主蓝色
+    "server": "#e76f51",        # 暖橙色（服务器）
+    "client": "#2a9d8f",        # 青绿色（客户端）
+    "network": "#f4a261",        # 柔和橙色（网络）
+    "management": "#9c89b8"      # 柔和紫色（管理）
 }
 
 # 定义设备类型形状
@@ -127,6 +127,7 @@ class NetworkTopologyVisualizer:
         self.canvas.bind("<ButtonRelease-1>", self.stop_drag)
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
         self.canvas.bind("<Motion>", self.on_mouse_move)
+        self.canvas.bind("<Leave>", self.on_canvas_leave)
         
         # 拖拽状态
         self.dragging = False
@@ -212,38 +213,162 @@ class NetworkTopologyVisualizer:
         Returns:
             int: 形状ID
         """
+        # 添加阴影效果
+        shadow_offset = 5
+        shadow_color = "#000000"
+        
+        # 创建多层阴影，增强立体感
+        stipple_patterns = ["gray25", "gray50", "gray75"]
+        for i in range(1, 4):
+            shadow_opacity = 0.1 * i
+            shadow_x = x + shadow_offset * i * 0.5
+            shadow_y = y + shadow_offset * i * 0.5
+            stipple = stipple_patterns[i-1]  # 使用支持的stipple模式
+            
+            if shape == "rectangle":
+                self.canvas.create_rectangle(
+                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
+                    fill=shadow_color,
+                    outline="",
+                    stipple=stipple
+                )
+            elif shape == "ellipse":
+                self.canvas.create_oval(
+                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
+                    fill=shadow_color,
+                    outline="",
+                    stipple=stipple
+                )
+            elif shape == "diamond":
+                self.canvas.create_polygon(
+                    shadow_x + width / 2, shadow_y,
+                    shadow_x + width, shadow_y + height / 2,
+                    shadow_x + width / 2, shadow_y + height,
+                    shadow_x, shadow_y + height / 2,
+                    fill=shadow_color,
+                    outline="",
+                    stipple=stipple
+                )
+            elif shape == "triangle":
+                self.canvas.create_polygon(
+                    shadow_x + width / 2, shadow_y,
+                    shadow_x + width, shadow_y + height,
+                    shadow_x, shadow_y + height,
+                    fill=shadow_color,
+                    outline="",
+                    stipple=stipple
+                )
+        
+        # 创建主形状
         if shape == "rectangle":
-            return self.canvas.create_rectangle(
-                x, y, x + width, y + height,
-                fill=fill,
+            # 创建圆角矩形
+            radius = 10
+            # 创建渐变效果（使用多层叠加）
+            for i in range(3):
+                alpha = 0.3 + i * 0.2
+                gradient_fill = fill
+                if i > 0:
+                    # 稍微亮一点的颜色作为渐变
+                    gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
+                
+                self.canvas.create_polygon(
+                    x + radius, y + i,
+                    x + width - radius, y + i,
+                    x + width - i, y + radius,
+                    x + width - i, y + height - radius,
+                    x + width - radius, y + height - i,
+                    x + radius, y + height - i,
+                    x + i, y + height - radius,
+                    x + i, y + radius,
+                    fill=gradient_fill,
+                    outline="",
+                    smooth=True
+                )
+            
+            # 创建边框
+            return self.canvas.create_polygon(
+                x + radius, y,
+                x + width - radius, y,
+                x + width, y + radius,
+                x + width, y + height - radius,
+                x + width - radius, y + height,
+                x + radius, y + height,
+                x, y + height - radius,
+                x, y + radius,
+                fill="",
                 outline=outline,
-                width=border_width
+                width=border_width + 1,
+                smooth=True
             )
         elif shape == "ellipse":
+            # 创建渐变效果
+            for i in range(3):
+                alpha = 0.3 + i * 0.2
+                gradient_fill = fill
+                if i > 0:
+                    gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
+                
+                self.canvas.create_oval(
+                    x + i, y + i, x + width - i, y + height - i,
+                    fill=gradient_fill,
+                    outline=""
+                )
+            
             return self.canvas.create_oval(
                 x, y, x + width, y + height,
-                fill=fill,
+                fill="",
                 outline=outline,
-                width=border_width
+                width=border_width + 1
             )
         elif shape == "diamond":
+            # 创建渐变效果
+            for i in range(3):
+                alpha = 0.3 + i * 0.2
+                gradient_fill = fill
+                if i > 0:
+                    gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
+                
+                self.canvas.create_polygon(
+                    x + width / 2, y + i,
+                    x + width - i, y + height / 2,
+                    x + width / 2, y + height - i,
+                    x + i, y + height / 2,
+                    fill=gradient_fill,
+                    outline=""
+                )
+            
             return self.canvas.create_polygon(
                 x + width / 2, y,
                 x + width, y + height / 2,
                 x + width / 2, y + height,
                 x, y + height / 2,
-                fill=fill,
+                fill="",
                 outline=outline,
-                width=border_width
+                width=border_width + 1
             )
         elif shape == "triangle":
+            # 创建渐变效果
+            for i in range(3):
+                alpha = 0.3 + i * 0.2
+                gradient_fill = fill
+                if i > 0:
+                    gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
+                
+                self.canvas.create_polygon(
+                    x + width / 2, y + i,
+                    x + width - i, y + height - i,
+                    x + i, y + height - i,
+                    fill=gradient_fill,
+                    outline=""
+                )
+            
             return self.canvas.create_polygon(
                 x + width / 2, y,
                 x + width, y + height,
                 x, y + height,
-                fill=fill,
+                fill="",
                 outline=outline,
-                width=border_width
+                width=border_width + 1
             )
         else:
             return self.canvas.create_rectangle(
@@ -253,7 +378,7 @@ class NetworkTopologyVisualizer:
                 width=border_width
             )
     
-    def add_node(self, name, subnet, level=0, subnet_type="default", device_type="default", ip_info=None):
+    def add_node(self, name, subnet, level=0, subnet_type="default", device_type="default", ip_info=None, parent_id=None):
         """添加节点
         
         Args:
@@ -263,15 +388,25 @@ class NetworkTopologyVisualizer:
             subnet_type: 网段类型
             device_type: 设备类型
             ip_info: IP地址信息
+            parent_id: 父节点ID
         
         Returns:
             str: 节点ID
         """
         node_id = f"node_{len(self.nodes)}"
         
-        # 计算节点位置（使用分层布局）
-        x = 100 + level * NODE_SPACING
-        y = 100 + (len(self.nodes) % 10) * (NODE_HEIGHT + 50)
+        # 计算节点位置（使用改进的树形布局）
+        if parent_id and parent_id in self.nodes:
+            # 如果有父节点，基于父节点位置计算
+            parent_node = self.nodes[parent_id]
+            x = parent_node["x"] + NODE_SPACING
+            # 计算父节点的子节点数量，确保子节点均匀分布
+            child_count = sum(1 for n in self.nodes.values() if n.get("parent_id") == parent_id)
+            y = parent_node["y"] + (child_count - 1) * (NODE_HEIGHT + 40) - (child_count * (NODE_HEIGHT + 40)) / 2 + NODE_HEIGHT / 2
+        else:
+            # 根节点或没有父节点的节点
+            x = 100 + level * NODE_SPACING
+            y = 100 + (len([n for n in self.nodes.values() if n.get("level") == level]) % 5) * (NODE_HEIGHT + 60)
         
         # 根据网段类型获取颜色
         node_color = SUBNET_TYPE_COLORS.get(subnet_type, NODE_COLOR)
@@ -341,7 +476,8 @@ class NetworkTopologyVisualizer:
             "ip_info_text": ip_info_id,
             "x": x,
             "y": y,
-            "level": level
+            "level": level,
+            "parent_id": parent_id
         }
         
         return node_id
@@ -363,12 +499,14 @@ class NetworkTopologyVisualizer:
             x2 = target["x"]
             y2 = target["y"] + NODE_HEIGHT / 2
             
-            # 创建连接线
+            # 创建连接线，添加箭头和动画效果
             link_id = self.canvas.create_line(
                 x1, y1, x2, y2,
                 fill=LINK_COLOR,
                 width=2,
-                arrow=tk.LAST
+                arrow=tk.LAST,
+                arrowshape=(10, 15, 5),  # 箭头形状：(箭头长度, 箭头宽度, 箭头角度)
+                smooth=True
             )
             
             # 存储连接信息
@@ -377,7 +515,10 @@ class NetworkTopologyVisualizer:
                 "source": source_node_id,
                 "target": target_node_id
             })
-    
+            
+            # 将连接线置于节点下方
+            self.canvas.tag_lower(link_id)
+
     def clear(self):
         """清空画布"""
         self.canvas.delete(tk.ALL)
@@ -409,10 +550,18 @@ class NetworkTopologyVisualizer:
             self.canvas.update_idletasks()
             self.canvas.config(scrollregion=(0, 0, 1, 1))
         
+        # 构建网络层次结构，先处理父节点，再处理子节点
+        # 按层级排序网络数据
+        sorted_data = sorted(filtered_data, key=lambda x: x.get("level", 0))
+        
         # 遍历网络数据，构建节点和连接
-        for network in filtered_data:
+        for network in sorted_data:
             # 检查节点级别是否在过滤范围内
             if network.get("level", 0) <= self.filter_level or self.filter_level == 0:
+                # 查找父节点ID
+                parent_network_id = network.get("parent_id")
+                parent_node_id = node_id_map.get(parent_network_id) if parent_network_id else None
+                
                 # 添加网络节点
                 node_id = self.add_node(
                     network.get("name", "Network"),
@@ -420,18 +569,26 @@ class NetworkTopologyVisualizer:
                     level=network.get("level", 0),
                     subnet_type=network.get("type", "default"),
                     device_type=network.get("device_type", "default"),
-                    ip_info=network.get("ip_info", {})
+                    ip_info=network.get("ip_info", {}),
+                    parent_id=parent_node_id
                 )
                 node_id_map[network.get("id", node_id)] = node_id
                 self.visible_nodes.add(node_id)
         
         # 添加连接
-        for network in filtered_data:
+        for network in sorted_data:
             node_id = node_id_map.get(network.get("id"))
             if node_id and node_id in self.visible_nodes:
-                for child_id in network.get("children", []):
-                    if child_id in node_id_map and node_id_map[child_id] in self.visible_nodes:
-                        self.add_link(node_id, node_id_map[child_id])
+                # 遍历子节点，获取子节点ID
+                for child in network.get("children", []):
+                    if isinstance(child, dict):
+                        child_id = child.get("id")
+                        if child_id in node_id_map and node_id_map[child_id] in self.visible_nodes:
+                            self.add_link(node_id, node_id_map[child_id])
+                    elif isinstance(child, str):
+                        # 如果子节点是字符串ID，直接查找
+                        if child in node_id_map and node_id_map[child] in self.visible_nodes:
+                            self.add_link(node_id, node_id_map[child])
         
         # 批量绘制完成
         if self.batch_drawing:
@@ -452,9 +609,31 @@ class NetworkTopologyVisualizer:
         Returns:
             list: 过滤后的节点列表
         """
+        def collect_nodes(data):
+            """递归收集所有节点"""
+            nodes = []
+            nodes.append(data)
+            if "children" in data and data["children"]:
+                for child in data["children"]:
+                    if isinstance(child, dict):
+                        child["parent_id"] = data["id"]  # 添加父节点ID
+                        nodes.extend(collect_nodes(child))
+            return nodes
+        
+        # 收集所有节点
+        nodes = []
+        if isinstance(network_data, list):
+            # 如果network_data是列表，遍历每个元素
+            for item in network_data:
+                if isinstance(item, dict):
+                    nodes.extend(collect_nodes(item))
+        elif isinstance(network_data, dict):
+            # 如果network_data是字典，直接收集
+            nodes = collect_nodes(network_data)
+        
         # 这里可以实现更复杂的过滤逻辑
         # 例如根据节点类型、状态等进行过滤
-        return network_data
+        return nodes
     
     def set_filter_level(self, level):
         """设置过滤级别
@@ -477,7 +656,7 @@ class NetworkTopologyVisualizer:
             self.refresh_data()
     
     def on_mouse_move(self, event):
-        """鼠标移动事件，用于显示节点悬停详情"""
+        """鼠标移动事件，用于显示节点悬停详情和悬停效果"""
         # 将窗口坐标转换为画布坐标（考虑滚动）
         canvas_x = self.canvas.canvasx(event.x)
         canvas_y = self.canvas.canvasy(event.y)
@@ -497,28 +676,78 @@ class NetworkTopologyVisualizer:
             if hovered_node:
                 break
         
-        # 如果悬停的节点发生变化
-        if hovered_node != self.hovered_node:
-            # 取消之前的定时器
+        # 无论悬停节点是否变化，都先恢复所有节点的样式
+        for node_id, node in self.nodes.items():
+            if hasattr(node, "original_style"):
+                self._restore_node_style(node)
+        
+        # 如果有新的悬停节点，应用悬停样式
+        if hovered_node:
+            self._apply_hover_style(hovered_node)
+            self.last_mouse_x = event.x_root
+            self.last_mouse_y = event.y_root
+            # 延迟 100ms 显示提示，避免频繁创建窗口
+            if self.tooltip_timer:
+                try:
+                    self.canvas.after_cancel(self.tooltip_timer)
+                except Exception:
+                    pass
+            self.tooltip_timer = self.canvas.after(100, self._delayed_show_tooltip)
+        else:
+            # 鼠标移开，隐藏提示
             if self.tooltip_timer:
                 try:
                     self.canvas.after_cancel(self.tooltip_timer)
                 except Exception:
                     pass
                 self.tooltip_timer = None
-            
-            # 隐藏之前的提示
             self.hide_tooltip()
+        
+        # 更新悬停状态
+        self.hovered_node = hovered_node
+
+    def _apply_hover_style(self, node):
+        """应用节点悬停样式
+        
+        Args:
+            node: 节点信息
+        """
+        # 保存原始样式
+        if "original_style" not in node:
+            node["original_style"] = {
+                "x": node["x"],
+                "y": node["y"],
+                "outline": self.canvas.itemcget(node["shape"], "outline"),
+                "line_width": self.canvas.itemcget(node["shape"], "width")
+            }
+        
+        # 更改节点样式 - 仅修改边框和宽度，不改变大小和位置
+        self.canvas.itemconfig(node["shape"], 
+                             outline="#ffffff", 
+                             width=3)
+        
+        # 提升节点到顶层
+        self.canvas.tag_raise(node["shape"])
+        self.canvas.tag_raise(node["text"])
+        self.canvas.tag_raise(node["subnet_text"])
+        self.canvas.tag_raise(node["ip_info_text"])
+
+    def _restore_node_style(self, node):
+        """恢复节点原始样式
+        
+        Args:
+            node: 节点信息
+        """
+        if "original_style" in node:
+            original = node["original_style"]
             
-            # 更新悬停状态
-            self.hovered_node = hovered_node
+            # 恢复节点样式
+            self.canvas.itemconfig(node["shape"], 
+                                 outline=original["outline"], 
+                                 width=original["line_width"])
             
-            # 如果有新的悬停节点，延迟显示提示（防抖）
-            if hovered_node:
-                self.last_mouse_x = event.x_root
-                self.last_mouse_y = event.y_root
-                # 延迟 100ms 显示提示，避免频繁创建窗口
-                self.tooltip_timer = self.canvas.after(100, self._delayed_show_tooltip)
+            # 删除原始样式属性
+            del node["original_style"]
     
     def _delayed_show_tooltip(self):
         """延迟显示提示窗口"""
@@ -619,12 +848,25 @@ class NetworkTopologyVisualizer:
             self.tooltip_timer = None
         
         # 销毁提示窗口
-        if self.tooltip:
+        if hasattr(self, 'tooltip') and self.tooltip:
             try:
                 self.tooltip.destroy()
             except Exception:
                 pass
             self.tooltip = None
+    
+    def on_canvas_leave(self, event):
+        """鼠标离开画布事件处理"""
+        # 恢复所有节点的原始样式
+        for node_id, node in self.nodes.items():
+            if "original_style" in node:
+                self._restore_node_style(node)
+        
+        # 隐藏提示窗口
+        self.hide_tooltip()
+        
+        # 重置悬停状态
+        self.hovered_node = None
     
 
     

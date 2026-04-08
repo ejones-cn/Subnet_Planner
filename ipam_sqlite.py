@@ -1412,12 +1412,13 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def reserve_ip(self, network_str: str, ip_address: str, description: str = "", record_id: int | None = None) -> tuple[bool, str]:
+    def reserve_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", record_id: int | None = None) -> tuple[bool, str]:
         """保留IP地址
         
         Args:
             network_str: 网络地址（CIDR格式）
             ip_address: 要保留的IP地址
+            hostname: 主机名
             description: 描述
             record_id: 记录ID，用于指定要保留的特定记录
         
@@ -1430,6 +1431,8 @@ class IPAMSQLite:
                 return False, "网络地址不能为空"
             if not ip_address:
                 return False, "IP地址不能为空"
+            if not hostname and not description:
+                return False, "主机名和描述不能同时为空"
             
             # 验证IP地址格式
             try:
@@ -1464,8 +1467,8 @@ class IPAMSQLite:
                 specific_row = cursor.fetchone()
                 if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2 and str(specific_row[1]) == 'available':
                     ip_id = int(specific_row[0])
-                    _ = cursor.execute('UPDATE ip_addresses SET status = ?, description = ?, updated_at = ? WHERE id = ?', 
-                                 ('reserved', description, now, ip_id))
+                    _ = cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
+                                 ('reserved', hostname, description, now, ip_id))
                 else:
                     # 检查是否有已分配或已保留的记录
                     _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
@@ -1477,9 +1480,9 @@ class IPAMSQLite:
                     else:
                         # 创建新的IP地址记录
                         _ = cursor.execute('''
-                        INSERT INTO ip_addresses (network_id, ip_address, status, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (network_id, ip_address, 'reserved', description, now, now))
+                        INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (network_id, ip_address, 'reserved', hostname, description, now, now))
             else:
                 # 查找所有该IP地址的记录
                 _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
@@ -1491,8 +1494,8 @@ class IPAMSQLite:
                 if available_rows:
                     # 使用第一条可用记录
                     ip_id = int(available_rows[0][0])
-                    _ = cursor.execute('UPDATE ip_addresses SET status = ?, description = ?, updated_at = ? WHERE id = ?', 
-                                 ('reserved', description, now, ip_id))
+                    _ = cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
+                                 ('reserved', hostname, description, now, ip_id))
                 else:
                     # 检查是否有已分配或已保留的记录
                     allocated_or_reserved_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['allocated', 'reserved']]
@@ -1502,15 +1505,15 @@ class IPAMSQLite:
                     else:
                         # 创建新的IP地址记录
                         _ = cursor.execute('''
-                        INSERT INTO ip_addresses (network_id, ip_address, status, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (network_id, ip_address, 'reserved', description, now, now))
+                        INSERT INTO ip_addresses (network_id, ip_address, status, hostname, description, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (network_id, ip_address, 'reserved', hostname, description, now, now))
             
             # 记录保留历史
             _ = cursor.execute('''
-            INSERT INTO allocation_history (network_id, ip_address, action, description, performed_by, performed_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (network_id, ip_address, 'reserve', description, 'admin', now))
+            INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, performed_by, performed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (network_id, ip_address, 'reserve', hostname, description, 'admin', now))
             
             conn.commit()
             conn.close()

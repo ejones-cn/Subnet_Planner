@@ -9446,14 +9446,14 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         # 批量分配IP地址，直接使用默认描述
-        description = "批量分配"
+        description = "批量生成"
         
         if not description:
             self.show_info(_('hint'), _('please_enter_description'))
             return
         
         # 创建批量分配对话框，使用统一的create_dialog方法
-        dialog = self.create_dialog(_('batch_allocate'), 500, 300)
+        dialog = self.create_dialog(_('batch_allocate'), 400, 250)
         
         # 解析网络前缀
         import ipaddress
@@ -9507,37 +9507,37 @@ class SubnetPlannerApp:
         
         # 创建IP范围输入框架
         ip_frame = ttk.Frame(dialog)
-        ip_frame.pack(pady=5, padx=20, fill=tk.X)
+        ip_frame.pack(pady=5, padx=20)
+        
+        # 创建内部容器用于水平居中
+        inner_frame = ttk.Frame(ip_frame)
+        inner_frame.pack(anchor=tk.CENTER)
         
         # 网络前缀显示
-        prefix_label = ttk.Label(ip_frame, text=display_prefix)
-        prefix_label.pack(side=tk.LEFT, padx=5)
+        prefix_label = ttk.Label(inner_frame, text=display_prefix)
+        prefix_label.pack(side=tk.LEFT, padx=0)
         
         # 起始IP输入
-        start_frame = ttk.Frame(ip_frame)
-        start_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        start_ip_border, start_ip_entry = create_bordered_entry(start_frame, width=15)
-        start_ip_border.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        start_ip_border, start_ip_entry = create_bordered_entry(inner_frame, width=14)
+        start_ip_border.pack(side=tk.LEFT, padx=0)
         
         # 连字符
-        ttk.Label(ip_frame, text="-").pack(side=tk.LEFT, padx=5)
+        ttk.Label(inner_frame, text="-").pack(side=tk.LEFT, padx=10)
         
         # 结束IP输入
-        end_frame = ttk.Frame(ip_frame)
-        end_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        end_ip_border, end_ip_entry = create_bordered_entry(end_frame, width=15)
-        end_ip_border.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        end_ip_border, end_ip_entry = create_bordered_entry(inner_frame, width=14)
+        end_ip_border.pack(side=tk.LEFT, padx=0)
         
         # 描述前缀（作为主机名前缀）
         ttk.Label(dialog, text=_('description_prefixauto_add_number')).pack(pady=5)
-        desc_prefix_border, description_prefix_entry = create_bordered_entry(dialog, width=45)
+        desc_prefix_border, description_prefix_entry = create_bordered_entry(dialog, width=40)
         description_prefix_entry.insert(0, description)
         desc_prefix_border.pack(pady=5, padx=20)
         
         # 确保输入框获得焦点
         start_ip_entry.focus_set()
         
-        def on_ok():
+        def batch_allocate():
             start_ip_str = start_ip_entry.get().strip()
             end_ip_str = end_ip_entry.get().strip()
             description_prefix = description_prefix_entry.get().strip()
@@ -9606,11 +9606,80 @@ class SubnetPlannerApp:
             except Exception as e:
                 self.show_error(_('error'), f"{_('parse_ip_range_failed')}: {str(e)}")
         
+        def batch_reserve():
+            start_ip_str = start_ip_entry.get().strip()
+            end_ip_str = end_ip_entry.get().strip()
+            description_prefix = description_prefix_entry.get().strip()
+            
+            if not start_ip_str or not end_ip_str:
+                self.show_info(_('hint'), _('please_enter_ip_range'))
+                return
+            
+            if not description_prefix:
+                self.show_info(_('hint'), _('please_enter_description'))
+                return
+            
+            # 构建完整的IP地址
+            try:
+                if host_octets_count == 1:
+                    # 大于等于/24网段，只需添加最后一个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 2:
+                    # /16 到 /23 网段，需要添加后两个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 3:
+                    # /8 到 /15 网段，需要添加后三个8位段
+                    start_ip_full = f"{network_prefix}.{start_ip_str}"
+                    end_ip_full = f"{network_prefix}.{end_ip_str}"
+                elif host_octets_count == 4:
+                    # 小于/8网段，直接使用输入的完整IP
+                    start_ip_full = start_ip_str
+                    end_ip_full = end_ip_str
+                else:
+                    # 其他情况，直接使用输入的完整IP
+                    start_ip_full = start_ip_str
+                    end_ip_full = end_ip_str
+                
+                start_ip_obj = ipaddress.ip_address(start_ip_full)
+                end_ip_obj = ipaddress.ip_address(end_ip_full)
+                
+                # 检查IP是否在所选网络内
+                if start_ip_obj not in network_obj or end_ip_obj not in network_obj:
+                    self.show_error(_('error'), _('ip_range_not_in_network'))
+                    return
+                
+                # 批量保留IP
+                success_count = 0
+                current_ip = start_ip_obj
+                counter = 1
+                
+                while current_ip <= end_ip_obj:
+                    ip_str = str(current_ip)
+                    # 使用描述作为主机名前缀，添加编号
+                    host = f"{description_prefix}-{counter}"
+                    if self.ipam.reserve_ip(network, ip_str, host, description_prefix):
+                        success_count += 1
+                    current_ip += 1
+                    counter += 1
+                
+                if success_count > 0:
+                    self.show_info(_('success'), f"成功保留 {success_count} 个IP地址")
+                    # 刷新IPAM数据并恢复选中状态
+                    self.refresh_ipam_with_selection()
+                else:
+                    self.show_error(_('error'), "批量保留IP失败")
+                
+                dialog.destroy()
+            except Exception as e:
+                self.show_error(_('error'), f"{_('parse_ip_range_failed')}: {str(e)}")
+        
         # 按钮
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="批量分配", command=batch_allocate).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text="批量保留", command=batch_reserve).pack(side=tk.LEFT, padx=10)
     
     def auto_allocate_ip(self):
         """自动分配IP地址"""
@@ -9629,6 +9698,7 @@ class SubnetPlannerApp:
         
         hostname = dialog_result['hostname']
         description = dialog_result['description']
+        action = dialog_result.get('action', 'allocate')
         
         if not hostname and not description:
             self.show_info(_('hint'), _('please_enter_hostname_or_description'))
@@ -9671,37 +9741,47 @@ class SubnetPlannerApp:
                     if ip_str not in allocated_ips:
                         # 检查IP是否在网络内
                         if ipaddress.ip_address(ip_str) in ip_network:
-                            # 分配这个IP地址
-                            if self.ipam.allocate_ip(network, ip_str, hostname, description):
-                                self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
-                                self.refresh_ipam_ips(network)
-                                # 清空输入框
-                                self.ipam_ip_entry.delete(0, tk.END)
-                                self.ipam_ip_entry.insert(0, ip_str)
-                                self.ipam_hostname_entry.delete(0, tk.END)
-                                self.ipam_ip_description_entry.delete(0, tk.END)
-                                return
-            else:
-                # 对于小型网络，逐个检查
-                for ip in ip_network.hosts():
-                    ip_str = str(ip)
-                    if ip_str not in allocated_ips:
-                        # 分配这个IP地址
-                        if self.ipam.allocate_ip(network, ip_str, hostname, description):
-                            self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
-                            # 刷新IPAM数据并恢复选中状态
-                            self.refresh_ipam_with_selection()
+                            # 根据操作类型执行相应的操作
+                            if action == 'allocate':
+                                if self.ipam.allocate_ip(network, ip_str, hostname, description):
+                                    self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
+                            else:  # reserve
+                                if self.ipam.reserve_ip(network, ip_str, hostname, description):
+                                    self.show_info(_('success'), f"成功自动保留IP地址: {ip_str}")
+                            
+                            self.refresh_ipam_ips(network)
                             # 清空输入框
                             self.ipam_ip_entry.delete(0, tk.END)
                             self.ipam_ip_entry.insert(0, ip_str)
                             self.ipam_hostname_entry.delete(0, tk.END)
                             self.ipam_ip_description_entry.delete(0, tk.END)
                             return
+            else:
+                # 对于小型网络，逐个检查
+                for ip in ip_network.hosts():
+                    ip_str = str(ip)
+                    if ip_str not in allocated_ips:
+                        # 根据操作类型执行相应的操作
+                        if action == 'allocate':
+                            if self.ipam.allocate_ip(network, ip_str, hostname, description):
+                                self.show_info(_('success'), f"成功自动分配IP地址: {ip_str}")
+                        else:  # reserve
+                            if self.ipam.reserve_ip(network, ip_str, hostname, description):
+                                self.show_info(_('success'), f"成功自动保留IP地址: {ip_str}")
+                        
+                        # 刷新IPAM数据并恢复选中状态
+                        self.refresh_ipam_with_selection()
+                        # 清空输入框
+                        self.ipam_ip_entry.delete(0, tk.END)
+                        self.ipam_ip_entry.insert(0, ip_str)
+                        self.ipam_hostname_entry.delete(0, tk.END)
+                        self.ipam_ip_description_entry.delete(0, tk.END)
+                        return
             
             # 没有可用的IP地址
             self.show_error(_('error'), "网络中没有可用的IP地址")
         except Exception as e:
-            self.show_error(_('error'), f"自动分配IP失败: {str(e)}")
+            self.show_error(_('error'), f"自动{action}IP失败: {str(e)}")
     
     def _match_search_pattern(self, text, keyword, search_mode):
         """根据搜索模式匹配文本
@@ -10101,11 +10181,10 @@ class SubnetPlannerApp:
                 ip_counts = {}
                 for ip_record in all_ip_records.values():
                     ip_addr = ip_record['ip_address']
-                    if ip_record['status'] != 'available':
-                        if ip_addr in ip_counts:
-                            ip_counts[ip_addr].append(ip_record)
-                        else:
-                            ip_counts[ip_addr] = [ip_record]
+                    if ip_addr in ip_counts:
+                        ip_counts[ip_addr].append(ip_record)
+                    else:
+                        ip_counts[ip_addr] = [ip_record]
                 
                 # 找出冲突的IP地址（被分配多次的）
                 all_conflicts = []
@@ -10116,13 +10195,16 @@ class SubnetPlannerApp:
                             all_conflicts.append(ip)
                 
                 conflicts = all_conflicts
+                selected_networks = []  # 空列表表示检查所有网段
             else:
                 # 有选中网段，检查所有选中的网段
                 # 收集所有IP地址记录，避免重复检查
                 all_ip_records = {}
+                selected_networks = []
                 
                 for item in selected_items:
                     network = self.ipam_network_tree.item(item, 'values')[0]
+                    selected_networks.append(network)
                     # 获取网络中的所有IP地址
                     ips = self.ipam.get_network_ips(network)
                     
@@ -10144,11 +10226,10 @@ class SubnetPlannerApp:
                 ip_counts = {}
                 for ip_record in all_ip_records.values():
                     ip_addr = ip_record['ip_address']
-                    if ip_record['status'] != 'available':
-                        if ip_addr in ip_counts:
-                            ip_counts[ip_addr].append(ip_record)
-                        else:
-                            ip_counts[ip_addr] = [ip_record]
+                    if ip_addr in ip_counts:
+                        ip_counts[ip_addr].append(ip_record)
+                    else:
+                        ip_counts[ip_addr] = [ip_record]
                 
                 # 找出冲突的IP地址（被分配多次的）
                 conflicts = []
@@ -10162,14 +10243,18 @@ class SubnetPlannerApp:
                 self.show_info(_('hint'), _('no_ip_conflicts_found'))
                 return
             
-            # 显示冲突信息窗口
-            self.show_conflict_window(conflicts)
+            # 显示冲突信息窗口，传递选中的网段信息
+            self.show_conflict_window(conflicts, selected_networks)
         except Exception as e:
             self.show_error(_('error'), f"{_('check_conflict_failed')}: {str(e)}")
             return
     
-    def show_conflict_window(self, conflicts):
+    def show_conflict_window(self, conflicts, selected_networks=None):
         """显示IP冲突结果窗口"""
+        # 确保selected_networks是列表
+        if selected_networks is None:
+            selected_networks = []
+        
         # 创建窗口
         dialog = self.create_dialog(_('ip_conflicts'), 850, 450, resizable=True, modal=True)
         
@@ -10202,11 +10287,22 @@ class SubnetPlannerApp:
         
         # 添加冲突数据
         for conflict in conflicts:
+            # 翻译状态值
+            status = conflict['status']
+            if status == 'available':
+                translated_status = _('available')
+            elif status == 'allocated':
+                translated_status = _('allocated')
+            elif status == 'reserved':
+                translated_status = _('reserved')
+            else:
+                translated_status = status
+            
             tree.insert('', tk.END, values=(
                 conflict['id'],
                 conflict['network'],
                 conflict['ip_address'],
-                conflict['status'],
+                translated_status,
                 conflict['hostname'],
                 conflict['description'],
                 conflict.get('allocated_at', '')
@@ -10249,14 +10345,14 @@ class SubnetPlannerApp:
             # 打开冲突处理对话框（处理第一个选中的记录）
             if selected_records:
                 first_record = selected_records[0]
-                self.show_conflict_resolution_dialog(dialog, tree, first_record['id'], first_record['ip_address'], conflicts, selected_records)
+                self.show_conflict_resolution_dialog(dialog, tree, first_record['id'], first_record['ip_address'], conflicts, selected_records, selected_networks)
         
         # 按钮
         ttk.Button(button_frame, text=_('handle_conflict'), command=handle_conflict).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text=_('refresh'), command=lambda: self.refresh_conflicts(tree, conflicts)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_('refresh'), command=lambda: self.refresh_conflicts(tree, conflicts, selected_networks)).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_('close'), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
-    def show_conflict_resolution_dialog(self, parent_dialog, tree, ip_id, ip_address, conflicts, selected_records=None):
+    def show_conflict_resolution_dialog(self, parent_dialog, tree, ip_id, ip_address, conflicts, selected_records=None, selected_networks=None):
         """显示冲突处理对话框
         
         Args:
@@ -10266,6 +10362,7 @@ class SubnetPlannerApp:
             ip_address: IP地址
             conflicts: 冲突列表
             selected_records: 选中的记录列表
+            selected_networks: 选中的网段列表
         """
         if selected_records is None:
             selected_records = [{'id': ip_id, 'ip_address': ip_address}]
@@ -10335,7 +10432,7 @@ class SubnetPlannerApp:
 
             dialog.destroy()
             # 刷新冲突列表 - 重新检查冲突
-            self.refresh_conflicts(tree, conflicts)
+            self.refresh_conflicts(tree, conflicts, selected_networks)
             
             # 刷新地址管理表
             try:
@@ -10380,39 +10477,29 @@ class SubnetPlannerApp:
         except Exception as e:
             self.show_error(_('error'), f"{_('resolve_conflict_failed')}: {str(e)}")
     
-    def refresh_conflicts(self, tree, conflicts):
+    def refresh_conflicts(self, tree, conflicts, selected_networks=None):
         """刷新冲突列表"""
         # 清空树
         for item in tree.get_children():
             tree.delete(item)
         
-        # 重新检查冲突 - 检查所有网络
+        # 重新检查冲突
         try:
-            # 获取所有网络
-            networks = self.ipam.get_all_networks()
-            updated_conflicts = []
+            # 收集所有IP地址记录，避免重复检查
+            all_ip_records = {}
             
-            for network_info in networks:
-                network = network_info['network']
-                # 获取网络中的所有IP地址
-                ips = self.ipam.get_network_ips(network)
-                
-                # 统计每个IP地址的分配情况
-                ip_counts = {}
-                for ip in ips:
-                    ip_addr = ip['ip_address']
-                    if ip['status'] != 'available':
-                        if ip_addr in ip_counts:
-                            ip_counts[ip_addr].append(ip)
-                        else:
-                            ip_counts[ip_addr] = [ip]
-                
-                # 找出冲突的IP地址（被分配多次的）
-                for ip_addr, ip_list in ip_counts.items():
-                    if len(ip_list) > 1:
-                        # 为每个冲突的IP地址记录添加到冲突列表
-                        for ip in ip_list:
-                            updated_conflicts.append({
+            if not selected_networks:
+                # 没有选中网段，检查所有网段
+                networks = self.ipam.get_all_networks()
+                for network_info in networks:
+                    network = network_info['network']
+                    # 获取网络中的所有IP地址
+                    ips = self.ipam.get_network_ips(network)
+                    
+                    for ip in ips:
+                        # 用ID作为唯一标识，避免重复记录
+                        if ip['id'] not in all_ip_records:
+                            all_ip_records[ip['id']] = {
                                 'id': ip['id'],
                                 'network': network,
                                 'ip_address': ip['ip_address'],
@@ -10421,15 +10508,62 @@ class SubnetPlannerApp:
                                 'description': ip.get('description', ''),
                                 'allocated_at': ip.get('allocated_at', ''),
                                 'network_id': ip.get('network_id', '')
-                            })
+                            }
+            else:
+                # 有选中网段，检查所有选中的网段
+                for network in selected_networks:
+                    # 获取网络中的所有IP地址
+                    ips = self.ipam.get_network_ips(network)
+                    
+                    for ip in ips:
+                        # 用ID作为唯一标识，避免重复记录
+                        if ip['id'] not in all_ip_records:
+                            all_ip_records[ip['id']] = {
+                                'id': ip['id'],
+                                'network': network,
+                                'ip_address': ip['ip_address'],
+                                'status': ip['status'],
+                                'hostname': ip.get('hostname', ''),
+                                'description': ip.get('description', ''),
+                                'allocated_at': ip.get('allocated_at', ''),
+                                'network_id': ip.get('network_id', '')
+                            }
+            
+            # 统计每个IP地址的分配情况
+            ip_counts = {}
+            for ip_record in all_ip_records.values():
+                ip_addr = ip_record['ip_address']
+                if ip_addr in ip_counts:
+                    ip_counts[ip_addr].append(ip_record)
+                else:
+                    ip_counts[ip_addr] = [ip_record]
+            
+            # 找出冲突的IP地址（被分配多次的）
+            updated_conflicts = []
+            for ip_addr, ip_list in ip_counts.items():
+                if len(ip_list) > 1:
+                    # 为每个冲突的IP地址记录添加到冲突列表
+                    for ip in ip_list:
+                        updated_conflicts.append(ip)
             
             # 显示更新后的冲突
             for conflict in updated_conflicts:
+                # 翻译状态值
+                status = conflict['status']
+                if status == 'available':
+                    translated_status = _('available')
+                elif status == 'allocated':
+                    translated_status = _('allocated')
+                elif status == 'reserved':
+                    translated_status = _('reserved')
+                else:
+                    translated_status = status
+                
                 tree.insert('', tk.END, values=(
                     conflict['id'],
                     conflict['network'],
                     conflict['ip_address'],
-                    conflict['status'],
+                    translated_status,
                     conflict['hostname'],
                     conflict['description'],
                     conflict.get('allocated_at', '')
@@ -11678,265 +11812,99 @@ class SubnetPlannerApp:
     
     def on_ip_tree_right_click(self, event):
         """IP地址表格右键菜单处理"""
-        # 获取当前右键点击的行
-        item = self.ipam_ip_tree.identify_row(event.y)
-        if not item:
-            return
-        
-        # 处理多选逻辑
-        # 如果当前行已经被选中，保持现有的选择
-        # 如果当前行未被选中，选中当前行
-        selected_items = self.ipam_ip_tree.selection()
-        if item not in selected_items:
-            # 选中当前点击的行
-            self.ipam_ip_tree.selection_set(item)
-            selected_items = [item]
-        
-        # 收集所有选中行的状态
-        statuses = set()
-        for item in selected_items:
-            row_values = self.ipam_ip_tree.item(item, 'values')
-            if row_values and len(row_values) >= 2:
-                statuses.add(row_values[1])
-        
-        if not statuses:
-            return
-        
-        # 清理之前的弹出菜单
-        self._cleanup_ip_popup_menu()
-        
-        # 创建阴影窗口（使用PIL创建半透明模糊阴影）
-        self._ip_shadow_windows = []
         try:
-            shadow = tk.Toplevel(self.ipam_ip_tree)
-            shadow.withdraw()
-            shadow.configure(bg='', relief='flat', borderwidth=0)
-            shadow.overrideredirect(True)
-            self._ip_shadow_windows.append(shadow)
-        except tk.TclError as e:
-            print(f"阴影窗口创建失败: {e}")
-            return
+            # 获取当前右键点击的行
+            item = self.ipam_ip_tree.identify_row(event.y)
+            if not item:
+                return
         
-        # 创建弹出菜单窗口（带有灰色边框）
-        popup = tk.Toplevel(self.ipam_ip_tree)
-        popup.withdraw()
-        popup.configure(bg='#a0a0a0', highlightthickness=0)  # 灰色背景作为边框
-        popup.overrideredirect(True)
-        
-        # 保存引用
-        self._ip_popup_menu = popup
-        
-        # 创建菜单框架（带有1像素内边距，显示灰色边框）
-        menu_frame = tk.Frame(popup, bg='#f0f0f0', relief='flat', borderwidth=0)
-        menu_frame.pack(fill='both', expand=True, padx=1, pady=1)
-        
-        # 根据选中行的状态动态添加菜单项
-        # 释放地址 - 只要有非可用状态的项目就显示
-        has_commands = False
-        if any(status != _('available') for status in statuses):
-            btn = tk.Button(menu_frame, text=_('release_address'),
-                          command=lambda: self._on_ip_popup_action('release', popup, self._ip_shadow_windows),
-                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
-                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
-                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
-                          cursor='hand2')
-            btn.pack(fill='x')
-            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
-            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
-            has_commands = True
-        
-        # 检查是否需要添加快速操作菜单项
-        has_quick_actions = False
-        
-        # 快速分配 - 可用或保留状态可以转为已分配
-        if _('available') in statuses or _('reserved') in statuses:
-            if has_commands:
-                tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
-            btn = tk.Button(menu_frame, text=_('convert_to_allocated'),
-                          command=lambda: self._on_ip_popup_action('quick_allocate', popup, self._ip_shadow_windows),
-                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
-                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
-                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
-                          cursor='hand2')
-            btn.pack(fill='x')
-            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
-            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
-            has_quick_actions = True
-            has_commands = True
-        
-        # 快速保留 - 可用或已分配状态可以转为保留
-        if _('available') in statuses or _('allocated') in statuses:
-            if has_commands and not has_quick_actions:
-                tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
-            btn = tk.Button(menu_frame, text=_('convert_to_reserved'),
-                          command=lambda: self._on_ip_popup_action('quick_reserve', popup, self._ip_shadow_windows),
-                          bg='#f0f0f0', fg='black', relief='flat', anchor='w',
-                          font=('微软雅黑', 10), bd=0, padx=8, pady=4,
-                          highlightthickness=0, activebackground='#0078d7', activeforeground='white',
-                          cursor='hand2')
-            btn.pack(fill='x')
-            btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
-            btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
-            has_quick_actions = True
-            has_commands = True
-        
-        # 如果只选中了一行，添加需要用户输入的操作
-        if len(selected_items) == 1:
-            # 获取当前行的状态
-            row_values = self.ipam_ip_tree.item(selected_items[0], 'values')
-            current_status = row_values[1]
+            # 处理多选逻辑
+            selected_items = self.ipam_ip_tree.selection()
+            if item not in selected_items:
+                self.ipam_ip_tree.selection_set(item)
+                selected_items = [item]
             
-            if current_status == _('available'):
-                # 可用状态：添加需要用户输入的操作
+            # 收集所有选中行的状态
+            statuses = set()
+            for item in selected_items:
+                row_values = self.ipam_ip_tree.item(item, 'values')
+                if row_values and len(row_values) >= 2:
+                    statuses.add(row_values[1])
+            
+            if not statuses:
+                return
+            
+            # 使用原生 tk.Menu 创建右键菜单（保持原生样式和阴影）
+            menu = tk.Menu(self.root, tearoff=0)
+            
+            # 根据选中行的状态动态添加菜单项
+            has_commands = False
+            if any(status != _('available') for status in statuses):
+                menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
+                has_commands = True
+            
+            has_quick_actions = False
+            
+            if _('available') in statuses or _('reserved') in statuses:
                 if has_commands:
-                    tk.Frame(menu_frame, height=1, bg='#d0d0d0').pack(fill='x', padx=5)
-                btn = tk.Button(menu_frame, text=_('reallocate_address'),
-                              command=lambda: self._on_ip_popup_action('allocate', popup, self._ip_shadow_windows),
-                              bg='#f0f0f0', fg='black', relief='flat', anchor='w',
-                              font=('微软雅黑', 10), bd=0, padx=8, pady=4,
-                              highlightthickness=0, activebackground='#0078d7', activeforeground='white',
-                              cursor='hand2')
-                btn.pack(fill='x')
-                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
-                btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
-                btn = tk.Button(menu_frame, text=_('reserve_address_again'),
-                              command=lambda: self._on_ip_popup_action('reserve', popup, self._ip_shadow_windows),
-                              bg='#f0f0f0', fg='black', relief='flat', anchor='w',
-                              font=('微软雅黑', 10), bd=0, padx=8, pady=4,
-                              highlightthickness=0, activebackground='#0078d7', activeforeground='white',
-                              cursor='hand2')
-                btn.pack(fill='x')
-                btn.bind('<Enter>', lambda e, b=btn: b.configure(bg='#0078d7', fg='white'))
-                btn.bind('<Leave>', lambda e, b=btn: b.configure(bg='#f0f0f0', fg='black'))
-        
-        # 绑定点击事件，当点击菜单外部时关闭菜单
-        popup.bind('<Button-1>', lambda e: None)
-        popup.bind('<Escape>', lambda: popup.destroy())
-        
-        # 计算菜单位置
-        x = event.x_root
-        y = event.y_root
-        
-        # 先显示弹出菜单，然后获取其尺寸
-        popup.update_idletasks()
-        popup.geometry(f'+{x}+{y}')
-        popup.deiconify()
-        
-        # 获取菜单的尺寸
-        popup.update_idletasks()
-        menu_width = popup.winfo_width()
-        menu_height = popup.winfo_height()
-        
-        # 显示半透明模糊阴影
-        shadow = self._ip_shadow_windows[0]
-        
-        try:
-            from PIL import Image, ImageDraw, ImageFilter, ImageTk
+                    menu.add_separator()
+                menu.add_command(label=_('convert_to_allocated'), command=lambda: self.on_ip_menu_action('quick_allocate'))
+                has_quick_actions = True
+                has_commands = True
             
-            # 1. 创建阴影图像
-            blur_radius = 5
-            shadow_padding = blur_radius + 2
-            shadow_width = menu_width + shadow_padding * 2
-            shadow_height = menu_height + shadow_padding * 2
+            if _('available') in statuses or _('allocated') in statuses:
+                if has_commands and not has_quick_actions:
+                    menu.add_separator()
+                menu.add_command(label=_('convert_to_reserved'), command=lambda: self.on_ip_menu_action('quick_reserve'))
+                has_quick_actions = True
+                has_commands = True
             
-            # 创建透明背景的图像
-            shadow_img = Image.new('RGBA', (shadow_width, shadow_height), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(shadow_img)
+            if len(selected_items) == 1:
+                row_values = self.ipam_ip_tree.item(selected_items[0], 'values')
+                current_status = row_values[1]
+                
+                if current_status == _('available'):
+                    if has_commands:
+                        menu.add_separator()
+                    menu.add_command(label=_('reallocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
+                    menu.add_command(label=_('reserve_address_again'), command=lambda: self.on_ip_menu_action('reserve'))
             
-            # 2. 在中间绘制半透明的黑色矩形
-            shadow_alpha = 60  # 透明度 0-255
-            shadow_rect = [
-                (shadow_padding, shadow_padding),
-                (shadow_padding + menu_width, shadow_padding + menu_height)
-            ]
-            draw.rectangle(shadow_rect, fill=(0, 0, 0, shadow_alpha))
-            
-            # 3. 应用高斯模糊
-            shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
-            
-            # 4. 转换为Tkinter可用格式
-            shadow_photo = ImageTk.PhotoImage(shadow_img)
-            
-            # 5. 在阴影窗口中显示
-            shadow_label = tk.Label(shadow, image=shadow_photo, bg='', bd=0)
-            shadow_label.image = shadow_photo  # 保持引用
-            shadow_label.pack()
-            
-            # 6. 定位阴影（稍微偏移一点）
-            shadow.geometry(f'{shadow_width}x{shadow_height}+{x-2}+{y-2}')
-            shadow.deiconify()
-            shadow.lower(popup)
-            
-        except Exception as e:
-            # 如果失败，回退到简单的灰色阴影
-            shadow.configure(bg='#c0c0c0')
-            shadow.geometry(f'{menu_width}x{menu_height}+{x+2}+{y+2}')
-            shadow.deiconify()
-            shadow.lower(popup)
-        
-        # 保存当前菜单和阴影的引用，用于点击外部关闭
-        self._current_ip_popup = popup
-        self._current_ip_shadows = self._ip_shadow_windows
-        self._ip_popup_click_bind_id = None
-        
-        # 点击外部关闭菜单的函数
-        def close_menu(event):
+            # 显示菜单（使用原生样式和阴影）
             try:
-                # 如果event是None（ESC键调用），直接关闭
-                if event is None:
-                    for s in self._current_ip_shadows:
-                        try:
-                            s.destroy()
-                        except:
-                            pass
-                    try:
-                        self._current_ip_popup.destroy()
-                    except:
-                        pass
-                    # 移除绑定
-                    if self._ip_popup_click_bind_id:
-                        try:
-                            self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
-                        except:
-                            pass
-                    return
+                # 显示原生菜单
+                menu.post(event.x_root, event.y_root)
                 
-                # 检查点击是否在菜单内部
-                x, y = event.x_root, event.y_root
-                popup_x = self._current_ip_popup.winfo_x()
-                popup_y = self._current_ip_popup.winfo_y()
-                popup_w = self._current_ip_popup.winfo_width()
-                popup_h = self._current_ip_popup.winfo_height()
+                # 通过DWM API禁用非客户区渲染（解决叠影问题）
+                # 这样只保留tkinter菜单自己的阴影，去掉Windows 11添加的额外圆角阴影
+                try:
+                    import ctypes
+                    
+                    # 获取菜单窗口的句柄
+                    hwnd = ctypes.windll.user32.GetParent(menu.winfo_id())
+                    
+                    # 定义常量
+                    DWMNCRP_DISABLED = 1  # 禁用非客户区渲染
+                    DWMWA_NCRENDERING_POLICY = 2  # 非客户区渲染策略属性ID
+                    
+                    # 禁用DWM的非客户区渲染（包括额外的圆角阴影）
+                    ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                        hwnd,
+                        DWMWA_NCRENDERING_POLICY,
+                        ctypes.byref(ctypes.c_int(DWMNCRP_DISABLED)),
+                        ctypes.sizeof(ctypes.c_int())
+                    )
+                except Exception as e:
+                    # 如果API调用失败，不影响菜单正常显示
+                    pass
                 
-                if not (popup_x <= x <= popup_x + popup_w and popup_y <= y <= popup_y + popup_h):
-                    # 点击在菜单外部，关闭菜单
-                    for s in self._current_ip_shadows:
-                        try:
-                            s.destroy()
-                        except:
-                            pass
-                    try:
-                        self._current_ip_popup.destroy()
-                    except:
-                        pass
-                    # 移除绑定
-                    if self._ip_popup_click_bind_id:
-                        try:
-                            self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
-                        except:
-                            pass
-            except:
-                pass
-        
-        # 绑定全局点击事件
-        self._ip_popup_click_bind_id = self.root.bind('<Button-1>', close_menu, add='+')
-        
-        # 绑定ESC键关闭
-        popup.bind('<Escape>', lambda e: close_menu(None))
-    
-    def _on_ip_popup_action(self, action, popup, shadows):
+            except Exception as e:
+                print(f"菜单显示错误: {e}")
+        except Exception as e:
+            print(f"右键菜单处理错误: {e}")
+
+    def _on_ip_popup_action(self, action, popup):
         """处理弹出菜单的操作"""
-        # 先关闭菜单和阴影
+        # 先关闭所有阴影
         try:
             for s in self._current_ip_shadows:
                 try:
@@ -11945,6 +11913,7 @@ class SubnetPlannerApp:
                     pass
         except:
             pass
+        # 再关闭菜单
         try:
             self._current_ip_popup.destroy()
         except:
@@ -12036,6 +12005,12 @@ class SubnetPlannerApp:
         except Exception:
             pass
         try:
+            if hasattr(self, '_calendar_close_check_timer') and self._calendar_close_check_timer:
+                self.root.after_cancel(self._calendar_close_check_timer)
+                delattr(self, '_calendar_close_check_timer')
+        except Exception:
+            pass
+        try:
             if hasattr(self, 'inline_edit_widget'):
                 # 对于DateEntry，先关闭日历窗口再销毁
                 if DateEntry is not None and isinstance(self.inline_edit_widget, DateEntry):
@@ -12064,7 +12039,9 @@ class SubnetPlannerApp:
         
         try:
             # 移除根窗口点击事件绑定
-            self.root.unbind('<Button-1>')
+            if hasattr(self, '_inline_edit_click_handler_id'):
+                self.root.unbind('<Button-1>', self._inline_edit_click_handler_id)
+                delattr(self, '_inline_edit_click_handler_id')
         except Exception:
             pass
     
@@ -12284,38 +12261,47 @@ class SubnetPlannerApp:
                     # 放置控件
                     self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
                     
-                    # 解除DateEntry和Calendar内部的FocusOut绑定，防止日历关闭
-                    try:
-                        self.inline_edit_widget.unbind('<FocusOut>')
-                    except Exception:
-                        pass
-                    try:
-                        if hasattr(self.inline_edit_widget, '_calendar'):
-                            self.inline_edit_widget._calendar.unbind('<FocusOut>')
-                    except Exception:
-                        pass
-                    
-                    # 绑定必要的事件，避免复杂的焦点管理
+                    # 绑定必要的事件
                     def on_date_save(event):
                         # 延迟执行保存，让tkcalendar内部的_select方法先完成
                         self.root.after(10, lambda: self.on_generic_inline_edit_save(None))
                     
-                    # 只绑定必要的事件，避免焦点管理问题
+                    def on_date_focus_out(event):
+                        # 检查日历是否打开
+                        calendar_open = False
+                        try:
+                            if hasattr(self.inline_edit_widget, '_top_cal'):
+                                top_cal = self.inline_edit_widget._top_cal
+                                if top_cal and top_cal.winfo_exists() and top_cal.winfo_ismapped():
+                                    calendar_open = True
+                        except Exception:
+                            pass
+                        
+                        # 日历关闭且焦点离开时，保存编辑
+                        if not calendar_open:
+                            self.on_generic_inline_edit_save(None)
+                    
+                    # 绑定事件
                     self.inline_edit_widget.bind('<Return>', on_date_save)
                     self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
                     self.inline_edit_widget.bind('<<DateEntrySelected>>', on_date_save)
+                    self.inline_edit_widget.bind('<FocusOut>', on_date_focus_out)
                     
                     # 确保日期选择器始终保持焦点
                     self.inline_edit_widget.focus_force()
                     
-                    # 添加根窗口点击事件，用于关闭编辑状态
-                    def on_root_click(event):
+                    # 添加全局点击事件监听，确保任何点击都能正确处理
+                    def on_any_click(event):
+                        # 检查是否点击在DateEntry控件上
                         if event.widget == self.inline_edit_widget:
                             return
+                        
+                        # 检查是否点击在日历控件上
+                        calendar_clicked = False
                         try:
                             if hasattr(self.inline_edit_widget, '_top_cal'):
                                 top_cal = self.inline_edit_widget._top_cal
-                                if top_cal:
+                                if top_cal and top_cal.winfo_exists() and top_cal.winfo_ismapped():
                                     x = event.x_root
                                     y = event.y_root
                                     try:
@@ -12324,14 +12310,49 @@ class SubnetPlannerApp:
                                         tw = top_cal.winfo_width()
                                         th = top_cal.winfo_height()
                                         if tw > 0 and th > 0 and tx <= x <= tx + tw and ty <= y <= ty + th:
-                                            return
+                                            calendar_clicked = True
                                     except Exception:
                                         pass
                         except Exception:
                             pass
-                        self.on_generic_inline_edit_save(None)
+                        
+                        # 检查是否点击在另一个DateEntry控件上
+                        another_date_entry = False
+                        try:
+                            if DateEntry is not None and isinstance(event.widget, DateEntry):
+                                another_date_entry = True
+                        except Exception:
+                            pass
+                        
+                        # 如果没有点击在日历上，也没有点击在另一个DateEntry上，保存编辑
+                        if not calendar_clicked and not another_date_entry:
+                            self.on_generic_inline_edit_save(None)
                     
-                    self.root.bind('<Button-1>', on_root_click, add='+')
+                    # 绑定到根窗口的所有点击事件，使用唯一标签
+                    self._inline_edit_click_handler_id = self.root.bind('<Button-1>', on_any_click, add='+')
+                    
+                    # 为日历控件添加关闭事件监听
+                    def check_calendar_close():
+                        try:
+                            if hasattr(self.inline_edit_widget, '_top_cal'):
+                                top_cal = self.inline_edit_widget._top_cal
+                                # 检查日历是否已关闭（不存在或未映射）
+                                calendar_closed = not (top_cal and top_cal.winfo_exists() and top_cal.winfo_ismapped())
+                                if calendar_closed:
+                                    # 日历已关闭，检查焦点
+                                    if not self.inline_edit_widget.focus_get() == self.inline_edit_widget:
+                                        self.on_generic_inline_edit_save(None)
+                        except Exception:
+                            pass
+                    
+                    # 开始检查日历关闭状态
+                    def start_check_calendar_close():
+                        check_calendar_close()
+                        # 只有当编辑控件仍然存在时，才继续检查
+                        if hasattr(self, 'inline_edit_widget'):
+                            self._calendar_close_check_timer = self.root.after(100, start_check_calendar_close)
+                    
+                    self._calendar_close_check_timer = self.root.after(100, start_check_calendar_close)
                     
                 except Exception as e:
                     # 如果日期选择器创建失败，使用普通的Entry控件替代
@@ -13700,7 +13721,18 @@ class SubnetPlannerApp:
             network_info = self.ipam.get_network_by_id(ip['network_id'])
             network = network_info['network_address'] if network_info else ''
             
-            tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'], 
+            # 翻译状态值
+            status = ip['status']
+            if status == 'available':
+                translated_status = _('available')
+            elif status == 'allocated':
+                translated_status = _('allocated')
+            elif status == 'reserved':
+                translated_status = _('reserved')
+            else:
+                translated_status = status
+            
+            tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status, 
                                            ip['hostname'] or '', ip['description'] or '', 
                                            ip['expiry_date'] or ''))
         
@@ -13867,14 +13899,25 @@ class SubnetPlannerApp:
             network_info = self.ipam.get_network_by_id(ip['network_id'])
             network = network_info['network_address'] if network_info else ''
             
+            # 翻译状态值
+            status = ip['status']
+            if status == 'available':
+                translated_status = _('available')
+            elif status == 'allocated':
+                translated_status = _('allocated')
+            elif status == 'reserved':
+                translated_status = _('reserved')
+            else:
+                translated_status = status
+            
             # 使用记录ID作为树项的ID
             record_id = ip.get('id', None)
             if record_id:
-                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], ip['status'],
+                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
                                                                     ip['hostname'] or '', ip['description'] or '',
                                                                     ip['expiry_date'] or ''))
             else:
-                tree.insert('', tk.END, values=(network, ip['ip_address'], ip['status'],
+                tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip['description'] or '',
                                                 ip['expiry_date'] or ''))
         
@@ -14367,6 +14410,10 @@ class SubnetPlannerApp:
             # 分配/保留对话框：显示"分配地址"和"保留地址"按钮
             ttk.Button(button_frame, text=_('reserve_address'), command=lambda: validate_and_save('reserve')).pack(side=tk.RIGHT, padx=(5, 15))
             ttk.Button(button_frame, text=_('allocate_address'), command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
+        elif action_type == 'auto_allocate':
+            # 自动分配对话框：显示"自动分配"和"自动保留"按钮
+            ttk.Button(button_frame, text="自动保留", command=lambda: validate_and_save('reserve')).pack(side=tk.RIGHT, padx=(5, 15))
+            ttk.Button(button_frame, text="自动分配", command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
         else:
             # 其他对话框：显示"确定"和"取消"按钮
             def on_ok():
@@ -14552,13 +14599,23 @@ class SubnetPlannerApp:
                     children.append(child_node['id'])
                     network_data.append(child_node)
             
+            # 根据网络名称和层级设置不同的设备类型
+            device_type = "router" if level == 0 else "switch"
+            
+            # 根据网络名称判断设备类型
+            name_lower = net_info['name'].lower()
+            if '服务器' in name_lower or 'server' in name_lower:
+                device_type = "server"
+            elif '管理' in name_lower or 'management' in name_lower:
+                device_type = "client"
+            
             return {
                 "id": node_id,
                 "name": net_info['name'],
                 "cidr": cidr,
                 "level": level,
                 "type": "network" if level == 0 else "client",
-                "device_type": "router" if level == 0 else "switch",
+                "device_type": device_type,
                 "ip_info": ip_info,
                 "children": children
             }
