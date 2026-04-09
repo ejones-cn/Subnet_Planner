@@ -1076,11 +1076,11 @@ class NetworkTopologyVisualizer:
             if parent_id in self.nodes:
                 parent_node = self.nodes[parent_id]
                 if children:
-                    # 计算子节点的垂直范围
+                    # 计算子节点的垂直范围，考虑子节点的高度
                     min_y = min(child["y"] for child in children)
-                    max_y = max(child["y"] for child in children)
+                    max_y = max(child["y"] + NODE_HEIGHT for child in children)
                     # 计算子节点的垂直中心
-                    center_y = (min_y + max_y) / 2
+                    center_y = (min_y + max_y) / 2 - NODE_HEIGHT / 2
                     # 调整父节点的垂直位置
                     parent_node["y"] = center_y
         
