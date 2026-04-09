@@ -1716,6 +1716,13 @@
     "zh_tw": "資料復原成功",
     "ko": "데이터 복원 성공"
   },
+  "network_import_export": {
+    "zh": "网段导入/导出",
+    "zh_tw": "網段匯入/匯出",
+    "en": "Network Import/Export",
+    "ja": "ネットワークのインポート/エクスポート",
+    "ko": "네트워크 가져오기/내보내기"
+  },
   "network_segment": {
     "zh": "网段",
     "zh_tw": "網段",

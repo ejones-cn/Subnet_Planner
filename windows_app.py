@@ -9024,7 +9024,7 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text=_('remove_network'), command=self.remove_ipam_network).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
         ttk.Button(button_frame, text=_('check_conflicts'), command=self.check_ip_conflicts).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
         ttk.Button(button_frame, text=_('auto_scan'), command=self.auto_scan_network).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
-        ttk.Button(button_frame, text=_('import_export'), command=self.import_export_data).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('import_export'), command=self.import_export_network_data).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
         ttk.Button(button_frame, text=_('backup_restore'), command=self.backup_restore_data).grid(row=0, column=5, padx=(2, 10), pady=2, sticky="ew")
         
         # 创建表格容器 - 专门用来容纳表格和滚动条
@@ -9136,6 +9136,7 @@ class SubnetPlannerApp:
         ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
         ttk.Button(ip_button_frame, text=_('check_expired_ips'), command=self.check_expired_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
         ttk.Button(ip_button_frame, text=_('batch_set_expiry_date'), command=self.batch_set_expiry_date).grid(row=0, column=6, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('import_export'), command=self.import_export_data).grid(row=0, column=7, padx=2, pady=2, sticky="ew")
         
         # IP地址列表 - 使用LabelFrame，和IPv6查询结果表保持一致
         # padding=(10, 0, 0, 10) 表示左边距10，上边距0，右边距0，下边距10
@@ -9342,6 +9343,23 @@ class SubnetPlannerApp:
     
     def refresh_ipam_networks(self):
         """刷新IPAM网络列表，实现分层显示"""
+        # 保存展开状态
+        expanded_items = set()
+        def save_expanded_state(item):
+            if self.ipam_network_tree.item(item, 'open'):
+                expanded_items.add(self.ipam_network_tree.item(item, 'values')[0])
+            for child in self.ipam_network_tree.get_children(item):
+                save_expanded_state(child)
+        
+        for item in self.ipam_network_tree.get_children():
+            save_expanded_state(item)
+        
+        # 保存选中状态
+        selected_network = None
+        selected_items = self.ipam_network_tree.selection()
+        if selected_items:
+            selected_network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
         # 清空现有网络列表
         for item in self.ipam_network_tree.get_children():
             self.ipam_network_tree.delete(item)
@@ -9354,6 +9372,32 @@ class SubnetPlannerApp:
         
         # 递归插入网段到Treeview
         self._insert_networks_recursively('', top_level_networks, full_hierarchy)
+        
+        # 恢复展开状态
+        def restore_expanded_state(item):
+            network_value = self.ipam_network_tree.item(item, 'values')[0]
+            if network_value in expanded_items:
+                self.ipam_network_tree.item(item, open=True)
+            for child in self.ipam_network_tree.get_children(item):
+                restore_expanded_state(child)
+        
+        for item in self.ipam_network_tree.get_children():
+            restore_expanded_state(item)
+        
+        # 恢复选中状态
+        if selected_network:
+            def find_and_select(item):
+                network_value = self.ipam_network_tree.item(item, 'values')[0]
+                if network_value == selected_network:
+                    self.ipam_network_tree.selection_set(item)
+                    return True
+                for child in self.ipam_network_tree.get_children(item):
+                    if find_and_select(child):
+                        return True
+                return False
+            
+            for item in self.ipam_network_tree.get_children():
+                find_and_select(item)
         
         # 更新斑马纹样式
         self.update_table_zebra_stripes(self.ipam_network_tree)
@@ -10810,6 +10854,147 @@ class SubnetPlannerApp:
             
         except Exception as e:
             self.show_error(_('error'), f"操作失败: {str(e)}")
+    
+    def import_export_network_data(self):
+        """导入/导出网段数据对话框"""
+        try:
+            # 创建对话框，使用统一的create_dialog方法
+            dialog = self.create_dialog(_('network_import_export'), 400, 220)
+            
+            # 对话框内容
+            ttk.Label(dialog, text=_('choose_import_export_method')).pack(pady=20)
+            
+            # 按钮框架
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            
+            # 第一行按钮
+            row1_frame = ttk.Frame(button_frame)
+            row1_frame.pack(pady=5)
+            ttk.Button(row1_frame, text=_('export_selected'), command=lambda: self.export_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            ttk.Button(row1_frame, text=_('export_all'), command=lambda: self.export_all_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            
+            # 第二行按钮
+            row2_frame = ttk.Frame(button_frame)
+            row2_frame.pack(pady=5)
+            ttk.Button(row2_frame, text=_('import_data'), command=lambda: self.import_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            ttk.Button(row2_frame, text=_('download_template'), command=lambda: self.download_network_template()).pack(side=tk.LEFT, padx=10, pady=5)
+            
+        except Exception as e:
+            self.show_error(_('error'), f"操作失败: {str(e)}")
+    
+    def export_network_data(self):
+        """导出选中的网段数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            # 生成默认文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"network_export_{timestamp}.csv"
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
+                initialfile=default_filename
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                
+                # 检查是否有选中的网段
+                selected_items = self.ipam_network_tree.selection()
+                selected_networks = []
+                
+                if selected_items:
+                    # 收集选中的网段
+                    for item in selected_items:
+                        network = self.ipam_network_tree.item(item, 'values')[0]
+                        selected_networks.append(network)
+                    
+                    # 导出选中的网段数据
+                    if self.ipam.export_network_data(file_path, format, networks=selected_networks):
+                        self.show_info(_('success'), f"网段数据导出成功: {file_path}")
+                    else:
+                        self.show_error(_('error'), "网段数据导出失败")
+                else:
+                    # 没有选中网段时提示用户
+                    self.show_info(_('hint'), "请先选择要导出的网段")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def export_all_network_data(self):
+        """导出所有网段数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            # 生成默认文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"network_export_all_{timestamp}.csv"
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
+                initialfile=default_filename
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                
+                # 导出所有网段数据
+                if self.ipam.export_network_data(file_path, format):
+                    self.show_info(_('success'), f"网段数据导出成功: {file_path}")
+                else:
+                    self.show_error(_('error'), "网段数据导出失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def import_network_data(self):
+        """导入网段数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.askopenfilename(
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")]
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                if self.ipam.import_network_data(file_path, format):
+                    self.show_info(_('success'), f"网段数据导入成功: {file_path}")
+                    self.refresh_ipam_networks()
+                    self.refresh_ipam_stats()
+                else:
+                    self.show_error(_('error'), "网段数据导入失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导入失败: {str(e)}")
+    
+    def download_network_template(self):
+        """下载网段数据导入模板"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            import csv
+            
+            # 生成默认文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"network_import_template_{timestamp}.csv"
+            
+            # 打开保存对话框
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv")],
+                initialfile=default_filename
+            )
+            
+            if file_path:
+                # 写入模板内容，使用utf-8-sig编码以支持Excel正确打开
+                with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
+                    writer = csv.writer(f)
+                    # 写入表头
+                    writer.writerow(['Network', 'Description'])
+                    # 写入示例数据
+                    writer.writerow(['192.168.1.0/24', '示例网段1'])
+                    writer.writerow(['192.168.2.0/24', '示例网段2'])
+                
+                self.show_info(_('success'), f"{_('download_template_success')}: {file_path}")
+        except Exception as e:
+            self.show_error(_('error'), f"{_('download_template_failed')}: {str(e)}")
     
     def import_ipam_data(self):
         """导入IPAM数据"""
@@ -14808,7 +14993,9 @@ class SubnetPlannerApp:
                         relevant_networks.append({
                             "name": network.get('description', f"子网{len(relevant_networks) + 1}"),
                             "cidr": network['network'],
-                            "network_obj": subnet
+                            "network_obj": subnet,
+                            # 保留完整原始数据用于智能颜色分配
+                            "raw_data": network
                         })
                 except Exception:
                     pass
@@ -14823,7 +15010,9 @@ class SubnetPlannerApp:
                 network_tree[cidr] = {
                     "name": net['name'],
                     "cidr": cidr,
-                    "children": []
+                    "children": [],
+                    # 保留原始数据用于类型推断
+                    "raw_data": net.get('raw_data', {})
                 }
             
             # 建立父子关系
@@ -14866,18 +15055,23 @@ class SubnetPlannerApp:
             if not net_info:
                 return None
             
+            # 确保ipaddress模块可用
+            import ipaddress
+            
             # 获取IP统计信息
             ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
             try:
-                import ipaddress
                 subnet_network = ipaddress.ip_network(cidr)
                 network_total = 2 ** (32 - subnet_network.prefixlen) if subnet_network.version == 4 else 2 ** (128 - subnet_network.prefixlen)
                 
-                # 获取子网的IP地址列表
+                # 获取子网及其所有子网络的IP地址列表
                 subnet_ips = self.ipam.get_network_ips(cidr)
-                registered = len(subnet_ips)
+                # 只计算已分配和已保留的IP地址数量
                 allocated = sum(1 for ip in subnet_ips if ip.get('status') == 'allocated')
                 reserved = sum(1 for ip in subnet_ips if ip.get('status') == 'reserved')
+                # 计算总注册IP数量（已分配 + 已保留）
+                registered = allocated + reserved
+                # 计算可用IP数量
                 available = sum(1 for ip in subnet_ips if ip.get('status') == 'available')
                 
                 ip_info = {
@@ -14905,12 +15099,99 @@ class SubnetPlannerApp:
             # 根据网络名称和层级设置不同的设备类型
             device_type = "router" if level == 0 else "switch"
             
-            # 根据网络名称判断设备类型
+            # 智能推断 subnet_type（决定颜色）
+            subnet_type = "default"
             name_lower = net_info['name'].lower()
+            cidr_lower = cidr.lower()
+            
+            # 调试信息
+            print(f"处理网络: {net_info['name']}, CIDR: {cidr}, Level: {level}")
+            
+            # 根据网络名称关键词判断类型
             if '服务器' in name_lower or 'server' in name_lower:
                 device_type = "server"
-            elif '管理' in name_lower or 'management' in name_lower:
+                subnet_type = "server"  # 暖橙色
+                print(f"匹配关键词 '服务器'，设置 subnet_type: {subnet_type}")
+            elif '管理' in name_lower or 'management' in name_lower or 'mgmt' in name_lower:
                 device_type = "client"
+                subnet_type = "management"  # 柔和紫色
+                print(f"匹配关键词 '管理'，设置 subnet_type: {subnet_type}")
+            elif '无线' in name_lower or 'wifi' in name_lower or 'wireless' in name_lower:
+                device_type = "wireless"
+                subnet_type = "wireless"  # 深蓝色
+                print(f"匹配关键词 '无线'，设置 subnet_type: {subnet_type}")
+            elif '客户' in name_lower or 'client' in name_lower:
+                device_type = "switch"
+                subnet_type = "client"  # 青绿色
+                print(f"匹配关键词 '客户'，设置 subnet_type: {subnet_type}")
+            elif '办公' in name_lower or 'office' in name_lower:
+                device_type = "office"
+                subnet_type = "office"  # 绿色
+                print(f"匹配关键词 '办公'，设置 subnet_type: {subnet_type}")
+            elif '生产' in name_lower or 'prod' in name_lower or 'production' in name_lower:
+                device_type = "production"
+                subnet_type = "production"  # 橙色
+                print(f"匹配关键词 '生产'，设置 subnet_type: {subnet_type}")
+            elif '测试' in name_lower or 'test' in name_lower or 'dev' in name_lower:
+                device_type = "test"
+                subnet_type = "test"  # 紫色
+                print(f"匹配关键词 '测试'，设置 subnet_type: {subnet_type}")
+            elif '监控' in name_lower or 'monitor' in name_lower:
+                device_type = "switch"
+                subnet_type = "management"  # 柔和紫色
+                print(f"匹配关键词 '监控'，设置 subnet_type: {subnet_type}")
+            elif '安全' in name_lower or 'security' in name_lower or 'dmz' in name_lower:
+                device_type = "dmz"
+                subnet_type = "dmz"  # 玫红色
+                print(f"匹配关键词 '安全'，设置 subnet_type: {subnet_type}")
+            elif '存储' in name_lower or 'storage' in name_lower or 'nas' in name_lower:
+                device_type = "storage"
+                subnet_type = "storage"  # 橙红色
+                print(f"匹配关键词 '存储'，设置 subnet_type: {subnet_type}")
+            elif '备份' in name_lower or 'backup' in name_lower:
+                device_type = "backup"
+                subnet_type = "backup"  # 浅绿色
+                print(f"匹配关键词 '备份'，设置 subnet_type: {subnet_type}")
+            # 根据网络层级设置设备类型（如果没有关键词匹配）
+            elif level > 0:
+                if level == 1:
+                    device_type = "switch"  # 一级子节点使用椭圆
+                elif level == 2:
+                    device_type = "switch2"  # 二级子节点使用圆角矩形
+                else:
+                    device_type = "switch3"  # 三级及以上子节点使用矩形
+                print(f"根据层级 {level}，设置 device_type: {device_type}")
+            # 根据 CIDR 前缀长度进一步区分（更细的层级）
+            else:
+                try:
+                    prefix_len = ipaddress.ip_network(cidr).prefixlen
+                    print(f"前缀长度: {prefix_len}")
+                    if prefix_len <= 8:  # 超大网段（如 10.0.0.0/8）
+                        subnet_type = "extra_large"  # 粉红色
+                        print(f"前缀长度 <= 8，设置 subnet_type: {subnet_type}")
+                    elif prefix_len <= 12:  # 大网段（如 172.16.0.0/12）
+                        subnet_type = "large"  # 亮蓝色
+                        print(f"前缀长度 <= 12，设置 subnet_type: {subnet_type}")
+                    elif prefix_len <= 16:  # 大网段（如 192.168.0.0/16）
+                        subnet_type = "large"  # 亮蓝色
+                        print(f"前缀长度 <= 16，设置 subnet_type: {subnet_type}")
+                    elif prefix_len <= 20:  # 中等网段（/17-20）
+                        subnet_type = "medium"  # 天蓝色
+                        print(f"前缀长度 <= 20，设置 subnet_type: {subnet_type}")
+                    elif prefix_len <= 24:  # 中等网段（/21-24）
+                        subnet_type = "default"  # 主蓝色
+                        print(f"前缀长度 <= 24，设置 subnet_type: {subnet_type}")
+                    elif prefix_len <= 26:  # 小网段（/25-26）
+                        subnet_type = "small"  # 深紫色
+                        print(f"前缀长度 <= 26，设置 subnet_type: {subnet_type}")
+                    else:  # 超小网段（/27+）
+                        subnet_type = "small"  # 深紫色
+                        print(f"前缀长度 > 26，设置 subnet_type: {subnet_type}")
+                except Exception as e:
+                    print(f"前缀长度判断失败: {e}, CIDR: {cidr}")
+            
+            # 调试信息
+            print(f"最终 subnet_type: {subnet_type}, device_type: {device_type}")
             
             return {
                 "id": node_id,
@@ -14919,6 +15200,7 @@ class SubnetPlannerApp:
                 "level": level,
                 "type": "network" if level == 0 else "client",
                 "device_type": device_type,
+                "subnet_type": subnet_type,
                 "ip_info": ip_info,
                 "children": children
             }
