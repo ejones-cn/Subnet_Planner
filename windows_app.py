@@ -7527,8 +7527,9 @@ class SubnetPlannerApp:
         # 配置锁定框架的列
         lock_frame.grid_columnconfigure(0, weight=1)
 
-        # 窗口横向锁定复选框
-        self.width_lock_var = tk.BooleanVar(value=self.width_locked)
+        # 窗口横向锁定复选框 - 检查窗口的实际可调整大小状态
+        width_locked = not self.root.resizable()[0]  # 获取窗口宽度是否可调整
+        self.width_lock_var = tk.BooleanVar(value=width_locked)
         width_lock_cb = ttk.Checkbutton(
             lock_frame,
             text=_('lock_window_width'),
@@ -7598,7 +7599,7 @@ class SubnetPlannerApp:
         else:
             label_style = "Success.TLabel"
             frame_style = "SuccessInfoBar.TFrame"
-            icon = "[OK] "  # 使用带框钩 (U+2705)，与带框叉风格一致
+            icon = "✅ "  # 使用带框对勾 (U+2705)，与带框叉风格一致
 
         # 更新信息标签和框架样式
 

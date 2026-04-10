@@ -36,6 +36,7 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 
 import tkinter as tk
 from tkinter import Canvas, Frame, Scrollbar
+from typing import Callable
 from style_manager import get_current_font_settings
 from i18n import _ as translate
 
@@ -104,24 +105,24 @@ DEVICE_SHAPES = {
 class NetworkTopologyVisualizer:
     """网络拓扑可视化类"""
     
-    def __init__(self, parent):
+    def __init__(self, parent: tk.BaseWidget) -> None:
         """初始化可视化器
         
         Args:
             parent: 父容器
         """
-        self.parent = parent
-        self.canvas_frame = Frame(parent)
+        self.parent: tk.BaseWidget = parent
+        self.canvas_frame: Frame = Frame(parent)
         
         # 配置 canvas_frame 以填充父容器
         self.canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建滚动条
-        self.v_scrollbar = Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
-        self.h_scrollbar = Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
+        self.v_scrollbar: Scrollbar = Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
+        self.h_scrollbar: Scrollbar = Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
         
         # 创建画布
-        self.canvas = Canvas(
+        self.canvas: Canvas = Canvas(
             self.canvas_frame,
             bg=BACKGROUND_COLOR,
             yscrollcommand=self.v_scrollbar.set,
@@ -129,8 +130,8 @@ class NetworkTopologyVisualizer:
         )
         
         # 配置滚动条
-        self.v_scrollbar.config(command=self.canvas.yview)
-        self.h_scrollbar.config(command=self.canvas.xview)
+        _ = self.v_scrollbar.config(command=self.canvas.yview)
+        _ = self.h_scrollbar.config(command=self.canvas.xview)
         
         # 放置组件
         self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -138,90 +139,90 @@ class NetworkTopologyVisualizer:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # 初始化数据
-        self.nodes = {}
-        self.links = []
+        self.nodes: dict[str, dict[str, object]] = {}
+        self.links: list[dict[str, object]] = []
         
         # 绑定事件
-        self.canvas.bind("<ButtonPress-1>", self.start_drag)
-        self.canvas.bind("<B1-Motion>", self.drag)
-        self.canvas.bind("<ButtonRelease-1>", self.stop_drag)
-        self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
-        self.canvas.bind("<Motion>", self.on_mouse_move)
-        self.canvas.bind("<Leave>", self.on_canvas_leave)
+        _ = self.canvas.bind("<ButtonPress-1>", self.start_drag)
+        _ = self.canvas.bind("<B1-Motion>", self.drag)
+        _ = self.canvas.bind("<ButtonRelease-1>", self.stop_drag)
+        _ = self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
+        _ = self.canvas.bind("<Motion>", self.on_mouse_move)
+        _ = self.canvas.bind("<Leave>", self.on_canvas_leave)
         
         # 绑定配置事件，当父容器大小变化时调整画布大小
-        self.canvas_frame.bind("<Configure>", self.on_canvas_frame_configure)
+        _ = self.canvas_frame.bind("<Configure>", self.on_canvas_frame_configure)
         
         # 拖拽状态
-        self.dragging = False
-        self.drag_start_x = 0
-        self.drag_start_y = 0
-        self.last_x = 0
-        self.last_y = 0
+        self.dragging: bool = False
+        self.drag_start_x: int = 0
+        self.drag_start_y: int = 0
+        self.last_x: int = 0
+        self.last_y: int = 0
         
         # 缩放因子
-        self.scale = 1.0
+        self.scale: float = 1.0
         
         # 节点悬停状态
-        self.hovered_node = None
-        self.tooltip = None
-        self.tooltip_timer = None  # 延迟显示定时器
-        self._hover_poll_job = None  # 悬停轮询检测定时器
-        self.last_mouse_x = 0  # 记录鼠标位置
-        self.last_mouse_y = 0
+        self.hovered_node: dict[str, object] | None = None
+        self.tooltip: tk.Toplevel | None = None
+        self.tooltip_timer: int | None = None  # 延迟显示定时器
+        self._hover_poll_job: int | None = None  # 悬停轮询检测定时器
+        self.last_mouse_x: int = 0  # 记录鼠标位置
+        self.last_mouse_y: int = 0
         
         # 数据更新相关
-        self.update_interval = 30000  # 默认30秒刷新一次
-        self.update_timer = None
-        self.data_callback = None
-        self.auto_update = False
+        self.update_interval: int = 30000  # 默认 30 秒刷新一次
+        self.update_timer: int | None = None
+        self.data_callback: Callable[[], object] | None = None
+        self.auto_update: bool = False
         
         # 性能优化相关
-        self.batch_drawing = True  # 启用批量绘制
-        self.max_nodes = 500  # 最大节点数
-        self.filter_level = 10  # 过滤级别，0表示显示所有节点
-        self.visible_nodes = set()  # 可见节点集合
+        self.batch_drawing: bool = True  # 启用批量绘制
+        self.max_nodes: int = 500  # 最大节点数
+        self.filter_level: int = 10  # 过滤级别，0 表示显示所有节点
+        self.visible_nodes: set[str] = set()  # 可见节点集合
         
-    def start_drag(self, event):
+    def start_drag(self, event: tk.Event) -> None:
         """开始拖拽"""
         self.dragging = True
-        self.drag_start_x = event.x
-        self.drag_start_y = event.y
-        self.last_x = event.x
-        self.last_y = event.y
+        self.drag_start_x: int = event.x
+        self.drag_start_y: int = event.y
+        self.last_x: int = event.x
+        self.last_y: int = event.y
     
-    def drag(self, event):
+    def drag(self, event: tk.Event) -> None:
         """拖拽操作"""
         if self.dragging:
-            dx = event.x - self.last_x
-            dy = event.y - self.last_y
+            dx: int = event.x - self.last_x
+            dy: int = event.y - self.last_y
             self.canvas.move(tk.ALL, dx, dy)
-            self.last_x = event.x
-            self.last_y = event.y
+            self.last_x: int = event.x
+            self.last_y: int = event.y
     
-    def stop_drag(self, event):
+    def stop_drag(self, event: tk.Event) -> None:
         """停止拖拽"""
         self.dragging = False
     
-    def on_mouse_wheel(self, event):
+    def on_mouse_wheel(self, event: tk.Event) -> None:
         """鼠标滚轮缩放"""
         # 计算缩放因子
         if event.delta > 0:
-            new_scale = self.scale * 1.1
+            new_scale: float = self.scale * 1.1
         else:
-            new_scale = self.scale * 0.9
+            new_scale: float = self.scale * 0.9
         
         # 限制缩放范围
         new_scale = max(0.3, min(new_scale, 3.0))
         
         # 计算缩放比例
-        scale_factor = new_scale / self.scale
+        scale_factor: float = new_scale / self.scale
         self.scale = new_scale
         
         # 缩放画布内容
         self.canvas.scale(tk.ALL, event.x, event.y, scale_factor, scale_factor)
     
-    def _create_shadow(self, points, shadow_x, shadow_y, width, height, smooth=False):
+    def _create_shadow(self, points: list[float], shadow_x: float, shadow_y: float, width: float, height: float, smooth: bool = False) -> int:
         """通用阴影创建方法
         
         Args:
