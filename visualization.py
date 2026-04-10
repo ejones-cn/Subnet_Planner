@@ -366,147 +366,6 @@ class NetworkTopologyVisualizer:
             # 如果提供了 node_tag，立即绑定
             if node_tag:
                 self.canvas.itemconfig(shadow_id, tags=(node_tag,))
-            if shape == "rectangle":
-                # 矩形使用圆角矩形阴影（与主形状一致）
-                radius = 10
-                self.canvas.create_polygon(
-                    shadow_x + radius, shadow_y,
-                    shadow_x + width - radius, shadow_y,
-                    shadow_x + width, shadow_y + radius,
-                    shadow_x + width, shadow_y + height - radius,
-                    shadow_x + width - radius, shadow_y + height,
-                    shadow_x + radius, shadow_y + height,
-                    shadow_x, shadow_y + height - radius,
-                    shadow_x, shadow_y + radius,
-                    fill="#000000",
-                    outline="",
-                    smooth=True
-                )
-            elif shape == "rounded_rectangle":
-                # 圆角矩形使用圆角矩形阴影
-                radius = 15
-                self.canvas.create_polygon(
-                    shadow_x + radius, shadow_y,
-                    shadow_x + width - radius, shadow_y,
-                    shadow_x + width, shadow_y + radius,
-                    shadow_x + width, shadow_y + height - radius,
-                    shadow_x + width - radius, shadow_y + height,
-                    shadow_x + radius, shadow_y + height,
-                    shadow_x, shadow_y + height - radius,
-                    shadow_x, shadow_y + radius,
-                    fill="#000000",
-                    outline="",
-                    smooth=True
-                )
-            elif shape == "ellipse" or shape == "circle":
-                # 椭圆和圆形使用椭圆阴影
-                self.canvas.create_oval(
-                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "diamond":
-                # 菱形使用菱形阴影
-                self.canvas.create_polygon(
-                    shadow_x + width / 2, shadow_y,
-                    shadow_x + width, shadow_y + height / 2,
-                    shadow_x + width / 2, shadow_y + height,
-                    shadow_x, shadow_y + height / 2,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "triangle":
-                # 三角形使用三角形阴影
-                self.canvas.create_polygon(
-                    shadow_x + width / 2, shadow_y,
-                    shadow_x + width, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "hexagon":
-                # 六边形使用六边形阴影
-                points = []
-                for j in range(6):
-                    angle = math.pi / 3 * j
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
-                self.canvas.create_polygon(
-                    *points,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "pentagon":
-                # 五边形使用五边形阴影
-                points = []
-                for j in range(5):
-                    angle = math.pi * 2 / 5 * j - math.pi / 2
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
-                self.canvas.create_polygon(
-                    *points,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "octagon":
-                # 八边形使用八边形阴影
-                points = []
-                for j in range(8):
-                    angle = math.pi / 4 * j
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
-                self.canvas.create_polygon(
-                    *points,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "star":
-                # 星形使用星形阴影
-                points = []
-                for j in range(10):
-                    angle = math.pi * 2 / 10 * j - math.pi / 2
-                    radius = width / 2 if j % 2 == 0 else width / 4
-                    px = shadow_x + width / 2 + radius * math.cos(angle)
-                    py = shadow_y + height / 2 + radius * math.sin(angle)
-                    points.extend([px, py])
-                self.canvas.create_polygon(
-                    *points,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "trapezoid":
-                # 梯形使用梯形阴影
-                top_width = width * 0.7
-                bottom_width = width
-                self.canvas.create_polygon(
-                    shadow_x + (width - top_width) / 2, shadow_y,
-                    shadow_x + (width + top_width) / 2, shadow_y,
-                    shadow_x + width, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "parallelogram":
-                # 平行四边形使用平行四边形阴影
-                skew = width * 0.2
-                self.canvas.create_polygon(
-                    shadow_x + skew, shadow_y,
-                    shadow_x + width, shadow_y,
-                    shadow_x + width - skew, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            else:
-                # 默认使用椭圆阴影
-                self.canvas.create_oval(
-                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
         
         # 创建主形状
         if shape == "rectangle":
@@ -1183,11 +1042,30 @@ class NetworkTopologyVisualizer:
         
         vertical_spacing = 15  # 子节点之间的垂直间距
         
+        # 获取节点的实际高度（考虑特殊形状）
+        def get_node_height(node):
+            device_type = node.get("device_type", "default")
+            base_height = NODE_HEIGHT
+            # 特殊形状需要额外空间
+            if device_type == "triangle":
+                return base_height + 15  # 三角形顶点突出，需要更多空间
+            elif device_type == "diamond":
+                return base_height + 20  # 菱形上下顶点突出
+            elif device_type == "hexagon":
+                return base_height + 12  # 六边形上下边较平
+            elif device_type == "pentagon":
+                return base_height + 12  # 五边形
+            elif device_type == "star":
+                return base_height + 15  # 星形
+            elif device_type == "trapezoid":
+                return base_height + 10
+            return base_height
+        
         # 递归计算子树高度
         def calculate_subtree_height(node):
             children = parent_to_children.get(node["id"], [])
             if not children:
-                return NODE_HEIGHT
+                return get_node_height(node)
             total = sum(calculate_subtree_height(child) for child in children)
             return total + vertical_spacing * (len(children) - 1)
         
@@ -1195,11 +1073,12 @@ class NetworkTopologyVisualizer:
         def assign_positions(node, start_y):
             node["x"] = level_x.get(node.get("level", 0), 100)
             children = parent_to_children.get(node["id"], [])
+            node_height = get_node_height(node)
             
             if not children:
                 # 叶子节点
                 node["y"] = start_y
-                return NODE_HEIGHT
+                return node_height
             
             # 有子节点：先计算所有子节点的位置
             current_y = start_y
