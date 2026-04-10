@@ -15216,6 +15216,9 @@ class SubnetPlannerApp:
             print(f"根节点子节点数量: {len(network_data[0]['children'])}")
         
         self.topology_visualizer.draw_topology(network_data)
+        
+        # 自动缩放拓扑图以适应父容器大小
+        self.topology_visualizer.auto_scale_to_fit()
     
     def reserve_ip(self):
         """保留IP地址"""

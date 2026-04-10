@@ -114,6 +114,8 @@ class NetworkTopologyVisualizer:
         """
         self.parent = parent
         self.canvas_frame = Frame(parent)
+        
+        # 配置 canvas_frame 以填充父容器
         self.canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建滚动条
@@ -148,6 +150,9 @@ class NetworkTopologyVisualizer:
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
         self.canvas.bind("<Motion>", self.on_mouse_move)
         self.canvas.bind("<Leave>", self.on_canvas_leave)
+        
+        # 绑定配置事件，当父容器大小变化时调整画布大小
+        self.canvas_frame.bind("<Configure>", self.on_canvas_frame_configure)
         
         # 拖拽状态
         self.dragging = False
@@ -1208,14 +1213,14 @@ class NetworkTopologyVisualizer:
         if content_width <= 0 or content_height <= 0:
             return
         
-        # 计算缩放比例，考虑边距
-        margin = 50
+        # 计算缩放比例，考虑边距（减少边距，使内容更大）
+        margin = 30  # 减少边距
         scale_x = (canvas_width - 2 * margin) / content_width
         scale_y = (canvas_height - 2 * margin) / content_height
         scale_factor = min(scale_x, scale_y)
         
-        # 限制缩放范围
-        scale_factor = max(0.1, min(scale_factor, 2.0))
+        # 限制缩放范围（允许更大的缩放比例）
+        scale_factor = max(0.35, min(scale_factor, 1.8))
         
         # 应用缩放
         if scale_factor != 1.0:
@@ -1225,35 +1230,21 @@ class NetworkTopologyVisualizer:
             
             # 缩放所有内容
             self.canvas.scale(tk.ALL, center_x, center_y, scale_factor, scale_factor)
-            
-            # 更新缩放因子
-            self.scale *= scale_factor
         
-        # 重新计算边界框并更新滚动区域
+        # 更新滚动区域
         self.canvas.update_idletasks()
         new_bbox = self.canvas.bbox(tk.ALL)
         if new_bbox:
-            nx1, ny1, nx2, ny2 = new_bbox
-            padding = 50
-            self.canvas.config(scrollregion=(nx1 - padding, ny1 - padding, nx2 + padding, ny2 + padding))
+            x1, y1, x2, y2 = new_bbox
+            padding = 30  # 减少边距
+            self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
         
-        # 滚动到合适位置，确保所有节点都能看到
-        # 计算内容中心
-        if bbox:
-            content_center_x = (x1 + x2) / 2
-            content_center_y = (y1 + y2) / 2
-            
-            # 计算滚动位置
-            scroll_x = (content_center_x - canvas_width / 2) / (content_width * scale_factor)
-            scroll_y = (content_center_y - canvas_height / 2) / (content_height * scale_factor)
-            
-            # 限制滚动位置在合理范围内
-            scroll_x = max(0, min(scroll_x, 1))
-            scroll_y = max(0, min(scroll_y, 1))
-            
-            # 设置滚动位置
-            self.canvas.xview_moveto(scroll_x)
-            self.canvas.yview_moveto(scroll_y)
+        # 更新缩放因子
+        self.scale *= scale_factor
+        
+        # 滚动到画布左上角，确保用户可以从开始查看
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
     
     def _filter_nodes(self, network_data):
         """过滤节点
@@ -1609,6 +1600,15 @@ class NetworkTopologyVisualizer:
         
         # 隐藏提示窗口
         self.hide_tooltip()
+    
+    def on_canvas_frame_configure(self, event):
+        """当父容器大小变化时调整画布大小"""
+        # 获取父容器的新大小
+        width = event.width
+        height = event.height
+        
+        # 调整画布大小
+        self.canvas.config(width=width, height=height)
         
         # 重置悬停状态
         self.hovered_node = None
