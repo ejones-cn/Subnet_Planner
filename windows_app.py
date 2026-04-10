@@ -9037,7 +9037,7 @@ class SubnetPlannerApp:
         table_container.grid_columnconfigure(0, weight=1)
         
         # 网络列表 - 在table_container上创建
-        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'created_at', 'ip_count'), show='tree headings', height=8, selectmode='extended')
+        self.ipam_network_tree = ttk.Treeview(table_container, columns=('network', 'description', 'vlan', 'created_at', 'ip_count'), show='tree headings', height=8, selectmode='extended')
         
         # 启用层次关系线
         style = ttk.Style()
@@ -9053,12 +9053,14 @@ class SubnetPlannerApp:
         self.ipam_network_tree.heading('#0', text=_('network_segment'))  # 树状结构列的标题
         self.ipam_network_tree.heading('network', text=_('network_address'))
         self.ipam_network_tree.heading('description', text=_('description'))
+        self.ipam_network_tree.heading('vlan', text='VLAN')
         self.ipam_network_tree.heading('created_at', text=_('created_at'))
         self.ipam_network_tree.heading('ip_count', text=_('ip_count'))
         
         # 调整列宽，提高空间利用率
         self.ipam_network_tree.column('network', width=0, stretch=False)  # 隐藏重复的网段地址列
-        self.ipam_network_tree.column('description', width=250, minwidth=150, stretch=True)
+        self.ipam_network_tree.column('description', width=200, minwidth=150, stretch=True)
+        self.ipam_network_tree.column('vlan', width=80, minwidth=60, stretch=True)
         self.ipam_network_tree.column('created_at', width=150, minwidth=120, stretch=True)
         self.ipam_network_tree.column('ip_count', width=70, minwidth=60, stretch=True)
         
@@ -9075,10 +9077,11 @@ class SubnetPlannerApp:
         # 为网络管理表添加内联编辑功能
         # 注册网络管理表的内联编辑配置
         self.register_inline_edit_config('ipam_network', {
-            'editable_columns': [0, 1],  # 网段地址列和描述列
+            'editable_columns': [0, 1, 2],  # 网段地址列、描述列和VLAN列
             'column_types': {
                 0: 'entry',  # 网段地址列使用文本框
-                1: 'entry'  # 描述列使用文本框
+                1: 'entry',  # 描述列使用文本框
+                2: 'entry'   # VLAN列使用文本框
             }
         })
         
@@ -9090,7 +9093,7 @@ class SubnetPlannerApp:
         })
         
         # 绑定双击事件用于内联编辑
-        self.ipam_network_tree.bind('<Double-1>', lambda event: self.on_ipam_network_double_click(event))
+        self.ipam_network_tree.bind('<Double-1>', lambda event: self.on_generic_tree_double_click(self.ipam_network_tree, 'ipam_network', event))
         # 绑定展开/收缩事件，用于刷新斑马纹
         self.ipam_network_tree.bind('<<TreeviewOpen>>', lambda event: self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree)))
         self.ipam_network_tree.bind('<<TreeviewClose>>', lambda event: self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree)))
@@ -9501,6 +9504,7 @@ class SubnetPlannerApp:
             item = self.ipam_network_tree.insert(parent_item, tk.END, text=network_data['network'], values=(
                 network_data['network'],
                 network_data['description'],
+                network_data.get('vlan', '') or '',  # 添加 VLAN 字段，默认为空
                 formatted_time,
                 network_data['ip_count']
             ))
@@ -11914,15 +11918,21 @@ class SubnetPlannerApp:
         desc_border, description_entry = create_bordered_entry(form_frame, width=12)
         desc_border.grid(row=1, column=1, sticky="ew", pady=10, padx=(0, 10))
         
+        # VLAN 输入
+        ttk.Label(form_frame, text='VLAN').grid(row=2, column=0, sticky="e", pady=10, padx=(0, 15))
+        vlan_border, vlan_entry = create_bordered_entry(form_frame, width=12)
+        vlan_border.grid(row=2, column=1, sticky="ew", pady=10, padx=(0, 10))
+        
         def on_add():
             network = network_entry.get().strip()
             description = description_entry.get().strip()
+            vlan = vlan_entry.get().strip()
             
             if not network:
                 self.show_info(_('hint'), _('please_enter_network'))
                 return
             
-            result = self.ipam.add_network(network, description)
+            result = self.ipam.add_network(network, description, vlan)
             # 处理返回值，可能是 (success, message) 或 (success, message, is_overlap)
             if len(result) == 3:
                 success, message, is_overlap = result
@@ -12047,71 +12057,93 @@ class SubnetPlannerApp:
         clicked_item = self.ipam_network_tree.identify_row(event.y)
         selected_items = self.ipam_network_tree.selection()
         
-        # 打印调试信息
-
+        # 检查点击的区域是否是单元格
+        # 如果是单元格，可能是双击编辑的一部分，不执行展开/收缩功能
+        region = self.ipam_network_tree.identify_region(event.x, event.y)
+        if region == "cell":
+            # 检查是否点击了已选中的项
+            if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
+                # 取消选择
+                self.ipam_network_tree.selection_remove(clicked_item)
+                # 清空IP地址列表
+                for item in self.ipam_ip_tree.get_children():
+                    self.ipam_ip_tree.delete(item)
+                # 显示提示
+                # 移除status_bar引用，因为该属性不存在
+                # 阻止默认选择行为
+                return 'break'
+            
+            # 如果点击的是未选中的项，手动选中该行
+            if clicked_item and clicked_item not in selected_items:
+                # 清除之前的选择
+                self.ipam_network_tree.selection_clear()
+                # 选中点击的项
+                self.ipam_network_tree.selection_add(clicked_item)
+                # 触发选择事件
+                self.on_ipam_network_select(None)
+            
+            # 允许默认的选择行为
+            return
         
-        # 如果点击的是第一列（树状结构列），检查是否点击了展开/折叠图标
+        # 检查是否点击了展开/折叠图标
         if column == '#0' and clicked_item:
             # 检查当前项是否有子节点（即是否有展开/折叠图标）
             children = self.ipam_network_tree.get_children(clicked_item)
-            if not children:
-                # 没有子节点，不阻止焦点转移
-                return
-            
-            # 获取点击的x坐标相对于Treeview的位置
-            x = event.x
-            
-            # 获取当前项的深度（缩进级别）
-            depth = 0
-            parent = self.ipam_network_tree.parent(clicked_item)
-            while parent:
-                depth += 1
-                parent = self.ipam_network_tree.parent(parent)
-            
-            # 计算展开/折叠图标的位置，每个深度级别增加20像素的缩进
-            icon_x_start = depth * 20
-            icon_x_end = icon_x_start + 10
-            
-            # 检查点击的x坐标是否在展开/折叠图标的范围内
-            if icon_x_start <= x < icon_x_end:
-                # 点击的是展开/折叠图标
-                # 切换节点的展开/折叠状态
-                if self.ipam_network_tree.item(clicked_item, 'open'):
-                    self.ipam_network_tree.item(clicked_item, open=False)
-                else:
-                    self.ipam_network_tree.item(clicked_item, open=True)
-                # 刷新斑马纹
-                self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree))
-                # 阻止默认的选择行为
-                return 'break'
+            if children:
+                # 获取点击的x坐标相对于Treeview的位置
+                x = event.x
+                
+                # 获取当前项的深度（缩进级别）
+                depth = 0
+                parent = self.ipam_network_tree.parent(clicked_item)
+                while parent:
+                    depth += 1
+                    parent = self.ipam_network_tree.parent(parent)
+                
+                # 计算展开/折叠图标的位置
+                # 从截图观察，每个层级的缩进量是10px
+                indent_per_level = 10
+                
+                # 计算图标起始和结束位置
+                # 第一层级图标在8-18px位置，每个层级向右移动10px
+                # 增加检测范围到10px，让用户更容易点击
+                icon_x_start = 2 + (depth * indent_per_level)
+                icon_x_end = 20 + (depth * indent_per_level)
+                
+                # 检查点击的x坐标是否在展开/折叠图标的范围内
+                if icon_x_start <= x < icon_x_end:
+                    # 点击的是展开/折叠图标，直接处理，不使用定时器
+                    # 切换节点的展开/折叠状态
+                    if self.ipam_network_tree.item(clicked_item, 'open'):
+                        self.ipam_network_tree.item(clicked_item, open=False)
+                    else:
+                        self.ipam_network_tree.item(clicked_item, open=True)
+                    # 刷新斑马纹
+                    self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree))
+                    # 阻止默认的选择行为
+                    return 'break'
         
-        # 检查是否点击了已选中的项
-        if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
-            # 取消选择
-            self.ipam_network_tree.selection_remove(clicked_item)
-            # 清空IP地址列表
-            for item in self.ipam_ip_tree.get_children():
-                self.ipam_ip_tree.delete(item)
-            # 显示提示
-            # 移除status_bar引用，因为该属性不存在
-            # 阻止默认选择行为
-            return 'break'
+        # 检查是否是双击事件的一部分
+        # 当发生双击时，单击事件会被触发两次，然后双击事件才会被触发
+        # 我们使用定时器来区分单击和双击
+        if hasattr(self, '_click_timer'):
+            self.root.after_cancel(self._click_timer)
         
-        # 如果点击的是未选中的项，手动选中该行
-        if clicked_item and clicked_item not in selected_items:
-            # 清除之前的选择
-            self.ipam_network_tree.selection_clear()
-            # 选中点击的项
-            self.ipam_network_tree.selection_add(clicked_item)
-            # 触发选择事件
-            self.on_ipam_network_select(None)
+        # 定义单击处理函数
+        def handle_single_click():
+            # 这里处理其他单击事件，比如点击空白区域等
+            pass
         
-        # 允许默认的选择行为
-        return
+        # 设置定时器，延迟150毫秒执行单击处理
+        self._click_timer = self.root.after(150, handle_single_click)
     
     def on_ipam_network_double_click(self, event):
         """网络双击事件处理（用于内联编辑）"""
         try:
+            # 取消单击定时器，防止触发展开/收缩功能
+            if hasattr(self, '_click_timer'):
+                self.root.after_cancel(self._click_timer)
+            
             # 获取双击的行和列
             item = self.ipam_network_tree.identify_row(event.y)
             column = self.ipam_network_tree.identify_column(event.x)
@@ -12173,6 +12205,10 @@ class SubnetPlannerApp:
             # 根据列类型创建编辑控件
             column_type = config.get('column_types', {}).get(column_index, 'entry')
             
+            # 获取字体设置
+            from style_manager import get_current_font_settings
+            font_family, font_size = get_current_font_settings()
+            
             if column_type == 'combobox':
                 # 为Combobox创建一个特殊的框架，确保下拉列表正常显示
                 self.inline_edit_frame = ttk.Frame(self.ipam_network_tree)
@@ -12184,13 +12220,13 @@ class SubnetPlannerApp:
                 self.inline_edit_widget = ttk.Combobox(self.inline_edit_frame, 
                                                        values=combobox_values,
                                                        width=width // 10 - 2,
-                                                       font=(self.font_family, self.font_size))
+                                                       font=(font_family, font_size))
                 self.inline_edit_widget.current(combobox_values.index(current_value) if current_value in combobox_values else 0)
             else:
                 # 创建Entry控件
                 self.inline_edit_widget = ttk.Entry(self.ipam_network_tree, 
                                                    width=width // 10 - 2,
-                                                   font=(self.font_family, self.font_size))
+                                                   font=(font_family, font_size))
                 self.inline_edit_widget.insert(0, current_value)
             
             # 放置编辑控件
@@ -12915,6 +12951,9 @@ class SubnetPlannerApp:
         # 如果是Entry，全选文本
         if column_type == 'entry':
             self.inline_edit_widget.select_range(0, tk.END)
+        
+        # 阻止Treeview的默认双击行为（展开/收缩节点）
+        return 'break'
     
     def on_generic_inline_edit_save(self, event):
         """通用的保存内联编辑内容方法
@@ -13394,13 +13433,17 @@ class SubnetPlannerApp:
             dict: 行数据字典
         """
         values = self.ipam_network_tree.item(item, 'values')
+        # 确保 values 数组长度足够，处理旧数据的情况
+        while len(values) < 5:
+            values.append('')
         return {
             'item': item,
             'values': values,
             'network': values[0],
             'description': values[1],
-            'created_at': values[2],
-            'ip_count': values[3]
+            'vlan': values[2],
+            'created_at': values[3],
+            'ip_count': values[4]
         }
     
     def _validate_network_edit(self, new_value, column_name, row_data):
@@ -13428,6 +13471,13 @@ class SubnetPlannerApp:
             # 描述长度限制
             if len(new_value) > 255:
                 return False, _('description_too_long')
+        elif column_name == 'vlan':
+            # VLAN 验证
+            if new_value:
+                if not new_value.replace('-', '').replace('.', '').isalnum():
+                    return False, 'VLAN格式无效，只能包含数字、字母、连字符和点'
+                if len(new_value) > 50:
+                    return False, 'VLAN长度不能超过50个字符'
         
         return True, None
     
@@ -13455,6 +13505,10 @@ class SubnetPlannerApp:
             elif column_name == 'description':
                 # 更新网络描述
                 success, message = self.ipam.update_network_description(row_data['network'], new_value)
+                return success, message
+            elif column_name == 'vlan':
+                # 更新网络VLAN
+                success, message = self.ipam.update_network_vlan(row_data['network'], new_value)
                 return success, message
             else:
                 return False, f"不支持编辑的列: {column_name}"

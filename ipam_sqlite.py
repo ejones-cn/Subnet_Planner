@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 IP地址管理（IPAM）模块 - SQLite版本
@@ -44,10 +44,19 @@ class IPAMSQLite:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             network_address TEXT UNIQUE NOT NULL,
             description TEXT,
+            vlan TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT
         )
         ''')
+        
+        # 为现有networks表添加vlan列（如果不存在）
+        try:
+            _ = cursor.execute('ALTER TABLE networks ADD COLUMN vlan TEXT')
+            conn.commit()
+        except sqlite3.OperationalError:
+            # 列已存在，忽略错误
+            pass
         
         # 创建ip_addresses表
         _ = cursor.execute('''
@@ -259,12 +268,13 @@ class IPAMSQLite:
             print(f"获取最具体网络失败: {str(e)}")
             return None
     
-    def add_network(self, network_str: str, description: str = "") -> tuple[bool, str]:
+    def add_network(self, network_str: str, description: str = "", vlan: str = "") -> tuple[bool, str]:
         """添加网络
         
         Args:
             network_str: 网络地址（CIDR格式）
             description: 网络描述
+            vlan: VLAN ID
         
         Returns:
             tuple[bool, str]: (是否添加成功, 错误信息)
@@ -291,9 +301,9 @@ class IPAMSQLite:
                 # 添加网络
                 created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 _ = cursor.execute('''
-                INSERT INTO networks (network_address, description, created_at, updated_at)
-                VALUES (?, ?, ?, ?)
-                ''', (network_str, description, created_at, created_at))
+                INSERT INTO networks (network_address, description, vlan, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (network_str, description, vlan, created_at, created_at))
                 
                 network_id = cursor.lastrowid
                 
@@ -535,7 +545,7 @@ class IPAMSQLite:
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 
-                _ = cursor.execute('SELECT id, network_address, description, created_at, updated_at FROM networks')
+                _ = cursor.execute('SELECT id, network_address, description, vlan, created_at, updated_at FROM networks')
                 network_rows = cursor.fetchall()
                 
                 # 一次性获取所有IP地址，避免多次数据库查询
@@ -558,18 +568,20 @@ class IPAMSQLite:
                 for network_item in network_rows:
                     # 计算网络及其子网络的IP数量
                     try:
-                        if isinstance(network_item, tuple) and len(network_item) >= 5:
+                        if isinstance(network_item, tuple) and len(network_item) >= 6:
                             network_id: int = int(network_item[0])
                             network_address: str = str(network_item[1])
                             description: str = str(network_item[2]) if network_item[2] else ''
-                            created_at: str = str(network_item[3]) if network_item[3] else ''
-                            updated_at: str = str(network_item[4]) if network_item[4] else ''
+                            vlan: str = str(network_item[3]) if network_item[3] else ''
+                            created_at: str = str(network_item[4]) if network_item[4] else ''
+                            updated_at: str = str(network_item[5]) if network_item[5] else ''
                             ip_count: int = self.get_network_ip_count(network_address, ip_objects)
                             
                             network_list.append({
                                 'id': network_id,
                                 'network': network_address,
                                 'description': description,
+                                'vlan': vlan,
                                 'created_at': created_at,
                                 'updated_at': updated_at,
                                 'ip_count': ip_count
@@ -1666,6 +1678,44 @@ class IPAMSQLite:
             return True, "网络描述更新成功"
         except Exception as e:
             return False, f"更新网络描述失败: {str(e)}"
+    
+    def update_network_vlan(self, network_str: str, vlan: str) -> tuple[bool, str]:
+        """更新网络VLAN
+        
+        Args:
+            network_str: 网络地址（CIDR格式）
+            vlan: 新的VLAN ID
+        
+        Returns:
+            tuple[bool, str]: (是否更新成功, 错误信息)
+        """
+        try:
+            if not network_str:
+                return False, "网络地址不能为空"
+            
+            try:
+                ip_network = ipaddress.ip_network(network_str, strict=False)
+                network_str = str(ip_network)
+            except ValueError as e:
+                return False, f"网络格式错误: {str(e)}"
+            
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                
+                # 检查网络是否存在
+                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
+                network_row = cursor.fetchone()
+                if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
+                    return False, "网络不存在"
+                
+                # 更新网络VLAN
+                _ = cursor.execute('UPDATE networks SET vlan = ?, updated_at = datetime("now") WHERE id = ?', 
+                             (vlan, int(network_row[0])))
+                
+                conn.commit()
+            return True, "网络VLAN更新成功"
+        except Exception as e:
+            return False, f"更新网络VLAN失败: {str(e)}"
     
     def update_network(self, old_network: str, new_network: str) -> tuple[bool, str]:
         """更新网络地址
