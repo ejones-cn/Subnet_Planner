@@ -15274,7 +15274,7 @@ if __name__ == "__main__":
     WINDOW_HEIGHT = int(BASE_HEIGHT)
     
     # 调用窗口设置函数
-    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=True, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=1100, max_height=10000)
+    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=False, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=1100, max_height=10000)
     
     # 创建应用实例
     app = SubnetPlannerApp(root)
