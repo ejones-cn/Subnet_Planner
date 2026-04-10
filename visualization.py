@@ -302,37 +302,56 @@ class NetworkTopologyVisualizer:
                     outline=""
                 )
             elif shape == "hexagon":
-                points = []
-                for j in range(6):
-                    angle = math.pi / 3 * j
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
+                # 六边形 - 顶点在边界框边缘（与主形状一致）
+                # 左右顶点在左右边界上，确保与其他形状对齐
+                points = [
+                    shadow_x + width / 2, shadow_y,                  # 上
+                    shadow_x + width, shadow_y + height / 3,         # 右上
+                    shadow_x + width, shadow_y + height * 2 / 3,     # 右下
+                    shadow_x + width / 2, shadow_y + height,         # 下
+                    shadow_x, shadow_y + height * 2 / 3,             # 左下
+                    shadow_x, shadow_y + height / 3                  # 左上
+                ]
                 shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
             elif shape == "pentagon":
-                points = []
-                for j in range(5):
-                    angle = math.pi * 2 / 5 * j - math.pi / 2
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
+                # 五边形 - 顶点在边界框边缘（与主形状一致）
+                points = [
+                    shadow_x + width / 2, shadow_y,                  # 上
+                    shadow_x + width, shadow_y + height / 2,          # 右中
+                    shadow_x + width * 0.8, shadow_y + height,        # 右下
+                    shadow_x + width * 0.2, shadow_y + height,        # 左下
+                    shadow_x, shadow_y + height / 2                   # 左中
+                ]
                 shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
             elif shape == "octagon":
-                points = []
-                for j in range(8):
-                    angle = math.pi / 4 * j
-                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
-                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
-                    points.extend([px, py])
+                # 八边形 - 顶点在边界框边缘
+                points = [
+                    shadow_x + width / 2, shadow_y,                  # 上
+                    shadow_x + width * 0.85, shadow_y + height * 0.15,  # 右上
+                    shadow_x + width, shadow_y + height / 2,          # 右
+                    shadow_x + width * 0.85, shadow_y + height * 0.85,  # 右下
+                    shadow_x + width / 2, shadow_y + height,          # 下
+                    shadow_x + width * 0.15, shadow_y + height * 0.85,  # 左下
+                    shadow_x, shadow_y + height / 2,                  # 左
+                    shadow_x + width * 0.15, shadow_y + height * 0.15   # 左上
+                ]
                 shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
             elif shape == "star":
-                points = []
-                for j in range(10):
-                    angle = math.pi * 2 / 10 * j - math.pi / 2
-                    radius = width / 2 if j % 2 == 0 else width / 4
-                    px = shadow_x + width / 2 + radius * math.cos(angle)
-                    py = shadow_y + height / 2 + radius * math.sin(angle)
-                    points.extend([px, py])
+                # 星形 - 简化版本，使用边界框边缘
+                points = [
+                    shadow_x + width / 2, shadow_y,                  # 上
+                    shadow_x + width * 0.6, shadow_y + height * 0.35,  # 外点
+                    shadow_x + width, shadow_y + height * 0.35,      # 右
+                    shadow_x + width * 0.65, shadow_y + height * 0.5,  # 内点
+                    shadow_x + width, shadow_y + height * 0.65,      # 右下
+                    shadow_x + width * 0.6, shadow_y + height * 0.65,  # 外点
+                    shadow_x + width / 2, shadow_y + height,          # 下
+                    shadow_x + width * 0.4, shadow_y + height * 0.65,  # 外点
+                    shadow_x, shadow_y + height * 0.65,              # 左下
+                    shadow_x + width * 0.35, shadow_y + height * 0.5,  # 内点
+                    shadow_x, shadow_y + height * 0.35,              # 左
+                    shadow_x + width * 0.4, shadow_y + height * 0.35   # 外点
+                ]
                 shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
             elif shape == "trapezoid":
                 top_width = width * 0.7
@@ -435,17 +454,18 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "diamond":
-            # 创建渐变效果 - 填充层先创建
+            # 创建菱形 - 四个顶点分别在边界框的四边中点
+            # 创建渐变效果
             for i in range(3):
                 gradient_fill = fill
                 if i > 0:
                     gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
                 
                 item = self.canvas.create_polygon(
-                    x + width / 2, y + i,
-                    x + width - i, y + height / 2,
-                    x + width / 2, y + height - i,
-                    x + i, y + height / 2,
+                    x + width / 2, y,          # 上顶点
+                    x + width, y + height / 2,  # 右顶点
+                    x + width / 2, y + height,  # 下顶点
+                    x, y + height / 2,          # 左顶点
                     fill=gradient_fill,
                     outline=""
                 )
@@ -464,16 +484,17 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "triangle":
-            # 创建渐变效果 - 填充层先创建
+            # 创建三角形 - 顶点在边界框的上边中点和底边两角
+            # 创建渐变效果
             for i in range(3):
                 gradient_fill = fill
                 if i > 0:
                     gradient_fill = "#" + "".join([f"{min(255, int(c, 16) + 20):02x}" for c in [fill[1:3], fill[3:5], fill[5:7]]])
                 
                 item = self.canvas.create_polygon(
-                    x + width / 2, y + i,
-                    x + width - i, y + height - i,
-                    x + i, y + height - i,
+                    x + width / 2, y,              # 上顶点
+                    x + width, y + height,          # 右下角
+                    x, y + height,                  # 左下角
                     fill=gradient_fill,
                     outline=""
                 )
@@ -532,17 +553,16 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "hexagon":
-            # 创建六边形 - 调整半径使实际大小与矩形一致
-            # 六边形的高度是 radius * sqrt(3)，所以 radius = height / sqrt(3) * 2
-            hex_radius_x = width / math.sqrt(3)
-            hex_radius_y = height / math.sqrt(3) * 2 / 2
-            
-            points = []
-            for i in range(6):
-                angle = math.pi / 3 * i
-                px = x + width / 2 + hex_radius_x * math.cos(angle)
-                py = y + height / 2 + hex_radius_y * math.sin(angle)
-                points.extend([px, py])
+            # 创建六边形 - 顶点在边界框的边缘
+            # 左右顶点在左右边界上，确保与其他形状对齐
+            points = [
+                x + width / 2, y,                  # 上
+                x + width, y + height / 3,         # 右上
+                x + width, y + height * 2 / 3,     # 右下
+                x + width / 2, y + height,         # 下
+                x, y + height * 2 / 3,             # 左下
+                x, y + height / 3                  # 左上
+            ]
             
             # 创建渐变效果
             for i in range(3):
@@ -567,16 +587,15 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "pentagon":
-            # 创建五边形 - 调整半径使实际大小与矩形一致
-            pent_radius_x = width / 2 * 1.15  # 五边形需要稍大一点的半径
-            pent_radius_y = height / 2 * 1.15
-            
-            points = []
-            for i in range(5):
-                angle = math.pi * 2 / 5 * i - math.pi / 2
-                px = x + width / 2 + pent_radius_x * math.cos(angle)
-                py = y + height / 2 + pent_radius_y * math.sin(angle)
-                points.extend([px, py])
+            # 创建五边形 - 顶点在边界框的边缘
+            # 五边形：上顶点在上边中点，左右顶点在左右边中点，底部两个顶点在底边
+            points = [
+                x + width / 2, y,                  # 上
+                x + width, y + height / 2,          # 右中
+                x + width * 0.8, y + height,        # 右下
+                x + width * 0.2, y + height,        # 左下
+                x, y + height / 2                   # 左中
+            ]
             
             # 创建渐变效果
             for i in range(3):
@@ -601,13 +620,18 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "octagon":
-            # 创建八边形
-            points = []
-            for i in range(8):
-                angle = math.pi / 4 * i
-                px = x + width / 2 + width / 2 * math.cos(angle)
-                py = y + height / 2 + height / 2 * math.sin(angle)
-                points.extend([px, py])
+            # 创建八边形 - 顶点在边界框边缘
+            # 左右两侧有垂直的边，确保连接线可以对齐
+            points = [
+                x + width * 0.3, y,                # 上中左
+                x + width * 0.7, y,                # 上中右
+                x + width, y + height * 0.3,       # 右上
+                x + width, y + height * 0.7,       # 右下
+                x + width * 0.7, y + height,       # 下中右
+                x + width * 0.3, y + height,       # 下中左
+                x, y + height * 0.7,               # 左下
+                x, y + height * 0.3                # 左上
+            ]
             
             # 创建渐变效果
             for i in range(3):
@@ -656,14 +680,21 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "star":
-            # 创建星形
-            points = []
-            for i in range(10):
-                angle = math.pi * 2 / 10 * i - math.pi / 2
-                radius = width / 2 if i % 2 == 0 else width / 4
-                px = x + width / 2 + radius * math.cos(angle)
-                py = y + height / 2 + radius * math.sin(angle)
-                points.extend([px, py])
+            # 创建星形 - 简化版本，使用边界框边缘
+            points = [
+                x + width / 2, y,                  # 上
+                x + width * 0.6, y + height * 0.35,  # 外点
+                x + width, y + height * 0.35,      # 右
+                x + width * 0.65, y + height * 0.5,  # 内点
+                x + width, y + height * 0.65,      # 右下
+                x + width * 0.6, y + height * 0.65,  # 外点
+                x + width / 2, y + height,          # 下
+                x + width * 0.4, y + height * 0.65,  # 外点
+                x, y + height * 0.65,              # 左下
+                x + width * 0.35, y + height * 0.5,  # 内点
+                x, y + height * 0.35,              # 左
+                x + width * 0.4, y + height * 0.35   # 外点
+            ]
             
             # 创建渐变效果
             for i in range(3):
@@ -1068,6 +1099,28 @@ class NetworkTopologyVisualizer:
                 return base_height + 10
             return base_height
         
+        # 获取形状的重心 Y 偏移（相对于形状边界框顶部）
+        def get_center_offset(node):
+            """返回形状重心相对于边界框中心的 Y 偏移量"""
+            device_type = node.get("device_type", "default")
+            # 椭圆、矩形、菱形、六边形的重心在中心
+            if device_type in ["ellipse", "circle", "rectangle", "rounded_rectangle", "diamond", "hexagon"]:
+                return 0
+            # 三角形的重心在从底部算 1/3 高度处，即从顶部算 2/3 高度处
+            # 边界框中心在 height/2，重心在 2*height/3，偏移 = 2*height/3 - height/2 = height/6
+            elif device_type == "triangle":
+                return NODE_HEIGHT / 6
+            # 五边形的重心略偏上
+            elif device_type == "pentagon":
+                return NODE_HEIGHT / 12
+            # 星形的重心略偏上
+            elif device_type == "star":
+                return NODE_HEIGHT / 12
+            # 梯形的重心略偏下
+            elif device_type == "trapezoid":
+                return -NODE_HEIGHT / 12
+            return 0
+        
         # 递归计算子树高度
         def calculate_subtree_height(node):
             children = parent_to_children.get(node["id"], [])
@@ -1120,9 +1173,13 @@ class NetworkTopologyVisualizer:
         # 移动每个节点到新位置
         for node_id, node in self.nodes.items():
             try:
-                coords = self.canvas.coords(node["shape"])
-                current_x = coords[0]
-                current_y = coords[1]
+                # 使用 bbox 获取边界框，而不是 coords（coords 返回的是顶点坐标，不是边界框）
+                bbox = self.canvas.bbox(node["shape"])
+                if bbox:
+                    current_x = bbox[0]  # 左边界
+                    current_y = bbox[1]  # 上边界
+                else:
+                    continue
             except (IndexError, TypeError, ValueError):
                 continue
             dx = node["x"] - current_x
@@ -1152,6 +1209,7 @@ class NetworkTopologyVisualizer:
                 target_node = node
                 
                 # 计算连接点（从源节点右侧到目标节点左侧）
+                # 所有形状的左右顶点都在边界框边缘，统一使用边界框坐标
                 x1 = source_node["x"] + NODE_WIDTH  # 源节点右侧
                 y1 = source_node["y"] + NODE_HEIGHT / 2  # 垂直中心
                 x2 = target_node["x"]  # 目标节点左侧
@@ -1177,6 +1235,10 @@ class NetworkTopologyVisualizer:
                     "target": node_id,
                     "line": line
                 })
+        
+        # 将所有连接线提升到最上层，确保连接线不被节点遮挡
+        for link in self.links:
+            self.canvas.tag_raise(link["line"])
     
     def auto_scale_to_fit(self):
         """自动缩放画布以适应所有节点"""
