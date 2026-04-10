@@ -218,35 +218,154 @@ class NetworkTopologyVisualizer:
         # 缩放画布内容
         self.canvas.scale(tk.ALL, event.x, event.y, scale_factor, scale_factor)
     
-    def create_node_shape(self, x, y, width, height, shape="rectangle", fill=NODE_COLOR, outline=NODE_BORDER_COLOR, border_width=2):
+    def create_node_shape(self, x, y, width, height, shape="rectangle", fill=NODE_COLOR, outline=NODE_BORDER_COLOR, border_width=2, node_tag=None):
         """创建不同形状的节点
         
         Args:
-            x: x坐标
-            y: y坐标
+            x: x 坐标
+            y: y 坐标
             width: 宽度
             height: 高度
             shape: 形状类型
             fill: 填充颜色
             outline: 边框颜色
             border_width: 边框宽度
+            node_tag: 节点 tag，用于绑定阴影层
         
         Returns:
-            tuple: (shape_id, gradient_items) shape_id 是边框对象的ID，gradient_items 是所有渐变填充层的ID列表
+            tuple: (shape_id, gradient_items, shadow_items) shape_id 是边框对象的 ID，gradient_items 是所有渐变填充层的 ID 列表，shadow_items 是所有阴影层的 ID 列表
         """
-        # 收集所有创建的渐变填充层对象ID
+        # 收集所有创建的渐变填充层对象 ID
         gradient_items = []
+        # 收集所有创建的阴影层对象 ID
+        shadow_items = []
         
-        # 添加阴影效果 - 统一所有形状的阴影渲染方法
+        # 添加阴影效果
         shadow_offset = 3
         
-        # 使用三层阴影，每层使用不同的偏移量，增强立体感
-        # 移除 stipple 参数，使用纯黑阴影，与椭圆阴影效果一致
         for i in range(3):
             shadow_x = x + shadow_offset * (i + 1)
             shadow_y = y + shadow_offset * (i + 1)
             
-            # 为所有形状创建相同效果的阴影
+            # 创建阴影并收集 ID
+            if shape == "rectangle":
+                radius = 10
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + radius, shadow_y,
+                    shadow_x + width - radius, shadow_y,
+                    shadow_x + width, shadow_y + radius,
+                    shadow_x + width, shadow_y + height - radius,
+                    shadow_x + width - radius, shadow_y + height,
+                    shadow_x + radius, shadow_y + height,
+                    shadow_x, shadow_y + height - radius,
+                    shadow_x, shadow_y + radius,
+                    fill="#000000",
+                    outline="",
+                    smooth=True
+                )
+            elif shape == "rounded_rectangle":
+                radius = 15
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + radius, shadow_y,
+                    shadow_x + width - radius, shadow_y,
+                    shadow_x + width, shadow_y + radius,
+                    shadow_x + width, shadow_y + height - radius,
+                    shadow_x + width - radius, shadow_y + height,
+                    shadow_x + radius, shadow_y + height,
+                    shadow_x, shadow_y + height - radius,
+                    shadow_x, shadow_y + radius,
+                    fill="#000000",
+                    outline="",
+                    smooth=True
+                )
+            elif shape == "ellipse" or shape == "circle":
+                shadow_id = self.canvas.create_oval(
+                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
+                    fill="#000000",
+                    outline=""
+                )
+            elif shape == "diamond":
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + width / 2, shadow_y,
+                    shadow_x + width, shadow_y + height / 2,
+                    shadow_x + width / 2, shadow_y + height,
+                    shadow_x, shadow_y + height / 2,
+                    fill="#000000",
+                    outline=""
+                )
+            elif shape == "triangle":
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + width / 2, shadow_y,
+                    shadow_x + width, shadow_y + height,
+                    shadow_x, shadow_y + height,
+                    fill="#000000",
+                    outline=""
+                )
+            elif shape == "hexagon":
+                points = []
+                for j in range(6):
+                    angle = math.pi / 3 * j
+                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
+                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
+                    points.extend([px, py])
+                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
+            elif shape == "pentagon":
+                points = []
+                for j in range(5):
+                    angle = math.pi * 2 / 5 * j - math.pi / 2
+                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
+                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
+                    points.extend([px, py])
+                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
+            elif shape == "octagon":
+                points = []
+                for j in range(8):
+                    angle = math.pi / 4 * j
+                    px = shadow_x + width / 2 + width / 2 * math.cos(angle)
+                    py = shadow_y + height / 2 + height / 2 * math.sin(angle)
+                    points.extend([px, py])
+                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
+            elif shape == "star":
+                points = []
+                for j in range(10):
+                    angle = math.pi * 2 / 10 * j - math.pi / 2
+                    radius = width / 2 if j % 2 == 0 else width / 4
+                    px = shadow_x + width / 2 + radius * math.cos(angle)
+                    py = shadow_y + height / 2 + radius * math.sin(angle)
+                    points.extend([px, py])
+                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
+            elif shape == "trapezoid":
+                top_width = width * 0.7
+                bottom_width = width
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + (width - top_width) / 2, shadow_y,
+                    shadow_x + (width + top_width) / 2, shadow_y,
+                    shadow_x + width, shadow_y + height,
+                    shadow_x, shadow_y + height,
+                    fill="#000000",
+                    outline=""
+                )
+            elif shape == "parallelogram":
+                skew = width * 0.2
+                shadow_id = self.canvas.create_polygon(
+                    shadow_x + skew, shadow_y,
+                    shadow_x + width, shadow_y,
+                    shadow_x + width - skew, shadow_y + height,
+                    shadow_x, shadow_y + height,
+                    fill="#000000",
+                    outline=""
+                )
+            else:
+                shadow_id = self.canvas.create_oval(
+                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
+                    fill="#000000",
+                    outline=""
+                )
+            
+            shadow_items.append(shadow_id)
+            # 如果提供了 node_tag，立即绑定
+            if node_tag:
+                self.canvas.itemconfig(shadow_id, tags=(node_tag,))
             if shape == "rectangle":
                 # 矩形使用圆角矩形阴影（与主形状一致）
                 radius = 10
@@ -817,13 +936,17 @@ class NetworkTopologyVisualizer:
         node_shape = DEVICE_SHAPES.get(device_type, "rectangle")
         
         # 创建节点形状
-        shape_id, gradient_items = self.create_node_shape(
+        shape_tuple = self.create_node_shape(
             x, y, NODE_WIDTH, NODE_HEIGHT, 
             shape=node_shape, 
             fill=node_color,
             outline=NODE_BORDER_COLOR,
-            border_width=2
+            border_width=2,
+            node_tag=node_id  # 传入 node_id，让阴影层也绑定 tag
         )
+        shape_id = shape_tuple[0]
+        gradient_items = shape_tuple[1] if len(shape_tuple) > 1 else []
+        shadow_items = shape_tuple[2] if len(shape_tuple) > 2 else []
         
         # 获取字体设置
         font_family, font_size = get_current_font_settings()
@@ -865,9 +988,8 @@ class NetworkTopologyVisualizer:
         )
         
         # 关键：将所有属于该节点的画布对象绑定到统一的 tag
-        # 包括：形状边框层 + 渐变填充层 + 文本对象
-        # 这样无论鼠标碰到节点的哪个部分（形状/填充/文本），都能正确识别
-        all_node_items = [shape_id, text_id, subnet_id, ip_info_id] + gradient_items
+        # 包括：形状边框层 + 渐变填充层 + 阴影层 + 文本对象
+        all_node_items = [shape_id, text_id, subnet_id, ip_info_id] + gradient_items + shadow_items
         for item_id in all_node_items:
             self.canvas.itemconfig(item_id, tags=(node_id,))
         
@@ -1021,145 +1143,114 @@ class NetworkTopologyVisualizer:
             self.canvas.config(scrollregion=(0, 0, 1000, 800))
     
     def _reposition_all_nodes(self):
-        """重新计算所有节点的位置，确保父节点垂直居中在子节点中间"""
-        # 首先计算每个层级的节点数量
-        level_nodes = {}
-        for node_id, node in self.nodes.items():
-            level = node.get("level", 0)
-            if level not in level_nodes:
-                level_nodes[level] = []
-            level_nodes[level].append(node)
+        """重新计算所有节点的位置，实现树形层级布局
         
-        # 按层级从低到高排序
-        sorted_levels = sorted(level_nodes.keys())
+        布局规则:
+        1. 根节点在最左侧
+        2. 层级从左到右展开，每层 X 坐标固定
+        3. 父节点与第一个子节点垂直对齐
+        4. 同级节点垂直紧凑排列
+        5. 使用直角折线连接
+        """
+        if not self.nodes:
+            return
+        
+        # 构建父子关系映射
+        parent_to_children = {}
+        root_nodes = []
+        
+        for node_id, node in self.nodes.items():
+            parent_id = node.get("parent_id")
+            if parent_id is None or parent_id not in self.nodes:
+                root_nodes.append(node)
+            else:
+                if parent_id not in parent_to_children:
+                    parent_to_children[parent_id] = []
+                parent_to_children[parent_id].append(node)
+        
+        if not root_nodes:
+            return
+        
+        # 对每个父节点的子节点按 ID 排序，确保顺序一致
+        for parent_id in parent_to_children:
+            parent_to_children[parent_id].sort(key=lambda x: x["id"])
         
         # 计算每个层级的水平位置
         level_x = {}
-        for level in sorted_levels:
+        max_level = max(node.get("level", 0) for node in self.nodes.values())
+        for level in range(max_level + 1):
             level_x[level] = 100 + level * NODE_SPACING
         
-        # 重新计算每个节点的位置
-        for level in sorted_levels:
-            nodes = level_nodes[level]
-            # 计算每个节点的垂直位置
-            for i, node in enumerate(nodes):
-                node["x"] = level_x[level]
-                # 暂时设置一个初始垂直位置
-                node["y"] = 100 + i * (NODE_HEIGHT + 40)
+        vertical_spacing = 15  # 子节点之间的垂直间距
         
-        # 调整父节点位置，确保垂直居中在子节点中间
-        self._adjust_parent_positions()
+        # 递归计算子树高度
+        def calculate_subtree_height(node):
+            children = parent_to_children.get(node["id"], [])
+            if not children:
+                return NODE_HEIGHT
+            total = sum(calculate_subtree_height(child) for child in children)
+            return total + vertical_spacing * (len(children) - 1)
+        
+        # 递归分配位置
+        def assign_positions(node, start_y):
+            node["x"] = level_x.get(node.get("level", 0), 100)
+            children = parent_to_children.get(node["id"], [])
+            
+            if not children:
+                # 叶子节点
+                node["y"] = start_y
+                return NODE_HEIGHT
+            
+            # 有子节点：先计算所有子节点的位置
+            current_y = start_y
+            for i, child in enumerate(children):
+                child_height = assign_positions(child, current_y)
+                if i == 0:
+                    # 父节点与第一个子节点对齐
+                    node["y"] = current_y
+                current_y += child_height + vertical_spacing
+            
+            return current_y - start_y
+        
+        # 从根节点开始布局
+        current_y = 50
+        for root in root_nodes:
+            height = calculate_subtree_height(root)
+            # 垂直居中
+            start_y = current_y + (600 - height) / 2 if height < 600 else current_y
+            assign_positions(root, start_y)
+            current_y += height + 50
+        
+        # 移动节点到新位置
+        self._move_all_nodes_to_new_positions()
     
-    def _adjust_parent_positions(self):
-        """调整父节点位置，确保垂直居中在子节点中间"""
-        # 收集所有父节点
-        parent_nodes = {}
+    def _move_all_nodes_to_new_positions(self):
+        """移动所有节点和连接线到新的位置"""
+        # 删除所有连接线
+        for link in self.links:
+            self.canvas.delete(link.get("id"))
+        self.links = []
+        
+        # 移动每个节点到新位置
         for node_id, node in self.nodes.items():
-            parent_id = node.get("parent_id")
-            if parent_id:
-                if parent_id not in parent_nodes:
-                    parent_nodes[parent_id] = []
-                parent_nodes[parent_id].append(node)
+            try:
+                coords = self.canvas.coords(node["shape"])
+                current_x = coords[0]
+                current_y = coords[1]
+            except (IndexError, TypeError, ValueError):
+                continue
+            dx = node["x"] - current_x
+            dy = node["y"] - current_y
+            # 移动所有绑定了 node_id tag 的对象
+            items_to_move = self.canvas.find_withtag(node_id)
+            for item in items_to_move:
+                self.canvas.move(item, dx, dy)
         
-        # 按层级从高到低排序父节点，确保先调整深层级的父节点
-        # 这样上层父节点的调整不会影响下层父节点的位置
-        sorted_parents = []
-        for parent_id in parent_nodes:
-            if parent_id in self.nodes:
-                level = self.nodes[parent_id].get("level", 0)
-                sorted_parents.append((level, parent_id))
-        sorted_parents.sort(reverse=True, key=lambda x: x[0])
-        
-        # 调整每个父节点的位置
-        for level, parent_id in sorted_parents:
-            children = parent_nodes[parent_id]
-            if parent_id in self.nodes:
-                parent_node = self.nodes[parent_id]
-                if children:
-                    # 计算子节点的垂直范围，考虑子节点的高度
-                    min_y = min(child["y"] for child in children)
-                    max_y = max(child["y"] + NODE_HEIGHT for child in children)
-                    # 计算子节点的垂直中心
-                    center_y = (min_y + max_y) / 2 - NODE_HEIGHT / 2
-                    # 调整父节点的垂直位置
-                    parent_node["y"] = center_y
-        
-        # 重新绘制所有节点和连接线
-        self._redraw_all_nodes()
+        # 重新绘制连接线
         self._redraw_all_links()
     
-    def _redraw_all_nodes(self):
-        """重新绘制所有节点"""
-        # 删除所有旧的节点
-        for node in self.nodes.values():
-            self.canvas.delete(node["shape"])
-            self.canvas.delete(node["text"])
-            self.canvas.delete(node["subnet_text"])
-            self.canvas.delete(node["ip_info_text"])
-        
-        # 重新绘制所有节点
-        for node_id, node in self.nodes.items():
-            # 确定节点形状和颜色
-            shape_type = DEVICE_SHAPES.get(node["device_type"], "rectangle")
-            node_color = SUBNET_TYPE_COLORS.get(node["subnet_type"], NODE_COLOR)
-            
-            # 绘制节点形状
-            shape_tuple = self.create_node_shape(
-                node["x"],
-                node["y"],
-                NODE_WIDTH,
-                NODE_HEIGHT,
-                shape_type,
-                node_color
-            )
-            # 只取形状ID，忽略渐变填充层ID列表
-            shape = shape_tuple[0]
-            
-            # 绘制节点文本
-            text = self.canvas.create_text(
-                node["x"] + NODE_WIDTH / 2,
-                node["y"] + NODE_HEIGHT / 2 - 20,
-                text=node["name"],
-                fill="white",
-                font=("微软雅黑", 10, "bold"),
-                tags=("node_text", f"node_{node_id}")
-            )
-            
-            # 绘制网段信息
-            cidr = node.get("subnet", "")
-            subnet_text = self.canvas.create_text(
-                node["x"] + NODE_WIDTH / 2,
-                node["y"] + NODE_HEIGHT / 2,
-                text=cidr,
-                fill="white",
-                font=("微软雅黑", 9),
-                tags=("node_text", f"node_{node_id}")
-            )
-            
-            # 绘制IP数量信息
-            ip_info_dict = node.get("ip_info", {})
-            allocated = ip_info_dict.get("allocated", 0)
-            reserved = ip_info_dict.get("reserved", 0)
-            total = ip_info_dict.get("total", 0)
-            used_ips = allocated + reserved
-            ip_info_text = f"{used_ips}/{total}"
-            ip_info_text_item = self.canvas.create_text(
-                node["x"] + NODE_WIDTH / 2,
-                node["y"] + NODE_HEIGHT * 3 / 4,
-                text=ip_info_text,
-                fill="white",
-                font=("微软雅黑", 8),
-                tags=("node_text", f"node_{node_id}")
-            )
-            
-            # 更新节点信息
-            node["shape"] = shape
-            node["text"] = text
-            node["subnet_text"] = subnet_text
-            node["ip_info_text"] = ip_info_text_item
-    
     def _redraw_all_links(self):
-        """重新绘制所有连接线"""
+        """重新绘制所有连接线（使用直角折线）"""
         # 先删除所有旧的连接线
         for item in self.canvas.find_withtag("link"):
             self.canvas.delete(item)
@@ -1173,14 +1264,26 @@ class NetworkTopologyVisualizer:
             if parent_id and parent_id in self.nodes:
                 source_node = self.nodes[parent_id]
                 target_node = node
+                
+                # 计算连接点（从源节点右侧到目标节点左侧）
+                x1 = source_node["x"] + NODE_WIDTH  # 源节点右侧
+                y1 = source_node["y"] + NODE_HEIGHT / 2  # 垂直中心
+                x2 = target_node["x"]  # 目标节点左侧
+                y2 = target_node["y"] + NODE_HEIGHT / 2  # 垂直中心
+                
+                # 创建直角折线
+                mid_x = x1 + (x2 - x1) / 2  # 转折点 X 坐标
+                
+                # 绘制折线：水平 → 垂直 → 水平
                 line = self.canvas.create_line(
-                    source_node["x"] + NODE_WIDTH / 2,
-                    source_node["y"] + NODE_HEIGHT / 2,
-                    target_node["x"] + NODE_WIDTH / 2,
-                    target_node["y"] + NODE_HEIGHT / 2,
+                    x1, y1,          # 起点（源节点右侧中心）
+                    mid_x, y1,       # 转折点 1（水平延伸）
+                    mid_x, y2,       # 转折点 2（垂直向下/上）
+                    x2, y2,          # 终点（目标节点左侧中心）
                     arrow=tk.LAST,
                     width=2,
                     fill="#CCCCCC",
+                    smooth=False,  # 不使用平滑，保持直角
                     tags="link"
                 )
                 self.links.append({

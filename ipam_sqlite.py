@@ -240,11 +240,23 @@ class IPAMSQLite:
                                         'created_at': created_at,
                                         'updated_at': updated_at
                                     }
+                    except ValueError as e:
+                        print(f"网络地址格式错误: {str(e)}")
+                        continue
+                    except TypeError as e:
+                        print(f"类型错误: {str(e)}")
+                        continue
                     except Exception as e:
                         print(f"处理网络行时出错: {str(e)}")
                         continue
                 
                 return most_specific_network
+        except sqlite3.Error as e:
+            print(f"数据库错误: {str(e)}")
+            return None
+        except ValueError as e:
+            print(f"IP地址格式错误: {str(e)}")
+            return None
         except Exception as e:
             print(f"获取最具体网络失败: {str(e)}")
             return None

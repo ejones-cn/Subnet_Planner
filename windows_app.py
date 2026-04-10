@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -174,12 +174,12 @@ if sys.platform == 'win32':
         SCALE_FACTOR = dpi_x / 96.0  # type: ignore
         # 只在直接运行应用程序时打印DPI信息，不在模块导入时打印
         if __name__ == "__main__":
-            print(f"✅ Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
+            print(f"[OK] Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
 
     except Exception as e:
         # 只在直接运行应用程序时打印错误信息，不在模块导入时打印
         if __name__ == "__main__":
-            print(f"⚠️ 设置DPI感知失败: {e}")
+            print(f"[WARN] 设置DPI感知失败: {e}")
         # 使用默认缩放因子
         SCALE_FACTOR = 1.0  # type: ignore
         DPI_MODE = "Default"  # type: ignore
@@ -7598,7 +7598,7 @@ class SubnetPlannerApp:
         else:
             label_style = "Success.TLabel"
             frame_style = "SuccessInfoBar.TFrame"
-            icon = "✅ "  # 使用带框钩 (U+2705)，与带框叉风格一致
+            icon = "[OK] "  # 使用带框钩 (U+2705)，与带框叉风格一致
 
         # 更新信息标签和框架样式
 
@@ -15048,7 +15048,7 @@ class SubnetPlannerApp:
         node_id_counter = 1
         
         # 递归生成网络数据
-        def generate_network_data(cidr, level=0):
+        def generate_network_data(cidr, level=0, parent_id=None):
             nonlocal node_id_counter
             
             net_info = network_tree.get(cidr)
@@ -15091,7 +15091,7 @@ class SubnetPlannerApp:
             # 生成子节点
             children = []
             for child_cidr in net_info['children']:
-                child_node = generate_network_data(child_cidr, level + 1)
+                child_node = generate_network_data(child_cidr, level + 1, node_id)
                 if child_node:
                     children.append(child_node['id'])
                     network_data.append(child_node)
@@ -15198,6 +15198,7 @@ class SubnetPlannerApp:
                 "name": net_info['name'],
                 "cidr": cidr,
                 "level": level,
+                "parent_id": parent_id,  # 添加父节点 ID
                 "type": "network" if level == 0 else "client",
                 "device_type": device_type,
                 "subnet_type": subnet_type,
