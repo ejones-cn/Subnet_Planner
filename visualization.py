@@ -53,7 +53,7 @@ class VisualizationError(Exception):
 
 # 定义颜色常量 - 优雅配色方案
 NODE_COLOR = "#4a6fa5"
-NODE_BORDER_COLOR = "#2c3e50"
+NODE_BORDER_COLOR = "#aaaaaa"
 LINK_COLOR = "#6c757d"
 TEXT_COLOR = "#ffffff"
 BACKGROUND_COLOR = "#2c3e50"
@@ -218,6 +218,32 @@ class NetworkTopologyVisualizer:
         # 缩放画布内容
         self.canvas.scale(tk.ALL, event.x, event.y, scale_factor, scale_factor)
     
+    def _create_shadow(self, points, shadow_x, shadow_y, width, height, smooth=False):
+        """通用阴影创建方法
+        
+        Args:
+            points: 顶点坐标列表（相对于 x, y 的偏移量，使用 0-1 之间的相对坐标）
+            shadow_x: 阴影起始 x 坐标
+            shadow_y: 阴影起始 y 坐标
+            width: 宽度
+            height: 高度
+            smooth: 是否使用平滑（圆角）
+        
+        Returns:
+            int: 阴影对象 ID
+        """
+        # 将相对坐标转换为阴影的绝对坐标
+        shadow_points = []
+        for i in range(0, len(points), 2):
+            px = shadow_x + points[i] * width
+            py = shadow_y + points[i + 1] * height
+            shadow_points.extend([px, py])
+        
+        if smooth:
+            return self.canvas.create_polygon(*shadow_points, fill="#000000", outline="", smooth=True)
+        else:
+            return self.canvas.create_polygon(*shadow_points, fill="#000000", outline="")
+    
     def create_node_shape(self, x, y, width, height, shape="rectangle", fill=NODE_COLOR, outline=NODE_BORDER_COLOR, border_width=2, node_tag=None):
         """创建不同形状的节点
         
@@ -237,6 +263,22 @@ class NetworkTopologyVisualizer:
         """
         # 收集所有创建的渐变填充层对象 ID
         gradient_items = []
+        # 定义各形状的顶点坐标（使用 0-1 的相对坐标）
+        SHAPE_POINTS = {
+            "rectangle": [0.1, 0, 0.9, 0, 1, 0.1, 1, 0.9, 0.9, 1, 0.1, 1, 0, 0.9, 0, 0.1],  # 圆角矩形近似
+            "rounded_rectangle": [0.15, 0, 0.85, 0, 1, 0.15, 1, 0.85, 0.85, 1, 0.15, 1, 0, 0.85, 0, 0.15],
+            "ellipse": None,  # 椭圆特殊处理
+            "circle": None,  # 圆形特殊处理
+            "diamond": [0.5, 0, 1, 0.5, 0.5, 1, 0, 0.5],
+            "triangle": [0.5, 0, 1, 1, 0, 1],
+            "hexagon": [0.5, 0, 1, 0.33, 1, 0.67, 0.5, 1, 0, 0.67, 0, 0.33],
+            "pentagon": [0.5, 0, 1, 0.5, 0.8, 1, 0.2, 1, 0, 0.5],
+            "octagon": [0.3, 0, 0.7, 0, 1, 0.3, 1, 0.7, 0.7, 1, 0.3, 1, 0, 0.7, 0, 0.3],
+            "star": [0.5, 0, 0.6, 0.35, 1, 0.35, 0.65, 0.5, 1, 0.65, 0.6, 0.65, 0.5, 1, 0.4, 0.65, 0, 0.65, 0.35, 0.5, 0, 0.35, 0.4, 0.35],
+            "trapezoid": [0.15, 0, 0.85, 0, 1, 1, 0, 1],
+            "parallelogram": [0.2, 0, 1, 0, 0.8, 1, 0, 1]
+        }
+        
         # 收集所有创建的阴影层对象 ID
         shadow_items = []
         
@@ -247,139 +289,23 @@ class NetworkTopologyVisualizer:
             shadow_x = x + shadow_offset * (i + 1)
             shadow_y = y + shadow_offset * (i + 1)
             
-            # 创建阴影并收集 ID
-            if shape == "rectangle":
-                radius = 10
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + radius, shadow_y,
-                    shadow_x + width - radius, shadow_y,
-                    shadow_x + width, shadow_y + radius,
-                    shadow_x + width, shadow_y + height - radius,
-                    shadow_x + width - radius, shadow_y + height,
-                    shadow_x + radius, shadow_y + height,
-                    shadow_x, shadow_y + height - radius,
-                    shadow_x, shadow_y + radius,
-                    fill="#000000",
-                    outline="",
-                    smooth=True
-                )
-            elif shape == "rounded_rectangle":
-                radius = 15
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + radius, shadow_y,
-                    shadow_x + width - radius, shadow_y,
-                    shadow_x + width, shadow_y + radius,
-                    shadow_x + width, shadow_y + height - radius,
-                    shadow_x + width - radius, shadow_y + height,
-                    shadow_x + radius, shadow_y + height,
-                    shadow_x, shadow_y + height - radius,
-                    shadow_x, shadow_y + radius,
-                    fill="#000000",
-                    outline="",
-                    smooth=True
-                )
-            elif shape == "ellipse" or shape == "circle":
+            # 使用通用方法创建阴影
+            if shape in ["ellipse", "circle"]:
+                # 椭圆和圆形特殊处理
                 shadow_id = self.canvas.create_oval(
                     shadow_x, shadow_y, shadow_x + width, shadow_y + height,
                     fill="#000000",
                     outline=""
                 )
-            elif shape == "diamond":
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + width / 2, shadow_y,
-                    shadow_x + width, shadow_y + height / 2,
-                    shadow_x + width / 2, shadow_y + height,
-                    shadow_x, shadow_y + height / 2,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "triangle":
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + width / 2, shadow_y,
-                    shadow_x + width, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "hexagon":
-                # 六边形 - 顶点在边界框边缘（与主形状一致）
-                # 左右顶点在左右边界上，确保与其他形状对齐
-                points = [
-                    shadow_x + width / 2, shadow_y,                  # 上
-                    shadow_x + width, shadow_y + height / 3,         # 右上
-                    shadow_x + width, shadow_y + height * 2 / 3,     # 右下
-                    shadow_x + width / 2, shadow_y + height,         # 下
-                    shadow_x, shadow_y + height * 2 / 3,             # 左下
-                    shadow_x, shadow_y + height / 3                  # 左上
-                ]
-                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
-            elif shape == "pentagon":
-                # 五边形 - 顶点在边界框边缘（与主形状一致）
-                points = [
-                    shadow_x + width / 2, shadow_y,                  # 上
-                    shadow_x + width, shadow_y + height / 2,          # 右中
-                    shadow_x + width * 0.8, shadow_y + height,        # 右下
-                    shadow_x + width * 0.2, shadow_y + height,        # 左下
-                    shadow_x, shadow_y + height / 2                   # 左中
-                ]
-                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
-            elif shape == "octagon":
-                # 八边形 - 顶点在边界框边缘
-                points = [
-                    shadow_x + width / 2, shadow_y,                  # 上
-                    shadow_x + width * 0.85, shadow_y + height * 0.15,  # 右上
-                    shadow_x + width, shadow_y + height / 2,          # 右
-                    shadow_x + width * 0.85, shadow_y + height * 0.85,  # 右下
-                    shadow_x + width / 2, shadow_y + height,          # 下
-                    shadow_x + width * 0.15, shadow_y + height * 0.85,  # 左下
-                    shadow_x, shadow_y + height / 2,                  # 左
-                    shadow_x + width * 0.15, shadow_y + height * 0.15   # 左上
-                ]
-                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
-            elif shape == "star":
-                # 星形 - 简化版本，使用边界框边缘
-                points = [
-                    shadow_x + width / 2, shadow_y,                  # 上
-                    shadow_x + width * 0.6, shadow_y + height * 0.35,  # 外点
-                    shadow_x + width, shadow_y + height * 0.35,      # 右
-                    shadow_x + width * 0.65, shadow_y + height * 0.5,  # 内点
-                    shadow_x + width, shadow_y + height * 0.65,      # 右下
-                    shadow_x + width * 0.6, shadow_y + height * 0.65,  # 外点
-                    shadow_x + width / 2, shadow_y + height,          # 下
-                    shadow_x + width * 0.4, shadow_y + height * 0.65,  # 外点
-                    shadow_x, shadow_y + height * 0.65,              # 左下
-                    shadow_x + width * 0.35, shadow_y + height * 0.5,  # 内点
-                    shadow_x, shadow_y + height * 0.35,              # 左
-                    shadow_x + width * 0.4, shadow_y + height * 0.35   # 外点
-                ]
-                shadow_id = self.canvas.create_polygon(*points, fill="#000000", outline="")
-            elif shape == "trapezoid":
-                top_width = width * 0.7
-                bottom_width = width
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + (width - top_width) / 2, shadow_y,
-                    shadow_x + (width + top_width) / 2, shadow_y,
-                    shadow_x + width, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
-            elif shape == "parallelogram":
-                skew = width * 0.2
-                shadow_id = self.canvas.create_polygon(
-                    shadow_x + skew, shadow_y,
-                    shadow_x + width, shadow_y,
-                    shadow_x + width - skew, shadow_y + height,
-                    shadow_x, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
+            elif shape in ["rectangle", "rounded_rectangle"]:
+                # 矩形和圆角矩形需要平滑效果
+                shadow_id = self._create_shadow(SHAPE_POINTS[shape], shadow_x, shadow_y, width, height, smooth=True)
+            elif shape in SHAPE_POINTS:
+                # 使用通用方法创建多边形阴影
+                shadow_id = self._create_shadow(SHAPE_POINTS[shape], shadow_x, shadow_y, width, height)
             else:
-                shadow_id = self.canvas.create_oval(
-                    shadow_x, shadow_y, shadow_x + width, shadow_y + height,
-                    fill="#000000",
-                    outline=""
-                )
+                # 默认使用矩形
+                shadow_id = self._create_shadow(SHAPE_POINTS.get("rectangle", []), shadow_x, shadow_y, width, height, smooth=True)
             
             shadow_items.append(shadow_id)
             # 如果提供了 node_tag，立即绑定
@@ -412,6 +338,9 @@ class NetworkTopologyVisualizer:
                     smooth=True
                 )
                 gradient_items.append(item)
+                # 绑定 tag 到渐变层
+                if node_tag:
+                    self.canvas.itemconfig(item, tags=(node_tag,))
             
             # 创建边框
             shape_id = self.canvas.create_polygon(
@@ -428,7 +357,10 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1,
                 smooth=True
             )
-            return shape_id, gradient_items
+            # 绑定 tag 到边框
+            if node_tag:
+                self.canvas.itemconfig(shape_id, tags=(node_tag,))
+            return shape_id, gradient_items, shadow_items, shadow_items
         elif shape == "ellipse":
             # 创建渐变效果 - 填充层先创建
             for i in range(3):
@@ -442,6 +374,9 @@ class NetworkTopologyVisualizer:
                     outline=""
                 )
                 gradient_items.append(item)
+                # 绑定 tag 到渐变层
+                if node_tag:
+                    self.canvas.itemconfig(item, tags=(node_tag,))
             
             # 边框层最后创建，并提升到最顶层，确保鼠标事件优先命中边框
             shape_id = self.canvas.create_oval(
@@ -451,8 +386,11 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             # 关键：将边框提升到所有填充层之上，解决椭圆内部无法触发悬停的问题
+            # 绑定 tag 到边框
+            if node_tag:
+                self.canvas.itemconfig(shape_id, tags=(node_tag,))
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "diamond":
             # 创建菱形 - 四个顶点分别在边界框的四边中点
             # 创建渐变效果
@@ -470,6 +408,9 @@ class NetworkTopologyVisualizer:
                     outline=""
                 )
                 gradient_items.append(item)
+                # 绑定 tag 到渐变层
+                if node_tag:
+                    self.canvas.itemconfig(item, tags=(node_tag,))
             
             # 边框层最后创建并提升到最顶层
             shape_id = self.canvas.create_polygon(
@@ -481,8 +422,11 @@ class NetworkTopologyVisualizer:
                 outline=outline,
                 width=border_width + 1
             )
+            # 绑定 tag 到边框
+            if node_tag:
+                self.canvas.itemconfig(shape_id, tags=(node_tag,))
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "triangle":
             # 创建三角形 - 顶点在边界框的上边中点和底边两角
             # 创建渐变效果
@@ -510,7 +454,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "rounded_rectangle":
             # 创建圆角矩形
             radius = 15
@@ -551,7 +495,7 @@ class NetworkTopologyVisualizer:
                 smooth=True
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "hexagon":
             # 创建六边形 - 顶点在边界框的边缘
             # 左右顶点在左右边界上，确保与其他形状对齐
@@ -585,7 +529,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "pentagon":
             # 创建五边形 - 顶点在边界框的边缘
             # 五边形：上顶点在上边中点，左右顶点在左右边中点，底部两个顶点在底边
@@ -618,7 +562,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "octagon":
             # 创建八边形 - 顶点在边界框边缘
             # 左右两侧有垂直的边，确保连接线可以对齐
@@ -654,7 +598,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "circle":
             # 创建圆形
             # 创建渐变效果
@@ -678,7 +622,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "star":
             # 创建星形 - 简化版本，使用边界框边缘
             points = [
@@ -717,7 +661,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "trapezoid":
             # 创建梯形
             top_width = width * 0.7
@@ -750,7 +694,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "parallelogram":
             # 创建平行四边形
             skew = width * 0.2
@@ -782,7 +726,7 @@ class NetworkTopologyVisualizer:
                 width=border_width + 1
             )
             self.canvas.tag_raise(shape_id)
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
         else:
             shape_id = self.canvas.create_rectangle(
                 x, y, x + width, y + height,
@@ -790,7 +734,7 @@ class NetworkTopologyVisualizer:
                 outline=outline,
                 width=border_width
             )
-            return shape_id, gradient_items
+            return shape_id, gradient_items, shadow_items
     
     def add_node(self, name, subnet, level=0, subnet_type="default", device_type="default", ip_info=None, parent_id=None):
         """添加节点
@@ -1084,19 +1028,8 @@ class NetworkTopologyVisualizer:
         def get_node_height(node):
             device_type = node.get("device_type", "default")
             base_height = NODE_HEIGHT
-            # 特殊形状需要额外空间
-            if device_type == "triangle":
-                return base_height + 15  # 三角形顶点突出，需要更多空间
-            elif device_type == "diamond":
-                return base_height + 20  # 菱形上下顶点突出
-            elif device_type == "hexagon":
-                return base_height + 12  # 六边形上下边较平
-            elif device_type == "pentagon":
-                return base_height + 12  # 五边形
-            elif device_type == "star":
-                return base_height + 15  # 星形
-            elif device_type == "trapezoid":
-                return base_height + 10
+            # 所有形状的实际边界框高度都是 NODE_HEIGHT
+            # 不需要额外空间，因为所有形状的顶点都在边界框边缘
             return base_height
         
         # 获取形状的重心 Y 偏移（相对于形状边界框顶部）
@@ -1155,8 +1088,8 @@ class NetworkTopologyVisualizer:
         current_y = 50
         for root in root_nodes:
             height = calculate_subtree_height(root)
-            # 垂直居中
-            start_y = current_y + (600 - height) / 2 if height < 600 else current_y
+            # 垂直居中 - 使用 800 作为画布高度，而不是 600
+            start_y = current_y + (800 - height) / 2 if height < 800 else current_y
             assign_positions(root, start_y)
             current_y += height + 50
         
@@ -1184,6 +1117,8 @@ class NetworkTopologyVisualizer:
                 continue
             dx = node["x"] - current_x
             dy = node["y"] - current_y
+            # 添加 Y 轴偏移量，向上移动 3 像素，修正连接线位置
+            dy -= 3
             # 移动所有绑定了 node_id tag 的对象
             items_to_move = self.canvas.find_withtag(node_id)
             for item in items_to_move:
@@ -1210,9 +1145,10 @@ class NetworkTopologyVisualizer:
                 
                 # 计算连接点（从源节点右侧到目标节点左侧）
                 # 所有形状的左右顶点都在边界框边缘，统一使用边界框坐标
-                x1 = source_node["x"] + NODE_WIDTH  # 源节点右侧
+                # 添加 3 像素偏移量，避免连接线穿入节点
+                x1 = source_node["x"] + NODE_WIDTH + 13  # 源节点右侧 + 13 像素偏移
                 y1 = source_node["y"] + NODE_HEIGHT / 2  # 垂直中心
-                x2 = target_node["x"]  # 目标节点左侧
+                x2 = target_node["x"] - 0  # 目标节点左侧 - 0 像素偏移
                 y2 = target_node["y"] + NODE_HEIGHT / 2  # 垂直中心
                 
                 # 创建直角折线
