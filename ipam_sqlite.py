@@ -211,13 +211,17 @@ class IPAMSQLite:
             dict: 网络信息，或None
         """
         try:
+            target_ip = ipaddress.ip_address(ip_address)
+        except ValueError as e:
+            print(f"IP地址格式错误: {str(e)}")
+            return None
+        
+        try:
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 
                 _ = cursor.execute('SELECT id, network_address, description, created_at, updated_at FROM networks')
                 network_rows: list[tuple[int, str, str | None, str | None, str | None]] = cursor.fetchall()
-                
-                target_ip = ipaddress.ip_address(ip_address)
                 most_specific_network: dict[str, str | int] | None = None
                 max_prefix_len = 0
                 
@@ -240,22 +244,16 @@ class IPAMSQLite:
                                         'created_at': created_at,
                                         'updated_at': updated_at
                                     }
-                    except ValueError as e:
-                        print(f"网络地址格式错误: {str(e)}")
-                        continue
-                    except TypeError as e:
-                        print(f"类型错误: {str(e)}")
+                    except (ValueError, TypeError) as e:
+                        print(f"处理网络行时出错：{str(e)}")
                         continue
                     except Exception as e:
-                        print(f"处理网络行时出错: {str(e)}")
+                        print(f"处理网络行时发生未知错误：{str(e)}")
                         continue
                 
                 return most_specific_network
         except sqlite3.Error as e:
             print(f"数据库错误: {str(e)}")
-            return None
-        except ValueError as e:
-            print(f"IP地址格式错误: {str(e)}")
             return None
         except Exception as e:
             print(f"获取最具体网络失败: {str(e)}")
