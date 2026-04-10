@@ -3930,7 +3930,7 @@ class SubnetPlannerApp:
         self._last_click_time = event.time
         
         # 检查是否正在编辑状态
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data is not None and self.inline_edit_data:
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
             return
         
@@ -12114,7 +12114,7 @@ class SubnetPlannerApp:
         self._last_click_time = event.time
         
         # 检查是否正在编辑状态
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data is not None and self.inline_edit_data:
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
             return
         
@@ -12230,7 +12230,7 @@ class SubnetPlannerApp:
         self._last_click_time = event.time
         
         # 检查是否正在编辑状态
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data is not None and self.inline_edit_data:
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
             return
         
