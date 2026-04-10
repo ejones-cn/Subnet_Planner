@@ -3926,6 +3926,20 @@ class SubnetPlannerApp:
 
     def on_treeview_click(self, event):
         """处理Treeview左键单击事件，实现取消选择功能"""
+        # 记录点击时间，用于双击检测
+        self._last_click_time = event.time
+        
+        # 检查是否正在编辑状态
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
+            # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
+            return
+        
+        # 检查是否是双击事件的一部分
+        # 当发生双击时，单击事件会被触发两次，然后双击事件才会被触发
+        # 我们使用定时器来区分单击和双击
+        if hasattr(self, '_click_timer'):
+            self.root.after_cancel(self._click_timer)
+        
         # 检查是否有正在编辑的状态（旧机制）
         if hasattr(self, 'current_edit_item') and self.current_edit_item is not None:
             # 获取当前编辑的表格
@@ -4011,17 +4025,51 @@ class SubnetPlannerApp:
             if item in selected_items:
                 # 点击已选中项
                 if len(selected_items) == 1:
-                    # 唯一选中项，取消选择
-                    tree.selection_remove(item)
+                    # 唯一选中项，使用定时器延迟处理取消选择
+                    def handle_single_click_cancel():
+                        # 重新获取选择状态，因为可能在延迟期间发生变化
+                        current_selected = list(tree.selection())
+                        current_item = tree.identify_row(event.y)
+                        
+                        # 如果点击的是已选中的项，取消选择
+                        if current_item and current_item in current_selected and len(current_selected) == 1:
+                            tree.selection_remove(current_item)
+                    
+                    # 设置定时器，延迟30毫秒执行取消选择
+                    # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+                    self._click_timer = self.root.after(30, handle_single_click_cancel)
+                    # 允许默认的选择行为
+                    return
                 else:
                     # 多个选中项，只选择当前项
                     tree.selection_set(item)
             else:
-                # 点击未选中项，只选择当前项
-                tree.selection_set(item)
+                # 点击未选中项，使用定时器延迟处理
+                def handle_single_click_select():
+                    # 重新获取选择状态，因为可能在延迟期间发生变化
+                    current_selected = list(tree.selection())
+                    current_item = tree.identify_row(event.y)
+                    
+                    # 如果点击的是未选中的项，只选择当前项
+                    if current_item and current_item not in current_selected:
+                        tree.selection_set(current_item)
+                
+                # 设置定时器，延迟30毫秒执行选择
+                # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+                self._click_timer = self.root.after(30, handle_single_click_select)
+                # 允许默认的选择行为
+                return
 
         # 阻止事件继续传递，避免默认行为冲突
         return "break"
+        
+        # 定义单击处理函数
+        def handle_single_click():
+            # 这里处理其他单击事件，比如点击空白区域等
+            pass
+        
+        # 设置定时器，延迟30毫秒执行单击处理
+        self._click_timer = self.root.after(30, handle_single_click)
 
     def save_edit(self, from_focus_out=False):
         """保存编辑的数据
@@ -12062,6 +12110,14 @@ class SubnetPlannerApp:
     
     def on_ipam_network_click(self, event):
         """网络点击事件处理（用于取消选择）"""
+        # 记录点击时间，用于双击检测
+        self._last_click_time = event.time
+        
+        # 检查是否正在编辑状态
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
+            # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
+            return
+        
         # 获取点击的列
         column = self.ipam_network_tree.identify_column(event.x)
         
@@ -12113,14 +12169,25 @@ class SubnetPlannerApp:
         if region in ("cell", "row", "tree"):
             # 检查是否点击了已选中的项
             if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
-                # 立即处理取消选择，不需要延迟
-                # 取消选择
-                self.ipam_network_tree.selection_remove(clicked_item)
-                # 清空IP地址列表
-                for item in self.ipam_ip_tree.get_children():
-                    self.ipam_ip_tree.delete(item)
-                # 阻止默认选择行为
-                return 'break'
+                # 使用定时器延迟处理取消选择，这样在双击时，定时器会被取消
+                def handle_single_click_cancel():
+                    # 重新获取选择状态，因为可能在延迟期间发生变化
+                    current_selected = self.ipam_network_tree.selection()
+                    current_clicked = self.ipam_network_tree.identify_row(event.y)
+                    
+                    # 如果点击的是已选中的项，取消选择
+                    if current_clicked and current_clicked in current_selected and len(current_selected) == 1:
+                        # 取消选择
+                        self.ipam_network_tree.selection_remove(current_clicked)
+                        # 清空IP地址列表
+                        for item in self.ipam_ip_tree.get_children():
+                            self.ipam_ip_tree.delete(item)
+                
+                # 设置定时器，延迟30毫秒执行取消选择
+                # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+                self._click_timer = self.root.after(30, handle_single_click_cancel)
+                # 允许默认的选择行为
+                return
             
             # 如果点击的是未选中的项，使用定时器延迟处理
             def handle_single_click_cell():
@@ -12137,9 +12204,9 @@ class SubnetPlannerApp:
                     # 触发选择事件
                     self.on_ipam_network_select(None)
             
-            # 设置定时器，延迟150毫秒执行单击处理
+            # 设置定时器，延迟30毫秒执行单击处理
             # 这样在双击时，定时器会被取消，避免与编辑功能冲突
-            self._click_timer = self.root.after(150, handle_single_click_cell)
+            self._click_timer = self.root.after(30, handle_single_click_cell)
             # 允许默认的选择行为
             return
         
@@ -12155,10 +12222,18 @@ class SubnetPlannerApp:
             pass
         
         # 设置定时器，延迟150毫秒执行单击处理
-        self._click_timer = self.root.after(150, handle_single_click)
+        self._click_timer = self.root.after(30, handle_single_click)
     
     def on_ipam_ip_click(self, event):
         """IP地址表点击事件处理（用于取消选择）"""
+        # 记录点击时间，用于双击检测
+        self._last_click_time = event.time
+        
+        # 检查是否正在编辑状态
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
+            # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
+            return
+        
         # 获取点击的项
         clicked_item = self.ipam_ip_tree.identify_row(event.y)
         selected_items = self.ipam_ip_tree.selection()
@@ -12168,11 +12243,22 @@ class SubnetPlannerApp:
         if region in ("cell", "row"):
             # 检查是否点击了已选中的项
             if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
-                # 立即处理取消选择，不需要延迟
-                # 取消选择
-                self.ipam_ip_tree.selection_remove(clicked_item)
-                # 阻止默认选择行为
-                return 'break'
+                # 使用定时器延迟处理取消选择，这样在双击时，定时器会被取消
+                def handle_single_click_cancel():
+                    # 重新获取选择状态，因为可能在延迟期间发生变化
+                    current_selected = self.ipam_ip_tree.selection()
+                    current_clicked = self.ipam_ip_tree.identify_row(event.y)
+                    
+                    # 如果点击的是已选中的项，取消选择
+                    if current_clicked and current_clicked in current_selected and len(current_selected) == 1:
+                        # 取消选择
+                        self.ipam_ip_tree.selection_remove(current_clicked)
+                
+                # 设置定时器，延迟30毫秒执行取消选择
+                # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+                self._click_timer = self.root.after(30, handle_single_click_cancel)
+                # 允许默认的选择行为
+                return
             
             # 如果点击的是未选中的项，使用定时器延迟处理
             def handle_single_click_cell():
@@ -12187,9 +12273,9 @@ class SubnetPlannerApp:
                     # 选中点击的项
                     self.ipam_ip_tree.selection_add(current_clicked)
             
-            # 设置定时器，延迟150毫秒执行单击处理
+            # 设置定时器，延迟30毫秒执行单击处理
             # 这样在双击时，定时器会被取消，避免与编辑功能冲突
-            self._click_timer = self.root.after(150, handle_single_click_cell)
+            self._click_timer = self.root.after(30, handle_single_click_cell)
             # 允许默认的选择行为
             return
         
@@ -12205,7 +12291,7 @@ class SubnetPlannerApp:
             pass
         
         # 设置定时器，延迟150毫秒执行单击处理
-        self._click_timer = self.root.after(150, handle_single_click)
+        self._click_timer = self.root.after(30, handle_single_click)
     
     def on_ipam_network_double_click(self, event):
         """网络双击事件处理（用于内联编辑）"""
@@ -12221,8 +12307,38 @@ class SubnetPlannerApp:
             if not item or not column:
                 return
             
+            # 检查是否点击了展开/折叠图标
+            if column == '#0':
+                # 检查当前项是否有子节点（即是否有展开/折叠图标）
+                children = self.ipam_network_tree.get_children(item)
+                if children:
+                    # 获取点击的x坐标相对于Treeview的位置
+                    x = event.x
+                    
+                    # 获取当前项的深度（缩进级别）
+                    depth = 0
+                    parent = self.ipam_network_tree.parent(item)
+                    while parent:
+                        depth += 1
+                        parent = self.ipam_network_tree.parent(parent)
+                    
+                    # 计算展开/折叠图标的位置
+                    indent_per_level = 10
+                    icon_x_start = 2 + (depth * indent_per_level)
+                    icon_x_end = 20 + (depth * indent_per_level)
+                    
+                    # 检查点击的x坐标是否在展开/折叠图标的范围内
+                    if icon_x_start <= x < icon_x_end:
+                        # 点击的是展开/折叠图标，不触发内联编辑
+                        return
+            
             # 获取列索引
-            column_index = int(column[1:]) - 1
+            if column == '#0':
+                # 对于#0列（网段字段），直接设置为0
+                column_index = 0
+            else:
+                # 对于其他列，正常计算
+                column_index = int(column[1:]) - 1
             
             # 确保内联编辑数据结构已初始化
             self._init_inline_edit_data()
@@ -12233,8 +12349,13 @@ class SubnetPlannerApp:
                 return
             
             # 获取当前单元格的值
-            values = self.ipam_network_tree.item(item, 'values')
-            current_value = values[column_index]
+            if column_index == 0 and column == '#0':
+                # 对于#0列（网段字段），值存储在'text'属性中
+                current_value = self.ipam_network_tree.item(item, 'text')
+            else:
+                # 对于其他列，值存储在'values'属性中
+                values = self.ipam_network_tree.item(item, 'values')
+                current_value = values[column_index]
             
             # 获取单元格的坐标
             try:
@@ -12691,27 +12812,85 @@ class SubnetPlannerApp:
         if tree_name not in self._inline_edit_handlers:
             return
         
+        # 检查点击的时间间隔，过滤掉误识别的双击
+        current_time = event.time
+        is_double_click = False
+        if hasattr(self, '_last_click_time'):
+            time_diff = current_time - self._last_click_time
+            # 只有当时间间隔小于250毫秒时，才认为是真正的双击
+            if time_diff <= 250:
+                is_double_click = True
+        # 记录当前点击时间
+        self._last_click_time = current_time
+        
         # 获取双击的行和列
         region = tree.identify_region(event.x, event.y)
-        if region != "cell":
-            return
-        
         item = tree.identify_row(event.y)
         column = tree.identify_column(event.x)
+        
+        # 只有当是真正的双击时，才执行编辑逻辑
+        if not is_double_click:
+            # 不是真正的双击，阻止默认行为并返回
+            return 'break'
+        
+        # 无论是否是真正的双击，都阻止默认的展开/收缩行为
+        # 这样网段表的双击就不会触发展开/收缩层级
+        
+        # 允许在cell或tree区域触发编辑，特别是#0列（网段字段）
+        if region not in ("cell", "tree"):
+            return
         
         if not item or not column:
             return
         
+        # 确保双击的行被选中
+        tree.selection_set(item)
+        
+        # 检查是否点击了展开/折叠图标
+        if column == '#0':
+            # 检查当前项是否有子节点（即是否有展开/折叠图标）
+            children = tree.get_children(item)
+            if children:
+                # 获取点击的x坐标相对于Treeview的位置
+                x = event.x
+                
+                # 获取当前项的深度（缩进级别）
+                depth = 0
+                parent = tree.parent(item)
+                while parent:
+                    depth += 1
+                    parent = tree.parent(parent)
+                
+                # 计算展开/折叠图标的位置
+                indent_per_level = 10
+                icon_x_start = 2 + (depth * indent_per_level)
+                icon_x_end = 20 + (depth * indent_per_level)
+                
+                # 检查点击的x坐标是否在展开/折叠图标的范围内
+                if icon_x_start <= x < icon_x_end:
+                    # 点击的是展开/折叠图标，不触发内联编辑
+                    return
+        
         # 获取列索引
-        column_index = int(column[1:]) - 1
+        if column == '#0':
+            # 对于#0列（网段字段），直接设置为0
+            column_index = 0
+        else:
+            # 对于其他列，正常计算
+            column_index = int(column[1:]) - 1
         
         # 检查是否是可编辑列
         if column_index not in config['editable_columns']:
             return
         
         # 获取当前单元格的值
-        values = tree.item(item, 'values')
-        current_value = values[column_index]
+        if column_index == 0 and column == '#0':
+            # 对于#0列（网段字段），值存储在'text'属性中
+            current_value = tree.item(item, 'text')
+        else:
+            # 对于其他列，值存储在'values'属性中
+            values = tree.item(item, 'values')
+            current_value = values[column_index]
         
         # 获取单元格的坐标
         try:
@@ -12790,6 +12969,8 @@ class SubnetPlannerApp:
                 # 检查点击的是否是编辑控件或其内部组件
                 target = event.widget
                 is_edit_widget = False
+                is_treeview_click = False
+                clicked_item = None
                 
                 # 遍历控件树，检查是否是编辑控件或其内部组件
                 while target:
@@ -12800,11 +12981,26 @@ class SubnetPlannerApp:
                     if str(target).endswith('.toplevel') and 'dateentry' in str(target):
                         is_edit_widget = True
                         break
+                    # 检查是否是Treeview控件
+                    if str(target).endswith('.treeview'):
+                        is_treeview_click = True
+                        # 获取点击的行
+                        try:
+                            clicked_item = target.identify_row(event.y)
+                        except Exception:
+                            pass
+                        break
                     target = target.master
                 
                 # 如果点击的不是编辑控件，关闭编辑状态
                 if not is_edit_widget:
+                    # 保存当前编辑
                     self.on_generic_inline_edit_save(None)
+                    
+                    # 如果点击的是Treeview控件且点击了有效的行
+                    if is_treeview_click and clicked_item:
+                        # 选中点击的行
+                        target.selection_set(clicked_item)
             
             self.root.bind('<Button-1>', on_root_click, add='+')
         elif column_type == 'datepicker':
@@ -12919,9 +13115,30 @@ class SubnetPlannerApp:
                         except Exception:
                             pass
                         
+                        # 检查是否是Treeview控件
+                        is_treeview_click = False
+                        clicked_item = None
+                        target_tree = None
+                        try:
+                            if str(event.widget).endswith('.treeview'):
+                                is_treeview_click = True
+                                # 获取点击的行
+                                try:
+                                    clicked_item = event.widget.identify_row(event.y)
+                                    target_tree = event.widget
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+                        
                         # 如果没有点击在日历上，也没有点击在另一个DateEntry上，保存编辑
                         if not calendar_clicked and not another_date_entry:
                             self.on_generic_inline_edit_save(None)
+                            
+                            # 如果点击的是Treeview控件且点击了有效的行
+                            if is_treeview_click and clicked_item and target_tree:
+                                # 选中点击的行
+                                target_tree.selection_set(clicked_item)
                     
                     # 绑定到根窗口的所有点击事件，使用唯一标签
                     self._inline_edit_click_handler_id = self.root.bind('<Button-1>', on_any_click, add='+')
@@ -13014,6 +13231,42 @@ class SubnetPlannerApp:
             self.inline_edit_widget.bind('<Return>', on_widget_save)
             self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
             self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+            
+            # 绑定根窗口点击事件，用于关闭编辑状态
+            def on_root_click(event):
+                # 检查点击的是否是编辑控件
+                target = event.widget
+                is_edit_widget = False
+                is_treeview_click = False
+                clicked_item = None
+                
+                # 遍历控件树，检查是否是编辑控件
+                while target:
+                    if hasattr(self, 'inline_edit_widget') and target == self.inline_edit_widget:
+                        is_edit_widget = True
+                        break
+                    # 检查是否是Treeview控件
+                    if str(target).endswith('.treeview'):
+                        is_treeview_click = True
+                        # 获取点击的行
+                        try:
+                            clicked_item = target.identify_row(event.y)
+                        except Exception:
+                            pass
+                        break
+                    target = target.master
+                
+                # 如果点击的不是编辑控件，关闭编辑状态
+                if not is_edit_widget:
+                    # 保存当前编辑
+                    self.on_generic_inline_edit_save(None)
+                    
+                    # 如果点击的是Treeview控件且点击了有效的行
+                    if is_treeview_click and clicked_item:
+                        # 选中点击的行
+                        target.selection_set(clicked_item)
+            
+            self.root.bind('<Button-1>', on_root_click, add='+')
         
         # 获取焦点
         self.inline_edit_widget.focus_set()
@@ -13098,8 +13351,8 @@ class SubnetPlannerApp:
         try:
             # 验证数据 - 空值检查
             if not new_value:
-                # 允许过期日期列为空，所以跳过空值检查
-                if column_name != 'expiry_date':
+                # 允许过期日期列和VLAN列为空，所以跳过空值检查
+                if column_name != 'expiry_date' and column_name != 'vlan':
                     if not from_focus_out:
                         self.show_error(_("error"), _("input_cannot_be_empty"))
                         self.inline_edit_widget.focus_set()
@@ -13138,13 +13391,28 @@ class SubnetPlannerApp:
                 self.inline_edit_widget.focus_set()
         finally:
             # 安全清理编辑控件，无论如何都会执行
+            item_to_select = edit_data['item']
+            tree_to_select = edit_data['tree']
             self._destroy_inline_edit_widgets()
+            # 确保编辑的行仍然保持选中状态
+            tree_to_select.selection_set(item_to_select)
     
     def on_generic_inline_edit_cancel(self, event):
         """通用的取消内联编辑方法
         """
         # 安全清理编辑控件
+        if hasattr(self, 'inline_edit_data'):
+            item_to_select = self.inline_edit_data['item']
+            tree_to_select = self.inline_edit_data['tree']
+        else:
+            item_to_select = None
+            tree_to_select = None
+        
         self._destroy_inline_edit_widgets()
+        
+        # 确保编辑的行仍然保持选中状态
+        if item_to_select and tree_to_select:
+            tree_to_select.selection_set(item_to_select)
     
     def on_ip_tree_double_click_inline(self, event):
         """IP地址表格双击内联编辑处理"""

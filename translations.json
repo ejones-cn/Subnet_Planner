@@ -1716,6 +1716,20 @@
     "zh_tw": "資料復原成功",
     "ko": "데이터 복원 성공"
   },
+  "vlan_invalid_format": {
+    "zh": "VLAN格式无效，请输入数字",
+    "zh_tw": "VLAN格式無效，請輸入數字",
+    "en": "VLAN format is invalid, please enter numbers only",
+    "ja": "VLAN形式が無効です、数字のみを入力してください",
+    "ko": "VLAN 형식이 유효하지 않습니다. 숫자만 입력하세요"
+  },
+  "vlan_out_of_range": {
+    "zh": "VLAN值超出范围(1-4094)",
+    "zh_tw": "VLAN值超出範圍(1-4094)",
+    "en": "VLAN value out of range (1-4094)",
+    "ja": "VLAN値が範囲外です(1-4094)",
+    "ko": "VLAN 값이 범위를 벗어났습니다(1-4094)"
+  },
   "network_import_export": {
     "zh": "网段导入/导出",
     "zh_tw": "網段匯入/匯出",
