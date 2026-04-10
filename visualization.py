@@ -35,9 +35,7 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 """
 
 import tkinter as tk
-from tkinter import Canvas, Frame, Scrollbar, Label, Toplevel
-import math
-import ipaddress
+from tkinter import Canvas, Frame, Scrollbar
 from style_manager import get_current_font_settings
 from i18n import _ as translate
 

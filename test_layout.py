@@ -73,8 +73,8 @@ def create_test_data():
         if i < len(l1n1_children):
             grandchild1 = {
                 "id": f"l3n1_{i}_1",
-                "name": f"Server {i+1}-1",
-                "cidr": f"10.1.{i+1}.128/25",
+                "name": f"Server {i + 1}-1",
+                "cidr": f"10.1.{i + 1}.128/25",
                 "level": 3,
                 "device_type": "server",
                 "subnet_type": "server",
@@ -83,8 +83,8 @@ def create_test_data():
             }
             grandchild2 = {
                 "id": f"l3n1_{i}_2",
-                "name": f"Client {i+1}-2",
-                "cidr": f"10.1.{i+1}.192/26",
+                "name": f"Client {i + 1}-2",
+                "cidr": f"10.1.{i + 1}.192/26",
                 "level": 3,
                 "device_type": "client",
                 "subnet_type": "client",
@@ -105,13 +105,13 @@ def create_test_data():
     for i in range(len(device_types)):
         child = {
             "id": f"l2n2_{i}",
-            "name": f"Branch {i+1}",
-            "cidr": f"10.2.{i+1}.0/24",
+            "name": f"Branch {i + 1}",
+            "cidr": f"10.2.{i + 1}.0/24",
             "level": 2,
             "device_type": device_types[i],
             "subnet_type": subnet_types[i],
             "parent_id": "l1n2",
-            "ip_info": {"total": 254, "allocated": 30*(i+1), "reserved": 10},
+            "ip_info": {"total": 254, "allocated": 30 * (i + 1), "reserved": 10},
             "children": []
         }
         l1n2_children.append(child)
