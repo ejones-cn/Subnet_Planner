@@ -110,7 +110,7 @@ def create_test_data():
             "level": 2,
             "device_type": device_types[i],
             "subnet_type": subnet_types[i],
-            "parent_id": "l2n2",
+            "parent_id": "l1n2",
             "ip_info": {"total": 254, "allocated": 30*(i+1), "reserved": 10},
             "children": []
         }
