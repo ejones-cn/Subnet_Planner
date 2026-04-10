@@ -57,13 +57,13 @@ def create_test_data():
         subnet_types = ["server", "network", "management", "wireless", "office", "client", "test"]
         child = {
             "id": f"l2n1_{i}",
-            "name": f"Device {i+1}",
-            "cidr": f"10.1.{i+1}.0/24",
+            "name": f"Device {i + 1}",
+            "cidr": f"10.1.{i + 1}.0/24",
             "level": 2,
             "device_type": device_types[i],
             "subnet_type": subnet_types[i],
             "parent_id": "l1n1",
-            "ip_info": {"total": 254, "allocated": 10*(i+1), "reserved": 5},
+            "ip_info": {"total": 254, "allocated": 10 * (i + 1), "reserved": 5},
             "children": []
         }
         l1n1_children.append(child)
