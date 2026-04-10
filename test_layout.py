@@ -97,15 +97,20 @@ def create_test_data():
     
     # 为 level1_node2 添加子节点
     l1n2_children = []
-    for i in range(3):
+    
+    # 添加更多节点，确保各种形状都有体现
+    device_types = ["switch", "wireless", "office", "production", "dmz", "storage", "backup"]
+    subnet_types = ["network", "wireless", "office", "production", "dmz", "storage", "backup"]
+    
+    for i in range(len(device_types)):
         child = {
             "id": f"l2n2_{i}",
             "name": f"Branch {i+1}",
             "cidr": f"10.2.{i+1}.0/24",
             "level": 2,
-            "device_type": "switch" if i == 0 else "wireless" if i == 1 else "office",
-            "subnet_type": "network" if i == 0 else "wireless" if i == 1 else "office",
-            "parent_id": "l1n2",
+            "device_type": device_types[i],
+            "subnet_type": subnet_types[i],
+            "parent_id": "l2n2",
             "ip_info": {"total": 254, "allocated": 30*(i+1), "reserved": 10},
             "children": []
         }

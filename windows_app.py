@@ -15152,41 +15152,41 @@ class SubnetPlannerApp:
                 device_type = "backup"
                 subnet_type = "backup"  # 浅绿色
                 print(f"匹配关键词 '备份'，设置 subnet_type: {subnet_type}")
-            # 根据网络层级设置设备类型（如果没有关键词匹配）
+            # 根据网络层级设置设备类型和子网类型（如果没有关键词匹配）
             elif level > 0:
                 if level == 1:
                     device_type = "switch"  # 一级子节点使用椭圆
+                    subnet_type = "network"  # 柔和橙色
                 elif level == 2:
                     device_type = "switch2"  # 二级子节点使用圆角矩形
+                    subnet_type = "management"  # 柔和紫色
+                elif level == 3:
+                    device_type = "switch3"  # 三级子节点使用矩形
+                    subnet_type = "office"  # 绿色
                 else:
-                    device_type = "switch3"  # 三级及以上子节点使用矩形
-                print(f"根据层级 {level}，设置 device_type: {device_type}")
+                    device_type = "switch3"  # 四级及以上子节点使用矩形
+                    subnet_type = "production"  # 橙色
+                print(f"根据层级 {level}，设置 device_type: {device_type}, subnet_type: {subnet_type}")
             # 根据 CIDR 前缀长度进一步区分（更细的层级）
             else:
                 try:
                     prefix_len = ipaddress.ip_network(cidr).prefixlen
                     print(f"前缀长度: {prefix_len}")
                     if prefix_len <= 8:  # 超大网段（如 10.0.0.0/8）
-                        subnet_type = "extra_large"  # 粉红色
+                        subnet_type = "extra_large"  # 红色
                         print(f"前缀长度 <= 8，设置 subnet_type: {subnet_type}")
-                    elif prefix_len <= 12:  # 大网段（如 172.16.0.0/12）
-                        subnet_type = "large"  # 亮蓝色
-                        print(f"前缀长度 <= 12，设置 subnet_type: {subnet_type}")
-                    elif prefix_len <= 16:  # 大网段（如 192.168.0.0/16）
-                        subnet_type = "large"  # 亮蓝色
+                    elif prefix_len <= 16:  # 大网段（如 172.16.0.0/12, 192.168.0.0/16）
+                        subnet_type = "large"  # 亮青色
                         print(f"前缀长度 <= 16，设置 subnet_type: {subnet_type}")
                     elif prefix_len <= 20:  # 中等网段（/17-20）
-                        subnet_type = "medium"  # 天蓝色
+                        subnet_type = "medium"  # 深蓝色
                         print(f"前缀长度 <= 20，设置 subnet_type: {subnet_type}")
                     elif prefix_len <= 24:  # 中等网段（/21-24）
                         subnet_type = "default"  # 主蓝色
                         print(f"前缀长度 <= 24，设置 subnet_type: {subnet_type}")
-                    elif prefix_len <= 26:  # 小网段（/25-26）
-                        subnet_type = "small"  # 深紫色
-                        print(f"前缀长度 <= 26，设置 subnet_type: {subnet_type}")
-                    else:  # 超小网段（/27+）
-                        subnet_type = "small"  # 深紫色
-                        print(f"前缀长度 > 26，设置 subnet_type: {subnet_type}")
+                    else:  # 小网段（/25+）
+                        subnet_type = "small"  # 紫色
+                        print(f"前缀长度 > 24，设置 subnet_type: {subnet_type}")
                 except Exception as e:
                     print(f"前缀长度判断失败: {e}, CIDR: {cidr}")
             

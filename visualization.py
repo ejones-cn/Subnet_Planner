@@ -66,19 +66,19 @@ NODE_SPACING = 280  # 增加节点间距，减少拥挤
 
 # 定义网段类型颜色 - 丰富配色方案
 SUBNET_TYPE_COLORS = {
-    "default": "#4a6fa5",      # 主蓝色
+    "default": "#f4a261",      # 柔和橙色（默认）
     "server": "#e76f51",        # 暖橙色（服务器）
     "client": "#2a9d8f",        # 青绿色（客户端）
     "network": "#f4a261",        # 柔和橙色（网络）
     "management": "#9c89b8",      # 柔和紫色（管理）
-    "large": "#00b4d8",         # 亮青色（大网段）
-    "medium": "#0077b6",        # 深蓝色（中等网段）
+    "large": "#f97316",         # 橙色（大网段）
+    "medium": "#f59e0b",        # 橙色（中等网段）
     "small": "#9333ea",         # 紫色（小网段）
     "extra_large": "#ef4444",    # 红色（超大网段）
     "wireless": "#8b5cf6",       # 紫色（无线网段）
     "office": "#10b981",         # 绿色（办公网段）
     "production": "#f59e0b",     # 橙色（生产网段）
-    "test": "#8b5cf6",           # 紫色（测试网段）
+    "test": "#ec4899",           # 粉色（测试网段）
     "dmz": "#ec4899",            # 粉色（DMZ网段）
     "storage": "#f97316",         # 橙色（存储网段）
     "backup": "#22c55e"          # 绿色（备份网段）
@@ -532,12 +532,16 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "hexagon":
-            # 创建六边形
+            # 创建六边形 - 调整半径使实际大小与矩形一致
+            # 六边形的高度是 radius * sqrt(3)，所以 radius = height / sqrt(3) * 2
+            hex_radius_x = width / math.sqrt(3)
+            hex_radius_y = height / math.sqrt(3) * 2 / 2
+            
             points = []
             for i in range(6):
                 angle = math.pi / 3 * i
-                px = x + width / 2 + width / 2 * math.cos(angle)
-                py = y + height / 2 + height / 2 * math.sin(angle)
+                px = x + width / 2 + hex_radius_x * math.cos(angle)
+                py = y + height / 2 + hex_radius_y * math.sin(angle)
                 points.extend([px, py])
             
             # 创建渐变效果
@@ -563,12 +567,15 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items
         elif shape == "pentagon":
-            # 创建五边形
+            # 创建五边形 - 调整半径使实际大小与矩形一致
+            pent_radius_x = width / 2 * 1.15  # 五边形需要稍大一点的半径
+            pent_radius_y = height / 2 * 1.15
+            
             points = []
             for i in range(5):
                 angle = math.pi * 2 / 5 * i - math.pi / 2
-                px = x + width / 2 + width / 2 * math.cos(angle)
-                py = y + height / 2 + height / 2 * math.sin(angle)
+                px = x + width / 2 + pent_radius_x * math.cos(angle)
+                py = y + height / 2 + pent_radius_y * math.sin(angle)
                 points.extend([px, py])
             
             # 创建渐变效果
