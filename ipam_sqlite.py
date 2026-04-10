@@ -11,7 +11,8 @@ import os
 from datetime import datetime, timedelta
 from typing import Any
 
-
+# 导入国际化模块
+from i18n import _
 
 
 import ipaddress
@@ -283,6 +284,14 @@ class IPAMSQLite:
             # 验证网络格式
             if not network_str:
                 return False, "网络地址不能为空"
+            
+            # 验证VLAN字段
+            if vlan:
+                if not vlan.isdigit():
+                    return False, _('vlan_invalid_format')
+                vlan_num = int(vlan)
+                if vlan_num < 1 or vlan_num > 4094:
+                    return False, _('vlan_out_of_range')
             
             try:
                 ip_network = ipaddress.ip_network(network_str, strict=False)
@@ -1692,6 +1701,14 @@ class IPAMSQLite:
         try:
             if not network_str:
                 return False, "网络地址不能为空"
+            
+            # 验证VLAN字段
+            if vlan:
+                if not vlan.isdigit():
+                    return False, _('vlan_invalid_format')
+                vlan_num = int(vlan)
+                if vlan_num < 1 or vlan_num > 4094:
+                    return False, _('vlan_out_of_range')
             
             try:
                 ip_network = ipaddress.ip_network(network_str, strict=False)

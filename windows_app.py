@@ -9276,6 +9276,8 @@ class SubnetPlannerApp:
         
         # 绑定双击事件
         self.ipam_ip_tree.bind('<Double-1>', lambda event: self.on_generic_tree_double_click(self.ipam_ip_tree, 'ipam_ip', event))
+        # 绑定左键点击事件，实现取消选择功能
+        self.ipam_ip_tree.bind('<Button-1>', self.on_ipam_ip_click)
         
         # 配置Treeview样式，包括斑马条纹
         self.configure_treeview_styles(self.ipam_ip_tree)
@@ -11932,6 +11934,16 @@ class SubnetPlannerApp:
                 self.show_info(_('hint'), _('please_enter_network'))
                 return
             
+            # 验证VLAN字段
+            if vlan:
+                if not vlan.isdigit():
+                    self.show_info(_('hint'), _('vlan_invalid_format'))
+                    return
+                vlan_num = int(vlan)
+                if vlan_num < 1 or vlan_num > 4094:
+                    self.show_info(_('hint'), _('vlan_out_of_range'))
+                    return
+            
             result = self.ipam.add_network(network, description, vlan)
             # 处理返回值，可能是 (success, message) 或 (success, message, is_overlap)
             if len(result) == 3:
@@ -12057,34 +12069,6 @@ class SubnetPlannerApp:
         clicked_item = self.ipam_network_tree.identify_row(event.y)
         selected_items = self.ipam_network_tree.selection()
         
-        # 检查点击的区域是否是单元格
-        # 如果是单元格，可能是双击编辑的一部分，不执行展开/收缩功能
-        region = self.ipam_network_tree.identify_region(event.x, event.y)
-        if region == "cell":
-            # 检查是否点击了已选中的项
-            if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
-                # 取消选择
-                self.ipam_network_tree.selection_remove(clicked_item)
-                # 清空IP地址列表
-                for item in self.ipam_ip_tree.get_children():
-                    self.ipam_ip_tree.delete(item)
-                # 显示提示
-                # 移除status_bar引用，因为该属性不存在
-                # 阻止默认选择行为
-                return 'break'
-            
-            # 如果点击的是未选中的项，手动选中该行
-            if clicked_item and clicked_item not in selected_items:
-                # 清除之前的选择
-                self.ipam_network_tree.selection_clear()
-                # 选中点击的项
-                self.ipam_network_tree.selection_add(clicked_item)
-                # 触发选择事件
-                self.on_ipam_network_select(None)
-            
-            # 允许默认的选择行为
-            return
-        
         # 检查是否点击了展开/折叠图标
         if column == '#0' and clicked_item:
             # 检查当前项是否有子节点（即是否有展开/折叠图标）
@@ -12122,6 +12106,92 @@ class SubnetPlannerApp:
                     self.ipam_network_tree.after(100, lambda: self.update_table_zebra_stripes(self.ipam_network_tree))
                     # 阻止默认的选择行为
                     return 'break'
+        
+        # 检查点击的区域是否是单元格、行或树区域
+        # 如果是这些区域，可能是双击编辑的一部分，不执行展开/收缩功能
+        region = self.ipam_network_tree.identify_region(event.x, event.y)
+        if region in ("cell", "row", "tree"):
+            # 检查是否点击了已选中的项
+            if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
+                # 立即处理取消选择，不需要延迟
+                # 取消选择
+                self.ipam_network_tree.selection_remove(clicked_item)
+                # 清空IP地址列表
+                for item in self.ipam_ip_tree.get_children():
+                    self.ipam_ip_tree.delete(item)
+                # 阻止默认选择行为
+                return 'break'
+            
+            # 如果点击的是未选中的项，使用定时器延迟处理
+            def handle_single_click_cell():
+                # 重新获取选择状态，因为可能在延迟期间发生变化
+                current_selected = self.ipam_network_tree.selection()
+                current_clicked = self.ipam_network_tree.identify_row(event.y)
+                
+                # 如果点击的是未选中的项，手动选中该行
+                if current_clicked and current_clicked not in current_selected:
+                    # 清除之前的选择
+                    self.ipam_network_tree.selection_clear()
+                    # 选中点击的项
+                    self.ipam_network_tree.selection_add(current_clicked)
+                    # 触发选择事件
+                    self.on_ipam_network_select(None)
+            
+            # 设置定时器，延迟150毫秒执行单击处理
+            # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+            self._click_timer = self.root.after(150, handle_single_click_cell)
+            # 允许默认的选择行为
+            return
+        
+        # 检查是否是双击事件的一部分
+        # 当发生双击时，单击事件会被触发两次，然后双击事件才会被触发
+        # 我们使用定时器来区分单击和双击
+        if hasattr(self, '_click_timer'):
+            self.root.after_cancel(self._click_timer)
+        
+        # 定义单击处理函数
+        def handle_single_click():
+            # 这里处理其他单击事件，比如点击空白区域等
+            pass
+        
+        # 设置定时器，延迟150毫秒执行单击处理
+        self._click_timer = self.root.after(150, handle_single_click)
+    
+    def on_ipam_ip_click(self, event):
+        """IP地址表点击事件处理（用于取消选择）"""
+        # 获取点击的项
+        clicked_item = self.ipam_ip_tree.identify_row(event.y)
+        selected_items = self.ipam_ip_tree.selection()
+        
+        # 检查点击的区域是否是单元格或行
+        region = self.ipam_ip_tree.identify_region(event.x, event.y)
+        if region in ("cell", "row"):
+            # 检查是否点击了已选中的项
+            if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
+                # 立即处理取消选择，不需要延迟
+                # 取消选择
+                self.ipam_ip_tree.selection_remove(clicked_item)
+                # 阻止默认选择行为
+                return 'break'
+            
+            # 如果点击的是未选中的项，使用定时器延迟处理
+            def handle_single_click_cell():
+                # 重新获取选择状态，因为可能在延迟期间发生变化
+                current_selected = self.ipam_ip_tree.selection()
+                current_clicked = self.ipam_ip_tree.identify_row(event.y)
+                
+                # 如果点击的是未选中的项，手动选中该行
+                if current_clicked and current_clicked not in current_selected:
+                    # 清除之前的选择
+                    self.ipam_ip_tree.selection_clear()
+                    # 选中点击的项
+                    self.ipam_ip_tree.selection_add(current_clicked)
+            
+            # 设置定时器，延迟150毫秒执行单击处理
+            # 这样在双击时，定时器会被取消，避免与编辑功能冲突
+            self._click_timer = self.root.after(150, handle_single_click_cell)
+            # 允许默认的选择行为
+            return
         
         # 检查是否是双击事件的一部分
         # 当发生双击时，单击事件会被触发两次，然后双击事件才会被触发
@@ -12723,7 +12793,7 @@ class SubnetPlannerApp:
                 
                 # 遍历控件树，检查是否是编辑控件或其内部组件
                 while target:
-                    if target == self.inline_edit_widget or (hasattr(self, 'inline_edit_frame') and target == self.inline_edit_frame):
+                    if (hasattr(self, 'inline_edit_widget') and target == self.inline_edit_widget) or (hasattr(self, 'inline_edit_frame') and target == self.inline_edit_frame):
                         is_edit_widget = True
                         break
                     # 检查是否是日期选择器的日历窗口
@@ -13457,11 +13527,10 @@ class SubnetPlannerApp:
         Returns:
             tuple: (是否有效, 错误消息或None)
         """
-        if not new_value:
-            return False, _('input_cannot_be_empty')
-        
         if column_name == 'network':
             # 验证网段地址格式
+            if not new_value:
+                return False, _('input_cannot_be_empty')
             try:
                 import ipaddress
                 ipaddress.ip_network(new_value, strict=False)
@@ -13474,10 +13543,11 @@ class SubnetPlannerApp:
         elif column_name == 'vlan':
             # VLAN 验证
             if new_value:
-                if not new_value.replace('-', '').replace('.', '').isalnum():
-                    return False, 'VLAN格式无效，只能包含数字、字母、连字符和点'
-                if len(new_value) > 50:
-                    return False, 'VLAN长度不能超过50个字符'
+                if not new_value.isdigit():
+                    return False, _('vlan_invalid_format')
+                vlan_num = int(new_value)
+                if vlan_num < 1 or vlan_num > 4094:
+                    return False, _('vlan_out_of_range')
         
         return True, None
     
