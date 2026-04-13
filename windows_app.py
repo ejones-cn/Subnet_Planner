@@ -15667,7 +15667,7 @@ if __name__ == "__main__":
         SCALE_FACTOR = 1.0
     
     # 设置窗口初始大小 - 根据DPI缩放因子调整
-    BASE_WIDTH = 850
+    BASE_WIDTH = 1050
     BASE_HEIGHT = 950
     
     # 使用原始窗口大小，不进行额外缩放
