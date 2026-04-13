@@ -22,9 +22,9 @@ class StyleManager:
     TAB_WIDTH_SETTINGS = {
         "zh": 10,
         "zh_tw": 10,
-        "ja": 18,
+        "ja": 14,
         "ko": 11,
-        "default": 16
+        "default": 18
     }
 
     # 按钮内边距设置映射表
