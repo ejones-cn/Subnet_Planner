@@ -1722,6 +1722,9 @@ class NetworkTopologyVisualizer:
         # 创建缩放控制面板
         self._create_fullscreen_controls()
         
+        # 更新缩放比例显示（确保显示的是自适应后的正确比例）
+        self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        
         # 添加退出全屏按钮
         self.exit_fullscreen_button = tk.Button(
             self.fullscreen_canvas_frame,
@@ -1858,7 +1861,7 @@ class NetworkTopologyVisualizer:
         self.reset_button.bind("<Enter>", lambda e: self.reset_button.config(bg="#bdc3c7"))
         self.reset_button.bind("<Leave>", lambda e: self.reset_button.config(bg="#95a5a6"))
         
-        # 创建缩放比例显示
+        # 创建缩放比例显示（固定宽度，防止文字位数变化导致控件宽度变化）
         self.scale_label = tk.Label(
             self.control_frame,
             text=f"{int(self.scale * 100)}%",
@@ -1866,7 +1869,8 @@ class NetworkTopologyVisualizer:
             fg="white",
             font=("Arial", 10),
             padx=6,
-            pady=2
+            pady=2,
+            width=4  # 固定宽度，足够容纳 "100%"
         )
         self.scale_label.grid(row=3, column=0, padx=2, pady=2)
     
@@ -1968,9 +1972,9 @@ class NetworkTopologyVisualizer:
                 canvas_width = self.fullscreen_canvas_frame.winfo_width()
                 canvas_height = self.fullscreen_canvas_frame.winfo_height()
         
-        # 如果还是没有正确获取尺寸，延迟重试
+        # 如果还是没有正确获取尺寸，延迟重试并更新显示
         if canvas_width <= 1 or canvas_height <= 1:
-            self.fullscreen_canvas.after(50, self._auto_scale_to_fit_fullscreen)
+            self.fullscreen_canvas.after(50, self._auto_scale_to_fit_fullscreen_and_update_label)
             return
         
         # 计算所有节点的边界框
@@ -2006,6 +2010,13 @@ class NetworkTopologyVisualizer:
         # 更新缩放因子
         self.scale = scale_factor
     
+    def _auto_scale_to_fit_fullscreen_and_update_label(self):
+        """全屏模式下自动缩放并更新显示"""
+        self._auto_scale_to_fit_fullscreen()
+        # 更新缩放比例显示
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
     def start_drag_fullscreen(self, event):
         """全屏模式下开始拖拽"""
         self.dragging = True
@@ -2028,12 +2039,15 @@ class NetworkTopologyVisualizer:
         else:
             new_scale = self.scale * 0.9
         
-        # 统一缩放范围：50%-200%
+        # 统一缩放范围：50%-100%
         new_scale = max(0.5, min(new_scale, 1.0))
         scale_factor = new_scale / self.scale
         self.scale = new_scale
         
         self.fullscreen_canvas.scale(tk.ALL, event.x, event.y, scale_factor, scale_factor)
+        
+        # 更新缩放比例显示
+        self.scale_label.config(text=f"{int(self.scale * 100)}%")
 
 
     def set_data_callback(self, callback):
