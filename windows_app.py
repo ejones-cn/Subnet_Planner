@@ -1798,6 +1798,12 @@ class SubnetPlannerApp:
                 self.edit_entry.destroy()
             self._cleanup_edit_state()
         
+        # 当切换到可视化页面时，触发自适应缩放
+        # 标签页顺序: 0-子网规划, 1-子网切分, 2-高级工具, 3-IP地址管理, 4-可视化
+        if tab_index == 4:
+            # 延迟调用自适应缩放，确保GUI完全渲染
+            self.root.after(100, lambda: self.topology_visualizer.auto_scale_to_fit())
+        
     def _create_requirements_tree(self, parent, height=5, columns=("index", "name", "hosts"),
                                 double_click_handler=None):
         """创建需求表格（子网需求表或需求池表）的通用方法
