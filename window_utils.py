@@ -7,7 +7,7 @@
 
 import tkinter as tk
 
-def setup_window_settings(root, width=850, height=750, lock_width=True, min_width=850, min_height=750, max_width=1100, max_height=10000):
+def setup_window_settings(root, width=850, height=950, lock_width=True, min_width=850, min_height=750, max_width=1100, max_height=10000):
     """
     
     Args:

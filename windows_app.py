@@ -11948,10 +11948,10 @@ class SubnetPlannerApp:
     def add_ipam_network(self):
         """添加网络"""
         # 创建添加网络对话框
-        dialog = self.create_dialog(_('add_network'), 400, 200)
+        dialog = self.create_dialog(_('add_network'), 400, 220)
         
         # 对话框内容
-        form_frame = ttk.Frame(dialog, padding="15")
+        form_frame = ttk.Frame(dialog, padding="15 15 15 0")
         form_frame.pack(fill=tk.BOTH, expand=True)
         
         # 配置网格布局
@@ -12032,15 +12032,14 @@ class SubnetPlannerApp:
         
         # 按钮框架
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
         
-        # 配置按钮框架的网格布局，使按钮居中对齐
+        # 配置按钮框架的网格布局，使按钮靠右对齐
         button_frame.grid_columnconfigure(0, weight=1)
         button_frame.grid_columnconfigure(1, weight=0)
         button_frame.grid_columnconfigure(2, weight=0)
-        button_frame.grid_columnconfigure(3, weight=1)
         
-        # 添加按钮到网格布局
+        # 添加按钮到网格布局，靠右对齐
         ttk.Button(button_frame, text="确定", command=on_add, width=10).grid(row=0, column=1, padx=5)
         ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10).grid(row=0, column=2, padx=5)
     
@@ -15346,8 +15345,8 @@ class SubnetPlannerApp:
 
         # 初始化数据
         self.refresh_visualization_networks()
-        # 绘制初始网络拓扑
-        self.refresh_visualization()
+        # 延迟绘制初始网络拓扑，确保GUI完全初始化
+        self.root.after(200, self.refresh_visualization)
 
     def refresh_visualization_networks(self):
         """刷新可视化网络列表"""
@@ -15610,8 +15609,8 @@ class SubnetPlannerApp:
         
         self.topology_visualizer.draw_topology(network_data)
         
-        # 自动缩放拓扑图以适应父容器大小
-        self.topology_visualizer.auto_scale_to_fit()
+        # 使用after延迟调用自动缩放，确保GUI完全渲染
+        self.root.after(100, lambda: self.topology_visualizer.auto_scale_to_fit())
     
     def reserve_ip(self):
         """保留IP地址"""
@@ -15663,7 +15662,7 @@ if __name__ == "__main__":
     
     # 设置窗口初始大小 - 根据DPI缩放因子调整
     BASE_WIDTH = 850
-    BASE_HEIGHT = 750
+    BASE_HEIGHT = 950
     
     # 使用原始窗口大小，不进行额外缩放
     WINDOW_WIDTH = int(BASE_WIDTH)

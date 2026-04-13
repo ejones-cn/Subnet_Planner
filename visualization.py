@@ -59,9 +59,9 @@ BACKGROUND_COLOR = "#2c3e50"
 HIGHLIGHT_COLOR = "#3498db"
 
 # 定义节点大小
-NODE_WIDTH = 180
-NODE_HEIGHT = 90
-NODE_SPACING = 280  # 增加节点间距，减少拥挤
+NODE_WIDTH = 150
+NODE_HEIGHT = 70
+NODE_SPACING = 230  # 调整节点间距，使布局更紧凑
 
 # 定义网段类型颜色 - 丰富配色方案
 SUBNET_TYPE_COLORS = {
@@ -117,26 +117,14 @@ class NetworkTopologyVisualizer:
         # 配置 canvas_frame 以填充父容器
         self.canvas_frame.pack(fill=tk.BOTH, expand=True)
         
-        # 创建滚动条
-        self.v_scrollbar: Scrollbar = Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
-        self.h_scrollbar: Scrollbar = Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
-        
-        # 创建画布
+        # 创建画布（移除滚动条）
         self.canvas: Canvas = Canvas(
             self.canvas_frame,
-            bg=BACKGROUND_COLOR,
-            yscrollcommand=self.v_scrollbar.set,
-            xscrollcommand=self.h_scrollbar.set
+            bg=BACKGROUND_COLOR
         )
         
-        # 配置滚动条
-        _ = self.v_scrollbar.config(command=self.canvas.yview)
-        _ = self.h_scrollbar.config(command=self.canvas.xview)
-        
         # 放置组件
-        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
         
         # 初始化数据
         self.nodes: dict[str, dict[str, object]] = {}
@@ -213,7 +201,7 @@ class NetworkTopologyVisualizer:
             new_scale: float = self.scale * 0.9
         
         # 限制缩放范围
-        new_scale = max(0.3, min(new_scale, 3.0))
+        new_scale = max(0.5, min(new_scale, 1.0))
         
         # 计算缩放比例
         scale_factor: float = new_scale / self.scale
@@ -800,7 +788,7 @@ class NetworkTopologyVisualizer:
         text_id = self.canvas.create_text(
             x + NODE_WIDTH / 2, y + NODE_HEIGHT / 4,
             text=name,
-            font=(font_family, font_size, "bold"),
+            font=(font_family, font_size - 2, "bold"),
             fill=TEXT_COLOR
         )
         
@@ -812,7 +800,7 @@ class NetworkTopologyVisualizer:
         subnet_id = self.canvas.create_text(
             x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2,
             text=subnet_text,
-            font=(font_family, font_size - 2),
+            font=(font_family, font_size - 3),
             fill=TEXT_COLOR
         )
         
@@ -828,7 +816,7 @@ class NetworkTopologyVisualizer:
         ip_info_id = self.canvas.create_text(
             x + NODE_WIDTH / 2, y + NODE_HEIGHT * 3 / 4,
             text=ip_info_text,
-            font=(font_family, font_size - 3),
+            font=(font_family, font_size - 4),
             fill=TEXT_COLOR
         )
         
@@ -913,6 +901,8 @@ class NetworkTopologyVisualizer:
         Args:
             network_data: 网络数据，包含所有网络结构信息
         """
+        # 重置缩放标志，允许新的自适应缩放
+        self._scaled = False
         self.clear()
         
         # 存储节点ID映射
@@ -1180,7 +1170,7 @@ class NetworkTopologyVisualizer:
         for link in self.links:
             self.canvas.tag_raise(link["line"])
     
-    def auto_scale_to_fit(self):
+    def auto_scale_to_fit(self, retry_count=0):
         """自动缩放画布以适应所有节点"""
         bbox = self.canvas.bbox(tk.ALL)
         if not bbox:
@@ -1193,16 +1183,24 @@ class NetworkTopologyVisualizer:
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
         
-        # 如果画布尺寸还没有正确获取，使用默认值
+        # 如果画布尺寸还没有正确获取，尝试从父容器获取
         if canvas_width <= 1 or canvas_height <= 1:
-            # 使用父容器的尺寸
+            # 先更新父容器
             if self.canvas_frame:
+                self.canvas_frame.update_idletasks()
                 canvas_width = self.canvas_frame.winfo_width()
                 canvas_height = self.canvas_frame.winfo_height()
+        
+        # 如果还是没有正确获取尺寸，延迟重试（最多重试50次，每次50ms，共2.5秒）
+        if canvas_width <= 1 or canvas_height <= 1:
+            if retry_count < 50:
+                # 延迟重试，等待GUI初始化完成
+                self.canvas.after(50, lambda: self.auto_scale_to_fit(retry_count + 1))
+                return
             else:
-                # 使用默认尺寸
-                canvas_width = 800
-                canvas_height = 600
+                # 多次重试后仍无法获取尺寸，记录日志并返回
+                print(f"警告: 无法获取画布尺寸，重试次数: {retry_count}")
+                return
         
         # 计算所有节点的边界框
         x1, y1, x2, y2 = bbox
@@ -1212,14 +1210,14 @@ class NetworkTopologyVisualizer:
         if content_width <= 0 or content_height <= 0:
             return
         
-        # 计算缩放比例，考虑边距（减少边距，使内容更大）
-        margin = 30  # 减少边距
+        # 计算缩放比例，使用更小的边距以充分利用空间
+        margin = 15  # 最小边距，让内容更大
         scale_x = (canvas_width - 2 * margin) / content_width
         scale_y = (canvas_height - 2 * margin) / content_height
         scale_factor = min(scale_x, scale_y)
         
-        # 限制缩放范围（允许更大的缩放比例）
-        scale_factor = max(0.35, min(scale_factor, 1.8))
+        # 限制缩放范围（允许更大的缩放比例，最大可放大到原始的1倍）
+        scale_factor = max(0.5, min(scale_factor, 1.0))
         
         # 应用缩放
         if scale_factor != 1.0:
@@ -1235,7 +1233,23 @@ class NetworkTopologyVisualizer:
         new_bbox = self.canvas.bbox(tk.ALL)
         if new_bbox:
             x1, y1, x2, y2 = new_bbox
-            padding = 30  # 减少边距
+            
+            # 获取画布实际尺寸
+            actual_width = self.canvas.winfo_width()
+            actual_height = self.canvas.winfo_height()
+            
+            # 计算内容实际占据的区域
+            content_width = x2 - x1
+            content_height = y2 - y1
+            
+            # 如果内容小于画布尺寸，不添加额外边距，避免显示滚动条
+            if content_width < actual_width and content_height < actual_height:
+                # 内容已经适合画布，使用最小边距，确保滚动区域不超过画布
+                padding = 15
+            else:
+                # 内容超出画布，添加适当边距
+                padding = 30
+            
             self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
         
         # 更新缩放因子
