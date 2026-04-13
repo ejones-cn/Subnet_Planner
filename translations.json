@@ -2495,11 +2495,11 @@
     "ko": "전체 내보내기"
   },
   "visualization": {
-    "zh": "可视化",
-    "zh_tw": "視覺化",
-    "en": "Visualization",
-    "ja": "可視化",
-    "ko": "시각화"
+    "zh": "网络拓扑",
+    "zh_tw": "網路拓撲",
+    "en": "Network Topology",
+    "ja": "ネットワークトポロジ",
+    "ko": "네트워크 토폴로지"
   },
   "network_management": {
     "zh": "网段管理",
