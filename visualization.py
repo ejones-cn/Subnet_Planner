@@ -300,8 +300,8 @@ class NetworkTopologyVisualizer:
                     parent.update_idletasks()
                     canvas_width = parent.winfo_width()
                     canvas_height = parent.winfo_height()
-            except Exception:
-                pass
+            except tk.TclError as e:
+                print(f"无法获取父容器尺寸: {e}")
         
         if current_scale < 1.0:
             # 放大到100%，以鼠标点击位置为中心
@@ -2116,16 +2116,18 @@ class NetworkTopologyVisualizer:
         self.fullscreen_window = tk.Toplevel()
         self.fullscreen_window.title("网络拓扑图 - 全屏模式")
         self.fullscreen_window.attributes("-fullscreen", True)
-        self.fullscreen_window.config(bg=BACKGROUND_COLOR)
+        self.fullscreen_window.config(bg=BACKGROUND_COLOR, bd=0, highlightthickness=0)
         
         # 设置全屏窗口为最顶层并获取焦点
         self.fullscreen_window.lift()
         self.fullscreen_window.focus_set()
         
-        # 创建新画布
+        # 创建新画布（无边框）
         self.fullscreen_canvas = Canvas(
             self.fullscreen_window,
-            bg=BACKGROUND_COLOR
+            bg=BACKGROUND_COLOR,
+            bd=0,
+            highlightthickness=0
         )
         self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
         
