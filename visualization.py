@@ -36,7 +36,7 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 
 import tkinter as tk
 from tkinter import Canvas, Frame
-from typing import Callable, Any, Optional
+from typing import Callable, Any
 from style_manager import get_current_font_settings
 
 # 模块版本
@@ -129,8 +129,8 @@ class NetworkTopologyVisualizer:
         self._create_fullscreen_button()
         
         # 初始化数据
-        self.nodes: dict[str, dict[str, float | int | str | dict | list]] = {}
-        self.links: list[dict[str, float | int | str | dict | list]] = []
+        self.nodes: dict[str, dict[str, str | int | float | None | dict[str, Any]]] = {}
+        self.links: list[dict[str, Any]] = []
         
         # 双击检测相关
         self.last_click_time: int = 0
@@ -146,7 +146,7 @@ class NetworkTopologyVisualizer:
         
         # 双击冷却相关
         self._in_double_click_cooldown: bool = False
-        self._double_click_cooldown_timer: int | None = None
+        self._double_click_cooldown_timer: str | None = None
         self._last_double_click_scale: float = 1.0
         self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
@@ -242,8 +242,9 @@ class NetworkTopologyVisualizer:
             self.on_double_click(event)
             # 设置冷却期，防止三击被误判为两次双击
             self._in_double_click_cooldown = True
-            if hasattr(self, '_double_click_cooldown_timer'):
+            if self._double_click_cooldown_timer is not None:
                 self.canvas.after_cancel(self._double_click_cooldown_timer)
+                self._double_click_cooldown_timer = None
             self._double_click_cooldown_timer = self.canvas.after(
                 self.double_click_threshold, 
                 lambda: setattr(self, '_in_double_click_cooldown', False)
@@ -918,7 +919,7 @@ class NetworkTopologyVisualizer:
             )
             return shape_id, gradient_items, shadow_items
     
-    def add_node(self, name: str, subnet: str, level: int = 0, subnet_type: str = "default", device_type: str = "default", ip_info: Optional[dict[str, Any]] = None, parent_id: Optional[str] = None) -> str:
+    def add_node(self, name: str, subnet: str, level: int = 0, subnet_type: str = "default", device_type: str = "default", ip_info: dict[str, Any] | None = None, parent_id: str | None = None) -> str:
         """添加节点
         
         Args:
