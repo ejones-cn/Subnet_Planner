@@ -146,7 +146,7 @@ class NetworkTopologyVisualizer:
         
         # 双击冷却相关
         self._in_double_click_cooldown: bool = False
-        self._double_click_cooldown_timer: str | None = None
+        self._double_click_cooldown_timer: int | None = None
         self._last_double_click_scale: float = 1.0
         self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
