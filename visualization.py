@@ -2470,8 +2470,9 @@ class NetworkTopologyVisualizer:
             self.on_double_click_fullscreen(event)
             # 设置冷却期，防止三击被误判为两次双击
             self._in_double_click_cooldown = True
-            if hasattr(self, '_double_click_cooldown_timer'):
+            if self._double_click_cooldown_timer is not None:
                 self.fullscreen_canvas.after_cancel(self._double_click_cooldown_timer)
+                self._double_click_cooldown_timer = None
             self._double_click_cooldown_timer = self.fullscreen_canvas.after(
                 self.double_click_threshold, 
                 lambda: setattr(self, '_in_double_click_cooldown', False)
