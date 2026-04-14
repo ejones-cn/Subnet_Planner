@@ -247,12 +247,12 @@ class NetworkTopologyVisualizer:
                 self.double_click_threshold, 
                 lambda: setattr(self, '_in_double_click_cooldown', False)
             )
+            # 执行双击缩放
+            self.on_double_click(event)
+            
             # 重置点击状态
             self.last_click_time = 0
             self.click_count = 0
-            
-            # 执行双击缩放
-            self.on_double_click(event)
             
             return
         
@@ -1971,19 +1971,14 @@ class NetworkTopologyVisualizer:
         # 切换到全屏画布
         self.canvas = self.fullscreen_canvas
         
-        # 清空并重新绘制
-        self.canvas.delete(tk.ALL)
-        self.nodes.clear()
-        self.links.clear()
-        
-        # 重新绘制拓扑图
-        self.draw_topology(self.network_data)
-        
-        # 延迟执行自适应缩放
+        # 延迟执行视图设置（包含绘制和缩放，避免闪现）
         self.canvas.after(100, self._apply_fullscreen_view)
     
     def _apply_fullscreen_view(self):
         """应用全屏视图设置"""
+        # 临时移除画布，防止变换过程中的闪现
+        self.fullscreen_canvas.pack_forget()
+        
         # 确保画布已完全初始化
         self.fullscreen_canvas.update_idletasks()
         
@@ -2002,6 +1997,7 @@ class NetworkTopologyVisualizer:
         # 获取内容边界框
         bbox = self.fullscreen_canvas.bbox(tk.ALL)
         if not bbox:
+            self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
             return
         
         x1, y1, x2, y2 = bbox
@@ -2009,6 +2005,7 @@ class NetworkTopologyVisualizer:
         content_height = y2 - y1
         
         if content_width <= 0 or content_height <= 0:
+            self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
             return
         
         # 计算缩放比例，使用30像素边距
@@ -2027,8 +2024,23 @@ class NetworkTopologyVisualizer:
         # 以原点为基准进行缩放
         self.fullscreen_canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
         
-        # 将内容移动到左上角（带边距）
-        self.fullscreen_canvas.move(tk.ALL, margin, margin)
+        # 计算缩放后的尺寸
+        scaled_content_width = content_width * scale_factor
+        scaled_content_height = content_height * scale_factor
+        
+        # 水平和垂直方向独立判断位置
+        if scaled_content_width <= canvas_width - 2 * margin:
+            target_x = (canvas_width - scaled_content_width) / 2
+        else:
+            target_x = margin
+        
+        if scaled_content_height <= canvas_height - 2 * margin:
+            target_y = (canvas_height - scaled_content_height) / 2
+        else:
+            target_y = margin
+        
+        # 将内容移动到目标位置
+        self.fullscreen_canvas.move(tk.ALL, target_x, target_y)
         
         # 获取缩放移动后的边界框
         final_bbox = self.fullscreen_canvas.bbox(tk.ALL)
@@ -2047,6 +2059,9 @@ class NetworkTopologyVisualizer:
         
         # 强制刷新画布
         self.fullscreen_canvas.update_idletasks()
+        
+        # 重新显示画布
+        self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
         
         # 确保视图从左上角开始
         self.fullscreen_canvas.xview_moveto(0)
@@ -2395,18 +2410,35 @@ class NetworkTopologyVisualizer:
         if scale_factor != 1.0:
             self.fullscreen_canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
         
-        # 将内容移动到左上角，保持30像素边距
-        self.fullscreen_canvas.move(tk.ALL, margin, margin)
-        
-        # 更新滚动区域
+        # 计算缩放后的尺寸
         scaled_content_width = content_width * scale_factor
         scaled_content_height = content_height * scale_factor
+        
+        # 水平和垂直方向独立判断位置
+        if scaled_content_width <= canvas_width - 2 * margin:
+            # 水平方向未超出容器，居中
+            target_x = (canvas_width - scaled_content_width) / 2
+        else:
+            # 水平方向超出容器，靠左
+            target_x = margin
+        
+        if scaled_content_height <= canvas_height - 2 * margin:
+            # 垂直方向未超出容器，居中
+            target_y = (canvas_height - scaled_content_height) / 2
+        else:
+            # 垂直方向超出容器，靠上
+            target_y = margin
+        
+        # 将内容移动到目标位置
+        self.fullscreen_canvas.move(tk.ALL, target_x, target_y)
+        
+        # 更新滚动区域
         self.fullscreen_canvas.config(
             scrollregion=(
-                margin, 
-                margin, 
-                margin + scaled_content_width + margin * 2, 
-                margin + scaled_content_height + margin * 2
+                0, 
+                0, 
+                max(canvas_width, target_x + scaled_content_width + margin), 
+                max(canvas_height, target_y + scaled_content_height + margin)
             )
         )
         
@@ -2476,10 +2508,10 @@ class NetworkTopologyVisualizer:
                 self.double_click_threshold, 
                 lambda: setattr(self, '_in_double_click_cooldown', False)
             )
-            self.last_click_time = 0
-            
             # 执行双击缩放
             self.on_double_click_fullscreen(event)
+            
+            self.last_click_time = 0
             
             return
         
@@ -2525,29 +2557,21 @@ class NetworkTopologyVisualizer:
                 dy = center_y - window_y
                 self.fullscreen_canvas.move(tk.ALL, dx, dy)
             else:
-                # 点击在图形外部：根据方向找到最边缘节点图形的中点
+                # 点击在图形外部：找到离鼠标最近的节点，居中放大
                 target_x = window_x
                 target_y = window_y
                 
-                if bbox_before:
-                    bx1, by1, bx2, by2 = bbox_before
-                    # 计算点击位置相对于图形的方向
-                    if window_x < bx1:
-                        # 点击在图形左侧：目标为左边缘中点
-                        target_x = bx1
-                        target_y = (by1 + by2) / 2
-                    elif window_x > bx2:
-                        # 点击在图形右侧：目标为右边缘中点
-                        target_x = bx2
-                        target_y = (by1 + by2) / 2
-                    elif window_y < by1:
-                        # 点击在图形上方：目标为上边缘中点
-                        target_x = (bx1 + bx2) / 2
-                        target_y = by1
-                    elif window_y > by2:
-                        # 点击在图形下方：目标为下边缘中点
-                        target_x = (bx1 + bx2) / 2
-                        target_y = by2
+                min_dist = float('inf')
+                for node_id, node in self.nodes.items():
+                    coords = self.fullscreen_canvas.bbox(node["shape"])
+                    if coords:
+                        node_cx = (coords[0] + coords[2]) / 2
+                        node_cy = (coords[1] + coords[3]) / 2
+                        dist = ((window_x - node_cx) ** 2 + (window_y - node_cy) ** 2) ** 0.5
+                        if dist < min_dist:
+                            min_dist = dist
+                            target_x = node_cx
+                            target_y = node_cy
                 
                 # 以目标位置为基准缩放
                 self.fullscreen_canvas.scale(tk.ALL, target_x, target_y, scale_factor, scale_factor)
