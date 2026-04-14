@@ -292,6 +292,17 @@ class NetworkTopologyVisualizer:
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
         
+        # 如果画布尺寸无效，尝试从父容器获取
+        if canvas_width <= 1 or canvas_height <= 1:
+            try:
+                parent = self.canvas.nametowidget(self.canvas.winfo_parent())
+                if parent:
+                    parent.update_idletasks()
+                    canvas_width = parent.winfo_width()
+                    canvas_height = parent.winfo_height()
+            except Exception:
+                pass
+        
         if current_scale < 1.0:
             # 放大到100%，以鼠标点击位置为中心
             canvas_x = self.canvas.canvasx(event.x)
@@ -317,9 +328,6 @@ class NetworkTopologyVisualizer:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
         else:
             # 缩小到50%
-            canvas_x = self.canvas.canvasx(event.x)
-            canvas_y = self.canvas.canvasy(event.y)
-            
             bbox = self.canvas.bbox(tk.ALL)
             if not bbox:
                 return
@@ -331,25 +339,31 @@ class NetworkTopologyVisualizer:
             scaled_height = content_height * 0.5
             margin = 30
             
-            if scaled_width <= canvas_width - margin * 2 and scaled_height <= canvas_height - margin * 2:
-                # 小图：整体缩小并居中
-                self.canvas.move(tk.ALL, -x1, -y1)
-                self.canvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
-                center_x = (canvas_width - scaled_width) / 2
-                center_y = (canvas_height - scaled_height) / 2
-                self.canvas.move(tk.ALL, center_x, center_y)
-            else:
-                # 大图：以点击位置为中心缩小
-                self.canvas.scale(tk.ALL, canvas_x, canvas_y, 0.5, 0.5)
-                center_canvas_x = self.canvas.canvasx(canvas_width / 2)
-                center_canvas_y = self.canvas.canvasy(canvas_height / 2)
-                dx = center_canvas_x - canvas_x
-                dy = center_canvas_y - canvas_y
-                self.canvas.move(tk.ALL, dx, dy)
+            # 统一使用：先移到原点 → 缩放 → 再移到目标位置
+            self.canvas.move(tk.ALL, -x1, -y1)
+            self.canvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
             
-            bbox = self.canvas.bbox(tk.ALL)
-            if bbox:
-                self.canvas.config(scrollregion=self._expanded_bbox(bbox))
+            # 水平和垂直方向独立判断位置
+            if scaled_width <= canvas_width - margin * 2:
+                target_x = (canvas_width - scaled_width) / 2
+            else:
+                target_x = margin
+            
+            if scaled_height <= canvas_height - margin * 2:
+                target_y = (canvas_height - scaled_height) / 2
+            else:
+                target_y = margin
+            
+            self.canvas.move(tk.ALL, target_x, target_y)
+            
+            # 设置正确的滚动区域（从0,0开始）
+            final_bbox = self.canvas.bbox(tk.ALL)
+            if final_bbox:
+                self.canvas.config(scrollregion=(
+                    0, 0,
+                    max(canvas_width, final_bbox[2] + margin),
+                    max(canvas_height, final_bbox[3] + margin)
+                ))
             self.canvas.xview_moveto(0)
             self.canvas.yview_moveto(0)
             
@@ -1151,17 +1165,167 @@ class NetworkTopologyVisualizer:
         self.canvas.update_idletasks()
         bbox = self.canvas.bbox(tk.ALL)
         if bbox:
-            # 扩展边界框，确保所有节点都能被看到
             x1, y1, x2, y2 = bbox
-            padding = 30  # 边距
-            self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
+            content_width = x2 - x1
+            content_height = y2 - y1
+            padding = 30
             
-            # 滚动到画布左上角，确保用户可以从开始查看
+            # 获取画布可视区域尺寸
+            self.canvas.update_idletasks()
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+            
+            # 如果画布尺寸未初始化，尝试从父容器获取
+            if canvas_width <= 1 or canvas_height <= 1:
+                parent = self.canvas.nametowidget(self.canvas.winfo_parent())
+                if parent:
+                    parent.update_idletasks()
+                    canvas_width = parent.winfo_width()
+                    canvas_height = parent.winfo_height()
+            
+            # 如果仍然无法获取有效尺寸，延迟重试
+            if canvas_width <= 1 or canvas_height <= 1:
+                self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
+                self.canvas.xview_moveto(0)
+                self.canvas.yview_moveto(0)
+                self.canvas.after(200, self._auto_scale_canvas)
+                return
+            
+            # 计算缩放比例
+            scale_x = (canvas_width - 2 * padding) / content_width if content_width > 0 else 1.0
+            scale_y = (canvas_height - 2 * padding) / content_height if content_height > 0 else 1.0
+            scale_factor = min(scale_x, scale_y)
+            scale_factor = max(0.5, min(scale_factor, 1.0))
+            
+            # 应用缩放
+            if scale_factor < 1.0:
+                self.canvas.move(tk.ALL, -x1, -y1)
+                self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
+                
+                scaled_width = content_width * scale_factor
+                scaled_height = content_height * scale_factor
+                
+                if scaled_width <= canvas_width - 2 * padding:
+                    target_x = (canvas_width - scaled_width) / 2
+                else:
+                    target_x = padding
+                
+                if scaled_height <= canvas_height - 2 * padding:
+                    target_y = (canvas_height - scaled_height) / 2
+                else:
+                    target_y = padding
+                
+                self.canvas.move(tk.ALL, target_x, target_y)
+                
+                self.scale = scale_factor
+                if hasattr(self, 'scale_label'):
+                    self.scale_label.config(text=f"{int(self.scale * 100)}%")
+            else:
+                # 不需要缩放，也要居中
+                self.canvas.move(tk.ALL, -x1, -y1)
+                
+                if content_width <= canvas_width - 2 * padding:
+                    target_x = (canvas_width - content_width) / 2
+                else:
+                    target_x = padding
+                
+                if content_height <= canvas_height - 2 * padding:
+                    target_y = (canvas_height - content_height) / 2
+                else:
+                    target_y = padding
+                
+                self.canvas.move(tk.ALL, target_x, target_y)
+            
+            # 更新滚动区域
+            final_bbox = self.canvas.bbox(tk.ALL)
+            if final_bbox:
+                self.canvas.config(scrollregion=(
+                    0, 0,
+                    max(canvas_width, final_bbox[2] + padding),
+                    max(canvas_height, final_bbox[3] + padding)
+                ))
+            
             self.canvas.xview_moveto(0)
             self.canvas.yview_moveto(0)
         else:
-            # 如果没有节点，设置默认滚动区域
             self.canvas.config(scrollregion=(0, 0, 1000, 800))
+    
+    def _auto_scale_canvas(self):
+        """画布初始化后延迟执行自适应缩放"""
+        # 检查是否已经缩放过（避免重复缩放）
+        if getattr(self, 'scale', 1.0) != 1.0:
+            return
+        
+        self.canvas.update_idletasks()
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        
+        if canvas_width <= 1 or canvas_height <= 1:
+            parent = self.canvas.nametowidget(self.canvas.winfo_parent())
+            if parent:
+                parent.update_idletasks()
+                canvas_width = parent.winfo_width()
+                canvas_height = parent.winfo_height()
+        
+        if canvas_width <= 1 or canvas_height <= 1:
+            self.canvas.after(200, self._auto_scale_canvas)
+            return
+        
+        bbox = self.canvas.bbox(tk.ALL)
+        if not bbox:
+            return
+        
+        x1, y1, x2, y2 = bbox
+        content_width = x2 - x1
+        content_height = y2 - y1
+        padding = 30
+        
+        if content_width <= 0 or content_height <= 0:
+            return
+        
+        scale_x = (canvas_width - 2 * padding) / content_width
+        scale_y = (canvas_height - 2 * padding) / content_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(0.5, min(scale_factor, 1.0))
+        
+        # 先移动到原点
+        self.canvas.move(tk.ALL, -x1, -y1)
+        
+        if scale_factor < 1.0:
+            self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
+            self.scale = scale_factor
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+            
+            scaled_width = content_width * scale_factor
+            scaled_height = content_height * scale_factor
+        else:
+            scaled_width = content_width
+            scaled_height = content_height
+        
+        # 水平和垂直方向独立判断位置
+        if scaled_width <= canvas_width - 2 * padding:
+            target_x = (canvas_width - scaled_width) / 2
+        else:
+            target_x = padding
+        
+        if scaled_height <= canvas_height - 2 * padding:
+            target_y = (canvas_height - scaled_height) / 2
+        else:
+            target_y = padding
+        
+        self.canvas.move(tk.ALL, target_x, target_y)
+        
+        final_bbox = self.canvas.bbox(tk.ALL)
+        if final_bbox:
+            self.canvas.config(scrollregion=(
+                0, 0,
+                max(canvas_width, final_bbox[2] + padding),
+                max(canvas_height, final_bbox[3] + padding)
+            ))
+        
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
     
     def _reposition_all_nodes(self):
         """重新计算所有节点的位置，实现树形层级布局
@@ -2345,16 +2509,41 @@ class NetworkTopologyVisualizer:
             scale_factor = min(scale_x, scale_y)
             scale_factor = max(0.5, min(scale_factor, 1.0))
             
-            self.fullscreen_canvas.scale(tk.ALL, x1, y1, scale_factor, scale_factor)
+            # 先移动到原点
+            self.fullscreen_canvas.move(tk.ALL, -x1, -y1)
+            
+            # 以原点为基准缩放
+            self.fullscreen_canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
             self.scale = scale_factor
             
-            # 将内容移动到左上角
-            new_bbox = self.fullscreen_canvas.bbox(tk.ALL)
-            if new_bbox:
-                new_x1, new_y1, _, _ = new_bbox
-                dx = margin - new_x1
-                dy = margin - new_y1
-                self.fullscreen_canvas.move(tk.ALL, dx, dy)
+            # 计算缩放后的尺寸
+            scaled_width = content_width * scale_factor
+            scaled_height = content_height * scale_factor
+            
+            # 水平和垂直方向独立判断位置
+            if scaled_width <= canvas_width - 2 * margin:
+                target_x = (canvas_width - scaled_width) / 2
+            else:
+                target_x = margin
+            
+            if scaled_height <= canvas_height - 2 * margin:
+                target_y = (canvas_height - scaled_height) / 2
+            else:
+                target_y = margin
+            
+            self.fullscreen_canvas.move(tk.ALL, target_x, target_y)
+            
+            # 更新滚动区域
+            final_bbox = self.fullscreen_canvas.bbox(tk.ALL)
+            if final_bbox:
+                self.fullscreen_canvas.config(scrollregion=(
+                    0, 0,
+                    max(canvas_width, final_bbox[2] + margin),
+                    max(canvas_height, final_bbox[3] + margin)
+                ))
+            
+            self.fullscreen_canvas.xview_moveto(0)
+            self.fullscreen_canvas.yview_moveto(0)
         
         if hasattr(self, 'scale_label'):
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
