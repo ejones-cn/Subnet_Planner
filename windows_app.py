@@ -12800,13 +12800,6 @@ class SubnetPlannerApp:
         if hasattr(self, '_in_double_click_cooldown') and self._in_double_click_cooldown:
             return 'break'
         
-        # 设置冷却期，防止三击被误判为两次双击
-        self._in_double_click_cooldown = True
-        if hasattr(self, '_double_click_cooldown_timer'):
-            self.root.after_cancel(self._double_click_cooldown_timer)
-        self._double_click_cooldown_timer = self.root.after(self.double_click_interval, 
-            lambda: setattr(self, '_in_double_click_cooldown', False))
-        
         # 获取双击的行和列
         region = tree.identify_region(event.x, event.y)
         item = tree.identify_row(event.y)
@@ -13253,6 +13246,13 @@ class SubnetPlannerApp:
         # 如果是Entry，全选文本
         if column_type == 'entry':
             self.inline_edit_widget.select_range(0, tk.END)
+        
+        # 设置冷却期，防止三击被误判为两次双击
+        self._in_double_click_cooldown = True
+        if hasattr(self, '_double_click_cooldown_timer'):
+            self.root.after_cancel(self._double_click_cooldown_timer)
+        self._double_click_cooldown_timer = self.root.after(self.double_click_interval, 
+            lambda: setattr(self, '_in_double_click_cooldown', False))
         
         # 阻止Treeview的默认双击行为（展开/收缩节点）
         return 'break'

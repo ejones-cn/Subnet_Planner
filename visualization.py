@@ -257,21 +257,56 @@ class NetworkTopologyVisualizer:
         self.start_drag(event)
     
     def on_double_click(self, event: tk.Event) -> None:
-        """双击事件：在100%和上一次双击大小之间切换"""
+        """双击事件：在100%和上一次双击大小之间切换，以鼠标为中心缩放"""
         canvas_x = self.canvas.canvasx(event.x)
         canvas_y = self.canvas.canvasy(event.y)
         
         if self.scale != 1.0:
             # 非100%状态，放大到100%，并记录当前缩放值
             self._last_double_click_scale = self.scale
+            
+            # 记录放大前的偏移量，用于缩小时恢复位置
+            self._last_double_click_offset = (canvas_x, canvas_y)
+            
+            # 计算窗口中心位置
+            self.canvas.update_idletasks()
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+            center_x = canvas_width / 2
+            center_y = canvas_height / 2
+            
+            # 计算鼠标点击位置到窗口中心的偏移（画布坐标）
+            offset_x = center_x - canvas_x
+            offset_y = center_y - canvas_y
+            
+            # 先缩放，再平移使点击位置移到窗口中心
             scale_factor = 1.0 / self.scale
             self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            self.canvas.move(tk.ALL, offset_x, offset_y)
             self.scale = 1.0
         else:
             # 100%状态，缩小到上一次双击时的大小
             if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
                 scale_factor = self._last_double_click_scale
-                self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                
+                # 获取之前记录的偏移位置，如果没有则使用当前鼠标位置
+                if hasattr(self, '_last_double_click_offset'):
+                    last_x, last_y = self._last_double_click_offset
+                else:
+                    last_x, last_y = canvas_x, canvas_y
+                
+                # 计算窗口中心位置
+                self.canvas.update_idletasks()
+                canvas_width = self.canvas.winfo_width()
+                canvas_height = self.canvas.winfo_height()
+                center_x = canvas_width / 2
+                center_y = canvas_height / 2
+                
+                # 先平移回原来的位置，再缩放
+                offset_x = last_x - center_x
+                offset_y = last_y - center_y
+                self.canvas.move(tk.ALL, offset_x, offset_y)
+                self.canvas.scale(tk.ALL, last_x, last_y, scale_factor, scale_factor)
                 self.scale = self._last_double_click_scale
             else:
                 # 如果没有记录，缩小到适应画布
@@ -293,6 +328,16 @@ class NetworkTopologyVisualizer:
                             target_scale = max(0.5, min(min(scale_x, scale_y), 1.0))
                             
                             self._last_double_click_scale = target_scale
+                            self._last_double_click_offset = (canvas_x, canvas_y)
+                            
+                            # 计算窗口中心位置
+                            center_x = canvas_width / 2
+                            center_y = canvas_height / 2
+                            
+                            # 先平移回原来的位置，再缩放
+                            offset_x = canvas_x - center_x
+                            offset_y = canvas_y - center_y
+                            self.canvas.move(tk.ALL, offset_x, offset_y)
                             self.canvas.scale(tk.ALL, canvas_x, canvas_y, target_scale, target_scale)
                             self.scale = target_scale
         
@@ -1996,21 +2041,56 @@ class NetworkTopologyVisualizer:
             self.last_y = event.y
     
     def on_double_click_fullscreen(self, event):
-        """全屏模式下双击事件：在100%和上一次双击大小之间切换"""
+        """全屏模式下双击事件：在100%和上一次双击大小之间切换，以鼠标为中心缩放"""
         canvas_x = self.fullscreen_canvas.canvasx(event.x)
         canvas_y = self.fullscreen_canvas.canvasy(event.y)
         
         if self.scale != 1.0:
             # 非100%状态，放大到100%，并记录当前缩放值
             self._last_double_click_scale = self.scale
+            
+            # 记录放大前的偏移量，用于缩小时恢复位置
+            self._last_double_click_offset = (canvas_x, canvas_y)
+            
+            # 计算窗口中心位置
+            self.fullscreen_canvas.update_idletasks()
+            canvas_width = self.fullscreen_canvas.winfo_width()
+            canvas_height = self.fullscreen_canvas.winfo_height()
+            center_x = canvas_width / 2
+            center_y = canvas_height / 2
+            
+            # 计算鼠标点击位置到窗口中心的偏移（画布坐标）
+            offset_x = center_x - canvas_x
+            offset_y = center_y - canvas_y
+            
+            # 先缩放，再平移使点击位置移到窗口中心
             scale_factor = 1.0 / self.scale
             self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            self.fullscreen_canvas.move(tk.ALL, offset_x, offset_y)
             self.scale = 1.0
         else:
             # 100%状态，缩小到上一次双击时的大小
             if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
                 scale_factor = self._last_double_click_scale
-                self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                
+                # 获取之前记录的偏移位置，如果没有则使用当前鼠标位置
+                if hasattr(self, '_last_double_click_offset'):
+                    last_x, last_y = self._last_double_click_offset
+                else:
+                    last_x, last_y = canvas_x, canvas_y
+                
+                # 计算窗口中心位置
+                self.fullscreen_canvas.update_idletasks()
+                canvas_width = self.fullscreen_canvas.winfo_width()
+                canvas_height = self.fullscreen_canvas.winfo_height()
+                center_x = canvas_width / 2
+                center_y = canvas_height / 2
+                
+                # 先平移回原来的位置，再缩放
+                offset_x = last_x - center_x
+                offset_y = last_y - center_y
+                self.fullscreen_canvas.move(tk.ALL, offset_x, offset_y)
+                self.fullscreen_canvas.scale(tk.ALL, last_x, last_y, scale_factor, scale_factor)
                 self.scale = self._last_double_click_scale
             else:
                 # 如果没有记录，缩放到适应画布
@@ -2402,21 +2482,56 @@ class NetworkTopologyVisualizer:
         self.start_drag(event)
     
     def on_double_click_fullscreen(self, event):
-        """全屏模式下双击事件：在100%和上一次双击大小之间切换"""
+        """全屏模式下双击事件：在100%和上一次双击大小之间切换，以鼠标为中心缩放"""
         canvas_x = self.fullscreen_canvas.canvasx(event.x)
         canvas_y = self.fullscreen_canvas.canvasy(event.y)
         
         if self.scale != 1.0:
             # 非100%状态，放大到100%，并记录当前缩放值
             self._last_double_click_scale = self.scale
+            
+            # 记录放大前的偏移量，用于缩小时恢复位置
+            self._last_double_click_offset = (canvas_x, canvas_y)
+            
+            # 计算窗口中心位置
+            self.fullscreen_canvas.update_idletasks()
+            canvas_width = self.fullscreen_canvas.winfo_width()
+            canvas_height = self.fullscreen_canvas.winfo_height()
+            center_x = canvas_width / 2
+            center_y = canvas_height / 2
+            
+            # 计算鼠标点击位置到窗口中心的偏移（画布坐标）
+            offset_x = center_x - canvas_x
+            offset_y = center_y - canvas_y
+            
+            # 先缩放，再平移使点击位置移到窗口中心
             scale_factor = 1.0 / self.scale
             self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            self.fullscreen_canvas.move(tk.ALL, offset_x, offset_y)
             self.scale = 1.0
         else:
             # 100%状态，缩小到上一次双击时的大小
             if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
                 scale_factor = self._last_double_click_scale
-                self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                
+                # 获取之前记录的偏移位置，如果没有则使用当前鼠标位置
+                if hasattr(self, '_last_double_click_offset'):
+                    last_x, last_y = self._last_double_click_offset
+                else:
+                    last_x, last_y = canvas_x, canvas_y
+                
+                # 计算窗口中心位置
+                self.fullscreen_canvas.update_idletasks()
+                canvas_width = self.fullscreen_canvas.winfo_width()
+                canvas_height = self.fullscreen_canvas.winfo_height()
+                center_x = canvas_width / 2
+                center_y = canvas_height / 2
+                
+                # 先平移回原来的位置，再缩放
+                offset_x = last_x - center_x
+                offset_y = last_y - center_y
+                self.fullscreen_canvas.move(tk.ALL, offset_x, offset_y)
+                self.fullscreen_canvas.scale(tk.ALL, last_x, last_y, scale_factor, scale_factor)
                 self.scale = self._last_double_click_scale
             else:
                 # 如果没有记录，缩放到适应画布
