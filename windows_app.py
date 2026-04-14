@@ -907,7 +907,7 @@ class SubnetPlannerApp:
         try:
             self.double_click_interval = self.root.tk.call('tk', 'getDoubleClickTime')
         except Exception:
-            self.double_click_interval = 150  # 默认值
+            self.double_click_interval = 500  # 默认值
 
         self.root = main_window
         self.root.title(f"{_("app_name")} v{self.app_version}")
@@ -3902,9 +3902,6 @@ class SubnetPlannerApp:
 
     def on_treeview_click(self, event):
         """处理Treeview左键单击事件，实现取消选择功能"""
-        # 记录点击时间，用于双击检测
-        self._last_click_time = event.time
-        
         # 检查是否正在编辑状态
         if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
@@ -12096,9 +12093,6 @@ class SubnetPlannerApp:
     
     def on_ipam_network_click(self, event):
         """网络点击事件处理（用于取消选择）"""
-        # 记录点击时间，用于双击检测
-        self._last_click_time = event.time
-        
         # 检查是否正在编辑状态
         if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
@@ -12212,9 +12206,6 @@ class SubnetPlannerApp:
     
     def on_ipam_ip_click(self, event):
         """IP地址表点击事件处理（用于取消选择）"""
-        # 记录点击时间，用于双击检测
-        self._last_click_time = event.time
-        
         # 检查是否正在编辑状态
         if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
@@ -12805,26 +12796,21 @@ class SubnetPlannerApp:
         if tree_name not in self._inline_edit_handlers:
             return
         
-        # 检查点击的时间间隔，过滤掉误识别的双击
-        current_time = event.time
-        is_double_click = False
-        if hasattr(self, '_last_click_time'):
-            time_diff = current_time - self._last_click_time
-            # 使用系统默认的双击间隔
-            if time_diff <= self.double_click_interval:
-                is_double_click = True
-        # 记录当前点击时间
-        self._last_click_time = current_time
+        # 检查是否处于双击冷却期（防止三击被误判为两次双击）
+        if hasattr(self, '_in_double_click_cooldown') and self._in_double_click_cooldown:
+            return 'break'
+        
+        # 设置冷却期，防止三击被误判为两次双击
+        self._in_double_click_cooldown = True
+        if hasattr(self, '_double_click_cooldown_timer'):
+            self.root.after_cancel(self._double_click_cooldown_timer)
+        self._double_click_cooldown_timer = self.root.after(self.double_click_interval, 
+            lambda: setattr(self, '_in_double_click_cooldown', False))
         
         # 获取双击的行和列
         region = tree.identify_region(event.x, event.y)
         item = tree.identify_row(event.y)
         column = tree.identify_column(event.x)
-        
-        # 只有当是真正的双击时，才执行编辑逻辑
-        if not is_double_click:
-            # 不是真正的双击，阻止默认行为并返回
-            return 'break'
         
         # 无论是否是真正的双击，都阻止默认的展开/收缩行为
         # 这样网段表的双击就不会触发展开/收缩层级
@@ -15617,7 +15603,7 @@ if __name__ == "__main__":
         double_click_time = root.tk.call('tk', 'getDoubleClickTime')
     except Exception:
         # 如果获取失败，使用合理的默认值（Windows默认通常是500ms）
-        double_click_time = 150
+        double_click_time = 500
     
     # 设置全局双击间隔
     try:
@@ -15642,7 +15628,7 @@ if __name__ == "__main__":
     WINDOW_HEIGHT = int(BASE_HEIGHT)
     
     # 调用窗口设置函数
-    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=False, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=1100, max_height=10000)
+    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=False, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=10000, max_height=10000)
     
     # 创建应用实例
     app = SubnetPlannerApp(root)

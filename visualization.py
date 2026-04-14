@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 可视化模块
 实现网络拓扑图和IP地址分配可视化功能
 
 模块说明：
 - NetworkTopologyVisualizer: 网络拓扑可视化类，支持单一综合性网络拓扑图
-- IPAllocationVisualizer: IP地址分配可视化类
 
 使用示例：
-```python
+python
 # 创建可视化器
 visualizer = NetworkTopologyVisualizer(parent_frame)
 
@@ -137,7 +137,10 @@ class NetworkTopologyVisualizer:
         self.last_click_time = 0
         self.last_click_x = 0
         self.last_click_y = 0
-        self.double_click_threshold = 500  # 双击时间间隔阈值（毫秒）
+        try:
+            self.double_click_threshold = self.canvas.tk.call('tk', 'getDoubleClickTime')
+        except Exception:
+            self.double_click_threshold = 500  # 默认值（毫秒）
         self.double_click_distance = 5  # 双击位置距离阈值（像素）
         self.click_count = 0
         self.click_timer = None
@@ -215,6 +218,15 @@ class NetworkTopologyVisualizer:
         current_x = event.x
         current_y = event.y
         
+        # 检查是否处于双击冷却期（防止三击被误判为两次双击）
+        if hasattr(self, '_in_double_click_cooldown') and self._in_double_click_cooldown:
+            # 在冷却期内，只记录点击信息，不检测双击
+            self.last_click_time = current_time
+            self.last_click_x = current_x
+            self.last_click_y = current_y
+            self.start_drag(event)
+            return
+        
         # 检查是否是双击
         time_diff = current_time - self.last_click_time
         distance = ((current_x - self.last_click_x) ** 2 + (current_y - self.last_click_y) ** 2) ** 0.5
@@ -223,6 +235,14 @@ class NetworkTopologyVisualizer:
             # 是双击事件 - 停止拖拽并执行双击操作
             self.dragging = False
             self.on_double_click(event)
+            # 设置冷却期，防止三击被误判为两次双击
+            self._in_double_click_cooldown = True
+            if hasattr(self, '_double_click_cooldown_timer'):
+                self.canvas.after_cancel(self._double_click_cooldown_timer)
+            self._double_click_cooldown_timer = self.canvas.after(
+                self.double_click_threshold, 
+                lambda: setattr(self, '_in_double_click_cooldown', False)
+            )
             # 重置点击状态
             self.last_click_time = 0
             self.click_count = 0
@@ -237,28 +257,47 @@ class NetworkTopologyVisualizer:
         self.start_drag(event)
     
     def on_double_click(self, event: tk.Event) -> None:
-        """双击事件：以鼠标点击位置为中心放大/缩小图像"""
-        # 将窗口坐标转换为画布坐标
+        """双击事件：在100%和上一次双击大小之间切换"""
         canvas_x = self.canvas.canvasx(event.x)
         canvas_y = self.canvas.canvasy(event.y)
         
-        if self.scale == 1.0:
-            # 当前是原始大小，缩放到适应画布
-            self.auto_scale_to_fit()
-        else:
-            # 当前是缩小状态，以鼠标点击位置为中心放大到原始大小
-            # 计算需要放大的比例
+        if self.scale != 1.0:
+            # 非100%状态，放大到100%，并记录当前缩放值
+            self._last_double_click_scale = self.scale
             scale_factor = 1.0 / self.scale
-            
-            # 应用缩放
             self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
-            
-            # 更新缩放因子
             self.scale = 1.0
-            
-            # 更新缩放比例显示
-            if hasattr(self, 'scale_label'):
-                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 100%状态，缩小到上一次双击时的大小
+            if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
+                scale_factor = self._last_double_click_scale
+                self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                self.scale = self._last_double_click_scale
+            else:
+                # 如果没有记录，缩小到适应画布
+                bbox = self.canvas.bbox(tk.ALL)
+                if bbox:
+                    self.canvas.update_idletasks()
+                    canvas_width = self.canvas.winfo_width()
+                    canvas_height = self.canvas.winfo_height()
+                    
+                    if canvas_width > 1 and canvas_height > 1:
+                        x1, y1, x2, y2 = bbox
+                        content_width = x2 - x1
+                        content_height = y2 - y1
+                        
+                        if content_width > 0 and content_height > 0:
+                            margin = 15
+                            scale_x = (canvas_width - 2 * margin) / content_width
+                            scale_y = (canvas_height - 2 * margin) / content_height
+                            target_scale = max(0.5, min(min(scale_x, scale_y), 1.0))
+                            
+                            self._last_double_click_scale = target_scale
+                            self.canvas.scale(tk.ALL, canvas_x, canvas_y, target_scale, target_scale)
+                            self.scale = target_scale
+        
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def reset_to_original(self):
         """重置到原始大小和位置，通过重新绘制避免缩放累积问题"""
@@ -301,6 +340,10 @@ class NetworkTopologyVisualizer:
         
         # 缩放画布内容 - 以鼠标位置为中心
         self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+        
+        # 更新缩放比例显示
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _create_shadow(self, points: list[float | int] | None, shadow_x: float, shadow_y: float, width: float, height: float, smooth: bool = False) -> int:
         """通用阴影创建方法
@@ -998,6 +1041,9 @@ class NetworkTopologyVisualizer:
         Args:
             network_data: 网络数据，包含所有网络结构信息
         """
+        # 保存网络数据供后续使用（如全屏模式）
+        self.network_data = network_data
+        
         # 重置缩放标志，允许新的自适应缩放
         self._scaled = False
         self.clear()
@@ -1346,6 +1392,10 @@ class NetworkTopologyVisualizer:
         # 更新缩放因子（关键修复：之前没有更新self.scale）
         self.scale = target_scale_factor
         
+        # 更新缩放比例显示
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        
         # 更新滚动区域
         self.canvas.update_idletasks()
         new_bbox = self.canvas.bbox(tk.ALL)
@@ -1501,13 +1551,15 @@ class NetworkTopologyVisualizer:
         解决鼠标停在画布空白处不再触发Motion事件导致高亮残留的问题
         """
         self._stop_hover_polling()
-        self._hover_poll_job = self.canvas.after(50, self._check_hover_state)
+        canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+        self._hover_poll_job = canvas.after(50, self._check_hover_state)
 
     def _stop_hover_polling(self):
         """停止悬停轮询检测定时器"""
         if self._hover_poll_job:
             try:
-                self.canvas.after_cancel(self._hover_poll_job)
+                canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+                canvas.after_cancel(self._hover_poll_job)
             except Exception:
                 pass
             self._hover_poll_job = None
@@ -1521,19 +1573,22 @@ class NetworkTopologyVisualizer:
             return
         
         try:
+            # 确定使用哪个画布
+            canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+            
             # 获取当前鼠标在画布上的坐标
-            x = self.canvas.winfo_pointerx() - self.canvas.winfo_rootx()
-            y = self.canvas.winfo_pointery() - self.canvas.winfo_rooty()
+            x = canvas.winfo_pointerx() - canvas.winfo_rootx()
+            y = canvas.winfo_pointery() - canvas.winfo_rooty()
             
             # 转换为画布坐标
-            canvas_x = self.canvas.canvasx(x)
-            canvas_y = self.canvas.canvasy(y)
+            canvas_x = canvas.canvasx(x)
+            canvas_y = canvas.canvasy(y)
             
             # 检查鼠标是否仍在当前悬停节点上（通过 tag 匹配）
-            overlapping = self.canvas.find_overlapping(canvas_x, canvas_y, canvas_x, canvas_y)
+            overlapping = canvas.find_overlapping(canvas_x, canvas_y, canvas_x, canvas_y)
             still_on_node = False
             for item_id in overlapping:
-                tags = self.canvas.gettags(item_id)
+                tags = canvas.gettags(item_id)
                 if self.hovered_node["id"] in tags:  # 检查 tag 是否包含当前节点的 node_id
                     still_on_node = True
                     break
@@ -1546,7 +1601,7 @@ class NetworkTopologyVisualizer:
                 return
             
             # 仍在节点上，继续轮询
-            self._hover_poll_job = self.canvas.after(50, self._check_hover_state)
+            self._hover_poll_job = canvas.after(50, self._check_hover_state)
         except (tk.TclError, Exception):
             # 画布可能已被销毁，停止轮询
             pass
@@ -1574,21 +1629,36 @@ class NetworkTopologyVisualizer:
                 line_width = int(float(width_str)) if width_str else 2
             except (ValueError, TypeError):
                 line_width = 2
+            
+            # 获取 outline，处理不支持该选项的节点类型
+            outline = None
+            try:
+                outline = canvas.itemcget(node["shape"], "outline")
+            except Exception:
+                pass
+            
             node["original_style"] = {
-                "outline": canvas.itemcget(node["shape"], "outline"),
+                "outline": outline,
                 "line_width": line_width
             }
         
         # 更改节点样式 - 仅修改边框和宽度
-        canvas.itemconfig(node["shape"], 
-                         outline="#ffffff", 
-                         width=3)
+        try:
+            if node["original_style"]["outline"] is not None:
+                canvas.itemconfig(node["shape"], outline="#ffffff", width=3)
+            else:
+                canvas.itemconfig(node["shape"], width=3)
+        except Exception:
+            pass
         
         # 提升节点到顶层
-        canvas.tag_raise(node["shape"])
-        canvas.tag_raise(node["text"])
-        canvas.tag_raise(node["subnet_text"])
-        canvas.tag_raise(node["ip_info_text"])
+        try:
+            canvas.tag_raise(node["shape"])
+            canvas.tag_raise(node["text"])
+            canvas.tag_raise(node["subnet_text"])
+            canvas.tag_raise(node["ip_info_text"])
+        except Exception:
+            pass
 
     def _restore_node_style(self, node):
         """恢复节点原始样式
@@ -1630,7 +1700,6 @@ class NetworkTopologyVisualizer:
         # 创建提示窗口
         self.tooltip = tk.Toplevel(self.parent)
         self.tooltip.wm_overrideredirect(True)
-        self.tooltip.wm_geometry(f"+{x_root + 15}+{y_root + 10}")
         
         # 创建提示内容
         frame = tk.Frame(self.tooltip, bg="#333", padx=10, pady=5)
@@ -1670,8 +1739,6 @@ class NetworkTopologyVisualizer:
             reserved = node["ip_info"].get("reserved", 0)
             available = node["ip_info"].get("available", 0)
             total = node["ip_info"].get("total", 0)
-            # 计算剩余IP数：总IP数 - 网络地址和广播地址 - 已分配IP - 已保留IP
-            # 网络地址和广播地址各占1个IP
             network_broadcast = 2 if total > 2 else 0
             remaining = max(0, total - network_broadcast - allocated - reserved)
             tk.Label(
@@ -1709,13 +1776,58 @@ class NetworkTopologyVisualizer:
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
+        
+        # 强制更新以获取实际尺寸
+        self.tooltip.update_idletasks()
+        
+        # 获取tooltip实际尺寸
+        tooltip_width = self.tooltip.winfo_width()
+        tooltip_height = self.tooltip.winfo_height()
+        
+        # 获取父窗口的边界（考虑窗口模式和全屏模式）
+        if self.is_fullscreen:
+            # 全屏模式：使用屏幕边界
+            screen_width = self.tooltip.winfo_screenwidth()
+            screen_height = self.tooltip.winfo_screenheight()
+            min_x = 0
+            min_y = 0
+        else:
+            # 窗口模式：使用父窗口边界
+            parent_x = self.parent.winfo_rootx()
+            parent_y = self.parent.winfo_rooty()
+            parent_width = self.parent.winfo_width()
+            parent_height = self.parent.winfo_height()
+            screen_width = parent_x + parent_width
+            screen_height = parent_y + parent_height
+            min_x = parent_x
+            min_y = parent_y
+        
+        # 默认显示在鼠标右下方
+        tooltip_x = x_root + 15
+        tooltip_y = y_root + 10
+        
+        # 如果tooltip右侧超出边界，显示在鼠标左侧
+        if tooltip_x + tooltip_width > screen_width:
+            tooltip_x = x_root - tooltip_width - 15
+        
+        # 如果tooltip底部超出边界，显示在鼠标上方
+        if tooltip_y + tooltip_height > screen_height:
+            tooltip_y = y_root - tooltip_height - 15
+        
+        # 确保不超出左侧和顶部边界
+        tooltip_x = max(min_x, tooltip_x)
+        tooltip_y = max(min_y, tooltip_y)
+        
+        # 设置最终位置
+        self.tooltip.wm_geometry(f"+{tooltip_x}+{tooltip_y}")
     
     def hide_tooltip(self):
         """隐藏提示窗口"""
         # 取消定时器
         if self.tooltip_timer:
             try:
-                self.canvas.after_cancel(self.tooltip_timer)
+                canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+                canvas.after_cancel(self.tooltip_timer)
             except Exception:
                 pass
             self.tooltip_timer = None
@@ -1769,7 +1881,7 @@ class NetworkTopologyVisualizer:
             font=("Arial", 10),
             cursor="hand2"
         )
-        self.fullscreen_button.place(relx=0.985, rely=0.01, anchor=tk.NE)
+        self.fullscreen_button.place(relx=1.0, rely=0.0, x=-12, y=12, anchor=tk.NE)
         self.fullscreen_button.bind("<Enter>", lambda e: self.fullscreen_button.config(bg="#2980b9"))
         self.fullscreen_button.bind("<Leave>", lambda e: self.fullscreen_button.config(bg="#3498db"))
         
@@ -1779,7 +1891,7 @@ class NetworkTopologyVisualizer:
     def _update_fullscreen_button_position(self):
         """更新全屏按钮位置"""
         if hasattr(self, 'fullscreen_button'):
-            self.fullscreen_button.place(relx=0.985, rely=0.01, anchor=tk.NE)
+            self.fullscreen_button.place(relx=1.0, rely=0.0, x=-12, y=12, anchor=tk.NE)
     
     def toggle_fullscreen(self):
         """切换全屏显示状态"""
@@ -1790,15 +1902,8 @@ class NetworkTopologyVisualizer:
     
     def enter_fullscreen(self):
         """进入全屏显示模式"""
-        # 保存当前状态
-        self.original_parent = self.parent.winfo_parent()
-        self.original_geometry = self.parent.winfo_toplevel().geometry()
         # 保存当前缩放因子
         self.original_scale = self.scale
-        
-        # 获取屏幕尺寸
-        screen_width = self.canvas.winfo_screenwidth()
-        screen_height = self.canvas.winfo_screenheight()
         
         # 创建全屏顶层窗口
         self.fullscreen_window = tk.Toplevel()
@@ -1821,25 +1926,19 @@ class NetworkTopologyVisualizer:
         )
         self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
         
-        # 获取当前缩放因子
-        current_scale = self.scale
+        # 保存原始画布引用，用于退出时恢复
+        self.original_canvas = self.canvas
         
-        # 复制当前画布内容到全屏画布
-        self._copy_canvas_content(self.canvas, self.fullscreen_canvas)
+        # 切换到全屏画布
+        self.canvas = self.fullscreen_canvas
         
-        # 如果当前不是原始大小，需要将复制的内容缩放回原始大小
-        if current_scale != 1.0:
-            # 获取内容边界框
-            bbox = self.fullscreen_canvas.bbox(tk.ALL)
-            if bbox:
-                x1, y1, x2, y2 = bbox
-                center_x = (x1 + x2) / 2
-                center_y = (y1 + y2) / 2
-                # 反向缩放回原始大小
-                inverse_scale = 1.0 / current_scale
-                self.fullscreen_canvas.scale(tk.ALL, center_x, center_y, inverse_scale, inverse_scale)
+        # 保存当前的节点数据
+        self.original_nodes = dict(self.nodes)
         
-        # 重置缩放因子为1.0（原始大小），确保自适应缩放基于原始尺寸计算
+        # 重新渲染拓扑图到全屏画布
+        self.draw_topology(self.network_data)
+        
+        # 重置缩放因子为1.0
         self.scale = 1.0
         
         # 全屏模式下进行自适应缩放
@@ -1847,13 +1946,11 @@ class NetworkTopologyVisualizer:
         
         # 创建缩放控制面板
         self._create_fullscreen_controls()
-        
-        # 更新缩放比例显示（确保显示的是自适应后的正确比例）
         self.scale_label.config(text=f"{int(self.scale * 100)}%")
         
         # 添加退出全屏按钮
         self.exit_fullscreen_button = tk.Button(
-            self.fullscreen_canvas_frame,
+            self.fullscreen_window,
             text="✕",
             command=self.exit_fullscreen,
             bg="#e74c3c",
@@ -1863,19 +1960,19 @@ class NetworkTopologyVisualizer:
             padx=4,
             pady=2,
             font=("Arial", 10),
-            cursor="hand2"
+            cursor="hand2",
+            activebackground="#c0392b"
         )
-        self.exit_fullscreen_button.place(relx=0.99, rely=0.01, anchor=tk.NE)
-        self.exit_fullscreen_button.bind("<Enter>", lambda e: self.exit_fullscreen_button.config(bg="#c0392b"))
-        self.exit_fullscreen_button.bind("<Leave>", lambda e: self.exit_fullscreen_button.config(bg="#e74c3c"))
+        self.exit_fullscreen_button.place(relx=1.0, rely=0.0, x=-12, y=12, anchor=tk.NE)
+        self.exit_fullscreen_button.lift()
         
-        # 绑定事件
-        self.fullscreen_canvas.bind("<ButtonPress-1>", self.on_click_fullscreen)
-        self.fullscreen_canvas.bind("<B1-Motion>", self.drag_fullscreen)
-        self.fullscreen_canvas.bind("<ButtonRelease-1>", self.stop_drag)
-        self.fullscreen_canvas.bind("<MouseWheel>", self.on_mouse_wheel_fullscreen)
-        self.fullscreen_canvas.bind("<Motion>", self.on_mouse_move_fullscreen)
-        self.fullscreen_canvas.bind("<Leave>", self.on_canvas_leave)
+        # 绑定画布事件（使用全屏模式的方法）
+        self.canvas.bind("<Button-1>", self.on_click_fullscreen)
+        self.canvas.bind("<B1-Motion>", self.drag)
+        self.canvas.bind("<ButtonRelease-1>", self.stop_drag)
+        self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
+        self.canvas.bind("<Motion>", self.on_mouse_move)
+        self.canvas.bind("<Leave>", self.on_canvas_leave)
         
         # 绑定ESC键退出全屏
         self.fullscreen_window.bind("<Escape>", lambda e: self.exit_fullscreen())
@@ -1883,10 +1980,52 @@ class NetworkTopologyVisualizer:
         # 更新状态
         self.is_fullscreen = True
     
+    def start_drag_fullscreen(self, event):
+        """全屏模式下开始拖拽"""
+        self.dragging = True
+        self.last_x = event.x
+        self.last_y = event.y
+    
+    def drag_fullscreen(self, event):
+        """全屏模式下拖拽操作"""
+        if self.dragging:
+            dx = event.x - self.last_x
+            dy = event.y - self.last_y
+            self.fullscreen_canvas.move(tk.ALL, dx, dy)
+            self.last_x = event.x
+            self.last_y = event.y
+    
+    def on_double_click_fullscreen(self, event):
+        """全屏模式下双击事件：在100%和上一次双击大小之间切换"""
+        canvas_x = self.fullscreen_canvas.canvasx(event.x)
+        canvas_y = self.fullscreen_canvas.canvasy(event.y)
+        
+        if self.scale != 1.0:
+            # 非100%状态，放大到100%，并记录当前缩放值
+            self._last_double_click_scale = self.scale
+            scale_factor = 1.0 / self.scale
+            self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            self.scale = 1.0
+        else:
+            # 100%状态，缩小到上一次双击时的大小
+            if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
+                scale_factor = self._last_double_click_scale
+                self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                self.scale = self._last_double_click_scale
+            else:
+                # 如果没有记录，缩放到适应画布
+                self._reset_fullscreen_view()
+        
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
     def exit_fullscreen(self):
         """退出全屏显示模式"""
         if not self.is_fullscreen:
             return
+        
+        # 强制停止拖拽
+        self.dragging = False
         
         # 停止悬停轮询和tooltip
         self._stop_hover_polling()
@@ -1903,6 +2042,26 @@ class NetworkTopologyVisualizer:
                 del self.fullscreen_window
         except Exception:
             pass
+        
+        # 恢复原始画布引用
+        if hasattr(self, 'original_canvas'):
+            self.canvas = self.original_canvas
+            delattr(self, 'original_canvas')
+        
+        # 恢复原始节点数据
+        if hasattr(self, 'original_nodes'):
+            self.nodes = self.original_nodes
+            delattr(self, 'original_nodes')
+        
+        # 清理全屏相关的控件引用
+        for attr_name in ['fullscreen_canvas', 'fullscreen_canvas_frame', 
+                          'exit_fullscreen_button', 'control_frame', 
+                          'zoom_in_button', 'zoom_out_button', 'scale_label']:
+            if hasattr(self, attr_name):
+                try:
+                    delattr(self, attr_name)
+                except Exception:
+                    pass
         
         # 恢复原始缩放因子
         if hasattr(self, 'original_scale'):
@@ -2053,63 +2212,50 @@ class NetworkTopologyVisualizer:
     
     def _reset_fullscreen_view(self):
         """重置全屏视图到最佳显示状态"""
-        # 清空画布并重新从原始画布复制内容
+        # 清空画布并重新绘制拓扑图
         self.fullscreen_canvas.delete(tk.ALL)
-        self._copy_canvas_content(self.canvas, self.fullscreen_canvas)
+        self.nodes.clear()
+        self.links.clear()
         
-        # 使用进入全屏时保存的原始缩放因子进行反向缩放
-        if hasattr(self, 'original_scale') and self.original_scale != 1.0:
-            # 获取内容边界框
-            bbox = self.fullscreen_canvas.bbox(tk.ALL)
-            if bbox:
-                x1, y1, x2, y2 = bbox
-                center_x = (x1 + x2) / 2
-                center_y = (y1 + y2) / 2
-                # 反向缩放回原始大小
-                inverse_scale = 1.0 / self.original_scale
-                self.fullscreen_canvas.scale(tk.ALL, center_x, center_y, inverse_scale, inverse_scale)
+        # 重新渲染拓扑图到全屏画布
+        self.draw_topology(self.network_data)
         
-        # 重置缩放因子为1.0（原始大小）
+        # 重置缩放因子为1.0
         self.scale = 1.0
         
-        # 获取画布尺寸
-        self.fullscreen_canvas.update_idletasks()
-        canvas_width = self.fullscreen_canvas.winfo_width()
-        canvas_height = self.fullscreen_canvas.winfo_height()
-        
-        # 获取原始内容边界框（此时是未缩放的原始大小）
+        # 手动计算并应用自适应缩放
         bbox = self.fullscreen_canvas.bbox(tk.ALL)
-        if not bbox:
-            return
+        if bbox:
+            self.fullscreen_canvas.update_idletasks()
+            canvas_width = self.fullscreen_canvas.winfo_width()
+            canvas_height = self.fullscreen_canvas.winfo_height()
+            
+            if canvas_width <= 1 or canvas_height <= 1:
+                return
+            
+            x1, y1, x2, y2 = bbox
+            content_width = x2 - x1
+            content_height = y2 - y1
+            
+            margin = 30
+            scale_x = (canvas_width - 2 * margin) / content_width
+            scale_y = (canvas_height - 2 * margin) / content_height
+            scale_factor = min(scale_x, scale_y)
+            scale_factor = max(0.5, min(scale_factor, 1.0))
+            
+            self.fullscreen_canvas.scale(tk.ALL, x1, y1, scale_factor, scale_factor)
+            self.scale = scale_factor
+            
+            # 将内容移动到左上角
+            new_bbox = self.fullscreen_canvas.bbox(tk.ALL)
+            if new_bbox:
+                new_x1, new_y1, _, _ = new_bbox
+                dx = margin - new_x1
+                dy = margin - new_y1
+                self.fullscreen_canvas.move(tk.ALL, dx, dy)
         
-        x1, y1, x2, y2 = bbox
-        content_width = x2 - x1
-        content_height = y2 - y1
-        
-        # 计算最佳缩放比例（保持30像素边距）
-        margin = 30
-        scale_x = (canvas_width - 2 * margin) / content_width
-        scale_y = (canvas_height - 2 * margin) / content_height
-        scale_factor = min(scale_x, scale_y)
-        
-        # 限制缩放范围（全屏模式允许更大的缩放范围）
-        scale_factor = max(0.5, min(scale_factor, 1.0))
-        
-        # 以内容左上角为原点进行缩放
-        self.fullscreen_canvas.scale(tk.ALL, x1, y1, scale_factor, scale_factor)
-        
-        # 获取缩放后的新边界框
-        new_bbox = self.fullscreen_canvas.bbox(tk.ALL)
-        if new_bbox:
-            new_x1, new_y1, _, _ = new_bbox
-            # 将内容移动到左上角，保持30像素边距
-            dx = margin - new_x1
-            dy = margin - new_y1
-            self.fullscreen_canvas.move(tk.ALL, dx, dy)
-        
-        # 更新缩放因子和显示
-        self.scale = scale_factor
-        self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _auto_scale_to_fit_fullscreen(self):
         """全屏模式下自动缩放画布以适应全屏窗口，左上对齐"""
@@ -2220,6 +2366,15 @@ class NetworkTopologyVisualizer:
         current_x = event.x
         current_y = event.y
         
+        # 检查是否处于双击冷却期（防止三击被误判为两次双击）
+        if hasattr(self, '_in_double_click_cooldown') and self._in_double_click_cooldown:
+            # 在冷却期内，只记录点击信息，不检测双击
+            self.last_click_time = current_time
+            self.last_click_x = current_x
+            self.last_click_y = current_y
+            self.start_drag(event)
+            return
+        
         # 检查是否是双击
         time_diff = current_time - self.last_click_time
         distance = ((current_x - self.last_click_x) ** 2 + (current_y - self.last_click_y) ** 2) ** 0.5
@@ -2227,6 +2382,14 @@ class NetworkTopologyVisualizer:
         if time_diff <= self.double_click_threshold and distance <= self.double_click_distance:
             # 是双击事件
             self.on_double_click_fullscreen(event)
+            # 设置冷却期，防止三击被误判为两次双击
+            self._in_double_click_cooldown = True
+            if hasattr(self, '_double_click_cooldown_timer'):
+                self.fullscreen_canvas.after_cancel(self._double_click_cooldown_timer)
+            self._double_click_cooldown_timer = self.fullscreen_canvas.after(
+                self.double_click_threshold, 
+                lambda: setattr(self, '_in_double_click_cooldown', False)
+            )
             self.last_click_time = 0
             return
         
@@ -2236,24 +2399,31 @@ class NetworkTopologyVisualizer:
         self.last_click_y = current_y
         
         # 立即开始拖拽
-        self.start_drag_fullscreen(event)
+        self.start_drag(event)
     
     def on_double_click_fullscreen(self, event):
-        """全屏模式下双击事件：以鼠标点击位置为中心放大/缩小图像"""
-        # 将窗口坐标转换为画布坐标
+        """全屏模式下双击事件：在100%和上一次双击大小之间切换"""
         canvas_x = self.fullscreen_canvas.canvasx(event.x)
         canvas_y = self.fullscreen_canvas.canvasy(event.y)
         
-        if self.scale == 1.0:
-            # 当前是原始大小，缩放到适应全屏
-            self._reset_fullscreen_view()
-        else:
-            # 当前是缩小状态，以鼠标点击位置为中心放大到原始大小
+        if self.scale != 1.0:
+            # 非100%状态，放大到100%，并记录当前缩放值
+            self._last_double_click_scale = self.scale
             scale_factor = 1.0 / self.scale
             self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
             self.scale = 1.0
-            if hasattr(self, 'scale_label'):
-                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 100%状态，缩小到上一次双击时的大小
+            if hasattr(self, '_last_double_click_scale') and self._last_double_click_scale < 1.0:
+                scale_factor = self._last_double_click_scale
+                self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+                self.scale = self._last_double_click_scale
+            else:
+                # 如果没有记录，缩放到适应画布
+                self._reset_fullscreen_view()
+        
+        if hasattr(self, 'scale_label'):
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_mouse_move_fullscreen(self, event):
         """全屏模式下鼠标移动事件，用于显示节点悬停详情"""
@@ -2289,7 +2459,7 @@ class NetworkTopologyVisualizer:
                 
                 if self.tooltip_timer:
                     try:
-                        self.canvas.after_cancel(self.tooltip_timer)
+                        self.fullscreen_canvas.after_cancel(self.tooltip_timer)
                     except Exception:
                         pass
                 self.tooltip_timer = self.fullscreen_canvas.after(100, self._delayed_show_tooltip)
@@ -2297,7 +2467,7 @@ class NetworkTopologyVisualizer:
             else:
                 if self.tooltip_timer:
                     try:
-                        self.canvas.after_cancel(self.tooltip_timer)
+                        self.fullscreen_canvas.after_cancel(self.tooltip_timer)
                     except Exception:
                         pass
                 self.tooltip_timer = None
@@ -2350,111 +2520,3 @@ class NetworkTopologyVisualizer:
             self.update_timer = self.canvas.after(self.update_interval, self._schedule_update)
 
 
-class IPAllocationVisualizer:
-    """IP地址分配可视化类"""
-    
-    def __init__(self, parent):
-        """初始化可视化器
-        
-        Args:
-            parent: 父容器
-        """
-        self.parent = parent
-        self.canvas_frame = Frame(parent)
-        self.canvas_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 创建滚动条
-        self.v_scrollbar = Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
-        
-        # 创建画布
-        self.canvas = Canvas(
-            self.canvas_frame,
-            bg=BACKGROUND_COLOR,
-            yscrollcommand=self.v_scrollbar.set
-        )
-        
-        # 配置滚动条
-        self.v_scrollbar.config(command=self.canvas.yview)
-        
-        # 放置组件
-        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-    def draw_ip_allocation(self, network, ip_list):
-        """绘制IP地址分配可视化
-        
-        Args:
-            network: 网络地址
-            ip_list: IP地址列表
-        """
-        self.canvas.delete(tk.ALL)
-        
-        # 获取字体设置
-        font_family, font_size = get_current_font_settings()
-        
-        # 计算画布尺寸
-        width = self.canvas.winfo_width() or 800
-        height = 50 + len(ip_list) * 30
-        
-        # 绘制标题
-        self.canvas.create_text(
-            width / 2, 20,
-            text=f"{translate('ip_allocation_visualization')}: {network}",
-            font=(font_family, font_size, "bold"),
-            fill=TEXT_COLOR
-        )
-        
-        # 绘制IP地址列表
-        for i, ip_info in enumerate(ip_list):
-            y = 60 + i * 30
-            
-            # 根据状态设置颜色
-            if ip_info["status"] == "allocated":
-                color = "#27ae60"
-            elif ip_info["status"] == "reserved":
-                color = "#f39c12"
-            else:
-                color = "#95a5a6"
-            
-            # 绘制IP地址条
-            self.canvas.create_rectangle(
-                50, y, width - 50, y + 25,
-                fill=color,
-                outline="#34495e",
-                width=1
-            )
-            
-            # 绘制IP地址文本
-            self.canvas.create_text(
-                70, y + 12,
-                text=ip_info["ip_address"],
-                font=(font_family, font_size - 1),
-                fill=TEXT_COLOR,
-                anchor=tk.W
-            )
-            
-            # 绘制主机名和描述
-            if ip_info.get("hostname"):
-                hostname = ip_info["hostname"]
-                if len(hostname) > 20:
-                    hostname = hostname[:17] + "..."
-                
-                self.canvas.create_text(
-                    200, y + 12,
-                    text=hostname,
-                    font=(font_family, font_size - 1),
-                    fill=TEXT_COLOR,
-                    anchor=tk.W
-                )
-            
-            # 绘制状态
-            self.canvas.create_text(
-                width - 70, y + 12,
-                text=ip_info["status"],
-                font=(font_family, font_size - 1),
-                fill=TEXT_COLOR,
-                anchor=tk.E
-            )
-        
-        # 更新滚动区域
-        self.canvas.config(scrollregion=(0, 0, width, height))
