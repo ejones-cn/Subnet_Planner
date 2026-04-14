@@ -35,10 +35,9 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 """
 
 import tkinter as tk
-from tkinter import Canvas, Frame, Scrollbar
-from typing import Callable
+from tkinter import Canvas, Frame
+from typing import Callable, Any, Optional
 from style_manager import get_current_font_settings
-from i18n import _ as translate
 
 # 模块版本
 __version__ = "1.0.0"
@@ -130,20 +129,26 @@ class NetworkTopologyVisualizer:
         self._create_fullscreen_button()
         
         # 初始化数据
-        self.nodes: dict[str, dict[str, object]] = {}
-        self.links: list[dict[str, object]] = []
+        self.nodes: dict[str, dict[str, float | int | str | dict | list]] = {}
+        self.links: list[dict[str, float | int | str | dict | list]] = []
         
         # 双击检测相关
-        self.last_click_time = 0
-        self.last_click_x = 0
-        self.last_click_y = 0
+        self.last_click_time: int = 0
+        self.last_click_x: int = 0
+        self.last_click_y: int = 0
         try:
-            self.double_click_threshold = self.canvas.tk.call('tk', 'getDoubleClickTime')
+            self.double_click_threshold: int = int(self.canvas.tk.call('tk', 'getDoubleClickTime'))
         except Exception:
-            self.double_click_threshold = 500  # 默认值（毫秒）
-        self.double_click_distance = 5  # 双击位置距离阈值（像素）
-        self.click_count = 0
-        self.click_timer = None
+            self.double_click_threshold: int = 500  # 默认值（毫秒）
+        self.double_click_distance: int = 5  # 双击位置距离阈值（像素）
+        self.click_count: int = 0
+        self.click_timer: int | None = None
+        
+        # 双击冷却相关
+        self._in_double_click_cooldown: bool = False
+        self._double_click_cooldown_timer: int | None = None
+        self._last_double_click_scale: float = 1.0
+        self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
         # 绑定事件（使用自定义双击检测）
         _ = self.canvas.bind("<Button-1>", self.on_click)
@@ -913,7 +918,7 @@ class NetworkTopologyVisualizer:
             )
             return shape_id, gradient_items, shadow_items
     
-    def add_node(self, name, subnet, level=0, subnet_type="default", device_type="default", ip_info=None, parent_id=None):
+    def add_node(self, name: str, subnet: str, level: int = 0, subnet_type: str = "default", device_type: str = "default", ip_info: Optional[dict[str, Any]] = None, parent_id: Optional[str] = None) -> str:
         """添加节点
         
         Args:
@@ -934,11 +939,11 @@ class NetworkTopologyVisualizer:
         if parent_id and parent_id in self.nodes:
             # 如果有父节点，基于父节点位置计算
             parent_node = self.nodes[parent_id]
-            x = parent_node["x"] + NODE_SPACING  # 水平间距
+            x = float(parent_node["x"]) + NODE_SPACING  # 水平间距
             # 计算父节点的子节点数量，确保子节点均匀分布
             child_count = sum(1 for n in self.nodes.values() if n.get("parent_id") == parent_id)
             # 计算子节点的垂直位置，确保父节点居中
-            y = parent_node["y"] + (child_count - 1) * (NODE_HEIGHT + 60) - (child_count * (NODE_HEIGHT + 60)) / 2 + NODE_HEIGHT / 2
+            y = float(parent_node["y"]) + (child_count - 1) * (NODE_HEIGHT + 60) - (child_count * (NODE_HEIGHT + 60)) / 2 + NODE_HEIGHT / 2
         else:
             # 根节点或没有父节点的节点
             x = 100 + level * NODE_SPACING  # 水平间距
