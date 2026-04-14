@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "language": "zh",
+  "window": {
+    "width": 1200,
+    "height": 800,
+    "maximized": false,
+    "x": null,
+    "y": null
+  },
+  "auto_backup": {
+    "enabled": true,
+    "frequency": "daily"
+  },
+  "ui": {
+    "theme": "default",
+    "font_size": 12
+  },
+  "recent_files": [],
+  "last_used_network": null
+}

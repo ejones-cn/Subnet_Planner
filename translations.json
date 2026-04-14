@@ -1744,13 +1744,6 @@
     "ja": "ネットワークセグメント",
     "ko": "네트워크 세그먼트"
   },
-  "network_address": {
-    "zh": "网段地址",
-    "zh_tw": "網段位址",
-    "en": "Network Address",
-    "ja": "ネットワークアドレス",
-    "ko": "네트워크 주소"
-  },
   "data_restore_failed": {
     "zh": "数据恢复失败",
     "en": "Data restore failed",

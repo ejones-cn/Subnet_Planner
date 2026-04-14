@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-04-14 10:22:05",
+  "exe_file": "SubnetPlannerV3.0.0.exe",
+  "included_files": [
+    {
+      "name": "translations.json",
+      "size_bytes": 152219,
+      "size_human": "148.65 KB"
+    },
+    {
+      "name": "Subnet_Planner.ico",
+      "size_bytes": 1201006,
+      "size_human": "1172.86 KB"
+    }
+  ],
+  "excluded_files": [
+    "ipam_data.db",
+    "ipam_backups",
+    "*.db"
+  ],
+  "directories": [
+    {
+      "name": "Picture",
+      "file_count": 2,
+      "total_size_bytes": 356591,
+      "total_size_human": "348.23 KB"
+    }
+  ],
+  "runtime_generated": [
+    {
+      "name": "ipam_data.db",
+      "description": "主数据库文件，运行时在程序所在目录创建"
+    },
+    {
+      "name": "ipam_backups/",
+      "description": "备份目录，运行时在程序所在目录创建"
+    }
+  ]
+}

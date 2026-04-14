@@ -19,7 +19,6 @@ __version__ = get_version()
 try:
     import ctypes
 except ImportError:
-    # 在非Windows系统上，ctypes可能不可用
     ctypes = None
 
 
@@ -36,7 +35,10 @@ class Translator:
     """翻译类，提供简洁高效的翻译功能"""
     
     def __init__(self):
-        self._current_language: str = self._detect_system_language()
+        # 延迟导入以避免循环依赖
+        from config_manager import get_config
+        self._config = get_config()
+        self._current_language: str = self._load_language()
         self._translations_file: str = get_resource_path('translations.json')
         # 默认翻译字典 - 只保留最基本的翻译键作为最后的回退
         # 完整的翻译内容已经移到了 translations.json 文件中
@@ -55,9 +57,6 @@ class Translator:
         Returns:
             检测到的语言代码，如果无法检测则返回默认语言 "zh"
         """
-        # 强制使用中文作为默认语言
-        return 'zh'
-        
         try:
             # 尝试使用 locale 模块检测系统语言
             import locale
@@ -99,6 +98,17 @@ class Translator:
         
         return 'zh'
     
+    def _load_language(self) -> str:
+        """从配置管理器加载语言设置"""
+        lang = self._config.get_language()
+        if lang in ["zh", "zh_tw", "en", "ja", "ko"]:
+            return lang
+        # 如果配置中没有有效语言，检测系统语言
+        detected_lang = self._detect_system_language()
+        # 将检测到的语言保存到配置
+        self._config.set_language(detected_lang)
+        return detected_lang
+    
     def _load_translations(self) -> dict[str, dict[str, str]]:
         """从JSON文件加载翻译数据"""
         try:
@@ -121,6 +131,8 @@ class Translator:
         """
         if lang in ["zh", "zh_tw", "en", "ja", "ko"]:
             self._current_language = lang
+            # 通过配置管理器保存语言设置
+            self._config.set_language(lang)
     
     def get_language(self) -> str:
         """获取当前语言

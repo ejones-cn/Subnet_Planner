@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 IP地址管理（IPAM）模块 - SQLite版本
@@ -8,11 +8,12 @@ IP地址管理（IPAM）模块 - SQLite版本
 import sqlite3
 import json
 import os
+import sys
 from datetime import datetime, timedelta
 from typing import Any
 
 # 导入国际化模块
-from i18n import _
+from i18n import translate as _
 
 
 import ipaddress
@@ -21,18 +22,66 @@ import ipaddress
 class IPAMSQLite:
     """IP地址管理类 - SQLite版本"""
     
-    def __init__(self, db_file: str = "ipam_data.db"):
+    def __init__(self, db_file: str | None = None):
         """初始化IPAM
         
         Args:
-            db_file: 数据库文件路径
+            db_file: 数据库文件路径，为None时自动使用程序所在目录
         """
+        # 获取应用程序所在目录（确保在单文件模式下也能正确获取）
+        self.app_dir = self._get_app_directory()
+        
+        if db_file is None:
+            # 使用应用程序目录作为数据库位置
+            db_file = os.path.join(self.app_dir, "ipam_data.db")
+        
         self.db_file: str = db_file
-        self.backup_dir: str = os.path.join(os.path.dirname(db_file), "ipam_backups")
+        # 备份目录始终在应用程序目录下，确保数据持久化
+        self.backup_dir: str = os.path.join(self.app_dir, "ipam_backups")
         # 创建备份目录
         if not os.path.exists(self.backup_dir):
             os.makedirs(self.backup_dir)
         self.init_db()
+    
+    def _get_app_directory(self) -> str:
+        """获取应用程序所在目录
+        
+        Returns:
+            str: 应用程序所在目录路径
+        """
+        app_dir = None
+        
+        # 优先使用 sys.argv[0]（这是最可靠的方法）
+        if sys.argv and sys.argv[0]:
+            exe_path = sys.argv[0]
+            if not os.path.isabs(exe_path):
+                exe_path = os.path.abspath(exe_path)
+            if os.path.exists(exe_path):
+                app_dir = os.path.dirname(exe_path)
+        
+        # 如果 sys.argv[0] 不可用，尝试使用 ctypes（Windows）
+        if app_dir is None:
+            try:
+                import ctypes
+                from ctypes import wintypes
+                
+                GetModuleFileNameW = ctypes.windll.kernel32.GetModuleFileNameW
+                GetModuleFileNameW.argtypes = [wintypes.HMODULE, wintypes.LPWSTR, wintypes.DWORD]
+                GetModuleFileNameW.restype = wintypes.DWORD
+                
+                buffer = ctypes.create_unicode_buffer(260)
+                if GetModuleFileNameW(None, buffer, 260) > 0:
+                    exe_path = buffer.value
+                    if os.path.exists(exe_path):
+                        app_dir = os.path.dirname(exe_path)
+            except Exception:
+                pass
+        
+        # 如果以上都失败，使用 __file__（非单文件模式）
+        if app_dir is None:
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        return app_dir
     
     def init_db(self) -> None:
         """初始化数据库"""
@@ -289,7 +338,7 @@ class IPAMSQLite:
             if vlan:
                 if not vlan.isdigit():
                     return False, _('vlan_invalid_format')
-                vlan_num = int(vlan)
+                vlan_num: int = int(vlan)
                 if vlan_num < 1 or vlan_num > 4094:
                     return False, _('vlan_out_of_range')
             
@@ -303,13 +352,13 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 
                 # 检查网络是否已存在
-                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
+                cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 if cursor.fetchone():
                     return False, "网络已存在"
                 
                 # 添加网络
                 created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                _ = cursor.execute('''
+                cursor.execute('''
                 INSERT INTO networks (network_address, description, vlan, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?)
                 ''', (network_str, description, vlan, created_at, created_at))
@@ -317,20 +366,20 @@ class IPAMSQLite:
                 network_id = cursor.lastrowid
                 
                 # 检查是否有IP地址应该归属到这个新网络
-                _ = cursor.execute('SELECT id, network_id, ip_address FROM ip_addresses')
+                cursor.execute('SELECT id, network_id, ip_address FROM ip_addresses')
                 ips = cursor.fetchall()
                 
-                def _validate_ip_item(ip_item: object) -> bool:
+                def validate_ip_item(ip_item: object) -> bool:
                     """验证IP项是否为有效的元组"""
                     return isinstance(ip_item, tuple) and len(ip_item) >= 3
 
-                def _validate_network_row(network_row: object) -> bool:
+                def validate_network_row(network_row: object) -> bool:
                     """验证网络行是否为有效的元组"""
                     return isinstance(network_row, tuple) and len(network_row) >= 1
 
                 for ip_item in ips:
                     try:
-                        if not _validate_ip_item(ip_item):
+                        if not validate_ip_item(ip_item):
                             continue
                         ip_id: int = int(ip_item[0])
                         current_network_id: int = int(ip_item[1])
@@ -339,15 +388,15 @@ class IPAMSQLite:
                         if ip_obj not in ip_network:
                             continue
                         # 检查是否是更具体的网络
-                        _ = cursor.execute('SELECT network_address FROM networks WHERE id = ?', (current_network_id,))
+                        cursor.execute('SELECT network_address FROM networks WHERE id = ?', (current_network_id,))
                         current_network_row = cursor.fetchone()
-                        if not current_network_row or not _validate_network_row(current_network_row):
+                        if not current_network_row or not validate_network_row(current_network_row):
                             continue
                         current_network_address: str = str(current_network_row[0])
                         current_network_obj = ipaddress.ip_network(current_network_address)
                         if ip_network.prefixlen > current_network_obj.prefixlen:
                             # 更新归属关系
-                            _ = cursor.execute('UPDATE ip_addresses SET network_id = ? WHERE id = ?', (network_id, ip_id))
+                            cursor.execute('UPDATE ip_addresses SET network_id = ? WHERE id = ?', (network_id, ip_id))
                     except Exception as e:
                         print(f"处理IP项时出错: {str(e)}")
                         continue
@@ -1706,7 +1755,7 @@ class IPAMSQLite:
             if vlan:
                 if not vlan.isdigit():
                     return False, _('vlan_invalid_format')
-                vlan_num = int(vlan)
+                vlan_num: int = int(vlan)
                 if vlan_num < 1 or vlan_num > 4094:
                     return False, _('vlan_out_of_range')
             
@@ -1720,13 +1769,13 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 
                 # 检查网络是否存在
-                _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
+                cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 network_row = cursor.fetchone()
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
                     return False, "网络不存在"
                 
                 # 更新网络VLAN
-                _ = cursor.execute('UPDATE networks SET vlan = ?, updated_at = datetime("now") WHERE id = ?', 
+                cursor.execute('UPDATE networks SET vlan = ?, updated_at = datetime("now") WHERE id = ?', 
                              (vlan, int(network_row[0])))
                 
                 conn.commit()
@@ -2036,7 +2085,7 @@ class IPAMSQLite:
             
             # 转换为列表字典格式，符合windows_app.py中的预期
             backup_list: list[dict[str, Any]] = []
-            backup_paths = set()
+            backup_names = set()
             
             # 添加数据库中的备份记录
             for backup_row in backup_rows:
@@ -2056,14 +2105,14 @@ class IPAMSQLite:
                             'ip_count': ip_count
                         }
                     })
-                    backup_paths.add(backup_path)
+                    backup_names.add(backup_name)
             
             # 检查备份目录中的实际文件，确保所有备份文件都能在列表中显示
             if os.path.exists(self.backup_dir):
                 for filename in os.listdir(self.backup_dir):
                     if filename.endswith('.db'):
                         backup_path = os.path.join(self.backup_dir, filename)
-                        if backup_path not in backup_paths:
+                        if filename not in backup_names:
                             # 对于没有数据库记录的备份文件，尝试从文件名提取时间戳
                             # 文件名格式：backup_20260408_183506.db
                             import re
@@ -2077,14 +2126,38 @@ class IPAMSQLite:
                                 mtime = os.path.getmtime(backup_path)
                                 backup_time = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
                             
+                            # 从备份文件中读取网络数和IP数
+                            network_count = 0
+                            ip_count = 0
+                            try:
+                                backup_conn = sqlite3.connect(backup_path)
+                                backup_cursor = backup_conn.cursor()
+                                
+                                backup_cursor.execute('SELECT COUNT(*) FROM networks')
+                                network_result = backup_cursor.fetchone()
+                                if network_result and isinstance(network_result, tuple) and len(network_result) >= 1:
+                                    network_count = int(network_result[0])
+                                
+                                backup_cursor.execute('SELECT COUNT(*) FROM ip_addresses')
+                                ip_result = backup_cursor.fetchone()
+                                if ip_result and isinstance(ip_result, tuple) and len(ip_result) >= 1:
+                                    ip_count = int(ip_result[0])
+                                
+                                backup_conn.close()
+                            except Exception as e:
+                                print(f"读取备份文件信息失败: {str(e)}")
+                            
+                            # 使用相对路径
+                            relative_backup_path = os.path.join('ipam_backups', filename)
+                            
                             # 添加到备份列表
                             backup_list.append({
                                 'filename': filename,
-                                'file_path': backup_path,
+                                'file_path': relative_backup_path,
                                 'info': {
                                     'backup_time': backup_time,
-                                    'network_count': 0,
-                                    'ip_count': 0
+                                    'network_count': network_count,
+                                    'ip_count': ip_count
                                 }
                             })
             
@@ -2130,6 +2203,9 @@ class IPAMSQLite:
             import shutil
             _ = shutil.copy2(self.db_file, backup_path)
             
+            # 存储相对路径
+            relative_backup_path = os.path.join('ipam_backups', backup_name)
+            
             # 获取网络和IP数量
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -2149,7 +2225,7 @@ class IPAMSQLite:
             _ = cursor.execute('''
             INSERT INTO backups (backup_name, backup_path, backup_type, backup_time, network_count, ip_count)
             VALUES (?, ?, ?, ?, ?, ?)
-            ''', (backup_name, backup_path, backup_type, backup_time, network_count, ip_count))
+            ''', (backup_name, relative_backup_path, backup_type, backup_time, network_count, ip_count))
             
             conn.commit()
             conn.close()
@@ -2180,12 +2256,51 @@ class IPAMSQLite:
             print(f"备份失败: {str(e)}")
             return ""
     
-    def delete_backup(self, backup_path: str) -> bool:
-        """删除备份记录
-        
+    def _get_absolute_backup_path(self, backup_path: str) -> str:
+        """将备份路径转换为绝对路径
+
+        Args:
+            backup_path: 备份文件路径（相对或绝对）
+
+        Returns:
+            str: 绝对路径
+        """
+        if os.path.isabs(backup_path):
+            return backup_path
+        return os.path.join(self.app_dir, backup_path)
+
+    def restore_data(self, backup_path: str) -> bool:
+        """从备份恢复数据
+
         Args:
             backup_path: 备份文件路径
-        
+
+        Returns:
+            bool: 是否恢复成功
+        """
+        try:
+            # 获取绝对路径
+            absolute_backup_path = self._get_absolute_backup_path(backup_path)
+            
+            if not os.path.exists(absolute_backup_path):
+                print(f"备份文件不存在: {absolute_backup_path}")
+                return False
+            
+            # 复制备份文件到当前数据库
+            import shutil
+            _ = shutil.copy2(absolute_backup_path, self.db_file)
+            
+            return True
+        except Exception as e:
+            print(f"恢复数据失败: {str(e)}")
+            return False
+
+    def delete_backup(self, backup_path: str) -> bool:
+        """删除备份记录
+
+        Args:
+            backup_path: 备份文件路径
+
         Returns:
             bool: 是否删除成功
         """

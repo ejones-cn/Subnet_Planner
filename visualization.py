@@ -112,15 +112,15 @@ class NetworkTopologyVisualizer:
             parent: 父容器
         """
         self.parent: tk.BaseWidget = parent
-        self.canvas_frame: Frame = Frame(parent)
         
-        # 配置 canvas_frame 以填充父容器
-        self.canvas_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 创建画布（移除滚动条）
+        # 创建画布，直接放在父容器上（移除多余的 canvas_frame）
         self.canvas: Canvas = Canvas(
-            self.canvas_frame,
-            bg=BACKGROUND_COLOR
+            parent,
+            bg=BACKGROUND_COLOR,
+            highlightthickness=0,
+            bd=0,
+            borderwidth=0,
+            relief="flat"
         )
         
         # 放置组件
@@ -133,8 +133,17 @@ class NetworkTopologyVisualizer:
         self.nodes: dict[str, dict[str, object]] = {}
         self.links: list[dict[str, object]] = []
         
-        # 绑定事件
-        _ = self.canvas.bind("<ButtonPress-1>", self.start_drag)
+        # 双击检测相关
+        self.last_click_time = 0
+        self.last_click_x = 0
+        self.last_click_y = 0
+        self.double_click_threshold = 500  # 双击时间间隔阈值（毫秒）
+        self.double_click_distance = 5  # 双击位置距离阈值（像素）
+        self.click_count = 0
+        self.click_timer = None
+        
+        # 绑定事件（使用自定义双击检测）
+        _ = self.canvas.bind("<Button-1>", self.on_click)
         _ = self.canvas.bind("<B1-Motion>", self.drag)
         _ = self.canvas.bind("<ButtonRelease-1>", self.stop_drag)
         _ = self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
@@ -142,7 +151,7 @@ class NetworkTopologyVisualizer:
         _ = self.canvas.bind("<Leave>", self.on_canvas_leave)
         
         # 绑定配置事件，当父容器大小变化时调整画布大小
-        _ = self.canvas_frame.bind("<Configure>", self.on_canvas_frame_configure)
+        _ = self.parent.bind("<Configure>", self.on_canvas_frame_configure)
         
         # 拖拽状态
         self.dragging: bool = False
@@ -177,10 +186,15 @@ class NetworkTopologyVisualizer:
     def start_drag(self, event: tk.Event) -> None:
         """开始拖拽"""
         self.dragging = True
-        self.drag_start_x: int = event.x
-        self.drag_start_y: int = event.y
-        self.last_x: int = event.x
-        self.last_y: int = event.y
+        self.drag_start_x = event.x
+        self.drag_start_y = event.y
+        self.last_x = event.x
+        self.last_y = event.y
+        
+        # 停止悬停轮询和tooltip，避免拖拽期间的性能负担
+        self._stop_hover_polling()
+        self.hide_tooltip()
+        self.hovered_node = None
     
     def drag(self, event: tk.Event) -> None:
         """拖拽操作"""
@@ -188,12 +202,83 @@ class NetworkTopologyVisualizer:
             dx: int = event.x - self.last_x
             dy: int = event.y - self.last_y
             self.canvas.move(tk.ALL, dx, dy)
-            self.last_x: int = event.x
-            self.last_y: int = event.y
+            self.last_x = event.x
+            self.last_y = event.y
     
-    def stop_drag(self, event: tk.Event) -> None:
+    def stop_drag(self, _event: tk.Event) -> None:
         """停止拖拽"""
         self.dragging = False
+    
+    def on_click(self, event: tk.Event) -> None:
+        """自定义点击处理，实现双击检测 - 立即响应拖拽"""
+        current_time = event.time
+        current_x = event.x
+        current_y = event.y
+        
+        # 检查是否是双击
+        time_diff = current_time - self.last_click_time
+        distance = ((current_x - self.last_click_x) ** 2 + (current_y - self.last_click_y) ** 2) ** 0.5
+        
+        if time_diff <= self.double_click_threshold and distance <= self.double_click_distance:
+            # 是双击事件 - 停止拖拽并执行双击操作
+            self.dragging = False
+            self.on_double_click(event)
+            # 重置点击状态
+            self.last_click_time = 0
+            self.click_count = 0
+            return
+        
+        # 不是双击，记录点击信息
+        self.last_click_time = current_time
+        self.last_click_x = current_x
+        self.last_click_y = current_y
+        
+        # 立即开始拖拽，不再等待双击检测
+        self.start_drag(event)
+    
+    def on_double_click(self, event: tk.Event) -> None:
+        """双击事件：以鼠标点击位置为中心放大/缩小图像"""
+        # 将窗口坐标转换为画布坐标
+        canvas_x = self.canvas.canvasx(event.x)
+        canvas_y = self.canvas.canvasy(event.y)
+        
+        if self.scale == 1.0:
+            # 当前是原始大小，缩放到适应画布
+            self.auto_scale_to_fit()
+        else:
+            # 当前是缩小状态，以鼠标点击位置为中心放大到原始大小
+            # 计算需要放大的比例
+            scale_factor = 1.0 / self.scale
+            
+            # 应用缩放
+            self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            
+            # 更新缩放因子
+            self.scale = 1.0
+            
+            # 更新缩放比例显示
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
+    def reset_to_original(self):
+        """重置到原始大小和位置，通过重新绘制避免缩放累积问题"""
+        # 获取当前网络数据
+        current_network_data = getattr(self, 'network_data', None)
+        if current_network_data:
+            # 清除画布
+            self.canvas.delete(tk.ALL)
+            self.nodes.clear()
+            self.links.clear()
+            
+            # 重新绘制拓扑图
+            self.draw_topology(current_network_data)
+            
+            # 更新缩放因子
+            self.scale = 1.0
+            
+            # 更新缩放比例显示
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_mouse_wheel(self, event: tk.Event) -> None:
         """鼠标滚轮缩放"""
@@ -213,7 +298,7 @@ class NetworkTopologyVisualizer:
         # 缩放画布内容
         self.canvas.scale(tk.ALL, event.x, event.y, scale_factor, scale_factor)
     
-    def _create_shadow(self, points: list[float], shadow_x: float, shadow_y: float, width: float, height: float, smooth: bool = False) -> int:
+    def _create_shadow(self, points: list[float | int] | None, shadow_x: float, shadow_y: float, width: float, height: float, smooth: bool = False) -> int:
         """通用阴影创建方法
         
         Args:
@@ -227,11 +312,13 @@ class NetworkTopologyVisualizer:
         Returns:
             int: 阴影对象 ID
         """
-        # 将相对坐标转换为阴影的绝对坐标
-        shadow_points = []
+        if points is None:
+            points = [0.1, 0, 0.9, 0, 1, 0.1, 1, 0.9, 0.9, 1, 0.1, 1, 0, 0.9, 0, 0.1]
+        
+        shadow_points: list[float] = []
         for i in range(0, len(points), 2):
-            px = shadow_x + points[i] * width
-            py = shadow_y + points[i + 1] * height
+            px = shadow_x + float(points[i]) * width
+            py = shadow_y + float(points[i + 1]) * height
             shadow_points.extend([px, py])
         
         if smooth:
@@ -239,7 +326,9 @@ class NetworkTopologyVisualizer:
         else:
             return self.canvas.create_polygon(*shadow_points, fill="#000000", outline="")
     
-    def create_node_shape(self, x, y, width, height, shape="rectangle", fill=NODE_COLOR, outline=NODE_BORDER_COLOR, border_width=2, node_tag=None):
+    def create_node_shape(self, x: float, y: float, width: float, height: float, shape: str = "rectangle", 
+                          fill: str = NODE_COLOR, outline: str = NODE_BORDER_COLOR, border_width: int = 2, 
+                          node_tag: str | None = None) -> tuple[int, list[int], list[int]]:
         """创建不同形状的节点
         
         Args:
@@ -312,8 +401,9 @@ class NetworkTopologyVisualizer:
             # 创建圆角矩形
             radius = 10
             # 创建渐变效果（使用多层叠加）
+            gradient_items: list[int] = []
+            shadow_items: list[int] = []
             for i in range(3):
-                alpha = 0.3 + i * 0.2
                 gradient_fill = fill
                 if i > 0:
                     # 稍微亮一点的颜色作为渐变
@@ -355,7 +445,7 @@ class NetworkTopologyVisualizer:
             # 绑定 tag 到边框
             if node_tag:
                 self.canvas.itemconfig(shape_id, tags=(node_tag,))
-            return shape_id, gradient_items, shadow_items, shadow_items
+            return shape_id, gradient_items, shadow_items
         elif shape == "ellipse":
             # 创建渐变效果 - 填充层先创建
             for i in range(3):
@@ -970,7 +1060,7 @@ class NetworkTopologyVisualizer:
         if bbox:
             # 扩展边界框，确保所有节点都能被看到
             x1, y1, x2, y2 = bbox
-            padding = 100  # 增加边距
+            padding = 30  # 边距
             self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
             
             # 滚动到画布左上角，确保用户可以从开始查看
@@ -1017,7 +1107,7 @@ class NetworkTopologyVisualizer:
         level_x = {}
         max_level = max(node.get("level", 0) for node in self.nodes.values())
         for level in range(max_level + 1):
-            level_x[level] = 100 + level * NODE_SPACING
+            level_x[level] = 50 + level * NODE_SPACING
         
         vertical_spacing = 15  # 子节点之间的垂直间距
         
@@ -1082,13 +1172,13 @@ class NetworkTopologyVisualizer:
             return current_y - start_y
         
         # 从根节点开始布局
-        current_y = 50
+        current_y = 30
         for root in root_nodes:
             height = calculate_subtree_height(root)
             # 垂直居中 - 使用 800 作为画布高度，而不是 600
             start_y = current_y + (800 - height) / 2 if height < 800 else current_y
             assign_positions(root, start_y)
-            current_y += height + 50
+            current_y += height + 30
         
         # 移动节点到新位置
         self._move_all_nodes_to_new_positions()
@@ -1172,9 +1262,18 @@ class NetworkTopologyVisualizer:
         # 将所有连接线提升到最上层，确保连接线不被节点遮挡
         for link in self.links:
             self.canvas.tag_raise(link["line"])
+        
+        # 强制更新画布，确保所有内容都已渲染完成
+        self.canvas.update_idletasks()
     
-    def auto_scale_to_fit(self, retry_count=0):
-        """自动缩放画布以适应所有节点"""
+    def auto_scale_to_fit(self, retry_count=0, center_x=None, center_y=None):
+        """自动缩放画布以适应所有节点
+        
+        Args:
+            retry_count: 重试次数（内部使用）
+            center_x: 缩放中心X坐标，如果为None则使用内容中心
+            center_y: 缩放中心Y坐标，如果为None则使用内容中心
+        """
         bbox = self.canvas.bbox(tk.ALL)
         if not bbox:
             return
@@ -1189,16 +1288,16 @@ class NetworkTopologyVisualizer:
         # 如果画布尺寸还没有正确获取，尝试从父容器获取
         if canvas_width <= 1 or canvas_height <= 1:
             # 先更新父容器
-            if self.canvas_frame:
-                self.canvas_frame.update_idletasks()
-                canvas_width = self.canvas_frame.winfo_width()
-                canvas_height = self.canvas_frame.winfo_height()
+            if self.parent:
+                self.parent.update_idletasks()
+                canvas_width = self.parent.winfo_width()
+                canvas_height = self.parent.winfo_height()
         
         # 如果还是没有正确获取尺寸，延迟重试（最多重试50次，每次50ms，共2.5秒）
         if canvas_width <= 1 or canvas_height <= 1:
             if retry_count < 50:
                 # 延迟重试，等待GUI初始化完成
-                self.canvas.after(50, lambda: self.auto_scale_to_fit(retry_count + 1))
+                self.canvas.after(50, lambda: self.auto_scale_to_fit(retry_count + 1, center_x, center_y))
                 return
             else:
                 # 多次重试后仍无法获取尺寸，记录日志并返回
@@ -1217,19 +1316,31 @@ class NetworkTopologyVisualizer:
         margin = 15  # 最小边距，让内容更大
         scale_x = (canvas_width - 2 * margin) / content_width
         scale_y = (canvas_height - 2 * margin) / content_height
-        scale_factor = min(scale_x, scale_y)
+        target_scale_factor = min(scale_x, scale_y)
         
         # 限制缩放范围（允许更大的缩放比例，最大可放大到原始的1倍）
-        scale_factor = max(0.5, min(scale_factor, 1.0))
+        target_scale_factor = max(0.5, min(target_scale_factor, 1.0))
+        
+        # 计算实际缩放因子（相对于当前缩放）
+        scale_factor = target_scale_factor / self.scale
+        
+        # 确定缩放中心
+        if center_x is None or center_y is None:
+            # 使用内容中心
+            scale_center_x = (x1 + x2) / 2
+            scale_center_y = (y1 + y2) / 2
+        else:
+            # 使用指定的缩放中心（鼠标点击位置）
+            scale_center_x = center_x
+            scale_center_y = center_y
         
         # 应用缩放
         if scale_factor != 1.0:
-            # 计算缩放中心（内容中心）
-            center_x = (x1 + x2) / 2
-            center_y = (y1 + y2) / 2
-            
             # 缩放所有内容
-            self.canvas.scale(tk.ALL, center_x, center_y, scale_factor, scale_factor)
+            self.canvas.scale(tk.ALL, scale_center_x, scale_center_y, scale_factor, scale_factor)
+        
+        # 更新缩放因子（关键修复：之前没有更新self.scale）
+        self.scale = target_scale_factor
         
         # 更新滚动区域
         self.canvas.update_idletasks()
@@ -1254,9 +1365,6 @@ class NetworkTopologyVisualizer:
                 padding = 30
             
             self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
-        
-        # 更新缩放因子
-        self.scale *= scale_factor
         
         # 滚动到画布左上角，确保用户可以从开始查看
         self.canvas.xview_moveto(0)
@@ -1319,6 +1427,10 @@ class NetworkTopologyVisualizer:
     
     def on_mouse_move(self, event):
         """鼠标移动事件，用于显示节点悬停详情和悬停效果"""
+        # 拖拽期间不处理悬停检测，避免性能问题
+        if self.dragging:
+            return
+        
         # 将窗口坐标转换为画布坐标（考虑滚动）
         canvas_x = self.canvas.canvasx(event.x)
         canvas_y = self.canvas.canvasy(event.y)
@@ -1635,7 +1747,7 @@ class NetworkTopologyVisualizer:
     def _create_fullscreen_button(self):
         """创建全屏显示按钮"""
         self.fullscreen_button = tk.Button(
-            self.canvas_frame,
+            self.canvas,
             text="⛶",
             command=self.toggle_fullscreen,
             bg="#3498db",
@@ -1669,8 +1781,8 @@ class NetworkTopologyVisualizer:
     def enter_fullscreen(self):
         """进入全屏显示模式"""
         # 保存当前状态
-        self.original_parent = self.canvas_frame.winfo_parent()
-        self.original_geometry = self.canvas_frame.winfo_toplevel().geometry()
+        self.original_parent = self.parent.winfo_parent()
+        self.original_geometry = self.parent.winfo_toplevel().geometry()
         # 保存当前缩放因子
         self.original_scale = self.scale
         
@@ -1683,6 +1795,10 @@ class NetworkTopologyVisualizer:
         self.fullscreen_window.title("网络拓扑图 - 全屏模式")
         self.fullscreen_window.attributes("-fullscreen", True)
         self.fullscreen_window.config(bg=BACKGROUND_COLOR)
+        
+        # 设置全屏窗口为最顶层并获取焦点
+        self.fullscreen_window.lift()
+        self.fullscreen_window.focus_set()
         
         # 创建新的画布框架
         self.fullscreen_canvas_frame = Frame(self.fullscreen_window, bg=BACKGROUND_COLOR)
@@ -1748,6 +1864,9 @@ class NetworkTopologyVisualizer:
         self.fullscreen_canvas.bind("<B1-Motion>", self.drag_fullscreen)
         self.fullscreen_canvas.bind("<MouseWheel>", self.on_mouse_wheel_fullscreen)
         
+        # 绑定ESC键退出全屏
+        self.fullscreen_window.bind("<Escape>", lambda e: self.exit_fullscreen())
+        
         # 更新状态
         self.is_fullscreen = True
     
@@ -1784,7 +1903,8 @@ class NetworkTopologyVisualizer:
                 fill = source_canvas.itemcget(item, "fill")
                 outline = source_canvas.itemcget(item, "outline")
                 smooth = source_canvas.itemcget(item, "smooth")
-                target_canvas.create_polygon(*coords, fill=fill, outline=outline, smooth=smooth)
+                width = source_canvas.itemcget(item, "width")
+                target_canvas.create_polygon(*coords, fill=fill, outline=outline, smooth=smooth, width=width)
             elif item_type == "oval":
                 fill = source_canvas.itemcget(item, "fill")
                 outline = source_canvas.itemcget(item, "outline")
@@ -1793,7 +1913,16 @@ class NetworkTopologyVisualizer:
             elif item_type == "line":
                 fill = source_canvas.itemcget(item, "fill")
                 width = source_canvas.itemcget(item, "width")
-                target_canvas.create_line(*coords, fill=fill, width=width)
+                arrow = source_canvas.itemcget(item, "arrow")
+                arrowshape = source_canvas.itemcget(item, "arrowshape")
+                # 解析arrowshape，它返回的是字符串格式如 "10 15 5"
+                arrowshape_tuple = ()
+                if arrowshape:
+                    try:
+                        arrowshape_tuple = tuple(map(int, arrowshape.split()))
+                    except (ValueError, AttributeError):
+                        arrowshape_tuple = (10, 15, 5)
+                target_canvas.create_line(*coords, fill=fill, width=width, arrow=arrow, arrowshape=arrowshape_tuple)
             elif item_type == "text":
                 text = source_canvas.itemcget(item, "text")
                 fill = source_canvas.itemcget(item, "fill")

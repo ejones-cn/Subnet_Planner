@@ -36,6 +36,7 @@ from tkinter import ttk, filedialog
 # 本地模块
 from version import get_version
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
+from config_manager import get_config
 from ip_subnet_calculator import format_large_number
 from ip_subnet_calculator import (
     split_subnet,
@@ -902,6 +903,12 @@ class SubnetPlannerApp:
         # 初始化导出工具
         self.export_utils = ExportUtils()
 
+        # 获取系统双击间隔设置
+        try:
+            self.double_click_interval = self.root.tk.call('tk', 'getDoubleClickTime')
+        except Exception:
+            self.double_click_interval = 150  # 默认值
+
         self.root = main_window
         self.root.title(f"{_("app_name")} v{self.app_version}")
         # 设置应用图标
@@ -989,38 +996,12 @@ class SubnetPlannerApp:
 
         # 获取当前主题的背景色
         
-        # 加载自动备份周期配置
-        def load_auto_backup_config():
-            backup_config_file = os.path.join(os.path.dirname(__file__), 'ipam_backups', 'backup_config.json')
-            try:
-                if os.path.exists(backup_config_file):
-                    with open(backup_config_file, 'r', encoding='utf-8') as f:
-                        config = json.load(f)
-                        # 直接获取英文频率值
-                        frequency = config.get('auto_backup_frequency', 'daily')
-                        # 验证频率值是否有效
-                        valid_frequencies = [None, 'hourly', 'daily', 'weekly', 'monthly']
-                        if frequency in valid_frequencies:
-                            return frequency
-                        # 向后兼容：处理旧格式的中文值
-                        else:
-                            frequency_map = {
-                                "禁用": None,
-                                "每小时": "hourly",
-                                "每日": "daily",
-                                "每周": "weekly",
-                                "每月": "monthly"
-                            }
-                            return frequency_map.get(frequency, 'weekly')
-            except Exception:
-                pass
-            return 'weekly'
-        
         # 启动时执行自动备份检查
         try:
             from datetime import datetime
-            # 执行自动备份，使用配置的频率
-            frequency = load_auto_backup_config()
+            # 从配置管理器获取自动备份频率
+            config = get_config()
+            frequency = config.get_auto_backup_frequency()
             if frequency:
                 # 获取最后一次备份时间
                 last_backup_time = self.ipam.get_last_backup_time()
@@ -1798,12 +1779,6 @@ class SubnetPlannerApp:
                 self.edit_entry.destroy()
             self._cleanup_edit_state()
         
-        # 当切换到可视化页面时，触发自适应缩放
-        # 标签页顺序: 0-子网规划, 1-子网切分, 2-高级工具, 3-IP地址管理, 4-可视化
-        if tab_index == 4:
-            # 延迟调用自适应缩放，确保GUI完全渲染
-            self.root.after(100, lambda: self.topology_visualizer.auto_scale_to_fit())
-        
     def _create_requirements_tree(self, parent, height=5, columns=("index", "name", "hosts"),
                                 double_click_handler=None):
         """创建需求表格（子网需求表或需求池表）的通用方法
@@ -1861,17 +1836,12 @@ class SubnetPlannerApp:
         # IP地址管理（IPAM）模块
         self.ipam_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
         self.setup_ipam_page()
-        
-        # 可视化模块
-        self.visualization_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
-        self.setup_visualization_page()
 
         # 添加顶级标签页
         self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec")
         self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0")
         self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9")
         self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
-        self.top_level_notebook.add_tab(_("visualization"), self.visualization_frame, "#f3e5f5")
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
@@ -9338,23 +9308,40 @@ class SubnetPlannerApp:
         # 添加斑马纹样式
         self.update_table_zebra_stripes(self.ipam_ip_tree)
         
-        # 统计和图表标签页
-        stats_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_green_style)
+        # 统计和图表标签页（使用浅紫色样式，与标签颜色匹配）
+        stats_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_purple_style)
         
-        # 配置统计区域的网格布局
+        # 配置统计区域的网格布局（仅一列，让stats_container自适应整个区域）
         stats_frame.grid_rowconfigure(0, weight=1)
         stats_frame.grid_columnconfigure(0, weight=1)
-        stats_frame.grid_columnconfigure(1, weight=1)
         
-        # 添加标签页，设置不同的颜色
-        self.ipam_notebook.add_tab(_('ip_address_management'), ip_management_frame, "#e3f2fd")  # 浅蓝色
-        self.ipam_notebook.add_tab(_('statistical_analysis'), stats_frame, "#e8f5e9")  # 浅绿色
+        # 添加标签页（调整顺序：地址管理 → 网络拓扑 → 统计分析，颜色次序遵循规范：浅蓝色→浅绿色→浅紫色）
+        self.ipam_notebook.add_tab(_('ip_address_management'), ip_management_frame, "#e3f2fd")  # 浅蓝色（第一个位置）
         
-
+        # 网络拓扑标签页（第二个位置，使用浅绿色）
+        topology_frame = ttk.Frame(self.ipam_notebook.content_area, padding="5", style=self.ipam_notebook.light_green_style)
+        self.ipam_notebook.add_tab(_('network_topology'), topology_frame, "#e8f5e9")  # 浅绿色（第二个位置）
         
-        # 统计信息框架
-        stats_info_frame = ttk.Frame(stats_frame)
-        stats_info_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        # 配置网络拓扑区域的网格布局
+        topology_frame.grid_rowconfigure(0, weight=1)
+        topology_frame.grid_columnconfigure(0, weight=1)
+        
+        # 创建拓扑可视化器，直接放在拓扑页面上
+        self.topology_visualizer = NetworkTopologyVisualizer(topology_frame)
+        
+        # 统计分析标签页（第三个位置，使用浅紫色）
+        self.ipam_notebook.add_tab(_('statistical_analysis'), stats_frame, "#f3e5f5")  # 浅紫色（第三个位置）
+        
+        # 创建父容器，包裹统计信息和图表（自适应整个stats_frame）
+        stats_container = ttk.Frame(stats_frame, padding="10")
+        stats_container.grid(row=0, column=0, sticky="nsew")
+        stats_container.rowconfigure(0, weight=1)
+        stats_container.columnconfigure(0, weight=1)
+        stats_container.columnconfigure(1, weight=1)
+        
+        # 统计信息框架（增加内边距）
+        stats_info_frame = ttk.Frame(stats_container, padding="15")
+        stats_info_frame.grid(row=0, column=0, padx=(0, 20), pady=5, sticky="nsew")
         
         # 统计数据 - 分两列显示
         self.stats_labels = {}
@@ -9376,15 +9363,15 @@ class SubnetPlannerApp:
             column = i % 2 * 2
             ttk.Label(stats_info_frame, text=label).grid(row=row, column=column, sticky="e", pady=3, padx=(0, 10))
             self.stats_labels[key] = ttk.Label(stats_info_frame, text="0")
-            self.stats_labels[key].grid(row=row, column=column + 1, sticky="w", pady=3)
+            self.stats_labels[key].grid(row=row, column=column + 1, sticky="w", pady=3, padx=(5, 30))
         
         # 添加可视化图表
-        chart_frame = ttk.LabelFrame(stats_frame, text=_('ip_usage_statistics'), padding="10")
+        chart_frame = ttk.LabelFrame(stats_container, text=_('ip_usage_statistics'), padding="10")
         chart_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         
-        # 创建Canvas用于绘制饼图
-        self.stats_canvas = tk.Canvas(chart_frame, width=400, height=300, bg="white")
-        self.stats_canvas.pack(fill=tk.BOTH, expand=True)
+        # 创建Canvas用于绘制饼图（使用应用标准背景色，增加内边距）
+        self.stats_canvas = tk.Canvas(chart_frame, width=400, height=300, bg="#2c3e50", highlightthickness=0)
+        self.stats_canvas.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
         # 添加画布大小变化事件监听器
         def on_canvas_configure(event):
@@ -9400,6 +9387,9 @@ class SubnetPlannerApp:
         self.refresh_ipam_networks()
         # 添加样例数据
         self.add_ipam_sample_data()
+        
+        # 自动选择第一个网段并刷新网络拓扑
+        self._auto_select_first_network()
     
     def refresh_ipam_networks(self):
         """刷新IPAM网络列表，实现分层显示"""
@@ -9461,6 +9451,21 @@ class SubnetPlannerApp:
         
         # 更新斑马纹样式
         self.update_table_zebra_stripes(self.ipam_network_tree)
+    
+    def _auto_select_first_network(self):
+        """自动选择第一个网段并刷新网络拓扑"""
+        # 获取所有顶层网段
+        top_level_items = self.ipam_network_tree.get_children()
+        if top_level_items:
+            # 选择第一个网段
+            first_item = top_level_items[0]
+            self.ipam_network_tree.selection_set(first_item)
+            
+            # 获取网段信息并刷新相关视图
+            network = self.ipam_network_tree.item(first_item, 'values')[0]
+            if network:
+                self.refresh_ipam_ips(network)
+                self.refresh_visualization(network)
     
     def _build_network_hierarchy(self, networks):
         """构建网段层次结构
@@ -11288,10 +11293,6 @@ class SubnetPlannerApp:
                             self.show_info(_('success'), f"{_('successfully_deleted_backups', count=deleted_count)}")
                     except Exception as e:
                         self.show_error(_('error'), f"{_('delete_failed')}: {str(e)}")
-            
-            # 配置文件路径 - 使用与备份系统相同的配置文件
-            backup_config_file = os.path.join(os.path.dirname(__file__), 'ipam_backups', 'backup_config.json')
-            
             # 频率映射（英文到本地化）
             def get_frequency_map():
                 return {
@@ -11310,14 +11311,12 @@ class SubnetPlannerApp:
             # 加载配置
             def load_config():
                 try:
-                    if os.path.exists(backup_config_file):
-                        with open(backup_config_file, 'r', encoding='utf-8') as f:
-                            config = json.load(f)
-                            # 获取英文频率值
-                            english_frequency = config.get('auto_backup_frequency', 'daily')
-                            # 转换为本地化值
-                            frequency_map = get_frequency_map()
-                            return frequency_map.get(english_frequency, _('daily'))
+                    # 使用配置管理器获取自动备份频率
+                    config = get_config()
+                    english_frequency = config.get_auto_backup_frequency()
+                    # 转换为本地化值
+                    frequency_map = get_frequency_map()
+                    return frequency_map.get(english_frequency, _('daily'))
                 except Exception:
                     pass
                 return _('daily')
@@ -11325,31 +11324,13 @@ class SubnetPlannerApp:
             # 保存配置
             def save_config(frequency):
                 try:
-                    # 加载现有配置或创建新配置
-                    config = {}
-                    if os.path.exists(backup_config_file):
-                        try:
-                            with open(backup_config_file, 'r', encoding='utf-8') as f:
-                                config = json.load(f)
-                        except Exception:
-                            pass
-                    
                     # 将本地化频率值转换为英文
                     reverse_map = get_reverse_frequency_map()
                     english_frequency = reverse_map.get(frequency, 'daily')
                     
-                    # 更新自动备份周期设置（使用英文值）
-                    config['auto_backup_frequency'] = english_frequency
-                    
-                    # 确保备份目录存在
-                    backup_dir = os.path.dirname(backup_config_file)
-                    if not os.path.exists(backup_dir):
-                        os.makedirs(backup_dir)
-                    
-                    # 保存配置文件
-                    with open(backup_config_file, 'w', encoding='utf-8') as f:
-                        json.dump(config, f, ensure_ascii=False, indent=2)
-                    return True
+                    # 使用配置管理器保存自动备份频率
+                    config = get_config()
+                    return config.set_auto_backup_frequency(english_frequency)
                 except Exception:
                     return False
             
@@ -11864,10 +11845,10 @@ class SubnetPlannerApp:
                 print("画布未初始化，等待下次绘制")
                 return
             
-            # 计算饼图中心和半径
+            # 计算饼图中心和半径（增加内部边距）
             center_x = width // 2
             center_y = height // 2
-            radius = min(center_x, center_y) - 60
+            radius = min(center_x, center_y) - 80
             
             # 计算总IP数
             total = allocated + reserved + available
@@ -11905,47 +11886,47 @@ class SubnetPlannerApp:
                 label_x = center_x + (radius + 30) * math.cos(mid_angle_rad)
                 label_y = center_y - (radius + 30) * math.sin(mid_angle_rad)
                 
-                # 绘制标签
+                # 绘制标签（浅色文字适应深色背景）
                 percentage = (value / total) * 100
                 label_text = f"{labels[i]}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 10), fill="#333333")
+                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 10), fill="#ffffff")
                 
                 start_angle = end_angle
             
-            # 绘制中心文字
+            # 绘制中心文字（浅色文字适应深色背景）
             self.stats_canvas.create_text(
                 center_x, center_y, 
                 text=f"总IP: {total}",
                 font=("微软雅黑", 12, "bold"),
-                fill="#333333"
+                fill="#ffffff"
             )
             
-            # 绘制利用率信息
+            # 绘制利用率信息（浅色文字适应深色背景）
             self.stats_canvas.create_text(
                 center_x, center_y + radius + 30, 
                 text=f"利用率: {utilization_rate:.1f}%",
                 font=("微软雅黑", 10, "bold"),
-                fill="#333333"
+                fill="#ffffff"
             )
             
-            # 绘制平均分配率
+            # 绘制平均分配率（浅色文字适应深色背景）
             self.stats_canvas.create_text(
                 center_x, center_y + radius + 50, 
                 text=f"平均每网络分配: {avg_allocation_rate:.1f}",
                 font=("微软雅黑", 10),
-                fill="#333333"
+                fill="#ffffff"
             )
             
-            # 绘制图例
-            legend_x = 20
-            legend_y = 20
+            # 绘制图例（增加边距）
+            legend_x = 30
+            legend_y = 30
             for i, (color, label, value) in enumerate(zip(colors, labels, values)):
-                # 绘制颜色方块
-                self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 15, legend_y + 15 + i * 20, fill=color, outline="#333333")
-                # 绘制图例文本
+                # 绘制颜色方块（浅色边框适应深色背景）
+                self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 15, legend_y + 15 + i * 20, fill=color, outline="#ffffff")
+                # 绘制图例文本（浅色文字适应深色背景）
                 percentage = (value / total) * 100 if total > 0 else 0
                 legend_text = f"{label}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i * 20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#333333")
+                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i * 20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#ffffff")
         except Exception as e:
             print(f"绘制饼图失败: {e}")
     
@@ -12455,6 +12436,8 @@ class SubnetPlannerApp:
             item = selected_items[0]
             network = self.ipam_network_tree.item(item, 'values')[0]
             self.refresh_ipam_ips(network)
+            # 刷新网络拓扑图
+            self.refresh_visualization(network)
         else:
             # 选中多个网段，显示所有选中网段的IP地址
             # 收集所有IP地址记录，避免重复显示
@@ -12500,6 +12483,11 @@ class SubnetPlannerApp:
             
             # 更新斑马纹样式
             self.update_table_zebra_stripes(self.ipam_ip_tree)
+            
+            # 选中多个网段时，使用第一个网段刷新网络拓扑
+            if selected_items:
+                network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+                self.refresh_visualization(network)
         
         # 显示网络前缀到IP输入框
         if network:
@@ -12822,8 +12810,8 @@ class SubnetPlannerApp:
         is_double_click = False
         if hasattr(self, '_last_click_time'):
             time_diff = current_time - self._last_click_time
-            # 只有当时间间隔小于250毫秒时，才认为是真正的双击
-            if time_diff <= 250:
+            # 使用系统默认的双击间隔
+            if time_diff <= self.double_click_interval:
                 is_double_click = True
         # 记录当前点击时间
         self._last_click_time = current_time
@@ -15323,51 +15311,18 @@ class SubnetPlannerApp:
         else:
             return None
 
-    def setup_visualization_page(self):
-        """设置可视化页面"""
-        # 配置主框架布局
-        self.visualization_frame.grid_rowconfigure(0, weight=1)
-        self.visualization_frame.grid_columnconfigure(0, weight=1)
-
-        # 网络拓扑图区域（扩展到整个页面）
-        topology_frame = ttk.LabelFrame(self.visualization_frame, text=_("network_topology"), padding="10")
-        topology_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        # 创建拓扑可视化器
-        self.topology_visualizer = NetworkTopologyVisualizer(topology_frame)
-
-        # 控制区域
-        control_frame = ttk.Frame(self.visualization_frame, padding="10")
-        control_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-
-        # 网络选择
-        ttk.Label(control_frame, text=_("select_network") + ":").pack(side=tk.LEFT, padx=5)
-        self.visualization_network_var = tk.StringVar()
-        self.visualization_network_combobox = ttk.Combobox(control_frame, textvariable=self.visualization_network_var, state="readonly")
-        self.visualization_network_combobox.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-
-        # 刷新按钮
-        ttk.Button(control_frame, text=_("refresh"), command=self.refresh_visualization).pack(side=tk.RIGHT, padx=5)
-
-        # 初始化数据
-        self.refresh_visualization_networks()
-        # 延迟绘制初始网络拓扑，确保GUI完全初始化
-        self.root.after(200, self.refresh_visualization)
-
-    def refresh_visualization_networks(self):
-        """刷新可视化网络列表"""
-        # 获取所有网络
-        networks = self.ipam.get_all_networks()
-        network_list = [network['network'] for network in networks]
+    def refresh_visualization(self, selected_network=None):
+        """刷新可视化内容
         
-        # 更新下拉列表
-        self.visualization_network_combobox['values'] = network_list
-        if network_list:
-            self.visualization_network_var.set(network_list[0])
-
-    def refresh_visualization(self):
-        """刷新可视化内容"""
-        selected_network = self.visualization_network_var.get()
+        Args:
+            selected_network: 要显示的网络CIDR，如果为None则使用当前选中的网段
+        """
+        # 如果没有传入网络参数，尝试从网段表的选中项获取
+        if not selected_network:
+            selected_items = self.ipam_network_tree.selection()
+            if selected_items:
+                selected_network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+        
         if not selected_network:
             return
         
@@ -15614,9 +15569,6 @@ class SubnetPlannerApp:
             print(f"根节点子节点数量: {len(network_data[0]['children'])}")
         
         self.topology_visualizer.draw_topology(network_data)
-        
-        # 使用after延迟调用自动缩放，确保GUI完全渲染
-        self.root.after(100, lambda: self.topology_visualizer.auto_scale_to_fit())
     
     def reserve_ip(self):
         """保留IP地址"""
@@ -15658,6 +15610,21 @@ if __name__ == "__main__":
     
     # 创建主窗口
     root = tk.Tk()
+    
+    # 设置双击间隔
+    try:
+        # 尝试获取系统双击间隔（毫秒）
+        double_click_time = root.tk.call('tk', 'getDoubleClickTime')
+    except Exception:
+        # 如果获取失败，使用合理的默认值（Windows默认通常是500ms）
+        double_click_time = 150
+    
+    # 设置全局双击间隔
+    try:
+        root.tk.call('tk', 'setDoubleClickTime', double_click_time)
+        print(f"[INFO] 双击间隔已设置为: {double_click_time}ms")
+    except Exception as e:
+        print(f"[WARNING] 无法设置双击间隔: {e}")
     
     # 获取DPI缩放因子（如果未定义则默认为1.0）
     # 全局变量已在文件开头定义，无需再次声明

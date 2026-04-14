@@ -329,6 +329,24 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     # 生成带版本号的输出文件名
     output_filename = f"SubnetPlannerV{version}.exe"
     
+    # 在编译前将数据库和备份目录移到临时位置，避免被打包
+    temp_db_dir = os.path.join(os.path.expanduser("~"), ".subnet_planner_temp")
+    original_db = "ipam_data.db"
+    original_backup_dir = "ipam_backups"
+    should_restore = False
+    
+    if os.path.exists(original_db) or os.path.exists(original_backup_dir):
+        os.makedirs(temp_db_dir, exist_ok=True)
+        should_restore = True
+        
+        if os.path.exists(original_db):
+            shutil.move(original_db, os.path.join(temp_db_dir, original_db))
+            print(f"⏳ 临时移动数据库文件: {original_db}")
+        
+        if os.path.exists(original_backup_dir):
+            shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
+            print(f"⏳ 临时移动备份目录: {original_backup_dir}")
+    
     # 编译命令 - 使用Nuitka新版本支持的选项
     cmd: list[str] = [
         sys.executable, "-m", "nuitka",
@@ -336,10 +354,13 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         "--windows-icon-from-ico=Subnet_Planner.ico",
         "--include-data-file=translations.json=translations.json",
         "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
-        "--include-data-file=icon.ico=icon.ico",
         "--include-data-dir=Picture=Picture",
         "--enable-plugin=tk-inter",
         "--windows-console-mode=disable",  # 禁用控制台
+        "--include-windows-runtime-dlls=no",  # 不包含Windows运行时DLL，减小文件大小
+        "--noinclude-default-mode=error",  # 不包含默认模块
+        "--assume-yes-for-downloads",  # 自动下载依赖
+        "--enable-plugin=anti-bloat",  # 启用反膨胀插件
         # 移除--remove-output选项，避免杀毒软件导致的删除失败
         f"--product-name={version_resource['product_name']}",  # 使用中文产品名称
         f"--product-version={version}",
@@ -408,6 +429,19 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     except Exception as e:
         print(f"❌ 编译过程中发生错误: {e}")
         return False
+    finally:
+        # 编译完成后恢复数据库和备份目录
+        if should_restore:
+            temp_db = os.path.join(temp_db_dir, original_db)
+            temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
+            
+            if os.path.exists(temp_db):
+                shutil.move(temp_db, original_db)
+                print(f"⏳ 恢复数据库文件: {original_db}")
+            
+            if os.path.exists(temp_backup_dir):
+                shutil.move(temp_backup_dir, original_backup_dir)
+                print(f"⏳ 恢复备份目录: {original_backup_dir}")
 
 
 
@@ -437,7 +471,7 @@ block_cipher = None
 a = Analysis(['windows_app.py'],
              pathex=['{os.getcwd()}'],
              binaries=[],
-             datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.'), ('icon.ico', '.'), ('Picture', 'Picture')],
+             datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.'), ('Picture', 'Picture')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
