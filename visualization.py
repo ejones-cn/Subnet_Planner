@@ -250,6 +250,10 @@ class NetworkTopologyVisualizer:
             # 重置点击状态
             self.last_click_time = 0
             self.click_count = 0
+            
+            # 执行双击缩放
+            self.on_double_click(event)
+            
             return
         
         # 不是双击，记录点击信息
@@ -279,6 +283,84 @@ class NetworkTopologyVisualizer:
             # 更新缩放比例显示
             if hasattr(self, 'scale_label'):
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
+    def on_double_click(self, event):
+        """双击缩放功能"""
+        current_scale = getattr(self, 'scale', 1.0)
+        
+        self.canvas.update_idletasks()
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        
+        if current_scale < 1.0:
+            # 放大到100%，以鼠标点击位置为中心
+            canvas_x = self.canvas.canvasx(event.x)
+            canvas_y = self.canvas.canvasy(event.y)
+            
+            scale_factor = 1.0 / current_scale
+            
+            self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
+            
+            center_canvas_x = self.canvas.canvasx(canvas_width / 2)
+            center_canvas_y = self.canvas.canvasy(canvas_height / 2)
+            
+            dx = center_canvas_x - canvas_x
+            dy = center_canvas_y - canvas_y
+            self.canvas.move(tk.ALL, dx, dy)
+            
+            bbox = self.canvas.bbox(tk.ALL)
+            if bbox:
+                self.canvas.config(scrollregion=self._expanded_bbox(bbox))
+            
+            self.scale = 1.0
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 缩小到50%
+            canvas_x = self.canvas.canvasx(event.x)
+            canvas_y = self.canvas.canvasy(event.y)
+            
+            bbox = self.canvas.bbox(tk.ALL)
+            if not bbox:
+                return
+            
+            x1, y1, x2, y2 = bbox
+            content_width = x2 - x1
+            content_height = y2 - y1
+            scaled_width = content_width * 0.5
+            scaled_height = content_height * 0.5
+            margin = 30
+            
+            if scaled_width <= canvas_width - margin * 2 and scaled_height <= canvas_height - margin * 2:
+                # 小图：整体缩小并居中
+                self.canvas.move(tk.ALL, -x1, -y1)
+                self.canvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
+                center_x = (canvas_width - scaled_width) / 2
+                center_y = (canvas_height - scaled_height) / 2
+                self.canvas.move(tk.ALL, center_x, center_y)
+            else:
+                # 大图：以点击位置为中心缩小
+                self.canvas.scale(tk.ALL, canvas_x, canvas_y, 0.5, 0.5)
+                center_canvas_x = self.canvas.canvasx(canvas_width / 2)
+                center_canvas_y = self.canvas.canvasy(canvas_height / 2)
+                dx = center_canvas_x - canvas_x
+                dy = center_canvas_y - canvas_y
+                self.canvas.move(tk.ALL, dx, dy)
+            
+            bbox = self.canvas.bbox(tk.ALL)
+            if bbox:
+                self.canvas.config(scrollregion=self._expanded_bbox(bbox))
+            self.canvas.xview_moveto(0)
+            self.canvas.yview_moveto(0)
+            
+            self.scale = 0.5
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
+    def _expanded_bbox(self, bbox, padding=60):
+        """扩展边界框，添加内边距"""
+        x1, y1, x2, y2 = bbox
+        return (x1 - padding, y1 - padding, x2 + padding, y2 + padding)
     
     def on_mouse_wheel(self, event: tk.Event) -> None:
         """鼠标滚轮缩放 - 以鼠标位置为中心"""
@@ -2395,6 +2477,10 @@ class NetworkTopologyVisualizer:
                 lambda: setattr(self, '_in_double_click_cooldown', False)
             )
             self.last_click_time = 0
+            
+            # 执行双击缩放
+            self.on_double_click_fullscreen(event)
+            
             return
         
         # 不是双击，记录点击信息
@@ -2404,6 +2490,127 @@ class NetworkTopologyVisualizer:
         
         # 立即开始拖拽
         self.start_drag(event)
+    
+    def on_double_click_fullscreen(self, event):
+        """全屏模式下双击缩放功能"""
+        current_scale = getattr(self, 'scale', 1.0)
+        
+        self.fullscreen_canvas.update_idletasks()
+        canvas_width = self.fullscreen_canvas.winfo_width()
+        canvas_height = self.fullscreen_canvas.winfo_height()
+        center_x = canvas_width / 2
+        center_y = canvas_height / 2
+        
+        if current_scale < 1.0:
+            # 放大到100%，确保容器中心始终在图形区域内
+            window_x = event.x
+            window_y = event.y
+            
+            scale_factor = 1.0 / current_scale
+            
+            # 获取缩放前的内容边界框
+            bbox_before = self.fullscreen_canvas.bbox(tk.ALL)
+            
+            # 判断点击位置是否在图形区域内
+            click_inside = False
+            if bbox_before:
+                bx1, by1, bx2, by2 = bbox_before
+                if bx1 <= window_x <= bx2 and by1 <= window_y <= by2:
+                    click_inside = True
+            
+            if click_inside:
+                # 点击在图形内部：以点击位置为中心缩放
+                self.fullscreen_canvas.scale(tk.ALL, window_x, window_y, scale_factor, scale_factor)
+                dx = center_x - window_x
+                dy = center_y - window_y
+                self.fullscreen_canvas.move(tk.ALL, dx, dy)
+            else:
+                # 点击在图形外部：根据方向找到最边缘节点图形的中点
+                target_x = window_x
+                target_y = window_y
+                
+                if bbox_before:
+                    bx1, by1, bx2, by2 = bbox_before
+                    # 计算点击位置相对于图形的方向
+                    if window_x < bx1:
+                        # 点击在图形左侧：目标为左边缘中点
+                        target_x = bx1
+                        target_y = (by1 + by2) / 2
+                    elif window_x > bx2:
+                        # 点击在图形右侧：目标为右边缘中点
+                        target_x = bx2
+                        target_y = (by1 + by2) / 2
+                    elif window_y < by1:
+                        # 点击在图形上方：目标为上边缘中点
+                        target_x = (bx1 + bx2) / 2
+                        target_y = by1
+                    elif window_y > by2:
+                        # 点击在图形下方：目标为下边缘中点
+                        target_x = (bx1 + bx2) / 2
+                        target_y = by2
+                
+                # 以目标位置为基准缩放
+                self.fullscreen_canvas.scale(tk.ALL, target_x, target_y, scale_factor, scale_factor)
+                dx = center_x - target_x
+                dy = center_y - target_y
+                self.fullscreen_canvas.move(tk.ALL, dx, dy)
+            
+            # 最终检查：确保容器中心在图形外框内部
+            bbox = self.fullscreen_canvas.bbox(tk.ALL)
+            if bbox:
+                bx1, by1, bx2, by2 = bbox
+                adjust_x = 0
+                adjust_y = 0
+                
+                if center_x < bx1:
+                    adjust_x = bx1 - center_x
+                elif center_x > bx2:
+                    adjust_x = bx2 - center_x
+                
+                if center_y < by1:
+                    adjust_y = by1 - center_y
+                elif center_y > by2:
+                    adjust_y = by2 - center_y
+                
+                if adjust_x != 0 or adjust_y != 0:
+                    self.fullscreen_canvas.move(tk.ALL, adjust_x, adjust_y)
+            
+            self.scale = 1.0
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 缩小到50%
+            window_x = event.x
+            window_y = event.y
+            
+            bbox = self.fullscreen_canvas.bbox(tk.ALL)
+            if not bbox:
+                return
+            
+            x1, y1, x2, y2 = bbox
+            content_width = x2 - x1
+            content_height = y2 - y1
+            scaled_width = content_width * 0.5
+            scaled_height = content_height * 0.5
+            margin = 30
+            
+            if scaled_width <= canvas_width - margin * 2 and scaled_height <= canvas_height - margin * 2:
+                # 小图：整体缩小并居中
+                self.fullscreen_canvas.move(tk.ALL, -x1, -y1)
+                self.fullscreen_canvas.scale(tk.ALL, 0, 0, 0.5, 0.5)
+                cx = (canvas_width - scaled_width) / 2
+                cy = (canvas_height - scaled_height) / 2
+                self.fullscreen_canvas.move(tk.ALL, cx, cy)
+            else:
+                # 大图：以点击位置为中心缩小
+                self.fullscreen_canvas.scale(tk.ALL, window_x, window_y, 0.5, 0.5)
+                dx = center_x - window_x
+                dy = center_y - window_y
+                self.fullscreen_canvas.move(tk.ALL, dx, dy)
+            
+            self.scale = 0.5
+            if hasattr(self, 'scale_label'):
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_mouse_move_fullscreen(self, event):
         """全屏模式下鼠标移动事件，用于显示节点悬停详情"""

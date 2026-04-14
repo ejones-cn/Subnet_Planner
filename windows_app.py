@@ -15609,8 +15609,9 @@ if __name__ == "__main__":
     try:
         root.tk.call('tk', 'setDoubleClickTime', double_click_time)
         print(f"[INFO] 双击间隔已设置为: {double_click_time}ms")
-    except Exception as e:
-        print(f"[WARNING] 无法设置双击间隔: {e}")
+    except Exception:
+        # 在某些系统上不支持此命令，使用系统默认值即可
+        pass
     
     # 获取DPI缩放因子（如果未定义则默认为1.0）
     # 全局变量已在文件开头定义，无需再次声明
