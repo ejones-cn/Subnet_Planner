@@ -53,7 +53,7 @@ from ip_subnet_calculator import (
 from export_utils import ExportUtils
 from chart_utils import draw_text_with_stroke, draw_distribution_chart
 from ipam_sqlite import IPAMSQLite
-from visualization import NetworkTopologyVisualizer, IPAllocationVisualizer
+from visualization import NetworkTopologyVisualizer
 from style_manager import (
     init_style_manager,
     update_styles,

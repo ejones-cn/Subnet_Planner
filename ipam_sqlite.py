@@ -59,8 +59,8 @@ class IPAMSQLite:
             if os.path.exists(exe_path):
                 app_dir = os.path.dirname(exe_path)
         
-        # 如果 sys.argv[0] 不可用，尝试使用 ctypes（Windows）
-        if app_dir is None:
+        # 如果 sys.argv[0] 不可用，尝试使用 ctypes（仅限Windows平台）
+        if app_dir is None and sys.platform == 'win32':
             try:
                 import ctypes
                 from ctypes import wintypes
