@@ -4354,6 +4354,11 @@ class SubnetPlannerApp:
         # 先获取并添加父网段（如果不存在）
         parent_cidr = self.planning_parent_entry.get().strip()
         if parent_cidr:
+            try:
+                ipaddress.ip_network(parent_cidr, strict=False)
+            except ValueError:
+                self.show_error(_("error"), _("invalid_cidr_format"))
+                return
             # 添加父网段，名称设置为"同步规划网段"加上CIDR
             result = self.ipam.add_network(parent_cidr, f"同步规划网段 - {parent_cidr}")
             # 如果已存在会返回False，但不需要处理这个错误
