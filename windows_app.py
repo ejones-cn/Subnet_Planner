@@ -12611,14 +12611,14 @@ class SubnetPlannerApp:
             for s in self._current_ip_shadows:
                 try:
                     s.destroy()
-                except Exception:
+                except tk.TclError:
                     pass
-        except Exception:
+        except tk.TclError:
             pass
         # 再关闭菜单
         try:
             self._current_ip_popup.destroy()
-        except Exception:
+        except tk.TclError:
             pass
         # 移除事件绑定
         if self._ip_popup_click_bind_id:

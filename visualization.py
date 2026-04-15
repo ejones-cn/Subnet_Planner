@@ -142,11 +142,11 @@ class NetworkTopologyVisualizer:
             self.double_click_threshold: int = 500  # 默认值（毫秒）
         self.double_click_distance: int = 5  # 双击位置距离阈值（像素）
         self.click_count: int = 0
-        self.click_timer: str | None = None
+        self.click_timer: int | None = None
         
         # 双击冷却相关
         self._in_double_click_cooldown: bool = False
-        self._double_click_cooldown_timer: str | None = None
+        self._double_click_cooldown_timer: int | None = None
         self._last_double_click_scale: float = 1.0
         self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
@@ -1121,6 +1121,10 @@ class NetworkTopologyVisualizer:
         
         # 重置缩放标志，允许新的自适应缩放
         self._scaled = False
+        
+        # 临时移除画布，防止绘制过程中的闪现
+        self.canvas.pack_forget()
+        
         self.clear()
         
         # 存储节点ID映射
@@ -1206,6 +1210,8 @@ class NetworkTopologyVisualizer:
                 self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
                 self.canvas.xview_moveto(0)
                 self.canvas.yview_moveto(0)
+                # 先重新显示画布，再延迟执行缩放
+                self.canvas.pack(fill=tk.BOTH, expand=True)
                 self.canvas.after(200, self._auto_scale_canvas)
                 return
             
@@ -1267,6 +1273,9 @@ class NetworkTopologyVisualizer:
             self.canvas.yview_moveto(0)
         else:
             self.canvas.config(scrollregion=(0, 0, 1000, 800))
+        
+        # 重新显示画布
+        self.canvas.pack(fill=tk.BOTH, expand=True)
     
     def _auto_scale_canvas(self):
         """画布初始化后延迟执行自适应缩放"""
@@ -2169,6 +2178,28 @@ class NetworkTopologyVisualizer:
         # 临时移除画布，防止变换过程中的闪现
         self.fullscreen_canvas.pack_forget()
         
+        # 绘制并缩放拓扑图
+        self._redraw_and_fit_fullscreen()
+        
+        # 重新显示画布
+        self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # 确保视图从左上角开始
+        self.fullscreen_canvas.xview_moveto(0)
+        self.fullscreen_canvas.yview_moveto(0)
+        
+        # 强制刷新
+        self.fullscreen_canvas.update_idletasks()
+        
+        # 创建缩放控制面板
+        self._create_fullscreen_controls()
+        if self.scale_label is not None:
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
+    
+    def _redraw_and_fit_fullscreen(self):
+        """重新绘制拓扑图并自适应缩放以适应全屏窗口"""
+        assert self.fullscreen_canvas is not None
+        
         # 确保画布已完全初始化
         self.fullscreen_canvas.update_idletasks()
         
@@ -2181,13 +2212,12 @@ class NetworkTopologyVisualizer:
         self.nodes.clear()
         self.links.clear()
         
-        # 绘制拓扑图（不设置scrollregion）
+        # 绘制拓扑图
         self.draw_topology(self.network_data)
         
         # 获取内容边界框
         bbox = self.fullscreen_canvas.bbox(tk.ALL)
         if not bbox:
-            self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
             return
         
         x1, y1, x2, y2 = bbox
@@ -2195,7 +2225,6 @@ class NetworkTopologyVisualizer:
         content_height = y2 - y1
         
         if content_width <= 0 or content_height <= 0:
-            self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
             return
         
         # 计算缩放比例，使用30像素边距
@@ -2235,35 +2264,18 @@ class NetworkTopologyVisualizer:
         # 获取缩放移动后的边界框
         final_bbox = self.fullscreen_canvas.bbox(tk.ALL)
         if final_bbox:
-            final_x1, final_y1, final_x2, final_y2 = final_bbox
-            
             # 设置滚动区域正好包含内容
             self.fullscreen_canvas.config(
                 scrollregion=(
                     0, 
                     0, 
-                    max(canvas_width, final_x2 + margin), 
-                    max(canvas_height, final_y2 + margin)
+                    max(canvas_width, final_bbox[2] + margin), 
+                    max(canvas_height, final_bbox[3] + margin)
                 )
             )
         
         # 强制刷新画布
         self.fullscreen_canvas.update_idletasks()
-        
-        # 重新显示画布
-        self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # 确保视图从左上角开始
-        self.fullscreen_canvas.xview_moveto(0)
-        self.fullscreen_canvas.yview_moveto(0)
-        
-        # 再次强制刷新
-        self.fullscreen_canvas.update_idletasks()
-        
-        # 创建缩放控制面板
-        self._create_fullscreen_controls()
-        if self.scale_label is not None:
-            self.scale_label.config(text=f"{int(self.scale * 100)}%")
         
         # 添加退出全屏按钮
         self.exit_fullscreen_button = tk.Button(
@@ -2515,73 +2527,21 @@ class NetworkTopologyVisualizer:
     def _reset_fullscreen_view(self):
         """重置全屏视图到最佳显示状态"""
         assert self.fullscreen_canvas is not None
-        # 清空画布并重新绘制拓扑图
-        self.fullscreen_canvas.delete(tk.ALL)
-        self.nodes.clear()
-        self.links.clear()
         
-        # 重新渲染拓扑图到全屏画布
-        self.draw_topology(self.network_data)
+        # 临时移除画布，防止变换过程中的闪现
+        self.fullscreen_canvas.pack_forget()
         
-        # 重置缩放因子为1.0
-        self.scale = 1.0
+        # 重新绘制拓扑图并自适应缩放
+        self._redraw_and_fit_fullscreen()
         
-        # 手动计算并应用自适应缩放
-        bbox = self.fullscreen_canvas.bbox(tk.ALL)
-        if bbox:
-            self.fullscreen_canvas.update_idletasks()
-            canvas_width = self.fullscreen_canvas.winfo_width()
-            canvas_height = self.fullscreen_canvas.winfo_height()
-            
-            if canvas_width <= 1 or canvas_height <= 1:
-                return
-            
-            x1, y1, x2, y2 = bbox
-            content_width = x2 - x1
-            content_height = y2 - y1
-            
-            margin = 30
-            scale_x = (canvas_width - 2 * margin) / content_width
-            scale_y = (canvas_height - 2 * margin) / content_height
-            scale_factor = min(scale_x, scale_y)
-            scale_factor = max(0.5, min(scale_factor, 1.0))
-            
-            # 先移动到原点
-            self.fullscreen_canvas.move(tk.ALL, -x1, -y1)
-            
-            # 以原点为基准缩放
-            self.fullscreen_canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
-            self.scale = scale_factor
-            
-            # 计算缩放后的尺寸
-            scaled_width = content_width * scale_factor
-            scaled_height = content_height * scale_factor
-            
-            # 水平和垂直方向独立判断位置
-            if scaled_width <= canvas_width - 2 * margin:
-                target_x = (canvas_width - scaled_width) / 2
-            else:
-                target_x = margin
-            
-            if scaled_height <= canvas_height - 2 * margin:
-                target_y = (canvas_height - scaled_height) / 2
-            else:
-                target_y = margin
-            
-            self.fullscreen_canvas.move(tk.ALL, target_x, target_y)
-            
-            # 更新滚动区域
-            final_bbox = self.fullscreen_canvas.bbox(tk.ALL)
-            if final_bbox:
-                self.fullscreen_canvas.config(scrollregion=(
-                    0, 0,
-                    max(canvas_width, final_bbox[2] + margin),
-                    max(canvas_height, final_bbox[3] + margin)
-                ))
-            
-            self.fullscreen_canvas.xview_moveto(0)
-            self.fullscreen_canvas.yview_moveto(0)
+        # 重新显示画布
+        self.fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
         
+        # 确保视图从左上角开始
+        self.fullscreen_canvas.xview_moveto(0)
+        self.fullscreen_canvas.yview_moveto(0)
+        
+        # 更新缩放比例显示
         if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
     

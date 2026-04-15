@@ -10,8 +10,11 @@
 import json
 import os
 import sys
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from version import get_version
+
+if TYPE_CHECKING:
+    from config_manager import ConfigManager
 
 __version__ = get_version()
 
@@ -37,7 +40,7 @@ class Translator:
     def __init__(self):
         # 延迟导入以避免循环依赖
         from config_manager import get_config
-        self._config = get_config()
+        self._config: ConfigManager = get_config()
         self._current_language: str = self._load_language()
         self._translations_file: str = get_resource_path('translations.json')
         # 默认翻译字典 - 只保留最基本的翻译键作为最后的回退
@@ -106,7 +109,7 @@ class Translator:
         # 如果配置中没有有效语言，检测系统语言
         detected_lang = self._detect_system_language()
         # 将检测到的语言保存到配置
-        self._config.set_language(detected_lang)
+        _ = self._config.set_language(detected_lang)
         return detected_lang
     
     def _load_translations(self) -> dict[str, dict[str, str]]:
@@ -132,7 +135,7 @@ class Translator:
         if lang in ["zh", "zh_tw", "en", "ja", "ko"]:
             self._current_language = lang
             # 通过配置管理器保存语言设置
-            self._config.set_language(lang)
+            _ = self._config.set_language(lang)
     
     def get_language(self) -> str:
         """获取当前语言
@@ -208,3 +211,4 @@ def get_supported_languages() -> list[tuple[str, str]]:
 
 # 导出TRANSLATIONS常量，保持向后兼容
 TRANSLATIONS = translator.translations
+

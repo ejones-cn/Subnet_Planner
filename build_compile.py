@@ -340,11 +340,11 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         should_restore = True
         
         if os.path.exists(original_db):
-            shutil.move(original_db, os.path.join(temp_db_dir, original_db))
+            _ = shutil.move(original_db, os.path.join(temp_db_dir, original_db))
             print(f"⏳ 临时移动数据库文件: {original_db}")
         
         if os.path.exists(original_backup_dir):
-            shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
+            _ = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
             print(f"⏳ 临时移动备份目录: {original_backup_dir}")
     
     # 编译命令 - 使用Nuitka新版本支持的选项
@@ -436,11 +436,11 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
             
             if os.path.exists(temp_db):
-                shutil.move(temp_db, original_db)
+                _ = shutil.move(temp_db, original_db)
                 print(f"⏳ 恢复数据库文件: {original_db}")
             
             if os.path.exists(temp_backup_dir):
-                shutil.move(temp_backup_dir, original_backup_dir)
+                _ = shutil.move(temp_backup_dir, original_backup_dir)
                 print(f"⏳ 恢复备份目录: {original_backup_dir}")
 
 

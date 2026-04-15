@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""临时脚本：修复 generate_package_list.py"""
+import pathlib
+
+content = '''#!/usr/bin/env python3
 """
 生成打包文件清单，检查单文件程序中包含的所有文件
 """
@@ -107,46 +111,51 @@ def generate_package_list() -> PackageInfo:
     package_info["runtime_generated"] = runtime_files
 
     print("=" * 60)
-    print("\U0001f4e6 Subnet Planner 打包文件清单")
+    print("\\U0001f4e6 Subnet Planner 打包文件清单")
     print("=" * 60)
     print(f"生成时间: {package_info['generated_at']}")
     print(f"主程序: {package_info['exe_file']}")
     print()
 
-    print("\U0001f4c1 包含的数据文件:")
+    print("\\U0001f4c1 包含的数据文件:")
     print("-" * 40)
     for f in package_info["included_files"]:
-        print(f"  \u2022 {f['name']} ({f['size_human']})")
+        print(f"  \\u2022 {f['name']} ({f['size_human']})")
 
     print()
-    print("\U0001f4c2 包含的目录:")
+    print("\\U0001f4c2 包含的目录:")
     print("-" * 40)
     for d in package_info["directories"]:
-        print(f"  \u2022 {d['name']}/")
-        print(f"    \u2514\u2500 {d['file_count']} 个文件, {d['total_size_human']}")
+        print(f"  \\u2022 {d['name']}/")
+        print(f"    \\u2514\\u2500 {d['file_count']} 个文件, {d['total_size_human']}")
 
     print()
-    print("\U0001f6ab 排除的文件/目录:")
+    print("\\U0001f6ab 排除的文件/目录:")
     print("-" * 40)
     for item in package_info["excluded_files"]:
-        print(f"  \u2022 {item}")
+        print(f"  \\u2022 {item}")
 
     print()
-    print("\u26a1 运行时生成的文件:")
+    print("\\u26a1 运行时生成的文件:")
     print("-" * 40)
     for item in package_info["runtime_generated"]:
-        print(f"  \u2022 {item['name']}")
-        print(f"    \u2514\u2500 {item['description']}")
+        print(f"  \\u2022 {item['name']}")
+        print(f"    \\u2514\\u2500 {item['description']}")
 
     print()
     print("=" * 60)
 
     with open("package_list.json", "w", encoding="utf-8") as f:
         json.dump(package_info, f, indent=2, ensure_ascii=False)
-    print("\u2705 清单已保存到 package_list.json")
+    print("\\u2705 清单已保存到 package_list.json")
 
     return package_info
 
 
 if __name__ == "__main__":
     _ = generate_package_list()
+'''
+
+p = pathlib.Path(r'e:\trae_projects\Subnet_Planner\generate_package_list.py')
+p.write_text(content, encoding='utf-8')
+print(f'Written {p.stat().st_size} bytes')

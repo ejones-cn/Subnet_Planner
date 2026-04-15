@@ -8,18 +8,16 @@
 
 import json
 import os
-import sys
-from typing import Any, Dict, Optional, List
+from typing import cast
 
 
 class ConfigManager:
     """配置管理器类"""
     
     # 当前配置版本
-    CURRENT_VERSION = "1.0"
-    
-    # 默认配置模板
-    DEFAULT_CONFIG: Dict[str, Any] = {
+    CURRENT_VERSION: str = "1.0"
+
+    DEFAULT_CONFIG: dict[str, object] = {
         "version": CURRENT_VERSION,
         "language": "zh",
         "window": {
@@ -41,30 +39,26 @@ class ConfigManager:
         "last_used_network": None
     }
     
-    # 支持的语言列表
-    SUPPORTED_LANGUAGES = ["zh", "zh_tw", "en", "ja", "ko"]
+    SUPPORTED_LANGUAGES: list[str] = ["zh", "zh_tw", "en", "ja", "ko"]
+
+    SUPPORTED_BACKUP_FREQUENCIES: list[str] = ["hourly", "daily", "weekly", "monthly"]
+
+    SUPPORTED_THEMES: list[str] = ["default", "dark", "light"]
     
-    # 支持的备份频率
-    SUPPORTED_BACKUP_FREQUENCIES = ["hourly", "daily", "weekly", "monthly"]
-    
-    # 支持的主题
-    SUPPORTED_THEMES = ["default", "dark", "light"]
-    
-    def __init__(self, config_file: Optional[str] = None):
+    def __init__(self, config_file: str | None = None):
         """初始化配置管理器
         
         Args:
             config_file: 配置文件路径，默认为 SubnetPlanner_config.json
         """
         if config_file is None:
-            # 配置文件保存在应用程序目录
-            self._config_file = os.path.join(os.path.dirname(__file__), 'SubnetPlanner_config.json')
+            self._config_file: str = os.path.join(os.path.dirname(__file__), 'SubnetPlanner_config.json')
         else:
             self._config_file = config_file
         
-        self._config: Dict[str, Any] = self._load_config()
+        self._config: dict[str, object] = self._load_config()
     
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, object]:
         """加载配置文件
         
         Returns:
@@ -75,9 +69,8 @@ class ConfigManager:
         
         try:
             with open(self._config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
+                config = cast(dict[str, object], json.load(f))
             
-            # 验证并迁移配置
             return self._migrate_config(config)
         
         except json.JSONDecodeError as e:
@@ -87,11 +80,11 @@ class ConfigManager:
             print(f"加载配置文件失败: {str(e)}，使用默认配置")
             return self._create_default_config()
     
-    def _create_default_config(self) -> Dict[str, Any]:
+    def _create_default_config(self) -> dict[str, object]:
         """创建默认配置"""
-        return json.loads(json.dumps(self.DEFAULT_CONFIG))  # 深拷贝
+        return cast(dict[str, object], json.loads(json.dumps(self.DEFAULT_CONFIG)))
     
-    def _migrate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _migrate_config(self, config: dict[str, object]) -> dict[str, object]:
         """迁移配置到最新版本
         
         Args:
@@ -103,57 +96,71 @@ class ConfigManager:
         result = self._create_default_config()
         current_version = config.get("version", "0.0")
         
-        # 版本迁移逻辑
         if current_version == "0.0" or current_version == "1.0":
-            # 从旧版本迁移
-            # 迁移语言设置
             if 'language' in config:
-                if config['language'] in self.SUPPORTED_LANGUAGES:
-                    result['language'] = config['language']
+                lang = config['language']
+                if lang in self.SUPPORTED_LANGUAGES:
+                    result['language'] = lang
             
-            # 迁移窗口设置
             if 'window' in config:
                 window = config['window']
                 if isinstance(window, dict):
-                    if 'width' in window and isinstance(window['width'], int):
-                        result['window']['width'] = window['width']
-                    if 'height' in window and isinstance(window['height'], int):
-                        result['window']['height'] = window['height']
-                    if 'maximized' in window and isinstance(window['maximized'], bool):
-                        result['window']['maximized'] = window['maximized']
+                    result_window = result.get('window')
+                    if isinstance(result_window, dict):
+                        if 'width' in window:
+                            w = window['width']
+                            if isinstance(w, int):
+                                result_window['width'] = w
+                        if 'height' in window:
+                            h = window['height']
+                            if isinstance(h, int):
+                                result_window['height'] = h
+                        if 'maximized' in window:
+                            m = window['maximized']
+                            if isinstance(m, bool):
+                                result_window['maximized'] = m
             
-            # 迁移自动备份设置
             if 'auto_backup' in config:
                 auto_backup = config['auto_backup']
                 if isinstance(auto_backup, dict):
-                    if 'enabled' in auto_backup and isinstance(auto_backup['enabled'], bool):
-                        result['auto_backup']['enabled'] = auto_backup['enabled']
-                    if 'frequency' in auto_backup and auto_backup['frequency'] in self.SUPPORTED_BACKUP_FREQUENCIES:
-                        result['auto_backup']['frequency'] = auto_backup['frequency']
+                    result_backup = result.get('auto_backup')
+                    if isinstance(result_backup, dict):
+                        if 'enabled' in auto_backup:
+                            en = auto_backup['enabled']
+                            if isinstance(en, bool):
+                                result_backup['enabled'] = en
+                        if 'frequency' in auto_backup:
+                            freq = auto_backup['frequency']
+                            if freq in self.SUPPORTED_BACKUP_FREQUENCIES:
+                                result_backup['frequency'] = freq
             
-            # 迁移UI设置
             if 'ui' in config:
                 ui = config['ui']
                 if isinstance(ui, dict):
-                    if 'theme' in ui and ui['theme'] in self.SUPPORTED_THEMES:
-                        result['ui']['theme'] = ui['theme']
-                    if 'font_size' in ui and isinstance(ui['font_size'], int):
-                        result['ui']['font_size'] = ui['font_size']
+                    result_ui = result.get('ui')
+                    if isinstance(result_ui, dict):
+                        if 'theme' in ui:
+                            theme = ui['theme']
+                            if theme in self.SUPPORTED_THEMES:
+                                result_ui['theme'] = theme
+                        if 'font_size' in ui:
+                            fs = ui['font_size']
+                            if isinstance(fs, int):
+                                result_ui['font_size'] = fs
             
-            # 迁移最近文件列表
-            if 'recent_files' in config and isinstance(config['recent_files'], list):
-                result['recent_files'] = [f for f in config['recent_files'] if isinstance(f, str)]
+            if 'recent_files' in config:
+                rf = config['recent_files']
+                if isinstance(rf, list):
+                    result['recent_files'] = [f for f in rf if isinstance(f, str)]
             
-            # 迁移上次使用的网络
             if 'last_used_network' in config:
                 result['last_used_network'] = config['last_used_network']
         
-        # 更新版本号
         result['version'] = self.CURRENT_VERSION
         
         return result
     
-    def _validate_config(self, config: Dict[str, Any]) -> bool:
+    def _validate_config(self, config: dict[str, object]) -> bool:
         """验证配置的完整性和有效性
         
         Args:
@@ -234,7 +241,7 @@ class ConfigManager:
             print(f"保存配置文件失败: {str(e)}")
             return False
     
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: object = None) -> object:
         """获取配置项
         
         Args:
@@ -246,7 +253,7 @@ class ConfigManager:
         """
         try:
             keys = key.split('.')
-            value = self._config
+            value: object = self._config
             for k in keys:
                 if isinstance(value, dict) and k in value:
                     value = value[k]
@@ -257,7 +264,7 @@ class ConfigManager:
             print(f"获取配置项失败 '{key}': {str(e)}")
             return default
     
-    def set(self, key: str, value: Any) -> bool:
+    def set(self, key: str, value: object) -> bool:
         """设置配置项
         
         Args:
@@ -269,23 +276,21 @@ class ConfigManager:
         """
         try:
             keys = key.split('.')
-            config = self._config
+            config: object = self._config
             
-            # 导航到目标位置
             for i, k in enumerate(keys[:-1]):
-                if k not in config:
-                    # 如果路径不存在，创建中间字典
-                    config[k] = {}
-                elif not isinstance(config[k], dict):
-                    print(f"配置路径冲突 '{'.'.join(keys[:i + 1])}'")
-                    return False
-                config = config[k]
+                if isinstance(config, dict):
+                    if k not in config:
+                        config[k] = {}
+                    elif not isinstance(config[k], dict):
+                        print(f"配置路径冲突 '{'.'.join(keys[:i + 1])}'")
+                        return False
+                    config = config[k]
             
-            # 设置最终值
-            last_key = keys[-1]
-            config[last_key] = value
+            if isinstance(config, dict):
+                last_key = keys[-1]
+                config[last_key] = value
             
-            # 保存配置
             return self._save_config()
         except Exception as e:
             print(f"设置配置项失败 '{key}': {str(e)}")
@@ -297,7 +302,8 @@ class ConfigManager:
         Returns:
             语言代码
         """
-        return self.get('language', 'zh')
+        result = self.get('language', 'zh')
+        return result if isinstance(result, str) else 'zh'
     
     def set_language(self, lang: str) -> bool:
         """设置语言
@@ -319,8 +325,10 @@ class ConfigManager:
         Returns:
             (宽度, 高度)
         """
-        width = self.get('window.width', 1200)
-        height = self.get('window.height', 800)
+        width_val = self.get('window.width', 1200)
+        height_val = self.get('window.height', 800)
+        width = width_val if isinstance(width_val, int) else 1200
+        height = height_val if isinstance(height_val, int) else 800
         return (width, height)
     
     def set_window_size(self, width: int, height: int) -> bool:
@@ -333,9 +341,6 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(width, int) or not isinstance(height, int):
-            print("窗口大小必须为整数")
-            return False
         if width < 800 or height < 600:
             print("窗口大小不能小于 800x600")
             return False
@@ -350,7 +355,8 @@ class ConfigManager:
         Returns:
             是否最大化
         """
-        return self.get('window.maximized', False)
+        result = self.get('window.maximized', False)
+        return result if isinstance(result, bool) else False
     
     def set_window_maximized(self, maximized: bool) -> bool:
         """设置窗口最大化状态
@@ -361,21 +367,18 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(maximized, bool):
-            print("窗口最大化状态必须为布尔值")
-            return False
         return self.set('window.maximized', maximized)
     
-    def get_window_position(self) -> Optional[tuple[int, int]]:
+    def get_window_position(self) -> tuple[int, int] | None:
         """获取窗口位置
         
         Returns:
             (x, y) 坐标，如果未设置则返回 None
         """
-        x = self.get('window.x')
-        y = self.get('window.y')
-        if x is not None and y is not None:
-            return (x, y)
+        x_val = self.get('window.x')
+        y_val = self.get('window.y')
+        if isinstance(x_val, int) and isinstance(y_val, int):
+            return (x_val, y_val)
         return None
     
     def set_window_position(self, x: int, y: int) -> bool:
@@ -388,10 +391,6 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(x, int) or not isinstance(y, int):
-            print("窗口位置必须为整数")
-            return False
-        
         success1 = self.set('window.x', x)
         success2 = self.set('window.y', y)
         return success1 and success2
@@ -402,7 +401,8 @@ class ConfigManager:
         Returns:
             是否启用自动备份
         """
-        return self.get('auto_backup.enabled', True)
+        result = self.get('auto_backup.enabled', True)
+        return result if isinstance(result, bool) else True
     
     def set_auto_backup_enabled(self, enabled: bool) -> bool:
         """设置自动备份是否启用
@@ -413,9 +413,6 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(enabled, bool):
-            print("自动备份状态必须为布尔值")
-            return False
         return self.set('auto_backup.enabled', enabled)
     
     def get_auto_backup_frequency(self) -> str:
@@ -424,7 +421,8 @@ class ConfigManager:
         Returns:
             备份频率
         """
-        return self.get('auto_backup.frequency', 'daily')
+        result = self.get('auto_backup.frequency', 'daily')
+        return result if isinstance(result, str) else 'daily'
     
     def set_auto_backup_frequency(self, frequency: str) -> bool:
         """设置自动备份频率
@@ -446,7 +444,8 @@ class ConfigManager:
         Returns:
             主题名称
         """
-        return self.get('ui.theme', 'default')
+        result = self.get('ui.theme', 'default')
+        return result if isinstance(result, str) else 'default'
     
     def set_ui_theme(self, theme: str) -> bool:
         """设置UI主题
@@ -468,7 +467,8 @@ class ConfigManager:
         Returns:
             字体大小
         """
-        return self.get('ui.font_size', 12)
+        result = self.get('ui.font_size', 12)
+        return result if isinstance(result, int) else 12
     
     def set_ui_font_size(self, font_size: int) -> bool:
         """设置UI字体大小
@@ -479,21 +479,21 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(font_size, int):
-            print("字体大小必须为整数")
-            return False
         if font_size < 8 or font_size > 32:
             print("字体大小必须在 8-32 之间")
             return False
         return self.set('ui.font_size', font_size)
     
-    def get_recent_files(self) -> List[str]:
+    def get_recent_files(self) -> list[str]:
         """获取最近打开的文件列表
         
         Returns:
             文件路径列表
         """
-        return self.get('recent_files', [])
+        result = self.get('recent_files', [])
+        if isinstance(result, list):
+            return [f for f in result if isinstance(f, str)]
+        return []
     
     def add_recent_file(self, file_path: str, max_count: int = 10) -> bool:
         """添加最近打开的文件
@@ -546,15 +546,16 @@ class ConfigManager:
         """
         return self.set('recent_files', [])
     
-    def get_last_used_network(self) -> Optional[str]:
+    def get_last_used_network(self) -> str | None:
         """获取上次使用的网络
         
         Returns:
             网络地址或 None
         """
-        return self.get('last_used_network')
+        result = self.get('last_used_network')
+        return result if isinstance(result, str) else None
     
-    def set_last_used_network(self, network: Optional[str]) -> bool:
+    def set_last_used_network(self, network: str | None) -> bool:
         """设置上次使用的网络
         
         Args:
@@ -610,7 +611,7 @@ class ConfigManager:
         """
         try:
             with open(import_path, 'r', encoding='utf-8') as f:
-                imported_config = json.load(f)
+                imported_config = cast(dict[str, object], json.load(f))
             
             # 迁移导入的配置
             self._config = self._migrate_config(imported_config)
