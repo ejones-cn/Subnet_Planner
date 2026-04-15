@@ -4451,5 +4451,19 @@
     "en": "Description Prefix (Auto Add Number)",
     "ja": "説明プレフィックス(自動番号付加)",
     "ko": "설명 접두사(자동 번호 추가)"
+  },
+  "batch_generate": {
+    "zh": "批量生成",
+    "zh_tw": "批量生成",
+    "en": "Batch Generate",
+    "ja": "一括生成",
+    "ko": "일괄 생성"
+  },
+  "invalid_ip_address": {
+    "zh": "无效的IP地址",
+    "zh_tw": "無效的IP位址",
+    "en": "Invalid IP address",
+    "ja": "無効なIPアドレス",
+    "ko": "유효하지 않은 IP 주소"
   }
 }

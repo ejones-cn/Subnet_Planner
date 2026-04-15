@@ -9196,7 +9196,7 @@ class SubnetPlannerApp:
         search_entry_border.grid(row=0, column=1, sticky="ew", padx=5, pady=0)
         
         ttk.Label(search_frame, text=_('scope') + ':').grid(row=0, column=2, sticky="e", padx=5, pady=0)
-        self.search_scope = ttk.Combobox(search_frame, values=[_('all'), _('ip_address'), _('hostname'), _('description'), _('status')], width=6)
+        self.search_scope = ttk.Combobox(search_frame, values=[_('all'), _('ip_address'), _('hostname'), _('description'), _('mac_address')], width=6)
         self.search_scope.set(_('all'))
         self.search_scope.grid(row=0, column=3, sticky="ew", padx=5, pady=0)
         
@@ -9698,7 +9698,7 @@ class SubnetPlannerApp:
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
         # 批量分配IP地址，直接使用默认描述
-        description = "批量生成"
+        description = _('batch_generate')
         
         if not description:
             self.show_info(_('hint'), _('please_enter_description'))
@@ -10103,8 +10103,6 @@ class SubnetPlannerApp:
         for ip in ips:
             # 根据搜索范围和搜索模式过滤
             match = False
-            # 获取本地化状态文本
-            localized_status = self._get_localized_status(ip['status'])
             
             # 检查IP地址
             ip_match = self._match_search_pattern(ip['ip_address'], ' '.join(keywords), search_mode)
@@ -10112,20 +10110,19 @@ class SubnetPlannerApp:
             hostname_match = self._match_search_pattern(ip.get('hostname', ''), ' '.join(keywords), search_mode)
             # 检查描述
             desc_match = self._match_search_pattern(ip.get('description', ''), ' '.join(keywords), search_mode)
-            # 检查状态（同时支持中文和英文）
-            status_match = self._match_search_pattern(ip['status'], ' '.join(keywords), search_mode) or \
-                self._match_search_pattern(localized_status, ' '.join(keywords), search_mode)
+            # 检查MAC地址
+            mac_match = self._match_search_pattern(ip.get('mac_address', ''), ' '.join(keywords), search_mode)
             
             if search_scope == _('all'):
-                match = ip_match or hostname_match or desc_match or status_match
+                match = ip_match or hostname_match or desc_match or mac_match
             elif search_scope == _('ip_address'):
                 match = ip_match
             elif search_scope == _('hostname'):
                 match = hostname_match
             elif search_scope == _('description'):
                 match = desc_match
-            elif search_scope == _('status'):
-                match = status_match
+            elif search_scope == _('mac_address'):
+                match = mac_match
             
             if match:
                 filtered_ips.append(ip)
@@ -12216,9 +12213,8 @@ class SubnetPlannerApp:
         """IP地址表点击事件处理（用于取消选择）"""
         # 检查是否正在编辑状态且验证失败
         if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
-            # 验证失败，阻止点击其他行，保持焦点在编辑控件上
-            if hasattr(self, 'inline_edit_widget'):
-                self.inline_edit_widget.focus_force()
+            # 验证失败，阻止点击其他行，延迟重新获取焦点
+            self.root.after(1, self._refocus_inline_edit)
             return 'break'
         
         # 检查是否正在编辑状态
@@ -12374,16 +12370,27 @@ class SubnetPlannerApp:
             
             # 绑定事件 - 先定义事件处理函数
             def on_widget_save(event):
+                # 用户主动保存，清除验证失败标记，让保存逻辑重新验证
+                self._inline_edit_validation_failed = False
                 # 直接保存
                 self.on_generic_inline_edit_save(None)
             
             def on_widget_focus_out(event):
+                # 焦点离开时，检查是否验证失败
+                if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                    # 验证失败，延迟重新获取焦点，避免与事件处理冲突
+                    self.root.after(1, self._refocus_inline_edit)
+                    return
                 # 直接保存，与子网规划表保持一致的行为
                 self.on_generic_inline_edit_save(None)
             
             def on_widget_cancel(event):
                 # 直接取消
                 self.on_generic_inline_edit_cancel(event)
+            
+            def on_widget_input(event):
+                # 用户修改输入时，清除验证失败标记，允许后续保存
+                self._inline_edit_validation_failed = False
             
             # 根据列类型创建编辑控件
             column_type = config.get('column_types', {}).get(column_index, 'entry')
@@ -12422,6 +12429,7 @@ class SubnetPlannerApp:
             self.inline_edit_widget.bind('<Return>', on_widget_save)
             self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
             self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
+            self.inline_edit_widget.bind('<Key>', on_widget_input)
             
             # 获取焦点并全选文本
             self.inline_edit_widget.focus_set()
@@ -12807,10 +12815,18 @@ class SubnetPlannerApp:
         """
         # 检查是否有验证失败标记，如果有则阻止新的编辑
         if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
-            # 保持焦点在当前编辑控件上
-            if hasattr(self, 'inline_edit_widget'):
-                self.inline_edit_widget.focus_force()
+            # 延迟重新获取焦点
+            self.root.after(1, self._refocus_inline_edit)
             return 'break'
+        
+        # 如果有活动编辑，先尝试保存
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
+            self.on_generic_inline_edit_save(None)
+            # 检查保存是否成功（编辑控件是否已被销毁）
+            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
+                # 保存失败（验证未通过），保持当前编辑状态
+                self.root.after(1, self._refocus_inline_edit)
+                return 'break'
         
         # 检查是否有注册的配置和处理器
         if tree_name not in self._inline_edit_configs:
@@ -12912,14 +12928,16 @@ class SubnetPlannerApp:
         
         # 绑定事件 - 先定义事件处理函数
         def on_widget_save(event):
+            # 用户主动保存，清除验证失败标记，让保存逻辑重新验证
+            self._inline_edit_validation_failed = False
             # 直接保存
             self.on_generic_inline_edit_save(None)
         
         def on_widget_focus_out(event):
             # 焦点离开时，检查是否验证失败
             if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
-                # 验证失败，保持焦点
-                self.inline_edit_widget.focus_force()
+                # 验证失败，延迟重新获取焦点，避免与事件处理冲突
+                self.root.after(1, self._refocus_inline_edit)
                 return
             # 验证通过或未验证，执行保存
             self.on_generic_inline_edit_save(None)
@@ -12927,6 +12945,10 @@ class SubnetPlannerApp:
         def on_widget_cancel(event):
             # 直接取消
             self.on_generic_inline_edit_cancel(event)
+        
+        def on_widget_input(event):
+            # 用户修改输入时，清除验证失败标记，允许后续保存
+            self._inline_edit_validation_failed = False
         
         # 根据列类型创建编辑控件
         column_type = config.get('column_types', {}).get(column_index, 'entry')
@@ -12947,6 +12969,8 @@ class SubnetPlannerApp:
             self.inline_edit_widget.set(current_value)
             
             def on_combobox_save(event=None):
+                # 用户选择了新值，清除验证失败标记
+                self._inline_edit_validation_failed = False
                 # 直接保存
                 self.on_generic_inline_edit_save(event)
             
@@ -12970,9 +12994,8 @@ class SubnetPlannerApp:
             def on_root_click(event):
                 # 检查是否验证失败，如果是则阻止点击其他位置
                 if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
-                    # 验证失败，保持焦点在编辑控件上
-                    if hasattr(self, 'inline_edit_widget'):
-                        self.inline_edit_widget.focus_force()
+                    # 验证失败，延迟重新获取焦点
+                    self.root.after(1, self._refocus_inline_edit)
                     return
                 
                 # 检查点击的是否是编辑控件或其内部组件
@@ -13063,10 +13086,17 @@ class SubnetPlannerApp:
                     
                     # 绑定必要的事件
                     def on_date_save(event):
+                        # 用户选择了新日期，清除验证失败标记
+                        self._inline_edit_validation_failed = False
                         # 延迟执行保存，让tkcalendar内部的_select方法先完成
                         self.root.after(10, lambda: self.on_generic_inline_edit_save(None))
                     
                     def on_date_focus_out(event):
+                        # 检查是否验证失败
+                        if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                            # 验证失败，延迟重新获取焦点
+                            self.root.after(1, self._refocus_inline_edit)
+                            return
                         # 检查日历是否打开
                         calendar_open = False
                         try:
@@ -13089,9 +13119,17 @@ class SubnetPlannerApp:
                     
                     # 确保日期选择器始终保持焦点
                     self.inline_edit_widget.focus_force()
+                    # 初始化验证失败标记
+                    self._inline_edit_validation_failed = False
                     
                     # 添加全局点击事件监听，确保任何点击都能正确处理
                     def on_any_click(event):
+                        # 检查是否验证失败，如果是则阻止点击其他位置
+                        if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                            # 验证失败，延迟重新获取焦点
+                            self.root.after(1, self._refocus_inline_edit)
+                            return
+                        
                         # 检查是否点击在DateEntry控件上
                         if event.widget == self.inline_edit_widget:
                             return
@@ -13185,6 +13223,7 @@ class SubnetPlannerApp:
                     self.inline_edit_widget.bind('<Return>', on_widget_save)
                     self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
                     self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+                    self.inline_edit_widget.bind('<Key>', on_widget_input)
                     
                     # 设置焦点
                     self.inline_edit_widget.focus_set()
@@ -13201,6 +13240,7 @@ class SubnetPlannerApp:
                 self.inline_edit_widget.bind('<Return>', on_widget_save)
                 self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
                 self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+                self.inline_edit_widget.bind('<Key>', on_widget_input)
                 
                 # 设置焦点
                 self.inline_edit_widget.focus_set()
@@ -13248,9 +13288,16 @@ class SubnetPlannerApp:
             self.inline_edit_widget.bind('<Return>', on_widget_save)
             self.inline_edit_widget.bind('<Escape>', on_widget_cancel)
             self.inline_edit_widget.bind('<FocusOut>', on_widget_focus_out)
+            self.inline_edit_widget.bind('<Key>', on_widget_input)
             
             # 绑定根窗口点击事件，用于关闭编辑状态
             def on_root_click(event):
+                # 检查是否验证失败，如果是则阻止点击其他位置
+                if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                    # 验证失败，延迟重新获取焦点
+                    self.root.after(1, self._refocus_inline_edit)
+                    return
+                
                 # 检查点击的是否是编辑控件
                 target = event.widget
                 is_edit_widget = False
@@ -13284,6 +13331,9 @@ class SubnetPlannerApp:
                         target.selection_set(clicked_item)
             
             self.root.bind('<Button-1>', on_root_click, add='+')
+            
+            # 初始化验证失败标记
+            self._inline_edit_validation_failed = False
         
         # 获取焦点
         self.inline_edit_widget.focus_set()
@@ -13378,10 +13428,10 @@ class SubnetPlannerApp:
             if column_name != 'expiry_date' and column_name != 'vlan':
                 # 在信息栏显示错误提示，保持编辑状态，阻止焦点离开
                 self.show_error("", _("input_cannot_be_empty"))
-                # 强制保持焦点在编辑控件上
-                self.inline_edit_widget.focus_force()
                 # 标记验证失败，用于后续焦点处理
                 self._inline_edit_validation_failed = True
+                # 延迟重新获取焦点，确保在所有事件处理完成后执行
+                self.root.after(1, self._refocus_inline_edit)
                 return
         
         # 验证数据 - 自定义验证（在try块外进行，验证失败时不销毁编辑控件）
@@ -13398,10 +13448,10 @@ class SubnetPlannerApp:
             if not is_valid:
                 # 在信息栏显示错误提示，保持编辑状态，阻止焦点离开
                 self.show_error("", validation_error)
-                # 强制保持焦点在编辑控件上
-                self.inline_edit_widget.focus_force()
                 # 标记验证失败，用于后续焦点处理
                 self._inline_edit_validation_failed = True
+                # 延迟重新获取焦点，确保在所有事件处理完成后执行
+                self.root.after(1, self._refocus_inline_edit)
                 return
             
             # 使用格式化后的值（如果有）
@@ -13419,9 +13469,10 @@ class SubnetPlannerApp:
                 success, message = save(new_value, column_name, row_data, item)
                 if not success:
                     self.show_error("", message)
-                    self.inline_edit_widget.focus_force()
                     # 标记验证失败
                     self._inline_edit_validation_failed = True
+                    # 延迟重新获取焦点
+                    self.root.after(1, self._refocus_inline_edit)
                     return
                 
                 # 更新Treeview
@@ -13433,17 +13484,30 @@ class SubnetPlannerApp:
                 self.update_table_zebra_stripes(tree)
         except Exception as e:
             self.show_error("", f"更新失败: {str(e)}")
-            self.inline_edit_widget.focus_force()
             # 标记验证失败
             self._inline_edit_validation_failed = True
+            # 延迟重新获取焦点
+            self.root.after(1, self._refocus_inline_edit)
             return
-        finally:
-            # 安全清理编辑控件，无论如何都会执行
-            item_to_select = edit_data['item']
-            tree_to_select = edit_data['tree']
-            self._destroy_inline_edit_widgets()
-            # 确保编辑的行仍然保持选中状态
-            tree_to_select.selection_set(item_to_select)
+        
+        # 保存成功，清理编辑控件
+        item_to_select = edit_data['item']
+        tree_to_select = edit_data['tree']
+        self._destroy_inline_edit_widgets()
+        # 确保编辑的行仍然保持选中状态
+        tree_to_select.selection_set(item_to_select)
+    
+    def _refocus_inline_edit(self):
+        """验证失败后延迟重新获取焦点，确保在所有事件处理完成后执行"""
+        if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
+                self.inline_edit_widget.focus_force()
+                # 选中所有文本，方便用户重新输入
+                if hasattr(self.inline_edit_widget, 'select_range'):
+                    try:
+                        self.inline_edit_widget.select_range(0, tk.END)
+                    except:
+                        pass
     
     def on_generic_inline_edit_cancel(self, event):
         """通用的取消内联编辑方法
