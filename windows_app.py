@@ -10136,7 +10136,7 @@ class SubnetPlannerApp:
                                 continue
                         elif expiry_filter == _('expiring_soon'):
                             # 7天内过期
-                            seven_days_later = now + datetime.timedelta(days=7)
+                            seven_days_later = now + timedelta(days=7)
                             if exp_date < now or exp_date > seven_days_later:
                                 continue
                         elif expiry_filter == _('not_expired'):
