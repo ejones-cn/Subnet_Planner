@@ -13484,9 +13484,14 @@ class SubnetPlannerApp:
                 self.root.after(1, self._refocus_inline_edit)
                 return 'break'
             self.on_generic_inline_edit_save(None)
-            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
+            # 检查编辑控件是否还存在（控件已被销毁时调用 winfo_exists() 会抛出异常）
+            try:
+                if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
+                    self.root.after(1, self._refocus_inline_edit)
+                    return 'break'
+            except tk.TclError:
+                # 控件已被销毁，说明保存成功
+                pass
         return None
 
     def on_generic_inline_edit_cancel(self, event):

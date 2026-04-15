@@ -1138,8 +1138,18 @@ class NetworkTopologyVisualizer:
             filtered_data = filtered_data[:self.max_nodes]
         
         # 构建网络层次结构，先处理父节点，再处理子节点
-        # 按层级排序网络数据
-        sorted_data = sorted(filtered_data, key=lambda x: x.get("level", 0))
+        # 按层级排序，同层级按 CIDR 排序
+        def _cidr_sort_key(item):
+            cidr = item.get("cidr", "")
+            if not cidr:
+                return (item.get("level", 0), "")
+            try:
+                ip_part = cidr.split('/')[0]
+                return (item.get("level", 0), tuple(map(int, ip_part.split('.'))))
+            except (ValueError, IndexError):
+                return (item.get("level", 0), "")
+        
+        sorted_data = sorted(filtered_data, key=_cidr_sort_key)
         
         # 遍历网络数据，构建节点和连接
         for network in sorted_data:
@@ -1383,9 +1393,24 @@ class NetworkTopologyVisualizer:
         if not root_nodes:
             return
         
-        # 对每个父节点的子节点按 ID 排序，确保顺序一致
+        def _cidr_to_sort_key(cidr):
+            """将CIDR转换为可用于排序的元组"""
+            if not cidr:
+                return ()
+            try:
+                # 提取IP地址部分（去掉子网掩码）
+                ip_part = cidr.split('/')[0]
+                # 将IP地址转换为整数元组
+                return tuple(map(int, ip_part.split('.')))
+            except (ValueError, IndexError):
+                return ()
+        
+        # 对根节点按网段（cidr）排序
+        root_nodes.sort(key=lambda x: _cidr_to_sort_key(x.get("cidr", "")))
+        
+        # 对每个父节点的子节点按网段（cidr）排序，确保顺序一致
         for parent_id in parent_to_children:
-            parent_to_children[parent_id].sort(key=lambda x: x["id"])
+            parent_to_children[parent_id].sort(key=lambda x: _cidr_to_sort_key(x.get("cidr", "")))
         
         # 计算每个层级的水平位置
         level_x = {}
