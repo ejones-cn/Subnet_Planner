@@ -3,8 +3,8 @@ class IPAMValidator:
     
     @staticmethod
     def validate_allocation_params(hostname, description):
-        if not description:
-            return False, "描述不能为空"
+        if not hostname and not description:
+            return False, "主机名和描述不能同时为空"
         return True, None
     
     @staticmethod

@@ -49,6 +49,34 @@
     "ja": "選択したネットワークを削除してもよろしいですか？",
     "ko": "선택한 네트워크를 삭제하시겠습니까?"
   },
+  "confirm_remove_networks": {
+    "zh": "确定要删除选中的 {count} 个网络吗？",
+    "zh_tw": "確定要刪除選中的 {count} 個網路嗎？",
+    "en": "Are you sure you want to delete the selected {count} networks?",
+    "ja": "選択した {count} 個のネットワークを削除してもよろしいですか？",
+    "ko": "선택한 {count}개의 네트워크를 삭제하시겠습니까?"
+  },
+  "remove_networks_success": {
+    "zh": "成功删除 {count} 个网络",
+    "zh_tw": "成功刪除 {count} 個網路",
+    "en": "Successfully removed {count} networks",
+    "ja": "{count} 個のネットワークを削除しました",
+    "ko": "{count}개의 네트워크를 삭제했습니다"
+  },
+  "remove_networks_partial": {
+    "zh": "成功删除 {success} 个网络，{failed} 个删除失败",
+    "zh_tw": "成功刪除 {success} 個網路，{failed} 個刪除失敗",
+    "en": "Successfully removed {success} networks, {failed} failed",
+    "ja": "{success} 個のネットワークを削除しました。{failed} 個の削除に失敗しました",
+    "ko": "{success}개의 네트워크를 삭제했습니다. {failed}개는 삭제에 실패했습니다"
+  },
+  "remove_networks_failed": {
+    "zh": "删除网络失败",
+    "zh_tw": "刪除網路失敗",
+    "en": "Failed to remove networks",
+    "ja": "ネットワークの削除に失敗しました",
+    "ko": "네트워크 삭제에 실패했습니다"
+  },
   "confirm_cleanup_available_ips": {
     "zh": "确定要清理所有可用状态的IP地址吗？",
     "zh_tw": "確定要清理所有可用狀態的IP位址嗎？",
@@ -482,6 +510,27 @@
     "en": "Export Planning",
     "ja": "エクスポート計画",
     "ko": "계획 내보내기"
+  },
+  "sync_to_ipam": {
+    "zh": "同步到IPAM",
+    "zh_tw": "同步到IPAM",
+    "en": "Sync to IPAM",
+    "ja": "IPAMに同期",
+    "ko": "IPAM에 동기화"
+  },
+  "sync_success": {
+    "zh": "成功同步 {count} 个子网到地址管理",
+    "zh_tw": "成功同步 {count} 個子網到地址管理",
+    "en": "Successfully synced {count} subnets to IPAM",
+    "ja": "{count}個のサブネットをIPAMに同期しました",
+    "ko": "{count}개의 서브넷을 IPAM에 동기화했습니다"
+  },
+  "no_subnet_to_sync": {
+    "zh": "没有可同步的子网数据",
+    "zh_tw": "沒有可同步的子網數據",
+    "en": "No subnet data to sync",
+    "ja": "同期するサブネットデータがありません",
+    "ko": "동기화할 서브넷 데이터가 없습니다"
   },
   "execute_planning": {
     "zh": "执行规划",

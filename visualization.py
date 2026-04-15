@@ -498,7 +498,7 @@ class NetworkTopologyVisualizer:
             "hexagon": [0.5, 0, 1, 0.33, 1, 0.67, 0.5, 1, 0, 0.67, 0, 0.33],
             "pentagon": [0.5, 0, 1, 0.5, 0.8, 1, 0.2, 1, 0, 0.5],
             "octagon": [0.3, 0, 0.7, 0, 1, 0.3, 1, 0.7, 0.7, 1, 0.3, 1, 0, 0.7, 0, 0.3],
-            "star": [0.5, 0, 0.6, 0.35, 1, 0.35, 0.65, 0.5, 1, 0.65, 0.6, 0.65, 0.5, 1, 0.4, 0.65, 0, 0.65, 0.35, 0.5, 0, 0.35, 0.4, 0.35],
+            "star": [0.5, 0.1, 0.6, 0.3, 0.9, 0.3, 0.65, 0.45, 0.85, 0.6, 0.6, 0.65, 0.5, 0.9, 0.4, 0.65, 0.15, 0.6, 0.35, 0.45, 0.1, 0.3, 0.4, 0.3],
             "trapezoid": [0.15, 0, 0.85, 0, 1, 1, 0, 1],
             "parallelogram": [0.2, 0, 1, 0, 0.8, 1, 0, 1]
         }
@@ -849,20 +849,20 @@ class NetworkTopologyVisualizer:
             self.canvas.tag_raise(shape_id)
             return shape_id, gradient_items, shadow_items
         elif shape == "star":
-            # 创建星形 - 简化版本，使用边界框边缘
+            # 创建星形 - 外顶点不动，内点位置调整
             points = [
-                x + width / 2, y,                  # 上
-                x + width * 0.6, y + height * 0.35,  # 外点
-                x + width, y + height * 0.35,      # 右
-                x + width * 0.65, y + height * 0.5,  # 内点
-                x + width, y + height * 0.65,      # 右下
-                x + width * 0.6, y + height * 0.65,  # 外点
-                x + width / 2, y + height,          # 下
-                x + width * 0.4, y + height * 0.65,  # 外点
-                x, y + height * 0.65,              # 左下
-                x + width * 0.35, y + height * 0.5,  # 内点
-                x, y + height * 0.35,              # 左
-                x + width * 0.4, y + height * 0.35   # 外点
+                x + width / 2, y,                         # 上顶点（保持顶部边缘）
+                x + width * 0.75, y + height * 0.28,      # 右上内点（往外调一点）
+                x + width, y + height * 0.35,             # 右顶点（保持右边缘）
+                x + width * 0.88, y + height * 0.52,      # 右内点（往外，远离中心）
+                x + width, y + height * 0.65,             # 右下顶点（保持右边缘）
+                x + width * 0.75, y + height * 0.75,      # 下右内点（向外移动）
+                x + width / 2, y + height,                # 下顶点（保持底部边缘）
+                x + width * 0.25, y + height * 0.75,      # 下左内点（向外移动）
+                x, y + height * 0.65,                     # 左下顶点（保持左边缘）
+                x + width * 0.12, y + height * 0.52,      # 左内点（往外，远离中心）
+                x, y + height * 0.35,                     # 左顶点（保持左边缘）
+                x + width * 0.25, y + height * 0.28       # 左上内点（往外调一点）
             ]
             
             # 创建渐变效果

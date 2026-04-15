@@ -2258,29 +2258,38 @@ class SubnetPlannerApp:
         style_manager = get_style_manager()
         button_width, __ = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
 
-        # 导出规划按钮 - 使用 place 布局手动控制位置，使用默认TButton样式
-        export_planning_btn = ttk.Button(
-            result_frame, text=_('export_planning'), command=self.export_planning_result, width=button_width
-        )
-        export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
-
         # 使用通用方法配置按钮样式
         self._setup_accent_button_style("Accent.TButton", "#1565c0", "#0d47a1", "#0d47a1")
         self._setup_accent_button_style("RedAccent.TButton", "#2e7d32", "#1b5e20", "#1b5e20")
 
-        # 规划子网按钮 - 使用 place 布局，位于导出规划按钮左方，大小相同，使用默认TButton样式
+        # 按钮间距
+        button_gap = 10
+
+        # 同步到地址管理按钮 - 位于最右边
+        sync_btn_width, __ = style_manager.get_button_size("sync_to_ipam") if style_manager else (12, 25)
+        self.sync_to_ipam_btn = ttk.Button(
+            result_frame, text=_("sync_to_ipam"), command=self.sync_allocated_to_ipam, width=sync_btn_width
+        )
+        # 先更新窗口，确保能获取到按钮的实际宽度
+        self.root.update_idletasks()
+        self.sync_to_ipam_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
+        sync_btn_width_actual = self.sync_to_ipam_btn.winfo_reqwidth()
+
+        # 导出规划按钮 - 位于同步按钮左边
+        export_btn_width, __ = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
+        export_planning_btn = ttk.Button(
+            result_frame, text=_('export_planning'), command=self.export_planning_result, width=export_btn_width
+        )
+        export_btn_x = -sync_btn_width_actual - button_gap
+        export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=export_btn_x, y=-3)
+        export_btn_width_actual = export_planning_btn.winfo_reqwidth()
+
+        # 执行规划按钮 - 位于导出规划按钮左边（最左边）
         execute_btn_width, __ = style_manager.get_button_size("execute_planning") if style_manager else (10, 25)
         self.execute_planning_btn = ttk.Button(
             result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=execute_btn_width
         )
-        # 动态计算规划子网按钮的位置：导出规划按钮左边，间隔10像素
-        button_gap = 10
-        # 先更新窗口，确保能获取到导出规划按钮的实际宽度
-        self.root.update_idletasks()
-        export_btn_width = export_planning_btn.winfo_reqwidth()
-        execute_btn_x = -export_btn_width - button_gap
-
-        # 使用动态计算的位置放置规划子网按钮
+        execute_btn_x = -sync_btn_width_actual - button_gap - export_btn_width_actual - button_gap
         self.execute_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=execute_btn_x, y=-3)
 
         # 已分配子网页面
@@ -4333,6 +4342,46 @@ class SubnetPlannerApp:
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
 
+    def sync_allocated_to_ipam(self):
+        """将已分配子网表中的数据同步到地址管理的网段表"""
+        # 获取已分配子网表中的所有数据
+        subnet_items = self.allocated_tree.get_children()
+        
+        if not subnet_items:
+            self.show_info(_("hint"), _("no_subnet_to_sync"))
+            return
+        
+        # 先获取并添加父网段（如果不存在）
+        parent_cidr = self.planning_parent_entry.get().strip()
+        if parent_cidr:
+            # 添加父网段，名称设置为"同步规划网段"加上CIDR
+            result = self.ipam.add_network(parent_cidr, f"同步规划网段 - {parent_cidr}")
+            # 如果已存在会返回False，但不需要处理这个错误
+        
+        success_count = 0
+        failed_count = 0
+        
+        for item in subnet_items:
+            values = self.allocated_tree.item(item, "values")
+            if len(values) >= 3:
+                cidr = values[2]  # CIDR列
+                name = values[1]  # 子网名称列
+                
+                # 调用IPAM的add_network方法添加网段
+                result = self.ipam.add_network(cidr, name)
+                if result[0]:
+                    success_count += 1
+                else:
+                    failed_count += 1
+        
+        # 刷新IPAM网络列表
+        self.refresh_ipam_networks()
+        
+        # 显示同步结果
+        if failed_count == 0:
+            self.show_info(_("hint"), _("sync_success").format(count=success_count))
+        else:
+            self.show_info(_("hint"), f"{_("sync_success").format(count=success_count)} ({failed_count} 个失败)")
 
 
     def generate_planning_chart_data(self, plan_result):
@@ -11947,26 +11996,49 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10).grid(row=0, column=2, padx=5)
     
     def remove_ipam_network(self):
-        """移除网络"""
+        """移除网络（支持多选）"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
             self.show_info(_('hint'), _('please_select_network'))
             return
         
-        item = selected_items[0]
-        network = self.ipam_network_tree.item(item, 'values')[0]
+        # 获取所有选中的网络
+        networks_to_remove = []
+        for item in selected_items:
+            network = self.ipam_network_tree.item(item, 'values')[0]
+            if network:
+                networks_to_remove.append(network)
+        
+        # 根据选择数量显示不同的确认消息
+        if len(networks_to_remove) == 1:
+            confirm_msg = _('confirm_remove_network')
+        else:
+            confirm_msg = _('confirm_remove_networks').format(count=len(networks_to_remove))
         
         # 确认删除
-        if self.show_yes_no_dialog(_('confirmation'), _('confirm_remove_network')):
-            success, message = self.ipam.remove_network(network)
-            if success:
-                self.show_info(_('success'), message)
+        if self.show_yes_no_dialog(_('confirmation'), confirm_msg):
+            success_count = 0
+            failed_count = 0
+            
+            for network in networks_to_remove:
+                success, message = self.ipam.remove_network(network)
+                if success:
+                    success_count += 1
+                else:
+                    failed_count += 1
+            
+            if success_count > 0:
                 self.refresh_ipam_networks()
                 # 清空IP地址列表
                 for item in self.ipam_ip_tree.get_children():
                     self.ipam_ip_tree.delete(item)
+                
+                if failed_count == 0:
+                    self.show_info(_('success'), _('remove_networks_success').format(count=success_count))
+                else:
+                    self.show_info(_('success'), _('remove_networks_partial').format(success=success_count, failed=failed_count))
             else:
-                self.show_error(_('error'), message)
+                self.show_error(_('error'), _('remove_networks_failed'))
     
     def add_ipam_sample_data(self):
         """添加IPAM样例数据"""
