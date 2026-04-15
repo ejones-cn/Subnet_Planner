@@ -35,7 +35,7 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 """
 
 import tkinter as tk
-from tkinter import Canvas, Frame
+from tkinter import Canvas
 from typing import Callable, Any
 from style_manager import get_current_font_settings
 
@@ -129,7 +129,7 @@ class NetworkTopologyVisualizer:
         self._create_fullscreen_button()
         
         # 初始化数据
-        self.nodes: dict[str, dict[str, str | int | float | None | dict[str, Any]]] = {}
+        self.nodes: dict[str, dict[str, Any]] = {}
         self.links: list[dict[str, Any]] = []
         
         # 双击检测相关
@@ -142,11 +142,11 @@ class NetworkTopologyVisualizer:
             self.double_click_threshold: int = 500  # 默认值（毫秒）
         self.double_click_distance: int = 5  # 双击位置距离阈值（像素）
         self.click_count: int = 0
-        self.click_timer: int | None = None
+        self.click_timer: str | None = None
         
         # 双击冷却相关
         self._in_double_click_cooldown: bool = False
-        self._double_click_cooldown_timer: int | None = None
+        self._double_click_cooldown_timer: str | None = None
         self._last_double_click_scale: float = 1.0
         self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
@@ -172,16 +172,16 @@ class NetworkTopologyVisualizer:
         self.scale: float = 1.0
         
         # 节点悬停状态
-        self.hovered_node: dict[str, object] | None = None
+        self.hovered_node: dict[str, Any] | None = None
         self.tooltip: tk.Toplevel | None = None
-        self.tooltip_timer: int | None = None  # 延迟显示定时器
-        self._hover_poll_job: int | None = None  # 悬停轮询检测定时器
+        self.tooltip_timer: str | None = None  # 延迟显示定时器
+        self._hover_poll_job: str | None = None  # 悬停轮询检测定时器
         self.last_mouse_x: int = 0  # 记录鼠标位置
         self.last_mouse_y: int = 0
         
         # 数据更新相关
         self.update_interval: int = 30000  # 默认 30 秒刷新一次
-        self.update_timer: int | None = None
+        self.update_timer: str | None = None
         self.data_callback: Callable[[], object] | None = None
         self.auto_update: bool = False
         
@@ -190,6 +190,24 @@ class NetworkTopologyVisualizer:
         self.max_nodes: int = 500  # 最大节点数
         self.filter_level: int = 10  # 过滤级别，0 表示显示所有节点
         self.visible_nodes: set[str] = set()  # 可见节点集合
+        
+        # 拓扑数据相关
+        self.network_data: object = None
+        self._scaled: bool = False
+        
+        # 全屏相关
+        self.is_fullscreen: bool = False
+        self.original_scale: float = 1.0
+        self.fullscreen_window: tk.Toplevel | None = None
+        self.fullscreen_canvas: Canvas | None = None
+        self.original_canvas: Canvas | None = None
+        self.exit_fullscreen_button: tk.Button | None = None
+        self.control_frame: tk.Frame | None = None
+        self.zoom_in_button: tk.Button | None = None
+        self.zoom_out_button: tk.Button | None = None
+        self.reset_button: tk.Button | None = None
+        self.scale_label: tk.Label | None = None
+        self.original_nodes: dict[str, dict[str, Any]] | None = None
         
     def start_drag(self, event: tk.Event) -> None:
         """开始拖拽"""
@@ -281,7 +299,7 @@ class NetworkTopologyVisualizer:
             self.scale = 1.0
             
             # 更新缩放比例显示
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_double_click(self, event):
@@ -324,7 +342,7 @@ class NetworkTopologyVisualizer:
                 self.canvas.config(scrollregion=self._expanded_bbox(bbox))
             
             self.scale = 1.0
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
         else:
             # 缩小到50%
@@ -368,7 +386,7 @@ class NetworkTopologyVisualizer:
             self.canvas.yview_moveto(0)
             
             self.scale = 0.5
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _expanded_bbox(self, bbox, padding=60):
@@ -399,7 +417,7 @@ class NetworkTopologyVisualizer:
         self.canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
         
         # 更新缩放比例显示
-        if hasattr(self, 'scale_label'):
+        if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _create_shadow(self, points: list[float | int] | None, shadow_x: float, shadow_y: float, width: float, height: float, smooth: bool = False) -> int:
@@ -1043,7 +1061,7 @@ class NetworkTopologyVisualizer:
         
         return node_id
     
-    def add_link(self, source_node_id, target_node_id):
+    def add_link(self, source_node_id: str, target_node_id: str) -> None:
         """添加连接
         
         Args:
@@ -1055,10 +1073,10 @@ class NetworkTopologyVisualizer:
             target = self.nodes[target_node_id]
             
             # 计算连接线坐标
-            x1 = source["x"] + NODE_WIDTH
-            y1 = source["y"] + NODE_HEIGHT / 2
-            x2 = target["x"]
-            y2 = target["y"] + NODE_HEIGHT / 2
+            x1: float = float(source["x"]) + NODE_WIDTH
+            y1: float = float(source["y"]) + NODE_HEIGHT / 2
+            x2: float = float(target["x"])
+            y2: float = float(target["y"]) + NODE_HEIGHT / 2
             
             # 创建连接线，添加箭头和动画效果
             link_id = self.canvas.create_line(
@@ -1218,7 +1236,7 @@ class NetworkTopologyVisualizer:
                 self.canvas.move(tk.ALL, target_x, target_y)
                 
                 self.scale = scale_factor
-                if hasattr(self, 'scale_label'):
+                if hasattr(self, 'scale_label') and self.scale_label:
                     self.scale_label.config(text=f"{int(self.scale * 100)}%")
             else:
                 # 不需要缩放，也要居中
@@ -1294,7 +1312,7 @@ class NetworkTopologyVisualizer:
         if scale_factor < 1.0:
             self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
             self.scale = scale_factor
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
             
             scaled_width = content_width * scale_factor
@@ -1362,7 +1380,7 @@ class NetworkTopologyVisualizer:
         
         # 计算每个层级的水平位置
         level_x = {}
-        max_level = max(node.get("level", 0) for node in self.nodes.values())
+        max_level = max(int(node.get("level", 0)) for node in self.nodes.values())
         for level in range(max_level + 1):
             level_x[level] = 50 + level * NODE_SPACING
         
@@ -1444,14 +1462,19 @@ class NetworkTopologyVisualizer:
         """移动所有节点和连接线到新的位置"""
         # 删除所有连接线
         for link in self.links:
-            self.canvas.delete(link.get("id"))
+            link_id = link.get("id")
+            if link_id is not None:
+                self.canvas.delete(link_id)
         self.links = []
         
         # 移动每个节点到新位置
         for node_id, node in self.nodes.items():
             try:
                 # 使用 bbox 获取边界框，而不是 coords（coords 返回的是顶点坐标，不是边界框）
-                bbox = self.canvas.bbox(node["shape"])
+                shape_id = node.get("shape")
+                if shape_id is None:
+                    continue
+                bbox = self.canvas.bbox(shape_id)
                 if bbox:
                     current_x = bbox[0]  # 左边界
                     current_y = bbox[1]  # 上边界
@@ -1459,8 +1482,8 @@ class NetworkTopologyVisualizer:
                     continue
             except (IndexError, TypeError, ValueError):
                 continue
-            dx = node["x"] - current_x
-            dy = node["y"] - current_y
+            dx: float = float(node["x"]) - current_x
+            dy: float = float(node["y"]) - current_y
             # 添加 Y 轴偏移量，向上移动 3 像素，修正连接线位置
             dy -= 3
             # 移动所有绑定了 node_id tag 的对象
@@ -1490,24 +1513,24 @@ class NetworkTopologyVisualizer:
                 # 计算连接点（从源节点右侧到目标节点左侧）
                 # 所有形状的左右顶点都在边界框边缘，统一使用边界框坐标
                 # 添加 3 像素偏移量，避免连接线穿入节点
-                x1 = source_node["x"] + NODE_WIDTH + 13  # 源节点右侧 + 13 像素偏移
-                y1 = source_node["y"] + NODE_HEIGHT / 2  # 垂直中心
-                x2 = target_node["x"] - 0  # 目标节点左侧 - 0 像素偏移
-                y2 = target_node["y"] + NODE_HEIGHT / 2  # 垂直中心
+                x1: float = float(source_node["x"]) + NODE_WIDTH + 13  # 源节点右侧 + 13 像素偏移
+                y1: float = float(source_node["y"]) + NODE_HEIGHT / 2  # 垂直中心
+                x2: float = float(target_node["x"])  # 目标节点左侧
+                y2: float = float(target_node["y"]) + NODE_HEIGHT / 2  # 垂直中心
                 
                 # 创建直角折线
                 mid_x = x1 + (x2 - x1) / 2  # 转折点 X 坐标
                 
                 # 绘制折线：水平 → 垂直 → 水平
-                line = self.canvas.create_line(
-                    x1, y1,          # 起点（源节点右侧中心）
-                    mid_x, y1,       # 转折点 1（水平延伸）
-                    mid_x, y2,       # 转折点 2（垂直向下/上）
-                    x2, y2,          # 终点（目标节点左侧中心）
+                line = self.canvas.create_line(  # pyright: ignore[reportCallIssue]
+                    x1, y1,
+                    mid_x, y1,
+                    mid_x, y2,
+                    x2, y2,
                     arrow=tk.LAST,
                     width=2,
                     fill="#CCCCCC",
-                    smooth=False,  # 不使用平滑，保持直角
+                    smooth=False,
                     tags="link"
                 )
                 self.links.append({
@@ -1600,7 +1623,7 @@ class NetworkTopologyVisualizer:
         self.scale = target_scale_factor
         
         # 更新缩放比例显示
-        if hasattr(self, 'scale_label'):
+        if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
         
         # 更新滚动区域
@@ -1758,14 +1781,14 @@ class NetworkTopologyVisualizer:
         解决鼠标停在画布空白处不再触发Motion事件导致高亮残留的问题
         """
         self._stop_hover_polling()
-        canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+        canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas else self.canvas
         self._hover_poll_job = canvas.after(50, self._check_hover_state)
 
     def _stop_hover_polling(self):
         """停止悬停轮询检测定时器"""
         if self._hover_poll_job:
             try:
-                canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+                canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas else self.canvas
                 canvas.after_cancel(self._hover_poll_job)
             except Exception:
                 pass
@@ -1781,7 +1804,7 @@ class NetworkTopologyVisualizer:
         
         try:
             # 确定使用哪个画布
-            canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+            canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas else self.canvas
             
             # 获取当前鼠标在画布上的坐标
             x = canvas.winfo_pointerx() - canvas.winfo_rootx()
@@ -1826,7 +1849,7 @@ class NetworkTopologyVisualizer:
             node: 节点信息
         """
         # 确定使用哪个画布
-        canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+        canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas is not None else self.canvas
         
         # 保存原始样式
         if "original_style" not in node:
@@ -1874,7 +1897,7 @@ class NetworkTopologyVisualizer:
             node: 节点信息
         """
         # 确定使用哪个画布
-        canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+        canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas is not None else self.canvas
         
         if "original_style" in node:
             original = node["original_style"]
@@ -2033,7 +2056,7 @@ class NetworkTopologyVisualizer:
         # 取消定时器
         if self.tooltip_timer:
             try:
-                canvas = self.fullscreen_canvas if self.is_fullscreen else self.canvas
+                canvas: Canvas = self.fullscreen_canvas if self.is_fullscreen and self.fullscreen_canvas else self.canvas
                 canvas.after_cancel(self.tooltip_timer)
             except Exception:
                 pass
@@ -2142,6 +2165,7 @@ class NetworkTopologyVisualizer:
     
     def _apply_fullscreen_view(self):
         """应用全屏视图设置"""
+        assert self.fullscreen_canvas is not None
         # 临时移除画布，防止变换过程中的闪现
         self.fullscreen_canvas.pack_forget()
         
@@ -2238,7 +2262,8 @@ class NetworkTopologyVisualizer:
         
         # 创建缩放控制面板
         self._create_fullscreen_controls()
-        self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        if self.scale_label is not None:
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
         
         # 添加退出全屏按钮
         self.exit_fullscreen_button = tk.Button(
@@ -2267,7 +2292,8 @@ class NetworkTopologyVisualizer:
         self.canvas.bind("<Leave>", self.on_canvas_leave)
         
         # 绑定ESC键退出全屏
-        self.fullscreen_window.bind("<Escape>", lambda e: self.exit_fullscreen())
+        if self.fullscreen_window is not None:
+            self.fullscreen_window.bind("<Escape>", lambda e: self.exit_fullscreen())
         
         # 更新状态
         self.is_fullscreen = True
@@ -2280,6 +2306,7 @@ class NetworkTopologyVisualizer:
     
     def drag_fullscreen(self, event):
         """全屏模式下拖拽操作"""
+        assert self.fullscreen_canvas is not None
         if self.dragging:
             dx = event.x - self.last_x
             dy = event.y - self.last_y
@@ -2301,25 +2328,25 @@ class NetworkTopologyVisualizer:
         self.hovered_node = None
         
         try:
-            if hasattr(self, 'fullscreen_window'):
+            if self.fullscreen_window is not None:
                 try:
                     if self.fullscreen_window.winfo_exists():
                         self.fullscreen_window.destroy()
                 except Exception:
                     pass
-                del self.fullscreen_window
+                self.fullscreen_window = None
         except Exception:
             pass
         
         # 恢复原始画布引用
-        if hasattr(self, 'original_canvas'):
+        if self.original_canvas is not None:
             self.canvas = self.original_canvas
-            delattr(self, 'original_canvas')
+            self.original_canvas = None
         
         # 恢复原始节点数据
-        if hasattr(self, 'original_nodes'):
+        if self.original_nodes is not None:
             self.nodes = self.original_nodes
-            delattr(self, 'original_nodes')
+            self.original_nodes = None
         
         # 清理全屏相关的控件引用
         for attr_name in ['fullscreen_canvas', 
@@ -2389,12 +2416,13 @@ class NetworkTopologyVisualizer:
     
     def _create_fullscreen_controls(self):
         """创建全屏模式下的缩放控制面板"""
+        assert self.fullscreen_canvas is not None
         # 创建控制面板框架
         self.control_frame = tk.Frame(self.fullscreen_canvas, bg="#34495e", bd=1, relief=tk.SUNKEN)
         self.control_frame.place(relx=0.99, rely=0.99, anchor=tk.SE)
         
         # 创建放大按钮
-        self.zoom_in_button = tk.Button(
+        zoom_in = tk.Button(
             self.control_frame,
             text="＋",
             command=lambda: self._zoom_fullscreen(1.1),
@@ -2407,12 +2435,13 @@ class NetworkTopologyVisualizer:
             font=("Arial", 12, "bold"),
             cursor="hand2"
         )
-        self.zoom_in_button.grid(row=0, column=0, padx=2, pady=2)
-        self.zoom_in_button.bind("<Enter>", lambda e: self.zoom_in_button.config(bg="#2ecc71"))
-        self.zoom_in_button.bind("<Leave>", lambda e: self.zoom_in_button.config(bg="#27ae60"))
+        self.zoom_in_button = zoom_in
+        zoom_in.grid(row=0, column=0, padx=2, pady=2)
+        zoom_in.bind("<Enter>", lambda e: zoom_in.config(bg="#2ecc71"))
+        zoom_in.bind("<Leave>", lambda e: zoom_in.config(bg="#27ae60"))
         
         # 创建缩小按钮
-        self.zoom_out_button = tk.Button(
+        zoom_out = tk.Button(
             self.control_frame,
             text="－",
             command=lambda: self._zoom_fullscreen(0.9),
@@ -2425,12 +2454,13 @@ class NetworkTopologyVisualizer:
             font=("Arial", 12, "bold"),
             cursor="hand2"
         )
-        self.zoom_out_button.grid(row=1, column=0, padx=2, pady=2)
-        self.zoom_out_button.bind("<Enter>", lambda e: self.zoom_out_button.config(bg="#f39c12"))
-        self.zoom_out_button.bind("<Leave>", lambda e: self.zoom_out_button.config(bg="#e67e22"))
+        self.zoom_out_button = zoom_out
+        zoom_out.grid(row=1, column=0, padx=2, pady=2)
+        zoom_out.bind("<Enter>", lambda e: zoom_out.config(bg="#f39c12"))
+        zoom_out.bind("<Leave>", lambda e: zoom_out.config(bg="#e67e22"))
         
         # 创建重置按钮
-        self.reset_button = tk.Button(
+        reset = tk.Button(
             self.control_frame,
             text="⟲",
             command=self._reset_fullscreen_view,
@@ -2443,12 +2473,13 @@ class NetworkTopologyVisualizer:
             font=("Arial", 12),
             cursor="hand2"
         )
-        self.reset_button.grid(row=2, column=0, padx=2, pady=2)
-        self.reset_button.bind("<Enter>", lambda e: self.reset_button.config(bg="#bdc3c7"))
-        self.reset_button.bind("<Leave>", lambda e: self.reset_button.config(bg="#95a5a6"))
+        self.reset_button = reset
+        reset.grid(row=2, column=0, padx=2, pady=2)
+        reset.bind("<Enter>", lambda e: reset.config(bg="#bdc3c7"))
+        reset.bind("<Leave>", lambda e: reset.config(bg="#95a5a6"))
         
         # 创建缩放比例显示（固定宽度，防止文字位数变化导致控件宽度变化）
-        self.scale_label = tk.Label(
+        scale_lbl = tk.Label(
             self.control_frame,
             text=f"{int(self.scale * 100)}%",
             bg="#34495e",
@@ -2456,12 +2487,14 @@ class NetworkTopologyVisualizer:
             font=("Arial", 10),
             padx=6,
             pady=2,
-            width=4  # 固定宽度，足够容纳 "100%"
+            width=4
         )
-        self.scale_label.grid(row=3, column=0, padx=2, pady=2)
+        self.scale_label = scale_lbl
+        scale_lbl.grid(row=3, column=0, padx=2, pady=2)
     
     def _zoom_fullscreen(self, factor):
         """全屏模式下缩放图像"""
+        assert self.fullscreen_canvas is not None
         new_scale = self.scale * factor
         new_scale = max(0.5, min(new_scale, 1.0))
         
@@ -2476,10 +2509,12 @@ class NetworkTopologyVisualizer:
             self.fullscreen_canvas.scale(tk.ALL, center_x, center_y, scale_factor, scale_factor)
         
         # 更新缩放比例显示
-        self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        if self.scale_label is not None:
+            self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _reset_fullscreen_view(self):
         """重置全屏视图到最佳显示状态"""
+        assert self.fullscreen_canvas is not None
         # 清空画布并重新绘制拓扑图
         self.fullscreen_canvas.delete(tk.ALL)
         self.nodes.clear()
@@ -2547,11 +2582,12 @@ class NetworkTopologyVisualizer:
             self.fullscreen_canvas.xview_moveto(0)
             self.fullscreen_canvas.yview_moveto(0)
         
-        if hasattr(self, 'scale_label'):
+        if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def _auto_scale_to_fit_fullscreen(self):
         """全屏模式下自动缩放画布以适应全屏窗口，左上对齐"""
+        assert self.fullscreen_canvas is not None
         # 确保画布已完全初始化
         self.fullscreen_canvas.update_idletasks()
         
@@ -2644,11 +2680,12 @@ class NetworkTopologyVisualizer:
         """全屏模式下自动缩放并更新显示"""
         self._auto_scale_to_fit_fullscreen()
         # 更新缩放比例显示
-        if hasattr(self, 'scale_label'):
+        if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_mouse_wheel_fullscreen(self, event):
         """全屏模式下鼠标滚轮缩放 - 以鼠标位置为中心"""
+        assert self.fullscreen_canvas is not None
         # 将窗口坐标转换为画布坐标
         canvas_x = self.fullscreen_canvas.canvasx(event.x)
         canvas_y = self.fullscreen_canvas.canvasy(event.y)
@@ -2667,11 +2704,12 @@ class NetworkTopologyVisualizer:
         self.fullscreen_canvas.scale(tk.ALL, canvas_x, canvas_y, scale_factor, scale_factor)
         
         # 更新缩放比例显示
-        if hasattr(self, 'scale_label'):
+        if hasattr(self, 'scale_label') and self.scale_label:
             self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_click_fullscreen(self, event):
         """全屏模式下自定义点击处理，实现双击检测"""
+        assert self.fullscreen_canvas is not None
         current_time = event.time
         current_x = event.x
         current_y = event.y
@@ -2716,6 +2754,7 @@ class NetworkTopologyVisualizer:
     
     def on_double_click_fullscreen(self, event):
         """全屏模式下双击缩放功能"""
+        assert self.fullscreen_canvas is not None
         current_scale = getattr(self, 'scale', 1.0)
         
         self.fullscreen_canvas.update_idletasks()
@@ -2754,7 +2793,10 @@ class NetworkTopologyVisualizer:
                 
                 min_dist = float('inf')
                 for node_id, node in self.nodes.items():
-                    coords = self.fullscreen_canvas.bbox(node["shape"])
+                    shape = node.get("shape")
+                    if shape is None:
+                        continue
+                    coords = self.fullscreen_canvas.bbox(int(shape))
                     if coords:
                         node_cx = (coords[0] + coords[2]) / 2
                         node_cy = (coords[1] + coords[3]) / 2
@@ -2791,7 +2833,7 @@ class NetworkTopologyVisualizer:
                     self.fullscreen_canvas.move(tk.ALL, adjust_x, adjust_y)
             
             self.scale = 1.0
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
         else:
             # 缩小到50%
@@ -2824,11 +2866,12 @@ class NetworkTopologyVisualizer:
                 self.fullscreen_canvas.move(tk.ALL, dx, dy)
             
             self.scale = 0.5
-            if hasattr(self, 'scale_label'):
+            if hasattr(self, 'scale_label') and self.scale_label:
                 self.scale_label.config(text=f"{int(self.scale * 100)}%")
     
     def on_mouse_move_fullscreen(self, event):
         """全屏模式下鼠标移动事件，用于显示节点悬停详情"""
+        assert self.fullscreen_canvas is not None
         if self.dragging:
             return
         
@@ -2920,5 +2963,3 @@ class NetworkTopologyVisualizer:
         if self.auto_update:
             self.refresh_data()
             self.update_timer = self.canvas.after(self.update_interval, self._schedule_update)
-
-

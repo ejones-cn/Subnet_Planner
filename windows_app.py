@@ -9392,6 +9392,7 @@ class SubnetPlannerApp:
         """刷新IPAM网络列表，实现分层显示"""
         # 保存展开状态
         expanded_items = set()
+
         def save_expanded_state(item):
             if self.ipam_network_tree.item(item, 'open'):
                 expanded_items.add(self.ipam_network_tree.item(item, 'values')[0])
@@ -11291,6 +11292,7 @@ class SubnetPlannerApp:
                     except Exception as e:
                         self.show_error(_('error'), f"{_('delete_failed')}: {str(e)}")
             # 频率映射（英文到本地化）
+
             def get_frequency_map():
                 return {
                     'disabled': _('disabled'),
@@ -12609,20 +12611,20 @@ class SubnetPlannerApp:
             for s in self._current_ip_shadows:
                 try:
                     s.destroy()
-                except:
+                except Exception:
                     pass
-        except:
+        except Exception:
             pass
         # 再关闭菜单
         try:
             self._current_ip_popup.destroy()
-        except:
+        except Exception:
             pass
         # 移除事件绑定
         if self._ip_popup_click_bind_id:
             try:
                 self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
-            except:
+            except Exception:
                 pass
         # 执行菜单操作
         self.on_ip_menu_action(action)
@@ -12633,7 +12635,7 @@ class SubnetPlannerApp:
         if hasattr(self, '_ip_popup_click_bind_id') and self._ip_popup_click_bind_id:
             try:
                 self.root.unbind('<Button-1>', self._ip_popup_click_bind_id)
-            except:
+            except Exception:
                 pass
             self._ip_popup_click_bind_id = None
         
@@ -12642,7 +12644,7 @@ class SubnetPlannerApp:
             for shadow in self._ip_shadow_windows:
                 try:
                     shadow.destroy()
-                except:
+                except Exception:
                     pass
             self._ip_shadow_windows = []
         
@@ -12656,7 +12658,7 @@ class SubnetPlannerApp:
         if hasattr(self, '_ip_popup_menu') and self._ip_popup_menu:
             try:
                 self._ip_popup_menu.destroy()
-            except:
+            except Exception:
                 pass
             self._ip_popup_menu = None
     
