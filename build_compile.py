@@ -340,12 +340,12 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         should_restore = True
         
         if os.path.exists(original_db):
-            _ = shutil.move(original_db, os.path.join(temp_db_dir, original_db))
-            print(f"⏳ 临时移动数据库文件: {original_db}")
+            moved_path = shutil.move(original_db, os.path.join(temp_db_dir, original_db))
+            print(f"⏳ 临时移动数据库文件: {original_db} -> {moved_path}")
         
         if os.path.exists(original_backup_dir):
-            _ = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
-            print(f"⏳ 临时移动备份目录: {original_backup_dir}")
+            moved_path = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
+            print(f"⏳ 临时移动备份目录: {original_backup_dir} -> {moved_path}")
     
     # 编译命令 - 使用Nuitka新版本支持的选项
     cmd: list[str] = [
@@ -436,12 +436,18 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
             
             if os.path.exists(temp_db):
-                _ = shutil.move(temp_db, original_db)
-                print(f"⏳ 恢复数据库文件: {original_db}")
+                try:
+                    moved_path = shutil.move(temp_db, original_db)
+                    print(f"✅ 恢复数据库文件成功: {moved_path}")
+                except Exception as e:
+                    print(f"❌ 恢复数据库文件失败: {original_db}, 错误: {e}")
             
             if os.path.exists(temp_backup_dir):
-                _ = shutil.move(temp_backup_dir, original_backup_dir)
-                print(f"⏳ 恢复备份目录: {original_backup_dir}")
+                try:
+                    moved_path = shutil.move(temp_backup_dir, original_backup_dir)
+                    print(f"✅ 恢复备份目录成功: {moved_path}")
+                except Exception as e:
+                    print(f"❌ 恢复备份目录失败: {original_backup_dir}, 错误: {e}")
 
 
 
