@@ -122,9 +122,18 @@ class IPAMSQLite:
             expiry_date TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT,
+            mac_address TEXT,
             FOREIGN KEY (network_id) REFERENCES networks(id)
         )
         ''')
+        
+        # 为现有ip_addresses表添加mac_address列（如果不存在）
+        try:
+            _ = cursor.execute('ALTER TABLE ip_addresses ADD COLUMN mac_address TEXT')
+            conn.commit()
+        except sqlite3.OperationalError:
+            # 列已存在，忽略错误
+            pass
         
         # 创建allocation_history表
         _ = cursor.execute('''
@@ -436,6 +445,13 @@ class IPAMSQLite:
             except ValueError as e:
                 return False, f"IP地址格式错误: {str(e)}"
             
+            # 验证并标准化过期日期格式
+            if expiry_date:
+                validated_date = self._validate_expiry_date(expiry_date)
+                if validated_date is None:
+                    return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+                expiry_date = validated_date
+            
             # 找到最具体的网络
             most_specific_network = self.get_most_specific_network(ip_address)
             if not most_specific_network:
@@ -550,25 +566,26 @@ class IPAMSQLite:
                 cursor = conn.cursor()
                 
                 # 获取所有IP地址，按创建时间降序排序
-                _ = cursor.execute('SELECT id, network_id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, created_at, updated_at FROM ip_addresses ORDER BY created_at DESC')
-                ips: list[tuple[int, int, str, str, str | None, str | None, str | None, str | None, str | None, str | None, str | None]] = cursor.fetchall()
+                _ = cursor.execute('SELECT id, network_id, ip_address, status, hostname, mac_address, description, allocated_at, allocated_by, expiry_date, created_at, updated_at FROM ip_addresses ORDER BY created_at DESC')
+                ips: list[tuple[int, int, str, str, str | None, str | None, str | None, str | None, str | None, str | None, str | None, str | None]] = cursor.fetchall()
                 
                 # 过滤出属于目标网络的IP地址
                 relevant_ips: list[dict[str, str | int | None]] = []
                 for ip_item in ips:
                     try:
-                        if len(ip_item) >= 11:
+                        if len(ip_item) >= 12:
                             ip_id: int = int(ip_item[0])
                             network_id: int = int(ip_item[1])
                             ip_address: str = str(ip_item[2])
                             status: str = str(ip_item[3])
                             hostname: str | None = str(ip_item[4]) if ip_item[4] else None
-                            description: str | None = str(ip_item[5]) if ip_item[5] else None
-                            allocated_at: str | None = str(ip_item[6]) if ip_item[6] else None
-                            allocated_by: str | None = str(ip_item[7]) if ip_item[7] else None
-                            expiry_date: str | None = str(ip_item[8]) if ip_item[8] else None
-                            created_at: str | None = str(ip_item[9]) if ip_item[9] else None
-                            updated_at: str | None = str(ip_item[10]) if ip_item[10] else None
+                            mac_address: str | None = str(ip_item[5]) if ip_item[5] else None
+                            description: str | None = str(ip_item[6]) if ip_item[6] else None
+                            allocated_at: str | None = str(ip_item[7]) if ip_item[7] else None
+                            allocated_by: str | None = str(ip_item[8]) if ip_item[8] else None
+                            expiry_date: str | None = str(ip_item[9]) if ip_item[9] else None
+                            created_at: str | None = str(ip_item[10]) if ip_item[10] else None
+                            updated_at: str | None = str(ip_item[11]) if ip_item[11] else None
                             ip_obj = ipaddress.ip_address(ip_address)
                             if ip_obj in ip_network:
                                 relevant_ips.append({
@@ -577,6 +594,7 @@ class IPAMSQLite:
                                     'ip_address': ip_address,
                                     'status': status,
                                     'hostname': hostname,
+                                    'mac_address': mac_address,
                                     'description': description,
                                     'allocated_at': allocated_at,
                                     'allocated_by': allocated_by,
@@ -970,18 +988,26 @@ class IPAMSQLite:
         except Exception:
             return None
     
-    def update_ip_record(self, record_id: int, hostname: str, description: str, expiry_date: str | None = None) -> tuple[bool, str]:
+    def update_ip_record(self, record_id: int, hostname: str, mac_address: str, description: str, expiry_date: str | None = None) -> tuple[bool, str]:
         """更新IP地址记录
         
         Args:
             record_id: 记录ID
             hostname: 主机名
+            mac_address: MAC地址
             description: 描述
             expiry_date: 过期日期
         
         Returns:
             tuple[bool, str]: (是否更新成功, 错误信息)
         """
+        # 验证并标准化过期日期格式
+        if expiry_date:
+            validated_date = self._validate_expiry_date(expiry_date)
+            if validated_date is None:
+                return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+            expiry_date = validated_date
+        
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -1002,9 +1028,9 @@ class IPAMSQLite:
             # 更新记录
             _ = cursor.execute('''
             UPDATE ip_addresses 
-            SET hostname = ?, description = ?, expiry_date = ?, updated_at = ?
+            SET hostname = ?, mac_address = ?, description = ?, expiry_date = ?, updated_at = ?
             WHERE id = ?
-            ''', (hostname, description, expiry_date, now, record_id))
+            ''', (hostname, mac_address, description, expiry_date, now, record_id))
             
             # 检查是否有记录被更新
             if cursor.rowcount == 0:
@@ -1367,7 +1393,7 @@ class IPAMSQLite:
             
             # 查找所有可用状态的IP地址
             _ = cursor.execute('''
-            SELECT id, network_id, ip_address, status, hostname, description, expiry_date 
+            SELECT id, network_id, ip_address, status, hostname, mac_address, description, expiry_date 
             FROM ip_addresses 
             WHERE status = ?
             ''', ('available',))
@@ -1384,6 +1410,7 @@ class IPAMSQLite:
                     'ip_address': ip['ip_address'],
                     'status': ip['status'],
                     'hostname': ip['hostname'],
+                    'mac_address': ip['mac_address'],
                     'description': ip['description'],
                     'expiry_date': ip['expiry_date']
                 })
@@ -1468,14 +1495,14 @@ class IPAMSQLite:
             
             # 获取所有过期的IP地址，包括allocated和reserved状态
             _ = cursor.execute('''
-            SELECT id, network_id, ip_address, status, hostname, description, allocated_at, expiry_date 
+            SELECT id, network_id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, mac_address 
             FROM ip_addresses 
             WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
             expired_ips: list[dict[str, str | int | None]] = []
             for row in cursor.fetchall():
-                if isinstance(row, tuple) and len(row) >= 8:
+                if isinstance(row, tuple) and len(row) >= 10:
                     ip_id: int = int(row[0])
                     network_id: int = int(row[1])
                     ip_address: str = str(row[2])
@@ -1483,7 +1510,9 @@ class IPAMSQLite:
                     hostname: str | None = str(row[4]) if row[4] else None
                     description: str | None = str(row[5]) if row[5] else None
                     allocated_at: str | None = str(row[6]) if row[6] else None
-                    expiry_date: str | None = str(row[7]) if row[7] else None
+                    allocated_by: str | None = str(row[7]) if row[7] else None
+                    expiry_date: str | None = str(row[8]) if row[8] else None
+                    mac_address: str | None = str(row[9]) if row[9] else None
                     expired_ips.append({
                         'id': ip_id,
                         'network_id': network_id,
@@ -1492,7 +1521,8 @@ class IPAMSQLite:
                         'hostname': hostname,
                         'description': description,
                         'allocated_at': allocated_at,
-                        'expiry_date': expiry_date
+                        'expiry_date': expiry_date,
+                        'mac_address': mac_address
                     })
             
             conn.close()
@@ -1617,6 +1647,13 @@ class IPAMSQLite:
                 _ = ipaddress.ip_address(ip_address)
             except ValueError as e:
                 return False, f"IP地址格式错误: {str(e)}"
+            
+            # 验证并标准化过期日期格式
+            if expiry_date:
+                validated_date = self._validate_expiry_date(expiry_date)
+                if validated_date is None:
+                    return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+                expiry_date = validated_date
             
             # 找到最具体的网络
             most_specific_network = self.get_most_specific_network(ip_address)
@@ -1850,25 +1887,26 @@ class IPAMSQLite:
             
             # 查找该IP地址的所有记录
             _ = cursor.execute('''
-            SELECT id, network_id, status, hostname, description, allocated_at, expiry_date, created_at, updated_at 
+            SELECT id, network_id, status, hostname, mac_address, description, allocated_at, expiry_date, created_at, updated_at 
             FROM ip_addresses 
             WHERE ip_address = ?
             ''', (ip_address,))
             
             conflict_records = []
             for row in cursor.fetchall():
-                if isinstance(row, tuple) and len(row) >= 9:
+                if isinstance(row, tuple) and len(row) >= 10:
                     conflict_records.append({
                         'id': int(row[0]),
                         'network_id': int(row[1]),
                         'ip_address': ip_address,
                         'status': str(row[2]),
                         'hostname': str(row[3]) if row[3] else None,
-                        'description': str(row[4]) if row[4] else None,
-                        'allocated_at': str(row[5]) if row[5] else None,
-                        'expiry_date': str(row[6]) if row[6] else None,
-                        'created_at': str(row[7]) if row[7] else None,
-                        'updated_at': str(row[8]) if row[8] else None
+                        'mac_address': str(row[4]) if row[4] else None,
+                        'description': str(row[5]) if row[5] else None,
+                        'allocated_at': str(row[6]) if row[6] else None,
+                        'expiry_date': str(row[7]) if row[7] else None,
+                        'created_at': str(row[8]) if row[8] else None,
+                        'updated_at': str(row[9]) if row[9] else None
                     })
             
             conn.close()
@@ -2020,10 +2058,27 @@ class IPAMSQLite:
             reserved_ips_result = cursor.fetchone()
             reserved_ips = int(reserved_ips_result[0]) if reserved_ips_result and isinstance(reserved_ips_result, tuple) and len(reserved_ips_result) >= 1 else 0
             
+            # 获取可用IP数
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE status = ?', ('available',))
+            available_ips_result = cursor.fetchone()
+            available_ips = int(available_ips_result[0]) if available_ips_result and isinstance(available_ips_result, tuple) and len(available_ips_result) >= 1 else 0
+            
             # 获取过期IP数，包括allocated和reserved状态
             _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE expiry_date < ? AND status IN ("allocated", "reserved")', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             expired_ips_result = cursor.fetchone()
             expired_ips = int(expired_ips_result[0]) if expired_ips_result and isinstance(expired_ips_result, tuple) and len(expired_ips_result) >= 1 else 0
+            
+            # 获取即将过期IP数（未来7天内过期）
+            from datetime import timedelta
+            seven_days_later = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE expiry_date >= ? AND expiry_date <= ? AND status IN ("allocated", "reserved")', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), seven_days_later))
+            expiring_ips_result = cursor.fetchone()
+            expiring_ips = int(expiring_ips_result[0]) if expiring_ips_result and isinstance(expiring_ips_result, tuple) and len(expiring_ips_result) >= 1 else 0
+            
+            # 获取已命名IP数（hostname不为空）
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE hostname IS NOT NULL AND hostname != ""')
+            named_ips_result = cursor.fetchone()
+            named_ips = int(named_ips_result[0]) if named_ips_result and isinstance(named_ips_result, tuple) and len(named_ips_result) >= 1 else 0
             
             # 获取IPv4和IPv6网络数
             _ = cursor.execute('SELECT network_address FROM networks')
@@ -2042,6 +2097,28 @@ class IPAMSQLite:
                 except Exception:
                     pass
             
+            # 获取IPv4和IPv6地址数
+            _ = cursor.execute('SELECT ip_address FROM ip_addresses')
+            ip_rows = cursor.fetchall()
+            ipv4_ips = 0
+            ipv6_ips = 0
+            
+            for ip_row in ip_rows:
+                try:
+                    if isinstance(ip_row, tuple) and len(ip_row) >= 1:
+                        ip_addr = ipaddress.ip_address(str(ip_row[0]))
+                        if ip_addr.version == 4:
+                            ipv4_ips += 1
+                        elif ip_addr.version == 6:
+                            ipv6_ips += 1
+                except Exception:
+                    pass
+            
+            # 获取VLAN数量（不重复的VLAN）
+            _ = cursor.execute('SELECT DISTINCT vlan FROM networks WHERE vlan IS NOT NULL AND vlan != ""')
+            vlan_rows = cursor.fetchall()
+            vlan_count = len(vlan_rows)
+            
             conn.close()
             
             stats = {
@@ -2049,21 +2126,34 @@ class IPAMSQLite:
                 'total_ips': total_ips,
                 'allocated_ips': allocated_ips,
                 'reserved_ips': reserved_ips,
+                'available_ips': available_ips,
                 'expired_ips': expired_ips,
+                'expiring_ips': expiring_ips,
+                'named_ips': named_ips,
                 'ipv4_networks': ipv4_networks,
-                'ipv6_networks': ipv6_networks
+                'ipv6_networks': ipv6_networks,
+                'ipv4_ips': ipv4_ips,
+                'ipv6_ips': ipv6_ips,
+                'vlan_count': vlan_count
             }
             
             return stats
-        except Exception:
+        except Exception as e:
+            print(f"获取统计信息失败: {str(e)}")
             return {
                 'total_networks': 0,
                 'total_ips': 0,
                 'allocated_ips': 0,
                 'reserved_ips': 0,
+                'available_ips': 0,
                 'expired_ips': 0,
+                'expiring_ips': 0,
+                'named_ips': 0,
                 'ipv4_networks': 0,
-                'ipv6_networks': 0
+                'ipv6_networks': 0,
+                'ipv4_ips': 0,
+                'ipv6_ips': 0,
+                'vlan_count': 0
             }
     
     def list_backups(self) -> list[dict[str, Any]]:

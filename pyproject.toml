@@ -15,17 +15,25 @@ extend-ignore = ['E203', 'W503']
 exclude = ['__pycache__', '.git', '.venv', 'venv', 'build', 'dist']
 select = ['E', 'F', 'W', 'C901']
 
-[tool.pyright]
-# Pyright configuration
-# 忽略包含第三方库调用的文件，这些库的 stub 类型定义不完整
+[tool.basedpyright]
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownLambdaType = false
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportMissingTypeArgument = false
+reportUnusedCallResult = false
 ignore = [
-    "windows_app.py",  # windows_app.py 包含大量 tkinter 动态组件创建，类型检查器会产生大量误报
-    "export_utils.py",  # export_utils.py 包含 reportlab/openpyxl/PIL 第三方库调用
-    "chart_utils.py",   # chart_utils.py 包含 tkinter 图形绘制调用
-    "style_manager.py",  # style_manager.py 包含 tkinter 样式配置调用
-    "ip_subnet_calculator.py",  # ip_subnet_calculator.py 包含 tkinter UI 组件调用
-    "version_info.py",  # version_info.py 只包含 PyInstaller 版本配置，导入其内部模块
-    "test_column_width.py",  # test_column_width.py 依赖 windows_app.py，会产生大量误报
-    "manage_version.py",  # manage_version.py 包含动态JSON处理，类型检查器会产生误报
-    "verify_versions.py",  # verify_versions.py 包含动态导入，类型检查器会产生误报
+    "windows_app.py",
+    "export_utils.py",
+    "chart_utils.py",
+    "style_manager.py",
+    "ip_subnet_calculator.py",
+    "version_info.py",
+    "test_column_width.py",
+    "manage_version.py",
+    "verify_versions.py",
 ]

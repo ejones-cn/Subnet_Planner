@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -9236,12 +9236,13 @@ class SubnetPlannerApp:
         table_container.grid_columnconfigure(0, weight=1)
         
         # IP 地址列表 - 在table_container上创建
-        self.ipam_ip_tree = ttk.Treeview(table_container, columns=('ip_address', 'status', 'hostname', 'description', 'allocated_at', 'expiry_date'), show='headings', height=8, selectmode='extended')
+        self.ipam_ip_tree = ttk.Treeview(table_container, columns=('ip_address', 'status', 'hostname', 'mac_address', 'description', 'allocated_at', 'expiry_date'), show='headings', height=8, selectmode='extended')
         
         # 为表头添加点击事件，实现排序功能
         self.ipam_ip_tree.heading('ip_address', text=_('ip_address'), command=lambda: self.sort_ip_table('ip_address'))
         self.ipam_ip_tree.heading('status', text=_('status'), command=lambda: self.sort_ip_table('status'))
         self.ipam_ip_tree.heading('hostname', text=_('hostname'), command=lambda: self.sort_ip_table('hostname'))
+        self.ipam_ip_tree.heading('mac_address', text=_('mac_address'), command=lambda: self.sort_ip_table('mac_address'))
         self.ipam_ip_tree.heading('description', text=_('description'), command=lambda: self.sort_ip_table('description'))
         self.ipam_ip_tree.heading('allocated_at', text=_('allocated_time'), command=lambda: self.sort_ip_table('allocated_at'))
         self.ipam_ip_tree.heading('expiry_date', text=_('expiry_date'), command=lambda: self.sort_ip_table('expiry_date'))
@@ -9256,6 +9257,7 @@ class SubnetPlannerApp:
         self.ipam_ip_tree.column('ip_address', width=100, minwidth=80, stretch=True)
         self.ipam_ip_tree.column('status', width=70, minwidth=50, stretch=True)
         self.ipam_ip_tree.column('hostname', width=100, minwidth=80, stretch=True)
+        self.ipam_ip_tree.column('mac_address', width=120, minwidth=100, stretch=False)
         self.ipam_ip_tree.column('description', width=120, minwidth=90, stretch=True)
         self.ipam_ip_tree.column('allocated_at', width=130, minwidth=100, stretch=True)
         self.ipam_ip_tree.column('expiry_date', width=130, minwidth=100, stretch=True)
@@ -9278,10 +9280,10 @@ class SubnetPlannerApp:
         # 为IP地址表格添加双击编辑功能 - 支持内联编辑
         # 注册IP地址表的内联编辑配置
         self.register_inline_edit_config('ipam_ip', {
-            'editable_columns': [0, 1, 2, 3, 5],  # 允许编辑IP地址、状态、主机名、描述和过期日期
+            'editable_columns': [0, 1, 2, 3, 4, 6],  # 允许编辑IP地址、状态、主机名、MAC地址、描述和过期日期
             'column_types': {
                 1: 'combobox',  # 状态列使用下拉框
-                5: 'datepicker'  # 过期日期列使用日期选择器
+                6: 'datepicker'  # 过期日期列使用日期选择器
             },
             'combobox_values': {
                 1: [_('available'), _('allocated'), _('reserved')]  # 状态选项
@@ -9343,16 +9345,20 @@ class SubnetPlannerApp:
         # 统计数据 - 分两列显示
         self.stats_labels = {}
         stats_items = [
-            ('total_networks', '网络总数:'),
-            ('ipv4_networks', 'IPv4网络:'),
-            ('ipv6_networks', 'IPv6网络:'),
-            ('total_ips', 'IP地址总数:'),
+            ('total_networks', '网段总数:'),
+            ('total_ips', '在库IP数:'),
+            ('ipv4_networks', 'IPv4网段:'),
+            ('ipv4_ips', 'IPv4地址数:'),
+            ('ipv6_networks', 'IPv6网段:'),
+            ('ipv6_ips', 'IPv6地址数:'),
             ('allocated_ips', '已分配IP:'),
             ('reserved_ips', '已保留IP:'),
             ('available_ips', '可用IP:'),
             ('expired_ips', '过期IP:'),
-            ('utilization_rate', '利用率:'),
-            ('avg_allocation_rate', '平均分配率:')
+            ('expiring_ips', '即将过期:'),
+            ('named_ips', '已命名IP:'),
+            ('vlan_count', 'VLAN数量:'),
+            ('utilization_rate', '利用率:')
         ]
         
         for i, (key, label) in enumerate(stats_items):
@@ -9619,6 +9625,7 @@ class SubnetPlannerApp:
                     ip['ip_address'],
                     status_text,
                     ip.get('hostname', ''),
+                    ip.get('mac_address', ''),
                     ip.get('description', ''),
                     formatted_allocated_at,
                     formatted_expiry_date
@@ -9629,6 +9636,7 @@ class SubnetPlannerApp:
                     ip['ip_address'],
                     status_text,
                     ip.get('hostname', ''),
+                    ip.get('mac_address', ''),
                     ip.get('description', ''),
                     formatted_allocated_at,
                     formatted_expiry_date
@@ -10148,6 +10156,7 @@ class SubnetPlannerApp:
                 ip['ip_address'],
                 status_text,
                 ip.get('hostname', ''),
+                ip.get('mac_address', ''),
                 ip.get('description', ''),
                 formatted_allocated_at,
                 formatted_expiry_date
@@ -10319,6 +10328,7 @@ class SubnetPlannerApp:
                 ip['ip_address'],
                 status_text,
                 ip.get('hostname', ''),
+                ip.get('mac_address', ''),
                 ip.get('description', ''),
                 formatted_allocated_at,
                 formatted_expiry_date
@@ -10386,8 +10396,10 @@ class SubnetPlannerApp:
                     ip['ip_address'],
                     ip['status'],
                     ip['hostname'],
+                    ip.get('mac_address', ''),
                     ip['description'],
-                    ip['allocated_at']
+                    ip['allocated_at'],
+                    ip.get('expiry_date', '')
                 ))
     
     def check_ip_conflicts(self):
@@ -10416,6 +10428,7 @@ class SubnetPlannerApp:
                                 'ip_address': ip['ip_address'],
                                 'status': ip['status'],
                                 'hostname': ip.get('hostname', ''),
+                                'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
                                 'allocated_at': ip.get('allocated_at', ''),
                                 'network_id': ip.get('network_id', '')
@@ -10461,6 +10474,7 @@ class SubnetPlannerApp:
                                 'ip_address': ip['ip_address'],
                                 'status': ip['status'],
                                 'hostname': ip.get('hostname', ''),
+                                'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
                                 'allocated_at': ip.get('allocated_at', ''),
                                 'network_id': ip.get('network_id', '')
@@ -10510,7 +10524,7 @@ class SubnetPlannerApp:
         main_frame.grid_columnconfigure(1, weight=0)
         
         # 创建结果树 - 添加ID列用于内部处理
-        columns = ('id', _('network'), _('ip_address'), _('status'), _('hostname'), _('description'), _('allocated_at'))
+        columns = ('id', _('network'), _('ip_address'), _('status'), _('hostname'), _('mac_address'), _('description'), _('allocated_at'))
         tree = ttk.Treeview(main_frame, columns=columns, show='headings', selectmode='extended')
         
         # 隐藏ID列
@@ -10518,12 +10532,13 @@ class SubnetPlannerApp:
         tree.heading('id', text='ID')
         
         # 设置列宽
-        tree.column(_('network'), width=120)
-        tree.column(_('ip_address'), width=110)
-        tree.column(_('status'), width=70)
-        tree.column(_('hostname'), width=140)
-        tree.column(_('description'), width=200)
-        tree.column(_('allocated_at'), width=130)
+        tree.column(_('network'), width=100, stretch=False)
+        tree.column(_('ip_address'), width=90, stretch=False)
+        tree.column(_('status'), width=60, stretch=False)
+        tree.column(_('hostname'), width=100, stretch=False)
+        tree.column(_('mac_address'), width=110, stretch=False)
+        tree.column(_('description'), width=100, stretch=True)
+        tree.column(_('allocated_at'), width=110, stretch=False)
         
         # 设置表头
         for col in columns[1:]:  # 跳过ID列
@@ -10548,6 +10563,7 @@ class SubnetPlannerApp:
                 conflict['ip_address'],
                 translated_status,
                 conflict['hostname'],
+                conflict.get('mac_address', ''),
                 conflict['description'],
                 conflict.get('allocated_at', '')
             ))
@@ -10749,6 +10765,7 @@ class SubnetPlannerApp:
                                 'ip_address': ip['ip_address'],
                                 'status': ip['status'],
                                 'hostname': ip.get('hostname', ''),
+                                'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
                                 'allocated_at': ip.get('allocated_at', ''),
                                 'network_id': ip.get('network_id', '')
@@ -10768,6 +10785,7 @@ class SubnetPlannerApp:
                                 'ip_address': ip['ip_address'],
                                 'status': ip['status'],
                                 'hostname': ip.get('hostname', ''),
+                                'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
                                 'allocated_at': ip.get('allocated_at', ''),
                                 'network_id': ip.get('network_id', '')
@@ -11781,33 +11799,35 @@ class SubnetPlannerApp:
             stats = self.ipam.get_overall_stats()
             
             total_networks = stats.get('total_networks', 0)
-            ipv4_networks = stats.get('ipv4_networks', 0)
-            ipv6_networks = stats.get('ipv6_networks', 0)
             total_ips = stats.get('total_ips', 0)
+            ipv4_networks = stats.get('ipv4_networks', 0)
+            ipv4_ips = stats.get('ipv4_ips', 0)
+            ipv6_networks = stats.get('ipv6_networks', 0)
+            ipv6_ips = stats.get('ipv6_ips', 0)
             allocated_ips = stats.get('allocated_ips', 0)
             reserved_ips = stats.get('reserved_ips', 0)
             available_ips = stats.get('available_ips', 0)
             expired_ips = stats.get('expired_ips', 0)
+            expiring_ips = stats.get('expiring_ips', 0)
+            named_ips = stats.get('named_ips', 0)
+            vlan_count = stats.get('vlan_count', 0)
             
-            # 计算利用率
             utilization_rate = 0
             if total_ips > 0:
                 utilization_rate = (allocated_ips + reserved_ips) / total_ips * 100
             
-            # 计算平均分配率
-            avg_allocation_rate = 0
-            if total_networks > 0:
-                avg_allocation_rate = (allocated_ips + reserved_ips) / total_networks
-            
-            # 更新统计标签
             if 'total_networks' in self.stats_labels:
                 self.stats_labels['total_networks'].config(text=str(total_networks))
-            if 'ipv4_networks' in self.stats_labels:
-                self.stats_labels['ipv4_networks'].config(text=str(ipv4_networks))
-            if 'ipv6_networks' in self.stats_labels:
-                self.stats_labels['ipv6_networks'].config(text=str(ipv6_networks))
             if 'total_ips' in self.stats_labels:
                 self.stats_labels['total_ips'].config(text=str(total_ips))
+            if 'ipv4_networks' in self.stats_labels:
+                self.stats_labels['ipv4_networks'].config(text=str(ipv4_networks))
+            if 'ipv4_ips' in self.stats_labels:
+                self.stats_labels['ipv4_ips'].config(text=str(ipv4_ips))
+            if 'ipv6_networks' in self.stats_labels:
+                self.stats_labels['ipv6_networks'].config(text=str(ipv6_networks))
+            if 'ipv6_ips' in self.stats_labels:
+                self.stats_labels['ipv6_ips'].config(text=str(ipv6_ips))
             if 'allocated_ips' in self.stats_labels:
                 self.stats_labels['allocated_ips'].config(text=str(allocated_ips))
             if 'reserved_ips' in self.stats_labels:
@@ -11816,63 +11836,63 @@ class SubnetPlannerApp:
                 self.stats_labels['available_ips'].config(text=str(available_ips))
             if 'expired_ips' in self.stats_labels:
                 self.stats_labels['expired_ips'].config(text=str(expired_ips))
+            if 'expiring_ips' in self.stats_labels:
+                self.stats_labels['expiring_ips'].config(text=str(expiring_ips))
+            if 'named_ips' in self.stats_labels:
+                self.stats_labels['named_ips'].config(text=str(named_ips))
+            if 'vlan_count' in self.stats_labels:
+                self.stats_labels['vlan_count'].config(text=str(vlan_count))
             if 'utilization_rate' in self.stats_labels:
                 self.stats_labels['utilization_rate'].config(text=f"{utilization_rate:.2f}%")
-            if 'avg_allocation_rate' in self.stats_labels:
-                self.stats_labels['avg_allocation_rate'].config(text=f"{avg_allocation_rate:.2f}")
             
             # 绘制饼图
-            self.draw_ip_usage_pie_chart(allocated_ips, reserved_ips, available_ips, utilization_rate, avg_allocation_rate)
+            self.draw_ip_usage_pie_chart(allocated_ips, reserved_ips, available_ips, utilization_rate)
         except Exception as e:
             print(f"刷新统计数据失败: {e}")
     
     def draw_ip_usage_pie_chart(self, allocated, reserved, available, utilization_rate=0, avg_allocation_rate=0):
         """绘制IP地址使用情况饼图"""
         try:
-            # 清空画布
             self.stats_canvas.delete("all")
             
-            # 获取画布尺寸
             width = self.stats_canvas.winfo_width()
             height = self.stats_canvas.winfo_height()
             
-            print(f"画布尺寸: {width}x{height}")
-            print(f"数据: 已分配={allocated}, 已保留={reserved}, 可用={available}")
-            
             if width == 1 or height == 1:
-                # 画布还未初始化，等待下次绘制
-                print("画布未初始化，等待下次绘制")
                 return
             
-            # 计算饼图中心和半径（增加内部边距）
             center_x = width // 2
             center_y = height // 2
-            radius = min(center_x, center_y) - 80
+            radius = min(center_x, center_y) - 60
             
-            # 计算总IP数
             total = allocated + reserved + available
             
             if total == 0:
-                # 没有数据，显示提示
                 self.stats_canvas.create_text(center_x, center_y, text=_('no_data_available'), font=("微软雅黑", 12))
                 return
             
-            # 定义颜色
-            colors = ["#4CAF50", "#2196F3", "#E0E0E0"]  # 已分配:绿色, 已保留:蓝色, 可用:灰色
+            colors = ["#4CAF50", "#2196F3", "#E0E0E0"]
             labels = ["已分配", "已保留", "可用"]
             values = [allocated, reserved, available]
             
-            # 绘制饼图
+            legend_x = 15
+            legend_y = 15
+            for i, (color, label, value) in enumerate(zip(colors, labels, values)):
+                if value == 0:
+                    continue
+                self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 12, legend_y + 12 + i * 20, fill=color, outline="#ffffff")
+                percentage = (value / total) * 100 if total > 0 else 0
+                legend_text = f"{label}: {value} ({percentage:.1f}%)"
+                self.stats_canvas.create_text(legend_x + 20, legend_y + 6 + i * 20, text=legend_text, font=("微软雅黑", 8), anchor=tk.W, fill="#ffffff")
+            
             start_angle = 0
             for i, value in enumerate(values):
                 if value == 0:
                     continue
                 
-                # 计算角度
                 angle = (value / total) * 360
                 end_angle = start_angle + angle
                 
-                # 绘制扇形
                 self.stats_canvas.create_arc(
                     center_x - radius, center_y - radius,
                     center_x + radius, center_y + radius,
@@ -11880,19 +11900,25 @@ class SubnetPlannerApp:
                     fill=colors[i], outline="white", width=2
                 )
                 
-                # 计算标签位置
                 mid_angle_rad = (start_angle + end_angle) / 2 * 3.14159 / 180
-                label_x = center_x + (radius + 30) * math.cos(mid_angle_rad)
-                label_y = center_y - (radius + 30) * math.sin(mid_angle_rad)
+                label_radius = radius + 20
+                label_x = center_x + label_radius * math.cos(mid_angle_rad)
+                label_y = center_y - label_radius * math.sin(mid_angle_rad)
                 
-                # 绘制标签（浅色文字适应深色背景）
+                mid_angle_deg = (start_angle + end_angle) / 2
+                if mid_angle_deg > 30 and mid_angle_deg < 150:
+                    anchor = tk.W
+                elif mid_angle_deg > 210 and mid_angle_deg < 330:
+                    anchor = tk.E
+                else:
+                    anchor = tk.CENTER
+                
                 percentage = (value / total) * 100
-                label_text = f"{labels[i]}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 10), fill="#ffffff")
+                label_text = f"{labels[i]}: {value}"
+                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 8), fill="#ffffff", anchor=anchor)
                 
                 start_angle = end_angle
             
-            # 绘制中心文字（浅色文字适应深色背景）
             self.stats_canvas.create_text(
                 center_x, center_y, 
                 text=f"总IP: {total}",
@@ -11900,32 +11926,12 @@ class SubnetPlannerApp:
                 fill="#ffffff"
             )
             
-            # 绘制利用率信息（浅色文字适应深色背景）
             self.stats_canvas.create_text(
-                center_x, center_y + radius + 30, 
+                center_x, height - 25, 
                 text=f"利用率: {utilization_rate:.1f}%",
                 font=("微软雅黑", 10, "bold"),
                 fill="#ffffff"
             )
-            
-            # 绘制平均分配率（浅色文字适应深色背景）
-            self.stats_canvas.create_text(
-                center_x, center_y + radius + 50, 
-                text=f"平均每网络分配: {avg_allocation_rate:.1f}",
-                font=("微软雅黑", 10),
-                fill="#ffffff"
-            )
-            
-            # 绘制图例（增加边距）
-            legend_x = 30
-            legend_y = 30
-            for i, (color, label, value) in enumerate(zip(colors, labels, values)):
-                # 绘制颜色方块（浅色边框适应深色背景）
-                self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 15, legend_y + 15 + i * 20, fill=color, outline="#ffffff")
-                # 绘制图例文本（浅色文字适应深色背景）
-                percentage = (value / total) * 100 if total > 0 else 0
-                legend_text = f"{label}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(legend_x + 25, legend_y + 7 + i * 20, text=legend_text, font=("微软雅黑", 9), anchor=tk.W, fill="#ffffff")
         except Exception as e:
             print(f"绘制饼图失败: {e}")
     
@@ -12208,6 +12214,13 @@ class SubnetPlannerApp:
     
     def on_ipam_ip_click(self, event):
         """IP地址表点击事件处理（用于取消选择）"""
+        # 检查是否正在编辑状态且验证失败
+        if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+            # 验证失败，阻止点击其他行，保持焦点在编辑控件上
+            if hasattr(self, 'inline_edit_widget'):
+                self.inline_edit_widget.focus_force()
+            return 'break'
+        
         # 检查是否正在编辑状态
         if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
             # 正在编辑状态，点击任何位置都会退出编辑并选中点击的行
@@ -12469,6 +12482,7 @@ class SubnetPlannerApp:
                     ip['ip_address'],
                     status_text,
                     ip.get('hostname', ''),
+                    ip.get('mac_address', ''),
                     ip.get('description', ''),
                     formatted_allocated_at,
                     formatted_expiry_date
@@ -12791,6 +12805,13 @@ class SubnetPlannerApp:
             tree_name: 表格名称标识
             event: 事件对象
         """
+        # 检查是否有验证失败标记，如果有则阻止新的编辑
+        if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+            # 保持焦点在当前编辑控件上
+            if hasattr(self, 'inline_edit_widget'):
+                self.inline_edit_widget.focus_force()
+            return 'break'
+        
         # 检查是否有注册的配置和处理器
         if tree_name not in self._inline_edit_configs:
             return
@@ -12895,7 +12916,12 @@ class SubnetPlannerApp:
             self.on_generic_inline_edit_save(None)
         
         def on_widget_focus_out(event):
-            # 直接保存，与子网规划表保持一致的行为
+            # 焦点离开时，检查是否验证失败
+            if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                # 验证失败，保持焦点
+                self.inline_edit_widget.focus_force()
+                return
+            # 验证通过或未验证，执行保存
             self.on_generic_inline_edit_save(None)
         
         def on_widget_cancel(event):
@@ -12937,9 +12963,18 @@ class SubnetPlannerApp:
             
             # 确保Combobox始终保持焦点
             self.inline_edit_widget.focus_force()
+            # 初始化验证失败标记
+            self._inline_edit_validation_failed = False
             
             # 绑定根窗口点击事件，用于关闭编辑状态
             def on_root_click(event):
+                # 检查是否验证失败，如果是则阻止点击其他位置
+                if hasattr(self, '_inline_edit_validation_failed') and self._inline_edit_validation_failed:
+                    # 验证失败，保持焦点在编辑控件上
+                    if hasattr(self, 'inline_edit_widget'):
+                        self.inline_edit_widget.focus_force()
+                    return
+                
                 # 检查点击的是否是编辑控件或其内部组件
                 target = event.widget
                 is_edit_widget = False
@@ -13154,6 +13189,8 @@ class SubnetPlannerApp:
                     # 设置焦点
                     self.inline_edit_widget.focus_set()
                     self.inline_edit_widget.select_range(0, tk.END)
+                    # 初始化验证失败标记
+                    self._inline_edit_validation_failed = False
             else:
                 # 如果DateEntry不可用，使用普通的Entry控件替代
                 self.inline_edit_widget = ttk.Entry(tree, width=width // 10 - 2)
@@ -13168,6 +13205,8 @@ class SubnetPlannerApp:
                 # 设置焦点
                 self.inline_edit_widget.focus_set()
                 self.inline_edit_widget.select_range(0, tk.END)
+                # 初始化验证失败标记
+                self._inline_edit_validation_failed = False
         else:
             # 默认使用Entry
             self.inline_edit_widget = ttk.Entry(tree, width=width // 10 - 2)
@@ -13192,8 +13231,12 @@ class SubnetPlannerApp:
                     row_data = get_row_data(item)
                     row_data['tree_name'] = tree_name
                     
-                    # 验证新值
-                    is_valid, _ = validate(text, column_name, row_data)
+                    # 验证新值 - 支持二元组或三元组返回值
+                    validate_result = validate(text, column_name, row_data)
+                    if len(validate_result) == 3:
+                        is_valid, _, _ = validate_result
+                    else:
+                        is_valid, _ = validate_result
                     # 设置文本颜色
                     self.inline_edit_widget.config(foreground='black' if is_valid else 'red')
                 return "1"
@@ -13329,34 +13372,56 @@ class SubnetPlannerApp:
         
         row_data = get_row_data(item)
         
+        # 验证数据 - 空值检查（在try块外进行，验证失败时不销毁编辑控件）
+        if not new_value:
+            # 允许过期日期列和VLAN列为空，所以跳过空值检查
+            if column_name != 'expiry_date' and column_name != 'vlan':
+                # 在信息栏显示错误提示，保持编辑状态，阻止焦点离开
+                self.show_error("", _("input_cannot_be_empty"))
+                # 强制保持焦点在编辑控件上
+                self.inline_edit_widget.focus_force()
+                # 标记验证失败，用于后续焦点处理
+                self._inline_edit_validation_failed = True
+                return
+        
+        # 验证数据 - 自定义验证（在try块外进行，验证失败时不销毁编辑控件）
+        validate = handlers.get('validate')
+        if validate:
+            validate_result = validate(new_value, column_name, row_data)
+            # 支持返回二元组或三元组
+            if len(validate_result) == 3:
+                is_valid, validation_error, formatted_value = validate_result
+            else:
+                is_valid, validation_error = validate_result
+                formatted_value = None
+            
+            if not is_valid:
+                # 在信息栏显示错误提示，保持编辑状态，阻止焦点离开
+                self.show_error("", validation_error)
+                # 强制保持焦点在编辑控件上
+                self.inline_edit_widget.focus_force()
+                # 标记验证失败，用于后续焦点处理
+                self._inline_edit_validation_failed = True
+                return
+            
+            # 使用格式化后的值（如果有）
+            if formatted_value is not None:
+                new_value = formatted_value
+        
+        # 验证通过，清除失败标记
+        self._inline_edit_validation_failed = False
+        
+        # 验证通过，执行保存操作
         try:
-            # 验证数据 - 空值检查
-            if not new_value:
-                # 允许过期日期列和VLAN列为空，所以跳过空值检查
-                if column_name != 'expiry_date' and column_name != 'vlan':
-                    if not from_focus_out:
-                        self.show_error(_("error"), _("input_cannot_be_empty"))
-                        self.inline_edit_widget.focus_set()
-                    return
-            
-            # 验证数据 - 自定义验证
-            validate = handlers.get('validate')
-            if validate:
-                is_valid, validation_error = validate(new_value, column_name, row_data)
-                if not is_valid:
-                    if not from_focus_out:
-                        self.show_error(_('error'), validation_error)
-                        self.inline_edit_widget.focus_set()
-                    return
-            
             # 保存数据
             save = handlers.get('save')
             if save:
                 success, message = save(new_value, column_name, row_data, item)
                 if not success:
-                    if not from_focus_out:
-                        self.show_error(_('error'), message)
-                        self.inline_edit_widget.focus_set()
+                    self.show_error("", message)
+                    self.inline_edit_widget.focus_force()
+                    # 标记验证失败
+                    self._inline_edit_validation_failed = True
                     return
                 
                 # 更新Treeview
@@ -13367,9 +13432,11 @@ class SubnetPlannerApp:
                 # 更新斑马条纹
                 self.update_table_zebra_stripes(tree)
         except Exception as e:
-            if not from_focus_out:
-                self.show_error(_('error'), f"更新失败: {str(e)}")
-                self.inline_edit_widget.focus_set()
+            self.show_error("", f"更新失败: {str(e)}")
+            self.inline_edit_widget.focus_force()
+            # 标记验证失败
+            self._inline_edit_validation_failed = True
+            return
         finally:
             # 安全清理编辑控件，无论如何都会执行
             item_to_select = edit_data['item']
@@ -13381,6 +13448,9 @@ class SubnetPlannerApp:
     def on_generic_inline_edit_cancel(self, event):
         """通用的取消内联编辑方法
         """
+        # 清除验证失败标记
+        self._inline_edit_validation_failed = False
+        
         # 安全清理编辑控件
         if hasattr(self, 'inline_edit_data'):
             item_to_select = self.inline_edit_data['item']
@@ -13417,9 +13487,10 @@ class SubnetPlannerApp:
                 'ip_address': values[0],
                 'status': values[1],
                 'hostname': values[2],
-                'description': values[3],
-                'allocated_at': values[4],
-                'expiry_date': values[5]
+                'mac_address': values[3],
+                'description': values[4],
+                'allocated_at': values[5],
+                'expiry_date': values[6]
             }
         except (tk.TclError, IndexError):
             # 树项不存在或数据格式错误
@@ -13487,6 +13558,34 @@ class SubnetPlannerApp:
         
         return date_str
     
+    def _format_mac_address(self, mac):
+        """格式化MAC地址为统一格式 XXXX-XXXX-XXXX，字母转为大写
+        
+        Args:
+            mac: 原始MAC地址
+            
+        Returns:
+            str: 格式化后的MAC地址
+        """
+        if not mac:
+            return ''
+        
+        # 移除非十六进制字符（保留字母和数字）
+        import re
+        clean_mac = re.sub(r'[^0-9A-Fa-f]', '', mac).upper()
+        
+        # 根据长度格式化
+        if len(clean_mac) == 12:
+            # 格式化为 XXXX-XXXX-XXXX
+            return f"{clean_mac[:4]}-{clean_mac[4:8]}-{clean_mac[8:]}"
+        elif len(clean_mac) == 6:
+            # 如果只有6个字符，可能是短格式，补齐前导零
+            clean_mac = clean_mac.zfill(12)
+            return f"{clean_mac[:4]}-{clean_mac[4:8]}-{clean_mac[8:]}"
+        else:
+            # 返回原始值（应该已经被验证过滤）
+            return mac.upper()
+    
     def _validate_ip_edit(self, new_value, column_name, row_data):
         """验证IP地址表的编辑值
         
@@ -13496,42 +13595,53 @@ class SubnetPlannerApp:
             row_data: 行数据字典
             
         Returns:
-            tuple: (是否有效, 错误消息或None)
+            tuple: (是否有效, 错误消息或None, 格式化后的值或None)
         """
         # 允许过期日期列为空
         if not new_value:
             if column_name == 'expiry_date':
-                return True, None
+                return True, None, None
             else:
-                return False, _('input_cannot_be_empty')
+                return False, _('input_cannot_be_empty'), None
         
         # 获取选中的网络
         network_items = self.ipam_network_tree.selection()
         if not network_items:
-            return False, _('please_select_network')
+            return False, _('please_select_network'), None
         network = self.ipam_network_tree.item(network_items[0], 'values')[0]
         
         if column_name == 'ip_address':
             # 验证IP地址格式
             if not self.is_valid_ipv4(new_value):
-                return False, _('invalid_ip_address')
+                return False, _('invalid_ip_address'), None
             
             # 验证IP地址是否在选定的网络范围内
             if not self.is_ip_in_network(new_value, network):
-                return False, _('ip_not_in_network')
+                return False, _('ip_not_in_network'), None
         elif column_name == 'status':
             # 验证状态合法性
             valid_statuses = [_('available'), _('allocated'), _('reserved')]
             if new_value not in valid_statuses:
-                return False, _('invalid_status')
+                return False, _('invalid_status'), None
         elif column_name == 'hostname':
             # 主机名长度限制
             if len(new_value) > 255:
-                return False, _('hostname_too_long')
+                return False, _('hostname_too_long'), None
+        elif column_name == 'mac_address':
+            # 验证MAC地址格式
+            import re
+            # 支持的MAC地址格式：
+            # XX:XX:XX:XX:XX:XX 或 XX-XX-XX-XX-XX-XX 或 XXXXXXXXXXXX 或 XXXX-XXXX-XXXX
+            mac_pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$|^[0-9A-Fa-f]{12}$|^([0-9A-Fa-f]{4}-){2}[0-9A-Fa-f]{4}$')
+            if not mac_pattern.match(new_value):
+                return False, _('invalid_mac_address'), None
+            # 格式化MAC地址
+            formatted_mac = self._format_mac_address(new_value)
+            return True, None, formatted_mac
         elif column_name == 'description':
             # 描述长度限制
             if len(new_value) > 1000:
-                return False, _('description_too_long')
+                return False, _('description_too_long'), None
         elif column_name == 'expiry_date':
             # 验证日期格式（支持YYYY-MM-DD和YYYY-MM-DD HH:MM:SS）
             try:
@@ -13542,11 +13652,11 @@ class SubnetPlannerApp:
                     # 格式：YYYY-MM-DD HH:MM:SS
                     datetime.datetime.strptime(new_value, '%Y-%m-%d %H:%M:%S')
                 else:
-                    return False, _('invalid_date_format')
+                    return False, _('invalid_date_format'), None
             except ValueError:
-                return False, _('invalid_date_format')
+                return False, _('invalid_date_format'), None
         
-        return True, None
+        return True, None, None
     
     def _save_ip_edit(self, new_value, column_name, row_data, item):
         """保存IP地址表的编辑值
@@ -13587,6 +13697,7 @@ class SubnetPlannerApp:
                         network, 
                         row_data['ip_address'], 
                         row_data['hostname'], 
+                        row_data.get('mac_address', ''),
                         row_data['description']
                     )
                 elif actual_status == 'reserved':
@@ -13608,10 +13719,11 @@ class SubnetPlannerApp:
                     network, 
                     new_value, 
                     row_data['hostname'], 
+                    row_data.get('mac_address', ''),
                     row_data['description']
                 )
-            elif column_name == 'hostname' or column_name == 'description':
-                # 更新主机名或描述
+            elif column_name == 'hostname' or column_name == 'description' or column_name == 'mac_address':
+                # 更新主机名、描述或MAC地址
                 # 获取记录ID（树项的ID）
                 record_id = item
                 try:
@@ -13619,17 +13731,19 @@ class SubnetPlannerApp:
                     record_id_int = int(record_id)
                     # 从row_data中获取当前值，确保使用最新数据
                     hostname = new_value if column_name == 'hostname' else row_data.get('hostname', '')
+                    mac_address = new_value if column_name == 'mac_address' else row_data.get('mac_address', '')
                     description = new_value if column_name == 'description' else row_data.get('description', '')
                     # 获取过期日期
                     expiry_date = row_data.get('expiry_date', None)
                     # 使用update_ip_record方法更新特定记录
-                    success, message = self.ipam.update_ip_record(record_id_int, hostname, description, expiry_date)
+                    success, message = self.ipam.update_ip_record(record_id_int, hostname, mac_address, description, expiry_date)
                 except ValueError:
                     # 如果树项ID不是整数，使用默认方法
                     success, message = self.ipam.update_ip_info(
                         row_data['ip_address'], 
-                        hostname=new_value if column_name == 'hostname' else None,
-                        description=new_value if column_name == 'description' else None
+                        hostname=new_value if column_name == 'hostname' else row_data.get('hostname', ''),
+                        description=new_value if column_name == 'description' else row_data.get('description', ''),
+                        mac_address=new_value if column_name == 'mac_address' else row_data.get('mac_address', '')
                     )
             elif column_name == 'expiry_date':
                 # 更新过期日期
@@ -14302,10 +14416,11 @@ class SubnetPlannerApp:
                 def on_ok():
                     hostname = hostname_entry.get().strip()
                     description = description_entry.get().strip()
+                    mac_address = ip_info.get('mac_address', '')
                     # 更新IP地址信息
                     if record_id_int:
                         # 使用记录ID更新特定记录
-                        success, message = self.ipam.update_ip_record(record_id_int, hostname, description)
+                        success, message = self.ipam.update_ip_record(record_id_int, hostname, mac_address, description)
                     else:
                         # 使用默认方法更新
                         success, message = self.ipam.update_ip_info(ip_address, hostname, description)
@@ -14354,13 +14469,13 @@ class SubnetPlannerApp:
                     return values[0]
             elif column == 'allocated_at':
                 # 时间排序
-                return values[4] if values[4] else ''
+                return values[5] if values[5] else ''
             elif column == 'expiry_date':
                 # 过期日期排序
-                return values[5] if values[5] else ''
+                return values[6] if values[6] else ''
             else:
                 # 其他列直接排序
-                index = {'status': 1, 'hostname': 2, 'description': 3}[column]
+                index = {'status': 1, 'hostname': 2, 'mac_address': 3, 'description': 4}[column]
                 return values[index]
         
         # 排序
@@ -14403,6 +14518,7 @@ class SubnetPlannerApp:
         
         ip_address = dialog_result['ip']
         hostname = dialog_result['hostname']
+        mac_address = dialog_result.get('mac_address', '')
         description = dialog_result['description']
         expiry_date = dialog_result.get('expiry_date', '')
         action = dialog_result.get('action', 'allocate')
@@ -14417,7 +14533,7 @@ class SubnetPlannerApp:
                 self.show_info(_('hint'), _('please_enter_hostname'))
                 return
             # 调用IPAM模块分配IP地址
-            success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
+            success, message = self.ipam.allocate_ip(network, ip_address, hostname, mac_address, description, expiry_date)
         else:  # reserve
             # 调用IPAM模块保留IP地址
             success, message = self.ipam.reserve_ip(network, ip_address, description)
@@ -14557,7 +14673,7 @@ class SubnetPlannerApp:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 创建树状视图
-        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
+        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
         tree.pack(fill=tk.BOTH, expand=True)
         
         # 配置列
@@ -14566,16 +14682,18 @@ class SubnetPlannerApp:
         tree.heading('ip_address', text=_('ip_address'))
         tree.heading('status', text=_('status'))
         tree.heading('hostname', text=_('hostname'))
+        tree.heading('mac_address', text=_('mac_address'))
         tree.heading('description', text=_('description'))
         tree.heading('expiry_date', text=_('expiry_date'))
         
         tree.column('#0', width=0, stretch=tk.NO)
-        tree.column('network', width=150)
-        tree.column('ip_address', width=120)
-        tree.column('status', width=80)
-        tree.column('hostname', width=120)
-        tree.column('description', width=150)
-        tree.column('expiry_date', width=150)
+        tree.column('network', width=100, stretch=False)
+        tree.column('ip_address', width=90, stretch=False)
+        tree.column('status', width=60, stretch=False)
+        tree.column('hostname', width=100, stretch=False)
+        tree.column('mac_address', width=110, stretch=False)
+        tree.column('description', width=100, stretch=True)
+        tree.column('expiry_date', width=110, stretch=False)
         
         # 添加数据
         for ip in available_ips:
@@ -14595,8 +14713,8 @@ class SubnetPlannerApp:
                 translated_status = status
             
             tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status, 
-                                           ip['hostname'] or '', ip['description'] or '', 
-                                           ip['expiry_date'] or ''))
+                                           ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                           ip['description'] or '', ip['expiry_date'] or ''))
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
@@ -14649,7 +14767,7 @@ class SubnetPlannerApp:
             cursor = conn.cursor()
             
             # 记录清理历史
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for ip in selected_ips:
                 if 'id' in ip and 'network_id' in ip and 'ip_address' in ip:
                     # 记录清理历史
@@ -14735,7 +14853,7 @@ class SubnetPlannerApp:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # 创建树状视图
-        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
+        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
         tree.pack(fill=tk.BOTH, expand=True)
         
         # 配置列
@@ -14744,16 +14862,18 @@ class SubnetPlannerApp:
         tree.heading('ip_address', text=_('ip_address'))
         tree.heading('status', text=_('status'))
         tree.heading('hostname', text=_('hostname'))
+        tree.heading('mac_address', text=_('mac_address'))
         tree.heading('description', text=_('description'))
         tree.heading('expiry_date', text=_('expiry_date'))
         
         tree.column('#0', width=0, stretch=tk.NO)
-        tree.column('network', width=150)
-        tree.column('ip_address', width=120)
-        tree.column('status', width=80)
-        tree.column('hostname', width=120)
-        tree.column('description', width=150)
-        tree.column('expiry_date', width=150)
+        tree.column('network', width=100, stretch=False)
+        tree.column('ip_address', width=90, stretch=False)
+        tree.column('status', width=60, stretch=False)
+        tree.column('hostname', width=100, stretch=False)
+        tree.column('mac_address', width=110, stretch=False)
+        tree.column('description', width=100, stretch=True)
+        tree.column('expiry_date', width=110, stretch=False)
         
         # 添加数据
         for ip in expired_ips:
@@ -14776,12 +14896,12 @@ class SubnetPlannerApp:
             record_id = ip.get('id', None)
             if record_id:
                 tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
-                                                                    ip['hostname'] or '', ip['description'] or '',
-                                                                    ip['expiry_date'] or ''))
+                                                                    ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                                    ip['description'] or '', ip['expiry_date'] or ''))
             else:
                 tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
-                                                ip['hostname'] or '', ip['description'] or '',
-                                                ip['expiry_date'] or ''))
+                                                ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                ip['description'] or '', ip['expiry_date'] or ''))
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
@@ -15090,7 +15210,7 @@ class SubnetPlannerApp:
             record_id: 可选，记录ID，用于获取特定记录的信息
         """
         # 根据操作类型调整对话框大小
-        height = 200 if action_type == 'auto_allocate' else 240
+        height = 260 if action_type == 'auto_allocate' else 300
         
         # 使用统一的create_dialog方法创建居中对话框
         dialog = self.create_dialog(title, 400, height)
@@ -15103,6 +15223,7 @@ class SubnetPlannerApp:
         main_frame.grid_rowconfigure(0, weight=1)
         main_frame.grid_rowconfigure(1, weight=1)
         main_frame.grid_rowconfigure(2, weight=1)
+        main_frame.grid_rowconfigure(3, weight=1)
         main_frame.grid_columnconfigure(0, weight=0)
         main_frame.grid_columnconfigure(1, weight=1)
         
@@ -15116,14 +15237,20 @@ class SubnetPlannerApp:
         hostname_border, hostname_entry = create_bordered_entry(main_frame)
         hostname_border.grid(row=hostname_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
+        # MAC地址输入
+        mac_row = 1 if not show_ip_input else 2
+        ttk.Label(main_frame, text=_('mac_address')).grid(row=mac_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        mac_border, mac_entry = create_bordered_entry(main_frame)
+        mac_border.grid(row=mac_row, column=1, sticky="ew", pady=5, padx=(0, 10))
+        
         # 描述输入
-        desc_row = 1 if not show_ip_input else 2
+        desc_row = 2 if not show_ip_input else 3
         ttk.Label(main_frame, text=_('description')).grid(row=desc_row, column=0, sticky="e", pady=5, padx=(0, 10))
         desc_border, description_entry = create_bordered_entry(main_frame)
         desc_border.grid(row=desc_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
         # 过期日期输入
-        expiry_row = 2 if not show_ip_input else 3
+        expiry_row = 3 if not show_ip_input else 4
         ttk.Label(main_frame, text=_('expiry_date')).grid(row=expiry_row, column=0, sticky="e", pady=5, padx=(0, 10))
         
         if DateEntry:
@@ -15220,19 +15347,40 @@ class SubnetPlannerApp:
                 
                 if ip_info:
                     hostname_entry.insert(0, ip_info.get('hostname', ''))
+                    mac_entry.insert(0, ip_info.get('mac_address', ''))
                     description_entry.insert(0, ip_info.get('description', ''))
         
         # 按钮框架
         button_frame = ttk.Frame(dialog)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
         
+        # 验证MAC地址格式
+        def validate_mac_address(mac):
+            if not mac:
+                return True
+            import re
+            # 支持的MAC地址格式：
+            # XX:XX:XX:XX:XX:XX 或 XX-XX-XX-XX-XX-XX 或 XXXXXXXXXXXX 或 XXXX-XXXX-XXXX
+            mac_pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$|^[0-9A-Fa-f]{12}$|^([0-9A-Fa-f]{4}-){2}[0-9A-Fa-f]{4}$')
+            return bool(mac_pattern.match(mac))
+        
         # 通用的验证和保存函数
         def validate_and_save(action):
             # 只有在显示IP输入框时才获取IP地址，自动分配时IP为空字符串
             ip = ip_entry.get().strip() if ip_entry else ''
             hostname = hostname_entry.get().strip()
+            mac_address = mac_entry.get().strip()
             description = description_entry.get().strip()
             expiry_date = expiry_var.get().strip()
+            
+            # 验证MAC地址格式
+            if mac_address and not validate_mac_address(mac_address):
+                self.show_error(_('error'), _('invalid_mac_address'))
+                return False
+            
+            # 格式化MAC地址
+            if mac_address:
+                mac_address = self._format_mac_address(mac_address)
             
             # 验证IP地址是否在所选网络范围内
             if ip and network:
@@ -15255,6 +15403,7 @@ class SubnetPlannerApp:
             # 保存输入值
             dialog.ip = ip
             dialog.hostname = hostname
+            dialog.mac_address = mac_address
             dialog.description = description
             dialog.expiry_date = expiry_date
             dialog.action = action
@@ -15292,6 +15441,7 @@ class SubnetPlannerApp:
             return {
                 'ip': getattr(dialog, 'ip', ''),
                 'hostname': getattr(dialog, 'hostname', ''),
+                'mac_address': getattr(dialog, 'mac_address', ''),
                 'description': getattr(dialog, 'description', ''),
                 'expiry_date': getattr(dialog, 'expiry_date', ''),
                 'action': getattr(dialog, 'action', 'allocate')

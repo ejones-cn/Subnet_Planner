@@ -211,4 +211,3 @@ def get_supported_languages() -> list[tuple[str, str]]:
 
 # 导出TRANSLATIONS常量，保持向后兼容
 TRANSLATIONS = translator.translations
-

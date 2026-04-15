@@ -505,10 +505,6 @@ class ConfigManager:
         Returns:
             是否添加成功
         """
-        if not isinstance(file_path, str):
-            print("文件路径必须为字符串")
-            return False
-        
         recent_files = self.get_recent_files()
         
         # 移除重复项
