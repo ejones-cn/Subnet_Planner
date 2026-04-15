@@ -9345,20 +9345,20 @@ class SubnetPlannerApp:
         # 统计数据 - 分两列显示
         self.stats_labels = {}
         stats_items = [
-            ('total_networks', '网段总数:'),
-            ('total_ips', '在库IP数:'),
-            ('ipv4_networks', 'IPv4网段:'),
-            ('ipv4_ips', 'IPv4地址数:'),
-            ('ipv6_networks', 'IPv6网段:'),
-            ('ipv6_ips', 'IPv6地址数:'),
-            ('allocated_ips', '已分配IP:'),
-            ('reserved_ips', '已保留IP:'),
-            ('available_ips', '可用IP:'),
-            ('expired_ips', '过期IP:'),
-            ('expiring_ips', '即将过期:'),
-            ('named_ips', '已命名IP:'),
-            ('vlan_count', 'VLAN数量:'),
-            ('utilization_rate', '利用率:')
+            ('total_networks', _('stats_total_networks')),
+            ('total_ips', _('stats_total_ips')),
+            ('ipv4_networks', _('stats_ipv4_networks')),
+            ('ipv4_ips', _('stats_ipv4_ips')),
+            ('ipv6_networks', _('stats_ipv6_networks')),
+            ('ipv6_ips', _('stats_ipv6_ips')),
+            ('allocated_ips', _('stats_allocated_ips')),
+            ('reserved_ips', _('stats_reserved_ips')),
+            ('available_ips', _('stats_available_ips')),
+            ('expired_ips', _('stats_expired_ips')),
+            ('expiring_ips', _('stats_expiring_ips')),
+            ('named_ips', _('stats_named_ips')),
+            ('vlan_count', _('stats_vlan_count')),
+            ('utilization_rate', _('stats_utilization_rate'))
         ]
         
         for i, (key, label) in enumerate(stats_items):
@@ -11872,7 +11872,7 @@ class SubnetPlannerApp:
                 return
             
             colors = ["#4CAF50", "#2196F3", "#E0E0E0"]
-            labels = ["已分配", "已保留", "可用"]
+            labels = [_('stats_allocated'), _('stats_reserved'), _('stats_available')]
             values = [allocated, reserved, available]
             
             legend_x = 15
@@ -11921,14 +11921,14 @@ class SubnetPlannerApp:
             
             self.stats_canvas.create_text(
                 center_x, center_y, 
-                text=f"总IP: {total}",
+                text=f"{_('stats_total_ip')}: {total}",
                 font=("微软雅黑", 12, "bold"),
                 fill="#ffffff"
             )
             
             self.stats_canvas.create_text(
                 center_x, height - 25, 
-                text=f"利用率: {utilization_rate:.1f}%",
+                text=f"{_('stats_utilization_rate')} {utilization_rate:.1f}%",
                 font=("微软雅黑", 10, "bold"),
                 fill="#ffffff"
             )

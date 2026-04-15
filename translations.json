@@ -4304,5 +4304,131 @@
     "en": "Invalid MAC address format. Supported formats: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXXXXXXXXXX, XXXX-XXXX-XXXX",
     "ja": "MACアドレス形式が無効です。サポートされている形式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXXXXXXXXXX、XXXX-XXXX-XXXX",
     "ko": "MAC 주소 형식이 잘못되었습니다. 지원 형식: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXXXXXXXXXX, XXXX-XXXX-XXXX"
+  },
+  "stats_total_networks": {
+    "zh": "网段总数:",
+    "zh_tw": "網段總數:",
+    "en": "Total Networks:",
+    "ja": "ネットワーク総数:",
+    "ko": "네트워크 총 수:"
+  },
+  "stats_total_ips": {
+    "zh": "在库IP数:",
+    "zh_tw": "在庫IP數:",
+    "en": "Total IPs:",
+    "ja": "IP総数:",
+    "ko": "총 IP 수:"
+  },
+  "stats_ipv4_networks": {
+    "zh": "IPv4网段:",
+    "zh_tw": "IPv4網段:",
+    "en": "IPv4 Networks:",
+    "ja": "IPv4ネットワーク:",
+    "ko": "IPv4 네트워크:"
+  },
+  "stats_ipv4_ips": {
+    "zh": "IPv4地址数:",
+    "zh_tw": "IPv4位址數:",
+    "en": "IPv4 Addresses:",
+    "ja": "IPv4アドレス数:",
+    "ko": "IPv4 주소 수:"
+  },
+  "stats_ipv6_networks": {
+    "zh": "IPv6网段:",
+    "zh_tw": "IPv6網段:",
+    "en": "IPv6 Networks:",
+    "ja": "IPv6ネットワーク:",
+    "ko": "IPv6 네트워크:"
+  },
+  "stats_ipv6_ips": {
+    "zh": "IPv6地址数:",
+    "zh_tw": "IPv6位址數:",
+    "en": "IPv6 Addresses:",
+    "ja": "IPv6アドレス数:",
+    "ko": "IPv6 주소 수:"
+  },
+  "stats_allocated_ips": {
+    "zh": "已分配IP:",
+    "zh_tw": "已分配IP:",
+    "en": "Allocated IPs:",
+    "ja": "割り当て済IP:",
+    "ko": "할당된 IP:"
+  },
+  "stats_reserved_ips": {
+    "zh": "已保留IP:",
+    "zh_tw": "已保留IP:",
+    "en": "Reserved IPs:",
+    "ja": "予約IP:",
+    "ko": "예약 IP:"
+  },
+  "stats_available_ips": {
+    "zh": "可用IP:",
+    "zh_tw": "可用IP:",
+    "en": "Available IPs:",
+    "ja": "利用可能IP:",
+    "ko": "사용 가능 IP:"
+  },
+  "stats_expired_ips": {
+    "zh": "过期IP:",
+    "zh_tw": "過期IP:",
+    "en": "Expired IPs:",
+    "ja": "期限切れIP:",
+    "ko": "만료된 IP:"
+  },
+  "stats_expiring_ips": {
+    "zh": "即将过期:",
+    "zh_tw": "即將過期:",
+    "en": "Expiring Soon:",
+    "ja": "期限切れ間近:",
+    "ko": "곧 만료:"
+  },
+  "stats_named_ips": {
+    "zh": "已命名IP:",
+    "zh_tw": "已命名IP:",
+    "en": "Named IPs:",
+    "ja": "名前付きIP:",
+    "ko": "이름이 지정된 IP:"
+  },
+  "stats_vlan_count": {
+    "zh": "VLAN数量:",
+    "zh_tw": "VLAN數量:",
+    "en": "VLAN Count:",
+    "ja": "VLAN数:",
+    "ko": "VLAN 수:"
+  },
+  "stats_utilization_rate": {
+    "zh": "利用率:",
+    "zh_tw": "利用率:",
+    "en": "Utilization:",
+    "ja": "利用率:",
+    "ko": "이용률:"
+  },
+  "stats_total_ip": {
+    "zh": "总IP",
+    "zh_tw": "總IP",
+    "en": "Total IP",
+    "ja": "総IP",
+    "ko": "총 IP"
+  },
+  "stats_allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済",
+    "ko": "할당됨"
+  },
+  "stats_reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約",
+    "ko": "예약됨"
+  },
+  "stats_available": {
+    "zh": "可用",
+    "zh_tw": "可用",
+    "en": "Available",
+    "ja": "利用可能",
+    "ko": "사용 가능"
   }
 }
