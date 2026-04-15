@@ -9,12 +9,13 @@ import sqlite3
 import json
 import os
 import sys
+import logging
 from datetime import datetime, timedelta
 from typing import Any
 
 # 导入国际化模块
 from i18n import translate as _
-
+from validators import IPAMValidator
 
 import ipaddress
 
@@ -480,8 +481,9 @@ class IPAMSQLite:
                 return False, "网络地址不能为空"
             if not ip_address:
                 return False, "IP地址不能为空"
-            if not hostname and not description:
-                return False, "主机名和描述不能同时为空"
+            is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+            if not is_valid:
+                return False, error_msg
             
             # 验证IP地址格式
             try:
@@ -1037,6 +1039,10 @@ class IPAMSQLite:
         Returns:
             tuple[bool, str]: (是否更新成功, 错误信息)
         """
+        # 处理字符串 "None" 的情况
+        if expiry_date == "None" or expiry_date == "":
+            expiry_date = None
+        
         # 验证并标准化过期日期格式
         if expiry_date:
             validated_date = self._validate_expiry_date(expiry_date)
@@ -1645,7 +1651,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def reserve_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", record_id: int | None = None) -> tuple[bool, str]:
+    def reserve_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None, record_id: int | None = None) -> tuple[bool, str]:
         """保留IP地址
         
         Args:
@@ -1653,6 +1659,7 @@ class IPAMSQLite:
             ip_address: 要保留的IP地址
             hostname: 主机名
             description: 描述
+            expiry_date: 过期日期
             record_id: 记录ID，用于指定要保留的特定记录
         
         Returns:
@@ -1664,8 +1671,9 @@ class IPAMSQLite:
                 return False, "网络地址不能为空"
             if not ip_address:
                 return False, "IP地址不能为空"
-            if not hostname and not description:
-                return False, "主机名和描述不能同时为空"
+            is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+            if not is_valid:
+                return False, error_msg
             
             # 验证IP地址格式
             try:
@@ -2507,6 +2515,8 @@ class IPAMSQLite:
     def migrate_ip(self, ip_address: str, new_network_str: str, record_id: int | None = None) -> tuple[bool, str]:
         """迁移单个IP地址到新网络
         
+        由于已移除network_id字段，迁移操作现在仅验证IP地址是否在目标网络范围内。
+        
         Args:
             ip_address: 要迁移的IP地址
             new_network_str: 目标网络地址（CIDR格式）
@@ -2538,7 +2548,7 @@ class IPAMSQLite:
             if ip_obj not in new_network:
                 return False, "IP地址不在目标网络范围内"
             
-            # 获取目标网络ID
+            # 检查目标网络是否存在
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
             
@@ -2548,43 +2558,32 @@ class IPAMSQLite:
                 if not new_network_row or not isinstance(new_network_row, tuple) or len(new_network_row) < 1:
                     conn.close()
                     return False, "目标网络不存在"
-                new_network_id = int(new_network_row[0])
                 
                 # 获取要迁移的记录
                 if record_id:
-                    _ = cursor.execute('SELECT id, network_id, status, hostname, description FROM ip_addresses WHERE id = ? AND ip_address = ?', 
+                    _ = cursor.execute('SELECT id, status, hostname, description FROM ip_addresses WHERE id = ? AND ip_address = ?', 
                                  (record_id, ip_address))
                     ip_row = cursor.fetchone()
                 else:
-                    _ = cursor.execute('SELECT id, network_id, status, hostname, description FROM ip_addresses WHERE ip_address = ?', 
+                    _ = cursor.execute('SELECT id, status, hostname, description FROM ip_addresses WHERE ip_address = ?', 
                                  (ip_address,))
                     ip_row = cursor.fetchone()
                 
-                if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 5:
+                if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 4:
                     conn.close()
                     return False, "IP地址记录不存在"
                 
                 ip_id = int(ip_row[0])
-                old_network_id = int(ip_row[1])
-                status = str(ip_row[2])
-                hostname = str(ip_row[3]) if ip_row[3] else ''
-                description = str(ip_row[4]) if ip_row[4] else ''
+                status = str(ip_row[1])
+                hostname = str(ip_row[2]) if ip_row[2] else ''
+                description = str(ip_row[3]) if ip_row[3] else ''
                 
-                # 如果已经在目标网络中，无需迁移
-                if old_network_id == new_network_id:
-                    conn.close()
-                    return False, "IP地址已在目标网络中"
-                
-                # 更新IP地址的network_id
+                # 记录迁移历史（由于已移除network_id，仅记录IP地址变化）
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                _ = cursor.execute('UPDATE ip_addresses SET network_id = ?, updated_at = ? WHERE id = ?', 
-                             (new_network_id, now, ip_id))
-                
-                # 记录迁移历史
                 _ = cursor.execute('''
-                INSERT INTO allocation_history (network_id, ip_address, action, hostname, description, performed_by, performed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (new_network_id, ip_address, 'migrate', hostname, description, 'admin', now))
+                INSERT INTO allocation_history (ip_address, action, hostname, description, performed_by, performed_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', (ip_address, 'migrate', hostname, description, 'admin', now))
                 
                 conn.commit()
                 conn.close()
@@ -2723,7 +2722,7 @@ class IPAMSQLite:
                         ''', (new_ip_address, now, ip_id))
                         
                         # 删除其他具有相同原IP地址的记录，确保原地址完全消失
-                        _ = cursor.execute('DELETE FROM ip_addresses WHERE ip_address = ? AND id != ?', (old_ip_address, ip_id))
+                        _ = cursor.execute('DELETE FROM ip_addresses WHERE ip_address = ? AND status = ? AND id != ?', (old_ip_address, 'available', ip_id))
                         
                         # 记录迁移历史
                         _ = cursor.execute('''
@@ -2734,7 +2733,7 @@ class IPAMSQLite:
                         ip_mapping.append(f"{old_ip_address} -> {new_ip_address}")
                         migrated_count += 1
                     except Exception as e:
-                        print(f"迁移IP {record.get('ip_address')} 失败: {str(e)}")
+                        logging.error(f"迁移IP {record.get('ip_address')} 失败: {str(e)}")
                         skipped_ips.append(f"{record.get('ip_address', '未知')} (迁移异常: {str(e)})")
                         continue
                 

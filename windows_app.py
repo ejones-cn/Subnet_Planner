@@ -53,6 +53,7 @@ from ip_subnet_calculator import (
 from export_utils import ExportUtils
 from chart_utils import draw_text_with_stroke, draw_distribution_chart
 from ipam_sqlite import IPAMSQLite
+from validators import IPAMValidator
 from visualization import NetworkTopologyVisualizer
 from style_manager import (
     init_style_manager,
@@ -762,8 +763,9 @@ class SubnetPlannerApp:
         Returns:
             str: 格式化后的日期时间字符串，如果解析失败则返回原始字符串
         """
-        if not datetime_str:
-            return datetime_str
+        # 处理字符串 "None" 的情况
+        if not datetime_str or datetime_str == "None":
+            return ""
         
         try:
             if 'T' in datetime_str:
@@ -9703,7 +9705,7 @@ class SubnetPlannerApp:
         description = _('batch_generate')
         
         if not description:
-            self.show_info(_('hint'), _('please_enter_description'))
+            self.show_error(_('error'), _('please_enter_description'))
             return
         
         # 创建批量分配对话框，使用统一的create_dialog方法
@@ -9801,7 +9803,7 @@ class SubnetPlannerApp:
                 return
             
             if not description_prefix:
-                self.show_info(_('hint'), _('please_enter_description'))
+                self.show_error(_('error'), _('please_enter_description'))
                 return
             
             # 构建完整的IP地址
@@ -9870,7 +9872,7 @@ class SubnetPlannerApp:
                 return
             
             if not description_prefix:
-                self.show_info(_('hint'), _('please_enter_description'))
+                self.show_error(_('error'), _('please_enter_description'))
                 return
             
             # 构建完整的IP地址
@@ -9954,8 +9956,9 @@ class SubnetPlannerApp:
         description = dialog_result['description']
         action = dialog_result.get('action', 'allocate')
         
-        if not hostname and not description:
-            self.show_info(_('hint'), _('please_enter_hostname_or_description'))
+        is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+        if not is_valid:
+            self.show_error(_('error'), _('please_enter_description'))
             return
         
         # 获取网络中的所有已分配IP地址
@@ -13328,8 +13331,8 @@ class SubnetPlannerApp:
         
         # 验证数据 - 空值检查（在try块外进行，验证失败时不销毁编辑控件）
         if not new_value:
-            # 允许过期日期列和VLAN列为空，所以跳过空值检查
-            if column_name != 'expiry_date' and column_name != 'vlan':
+            is_valid, error_msg = IPAMValidator.validate_inline_edit(column_name, new_value)
+            if not is_valid:
                 # 在信息栏显示错误提示，保持编辑状态，阻止焦点离开
                 self.show_error("", _("input_cannot_be_empty"))
                 # 标记验证失败，用于后续焦点处理
@@ -13440,7 +13443,8 @@ class SubnetPlannerApp:
         item = self.inline_edit_data.get('item')
         
         # 空值检查
-        if not current_value and column_name not in ('expiry_date', 'vlan'):
+        is_valid, error_msg = IPAMValidator.validate_inline_edit(column_name, current_value)
+        if not is_valid:
             return False, _("input_cannot_be_empty")
         
         # 自定义验证
@@ -13647,9 +13651,10 @@ class SubnetPlannerApp:
         Returns:
             tuple: (是否有效, 错误消息或None, 格式化后的值或None)
         """
-        # 允许过期日期列为空
+        # 空值检查
         if not new_value:
-            if column_name == 'expiry_date':
+            is_valid, error_msg = IPAMValidator.validate_inline_edit(column_name, new_value)
+            if is_valid:
                 return True, None, None
             else:
                 return False, _('input_cannot_be_empty'), None
@@ -13747,15 +13752,23 @@ class SubnetPlannerApp:
                         network, 
                         row_data['ip_address'], 
                         row_data['hostname'], 
-                        row_data.get('mac_address', ''),
-                        row_data['description']
+                        row_data['description'],
+                        row_data.get('expiry_date')
                     )
                 elif actual_status == 'reserved':
                     # 保留IP
+                    record_id = None
+                    try:
+                        record_id = int(item)
+                    except (ValueError, TypeError):
+                        pass
                     success, message = self.ipam.reserve_ip(
                         network, 
                         row_data['ip_address'], 
-                        row_data['description']
+                        row_data['hostname'],
+                        row_data['description'],
+                        row_data.get('expiry_date'),
+                        record_id
                     )
                 else:
                     success = False
@@ -14585,11 +14598,12 @@ class SubnetPlannerApp:
         
         # 根据用户选择的操作类型执行相应的操作
         if action == 'allocate':
-            if not hostname:
-                self.show_info(_('hint'), _('please_enter_hostname'))
+            is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+            if not is_valid:
+                self.show_error(_('error'), _('please_enter_description'))
                 return
             # 调用IPAM模块分配IP地址
-            success, message = self.ipam.allocate_ip(network, ip_address, hostname, mac_address, description, expiry_date)
+            success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
         else:  # reserve
             # 调用IPAM模块保留IP地址
             success, message = self.ipam.reserve_ip(network, ip_address, description)
@@ -14626,8 +14640,9 @@ class SubnetPlannerApp:
             self.show_info(_('hint'), _('please_enter_ip_address'))
             return
         
-        if not hostname:
-            self.show_info(_('hint'), _('please_enter_hostname'))
+        is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+        if not is_valid:
+            self.show_error(_('error'), _('please_enter_description'))
             return
         
         success, message = self.ipam.allocate_ip(network, ip_address, hostname, description, expiry_date)
@@ -15520,6 +15535,11 @@ class SubnetPlannerApp:
             mac_address = mac_entry.get().strip()
             description = description_entry.get().strip()
             expiry_date = expiry_var.get().strip()
+            
+            # 验证描述不能为空（分配和保留时）
+            if not description:
+                self.show_error(_('error'), _('please_enter_description'))
+                return False
             
             # 验证MAC地址格式
             if mac_address and not validate_mac_address(mac_address):

@@ -22,7 +22,7 @@ class StyleManager:
     TAB_WIDTH_SETTINGS = {
         "zh": 10,
         "zh_tw": 10,
-        "ja": 14,
+        "ja": 16,
         "ko": 11,
         "default": 18
     }

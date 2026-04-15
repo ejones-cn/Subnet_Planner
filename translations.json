@@ -25,7 +25,7 @@
     "zh": "取消",
     "zh_tw": "取消",
     "en": "Cancel",
-    "ja": "キャンセル",
+    "ja": "取消",
     "ko": "취소"
   },
   "confirm": {
@@ -1740,8 +1740,8 @@
     "zh": "网段导入/导出",
     "zh_tw": "網段匯入/匯出",
     "en": "Network Import/Export",
-    "ja": "ネットワークのインポート/エクスポート",
-    "ko": "네트워크 가져오기/내보내기"
+    "ja": "輸入/出力",
+    "ko": "가져오기/보내기"
   },
   "network_segment": {
     "zh": "网段",
@@ -1879,14 +1879,14 @@
   "check_expired_ips": {
     "zh": "检查过期",
     "en": "Check Expired",
-    "ja": "期限切れを確認",
+    "ja": "期限切れ確認",
     "zh_tw": "檢查過期",
     "ko": "만료 확인"
   },
   "check_conflicts": {
     "zh": "检查冲突",
     "en": "Check Conflicts",
-    "ja": "衝突を確認",
+    "ja": "衝突確認",
     "zh_tw": "檢查衝突",
     "ko": "충돌 확인"
   },
@@ -1948,17 +1948,17 @@
   },
   "expiring_soon": {
     "zh": "即将过期",
-    "en": "Expiring Soon",
-    "ja": "もうすぐ期限切れ",
+    "en": "Expiring",
+    "ja": "期限間近",
     "zh_tw": "即將過期",
-    "ko": "곧 만료됨"
+    "ko": "곧 만료"
   },
   "not_expired": {
     "zh": "未过期",
-    "en": "Not Expired",
+    "en": "Valid",
     "ja": "有効",
     "zh_tw": "未過期",
-    "ko": "만료되지 않음"
+    "ko": "유효"
   },
   "date_format_yyyy_mm_dd": {
     "zh": "格式: YYYY-MM-DD",
@@ -2293,7 +2293,7 @@
     "zh": "备份/恢复",
     "zh_tw": "備份/恢復",
     "en": "Backup/Restore",
-    "ja": "バックアップ/復元",
+    "ja": "バック/復",
     "ko": "백업/복원"
   },
   "choose_backup_restore_method": {
@@ -2306,7 +2306,7 @@
   "ip_address_management": {
     "zh": "地址管理",
     "zh_tw": "位址管理",
-    "en": "Address Management",
+    "en": "Addr Management",
     "ja": "アドレス管理",
     "ko": "주소 관리"
   },
@@ -2328,7 +2328,7 @@
     "zh": "分配/保留",
     "zh_tw": "分配/保留",
     "en": "Allocate/Reserve",
-    "ja": "割り当て/予約",
+    "ja": "割当/予約",
     "ko": "할당/예약"
   },
   "restore_allocation": {
@@ -2342,14 +2342,14 @@
     "zh": "批量分配",
     "zh_tw": "批量分配",
     "en": "Batch Allocate",
-    "ja": "一括割り当て",
+    "ja": "一括割当",
     "ko": "일괄 할당"
   },
   "auto_allocate": {
     "zh": "自动分配",
     "zh_tw": "自動分配",
     "en": "Auto Allocate",
-    "ja": "自動割り当て",
+    "ja": "自動割当",
     "ko": "자동 할당"
   },
   "batch_migrate": {
@@ -2398,14 +2398,14 @@
     "zh": "释放地址",
     "zh_tw": "釋放位址",
     "en": "Release Address",
-    "ja": "アドレスを解放",
+    "ja": "解放",
     "ko": "주소 해제"
   },
   "cleanup_unused": {
     "zh": "清理未用",
     "zh_tw": "清理未用",
     "en": "Cleanup Unused",
-    "ja": "未使用をクリーンアップ",
+    "ja": "未使用削除",
     "ko": "미사용 정리"
   },
   "search_and_filter": {
@@ -2468,14 +2468,14 @@
     "zh": "已分配",
     "zh_tw": "已分配",
     "en": "Allocated",
-    "ja": "割り当て済み",
+    "ja": "割当済",
     "ko": "할당됨"
   },
   "reserved": {
     "zh": "已保留",
     "zh_tw": "已保留",
     "en": "Reserved",
-    "ja": "予約済み",
+    "ja": "予約済",
     "ko": "예약됨"
   },
   "allocated_time": {
@@ -2510,8 +2510,8 @@
     "zh": "导入/导出",
     "zh_tw": "導入/匯出",
     "en": "Import/Export",
-    "ja": "インポート/エクスポート",
-    "ko": "가져오기/내보내기"
+    "ja": "輸入/出力",
+    "ko": "가져오기/보내기"
   },
   "choose_import_export_method": {
     "zh": "请选择导入/导出方式：",
@@ -2544,7 +2544,7 @@
   "network_management": {
     "zh": "网段管理",
     "zh_tw": "網段管理",
-    "en": "Network Management",
+    "en": "Networks",
     "ja": "ネットワーク管理",
     "ko": "네트워크 관리"
   },
@@ -2559,14 +2559,14 @@
     "zh": "添加网段",
     "zh_tw": "新增網段",
     "en": "Add Network",
-    "ja": "ネットワークを追加",
+    "ja": "追加",
     "ko": "네트워크 추가"
   },
   "remove_network": {
     "zh": "移除网段",
     "zh_tw": "移除網段",
     "en": "Remove Network",
-    "ja": "ネットワークを削除",
+    "ja": "削除",
     "ko": "네트워크 제거"
   },
   "created_at": {
@@ -2692,7 +2692,7 @@
     "zh": "网络拓扑",
     "zh_tw": "網路拓撲",
     "en": "Network Topology",
-    "ja": "ネットワークトポロジ",
+    "ja": "トポロジ",
     "ko": "네트워크 토폴로지"
   },
   "ip_allocation_visualization": {
@@ -3083,7 +3083,7 @@
   "ip_address": {
     "zh": "IP地址",
     "en": "IP Address",
-    "ja": "IPアドレス",
+    "ja": "IP",
     "zh_tw": "IP位址",
     "ko": "IP 주소"
   },
@@ -4231,9 +4231,9 @@
   "available": {
     "zh": "可用",
     "en": "Available",
-    "ja": "利用可能",
+    "ja": "利用可",
     "zh_tw": "可用",
-    "ko": "사용 가능"
+    "ko": "사용가능"
   },
   "timestamp": {
     "zh": "时间戳",
@@ -4336,8 +4336,8 @@
   "mac_address": {
     "zh": "MAC地址",
     "zh_tw": "MAC位址",
-    "en": "MAC Address",
-    "ja": "MACアドレス",
+    "en": "MAC",
+    "ja": "MAC",
     "ko": "MAC 주소"
   },
   "invalid_mac_address": {
