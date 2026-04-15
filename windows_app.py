@@ -10357,7 +10357,8 @@ class SubnetPlannerApp:
                         for ip in ip_list:
                             all_conflicts.append(ip)
                 
-                conflicts = all_conflicts
+                # 按IP地址排序
+                conflicts = self._sort_ip_list(all_conflicts)
                 selected_networks = []  # 空列表表示检查所有网段
             else:
                 # 有选中网段，检查所有选中的网段
@@ -10402,6 +10403,9 @@ class SubnetPlannerApp:
                         # 为每个冲突的IP地址记录添加到冲突列表
                         for ip in ip_list:
                             conflicts.append(ip)
+                
+                # 按IP地址排序
+                conflicts = self._sort_ip_list(conflicts)
             
             if not conflicts:
                 self.show_info(_('hint'), _('no_ip_conflicts_found'))
@@ -14669,7 +14673,9 @@ class SubnetPlannerApp:
         tree.column('expiry_date', width=110, stretch=False)
         
         # 添加数据
-        for ip in available_ips:
+        # 按IP地址排序
+        sorted_ips = self._sort_ip_list(available_ips)
+        for ip in sorted_ips:
             # 获取网络信息
             network_info = self.ipam.get_network_by_id(ip['network_id'])
             network = network_info['network_address'] if network_info else ''
@@ -14849,7 +14855,9 @@ class SubnetPlannerApp:
         tree.column('expiry_date', width=110, stretch=False)
         
         # 添加数据
-        for ip in expired_ips:
+        # 按IP地址排序
+        sorted_ips = self._sort_ip_list(expired_ips)
+        for ip in sorted_ips:
             # 获取网络信息
             network_info = self.ipam.get_network_by_id(ip['network_id'])
             network = network_info['network_address'] if network_info else ''
