@@ -4299,11 +4299,11 @@
     "ko": "MAC 주소"
   },
   "invalid_mac_address": {
-    "zh": "MAC地址格式不正确，支持格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXXXXXXXXXX、XXXX-XXXX-XXXX",
-    "zh_tw": "MAC位址格式不正確，支援格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXXXXXXXXXX、XXXX-XXXX-XXXX",
-    "en": "Invalid MAC address format. Supported formats: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXXXXXXXXXX, XXXX-XXXX-XXXX",
-    "ja": "MACアドレス形式が無効です。サポートされている形式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXXXXXXXXXX、XXXX-XXXX-XXXX",
-    "ko": "MAC 주소 형식이 잘못되었습니다. 지원 형식: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXXXXXXXXXX, XXXX-XXXX-XXXX"
+    "zh": "MAC地址格式不正确，支持格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "zh_tw": "MAC位址格式不正確，支援格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "en": "Invalid MAC address format. Supported formats: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXX-XXXX-XXXX",
+    "ja": "MACアドレス形式が無効です。サポートされている形式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "ko": "MAC 주소 형식이 잘못되었습니다. 지원 형식: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX,  XXXX-XXXX-XXXX"
   },
   "stats_total_networks": {
     "zh": "网段总数:",
