@@ -4430,5 +4430,26 @@
     "en": "Available",
     "ja": "利用可能",
     "ko": "사용 가능"
+  },
+  "batch_reserve": {
+    "zh": "批量保留",
+    "zh_tw": "批量保留",
+    "en": "Batch Reserve",
+    "ja": "一括予約",
+    "ko": "일괄 예약"
+  },
+  "auto_reserve": {
+    "zh": "自动保留",
+    "zh_tw": "自動保留",
+    "en": "Auto Reserve",
+    "ja": "自動予約",
+    "ko": "자동 예약"
+  },
+  "description_prefix": {
+    "zh": "描述前缀(自动添加编号)",
+    "zh_tw": "描述前綴(自動添加編號)",
+    "en": "Description Prefix (Auto Add Number)",
+    "ja": "説明プレフィックス(自動番号付加)",
+    "ko": "설명 접두사(자동 번호 추가)"
   }
 }

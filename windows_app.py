@@ -9930,8 +9930,8 @@ class SubnetPlannerApp:
         # 按钮
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="批量分配", command=batch_allocate).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="批量保留", command=batch_reserve).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_('batch_allocate'), command=batch_allocate).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_('batch_reserve'), command=batch_reserve).pack(side=tk.LEFT, padx=10)
     
     def auto_allocate_ip(self):
         """自动分配IP地址"""
@@ -15423,8 +15423,8 @@ class SubnetPlannerApp:
             ttk.Button(button_frame, text=_('allocate_address'), command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
         elif action_type == 'auto_allocate':
             # 自动分配对话框：显示"自动分配"和"自动保留"按钮
-            ttk.Button(button_frame, text="自动保留", command=lambda: validate_and_save('reserve')).pack(side=tk.RIGHT, padx=(5, 15))
-            ttk.Button(button_frame, text="自动分配", command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(button_frame, text=_('auto_reserve'), command=lambda: validate_and_save('reserve')).pack(side=tk.RIGHT, padx=(5, 15))
+            ttk.Button(button_frame, text=_('auto_allocate'), command=lambda: validate_and_save('allocate')).pack(side=tk.RIGHT, padx=5)
         else:
             # 其他对话框：显示"确定"和"取消"按钮
             def on_ok():
