@@ -10203,10 +10203,10 @@ class SubnetPlannerApp:
                     continue
             
             # 按过期日期过滤
-            if expiry_filter != "全部":
+            if expiry_filter != _('all'):
                 expiry_date = ip.get('expiry_date')
                 if not expiry_date:
-                    if expiry_filter != "未过期":
+                    if expiry_filter != _('not_expired'):
                         continue
                 else:
                     try:
@@ -10219,20 +10219,20 @@ class SubnetPlannerApp:
                             exp_date = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
                         
                         # 根据筛选选项过滤
-                        if expiry_filter == "已过期":
+                        if expiry_filter == _('expired'):
                             if exp_date >= now:
                                 continue
-                        elif expiry_filter == "即将过期":
+                        elif expiry_filter == _('expiring_soon'):
                             # 7天内过期
                             seven_days_later = now + datetime.timedelta(days=7)
                             if exp_date < now or exp_date > seven_days_later:
                                 continue
-                        elif expiry_filter == "未过期":
+                        elif expiry_filter == _('not_expired'):
                             if exp_date < now:
                                 continue
                     except (ValueError, TypeError):
                         # 日期格式错误，跳过
-                        if expiry_filter != "未过期":
+                        if expiry_filter != _('not_expired'):
                             continue
             
             # 按搜索关键词过滤
@@ -10240,8 +10240,6 @@ class SubnetPlannerApp:
                 # 支持多关键词搜索，按空格分割
                 keywords = search_text.split()
                 match = False
-                # 获取本地化状态文本
-                localized_status = self._get_localized_status(ip['status'])
                 
                 # 检查IP地址
                 ip_match = self._match_search_pattern(ip['ip_address'], ' '.join(keywords), search_mode)
@@ -10249,20 +10247,19 @@ class SubnetPlannerApp:
                 hostname_match = self._match_search_pattern(ip.get('hostname', ''), ' '.join(keywords), search_mode)
                 # 检查描述
                 desc_match = self._match_search_pattern(ip.get('description', ''), ' '.join(keywords), search_mode)
-                # 检查状态（同时支持中文和英文）
-                status_match = self._match_search_pattern(ip['status'], ' '.join(keywords), search_mode) or \
-                    self._match_search_pattern(localized_status, ' '.join(keywords), search_mode)
+                # 检查MAC地址
+                mac_match = self._match_search_pattern(ip.get('mac_address', ''), ' '.join(keywords), search_mode)
                 
                 if search_scope == _('all'):
-                    match = ip_match or hostname_match or desc_match or status_match
+                    match = ip_match or hostname_match or desc_match or mac_match
                 elif search_scope == _('ip_address'):
                     match = ip_match
                 elif search_scope == _('hostname'):
                     match = hostname_match
                 elif search_scope == _('description'):
                     match = desc_match
-                elif search_scope == _('status'):
-                    match = status_match
+                elif search_scope == _('mac_address'):
+                    match = mac_match
                 
                 if not match:
                     continue
