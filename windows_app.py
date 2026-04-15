@@ -9152,16 +9152,18 @@ class SubnetPlannerApp:
         ip_button_frame.grid_columnconfigure(5, weight=1)
         ip_button_frame.grid_columnconfigure(6, weight=1)
         ip_button_frame.grid_columnconfigure(7, weight=1)
+        ip_button_frame.grid_columnconfigure(8, weight=1)
         
         # 一行按钮，按要求排序
         ttk.Button(ip_button_frame, text=_('allocate_reserve_address'), command=self.allocate_reserve_ip).grid(row=0, column=0, padx=2, pady=2, sticky="ew")
         ttk.Button(ip_button_frame, text=_('batch_allocate'), command=self.batch_allocate_ip).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
         ttk.Button(ip_button_frame, text=_('auto_allocate'), command=self.auto_allocate_ip).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
         ttk.Button(ip_button_frame, text=_('release_address'), command=self.release_ip_address).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('check_expired_ips'), command=self.check_expired_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('batch_set_expiry_date'), command=self.batch_set_expiry_date).grid(row=0, column=6, padx=2, pady=2, sticky="ew")
-        ttk.Button(ip_button_frame, text=_('import_export'), command=self.import_export_data).grid(row=0, column=7, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('batch_migrate'), command=self.batch_migrate_ip_addresses).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('cleanup_unused'), command=self.cleanup_available_ips).grid(row=0, column=5, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('check_expired_ips'), command=self.check_expired_ips).grid(row=0, column=6, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('batch_set_expiry_date'), command=self.batch_set_expiry_date).grid(row=0, column=7, padx=2, pady=2, sticky="ew")
+        ttk.Button(ip_button_frame, text=_('import_export'), command=self.import_export_data).grid(row=0, column=8, padx=2, pady=2, sticky="ew")
         
         # IP地址列表 - 使用LabelFrame，和IPv6查询结果表保持一致
         # padding=(10, 0, 0, 10) 表示左边距10，上边距0，右边距0，下边距10
@@ -10336,8 +10338,7 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', ''),
-                                'network_id': ip.get('network_id', '')
+                                'allocated_at': ip.get('allocated_at', '')
                             }
                 
                 # 统计每个IP地址的分配情况
@@ -10383,8 +10384,7 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', ''),
-                                'network_id': ip.get('network_id', '')
+                                'allocated_at': ip.get('allocated_at', '')
                             }
                 
                 # 统计每个IP地址的分配情况
@@ -10677,8 +10677,7 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', ''),
-                                'network_id': ip.get('network_id', '')
+                                'allocated_at': ip.get('allocated_at', '')
                             }
             else:
                 # 有选中网段，检查所有选中的网段
@@ -10697,8 +10696,7 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', ''),
-                                'network_id': ip.get('network_id', '')
+                                'allocated_at': ip.get('allocated_at', '')
                             }
             
             # 统计每个IP地址的分配情况
@@ -14757,8 +14755,8 @@ class SubnetPlannerApp:
         # 按IP地址排序
         sorted_ips = self._sort_ip_list(available_ips)
         for ip in sorted_ips:
-            # 获取网络信息
-            network_info = self.ipam.get_network_by_id(ip['network_id'])
+            # 通过IP地址获取归属网络
+            network_info = self.ipam.get_most_specific_network(ip['ip_address'])
             network = network_info['network_address'] if network_info else ''
             
             # 翻译状态值
@@ -14829,12 +14827,12 @@ class SubnetPlannerApp:
             # 记录清理历史
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for ip in selected_ips:
-                if 'id' in ip and 'network_id' in ip and 'ip_address' in ip:
+                if 'id' in ip and 'ip_address' in ip:
                     # 记录清理历史
                     cursor.execute('''
-                    INSERT INTO allocation_history (network_id, ip_address, action, performed_by, performed_at)
-                    VALUES (?, ?, ?, ?, ?)
-                    ''', (ip['network_id'], ip['ip_address'], 'cleanup', 'admin', now))
+                    INSERT INTO allocation_history (ip_address, action, performed_by, performed_at)
+                    VALUES (?, ?, ?, ?)
+                    ''', (ip['ip_address'], 'cleanup', 'admin', now))
                     
                     # 删除可用状态的IP地址
                     cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip['id'], 'available'))
@@ -14939,8 +14937,8 @@ class SubnetPlannerApp:
         # 按IP地址排序
         sorted_ips = self._sort_ip_list(expired_ips)
         for ip in sorted_ips:
-            # 获取网络信息
-            network_info = self.ipam.get_network_by_id(ip['network_id'])
+            # 通过IP地址获取归属网络
+            network_info = self.ipam.get_most_specific_network(ip['ip_address'])
             network = network_info['network_address'] if network_info else ''
             
             # 翻译状态值
@@ -15156,6 +15154,94 @@ class SubnetPlannerApp:
         # 添加关闭按钮
         close_btn = ttk.Button(dialog, text="关闭", command=dialog.destroy)
         close_btn.pack(pady=10)
+    
+    def batch_migrate_ip_addresses(self):
+        """批量迁移IP地址到其他网络"""
+        # 检查是否选择了IP地址
+        selected_items = self.ipam_ip_tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_ips_to_migrate'))
+            return
+        
+        # 获取选中的记录ID和IP地址
+        ip_records = []
+        for item in selected_items:
+            try:
+                record_id = int(item)
+                values = self.ipam_ip_tree.item(item, 'values')
+                ip_address = values[0]
+                ip_records.append({'id': record_id, 'ip_address': ip_address})
+            except ValueError:
+                pass
+        
+        if not ip_records:
+            self.show_info(_('hint'), _('please_select_ips_to_migrate'))
+            return
+        
+        # 获取所有可用的网络列表
+        all_networks = self.ipam.get_all_networks()
+        network_list = [net['network'] for net in all_networks]
+        
+        # 对网络列表进行排序（按IP地址数值排序）
+        try:
+            import ipaddress
+            network_list.sort(key=lambda x: int(ipaddress.ip_network(x, strict=False).network_address))
+        except Exception:
+            # 如果排序失败，保持原顺序
+            pass
+        
+        if not network_list:
+            self.show_info(_('hint'), _('no_networks_available'))
+            return
+        
+        # 创建对话框
+        dialog = self.create_dialog(_('batch_migrate'), 450, 200)
+        
+        # 显示选中的IP数量
+        ttk.Label(dialog, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
+        
+        # 目标网络选择
+        ttk.Label(dialog, text=_('target_network') + ':').pack(pady=5)
+        
+        # 创建网络下拉列表
+        network_var = tk.StringVar()
+        network_combobox = ttk.Combobox(dialog, textvariable=network_var, values=network_list, width=40)
+        network_combobox.pack(pady=5)
+        network_combobox.focus_set()
+        
+        # 确认按钮
+        def confirm():
+            target_network = network_var.get().strip()
+            if not target_network:
+                self.show_info(_('hint'), _('please_select_target_network'))
+                return
+            
+            # 执行批量迁移
+            success, msg, migrated_count = self.ipam.batch_migrate_ips(ip_records, target_network)
+            if success:
+                self.show_info(_('success'), msg)
+                # 刷新IPAM数据并切换到目标网络
+                self.refresh_ipam_networks()
+                # 选中目标网络并刷新其IP列表
+                for item in self.ipam_network_tree.get_children():
+                    network = self.ipam_network_tree.item(item, 'values')[0]
+                    if network == target_network:
+                        self.ipam_network_tree.selection_set(item)
+                        self.refresh_ipam_ips(target_network)
+                        break
+            else:
+                self.show_error(_('error'), msg)
+            
+            dialog.destroy()
+        
+        # 取消按钮
+        def cancel():
+            dialog.destroy()
+        
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=15)
+        ttk.Button(button_frame, text=_('confirm'), command=confirm).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_('cancel'), command=cancel).pack(side=tk.LEFT, padx=10)
     
     def batch_set_expiry_date(self):
         """批量设置IP地址的过期日期"""

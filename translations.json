@@ -2352,6 +2352,48 @@
     "ja": "自動割り当て",
     "ko": "자동 할당"
   },
+  "batch_migrate": {
+    "zh": "批量迁移",
+    "zh_tw": "批量遷移",
+    "en": "Batch Migrate",
+    "ja": "一括移行",
+    "ko": "일괄 이동"
+  },
+  "please_select_ips_to_migrate": {
+    "zh": "请选择要迁移的IP地址",
+    "zh_tw": "請選擇要遷移的IP位址",
+    "en": "Please select IP addresses to migrate",
+    "ja": "移行するIPアドレスを選択してください",
+    "ko": "이동할 IP 주소를 선택하십시오"
+  },
+  "no_networks_available": {
+    "zh": "没有可用的网络",
+    "zh_tw": "沒有可用的網路",
+    "en": "No networks available",
+    "ja": "利用可能なネットワークがありません",
+    "ko": "사용 가능한 네트워크가 없습니다"
+  },
+  "selected_ips_count": {
+    "zh": "已选择 {count} 个IP地址",
+    "zh_tw": "已選擇 {count} 個IP位址",
+    "en": "Selected {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを選択",
+    "ko": "{count}개의 IP 주소 선택"
+  },
+  "target_network": {
+    "zh": "目标网络",
+    "zh_tw": "目標網路",
+    "en": "Target Network",
+    "ja": "ターゲットネットワーク",
+    "ko": "대상 네트워크"
+  },
+  "please_select_target_network": {
+    "zh": "请选择目标网络",
+    "zh_tw": "請選擇目標網路",
+    "en": "Please select target network",
+    "ja": "ターゲットネットワークを選択してください",
+    "ko": "대상 네트워크를 선택하십시오"
+  },
   "release_address": {
     "zh": "释放地址",
     "zh_tw": "釋放位址",
