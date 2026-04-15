@@ -12011,22 +12011,9 @@ class SubnetPlannerApp:
     
     def on_ipam_network_click(self, event):
         """网络点击事件处理（用于取消选择）"""
-        # 检查是否正在编辑状态
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
-            # 主动验证当前输入，如果无效则阻止点击其他行
-            is_valid, error_msg = self._validate_current_inline_edit()
-            if not is_valid:
-                self._inline_edit_validation_failed = True
-                self.show_error("", error_msg)
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
-            # 验证通过，先保存当前编辑
-            self.on_generic_inline_edit_save(None)
-            # 检查保存是否成功（编辑控件是否已被销毁）
-            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
-                # 保存失败，保持当前编辑状态
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
+        result = self._handle_inline_edit_validation_before_click()
+        if result == 'break':
+            return result
         
         # 获取点击的列
         column = self.ipam_network_tree.identify_column(event.x)
@@ -12136,22 +12123,9 @@ class SubnetPlannerApp:
     
     def on_ipam_ip_click(self, event):
         """IP地址表点击事件处理（用于取消选择）"""
-        # 检查是否正在编辑状态
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
-            # 主动验证当前输入，如果无效则阻止点击其他行
-            is_valid, error_msg = self._validate_current_inline_edit()
-            if not is_valid:
-                self._inline_edit_validation_failed = True
-                self.show_error("", error_msg)
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
-            # 验证通过，先保存当前编辑
-            self.on_generic_inline_edit_save(None)
-            # 检查保存是否成功（编辑控件是否已被销毁）
-            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
-                # 保存失败，保持当前编辑状态
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
+        result = self._handle_inline_edit_validation_before_click()
+        if result == 'break':
+            return result
         
         # 获取点击的项
         clicked_item = self.ipam_ip_tree.identify_row(event.y)
@@ -12746,21 +12720,9 @@ class SubnetPlannerApp:
             tree_name: 表格名称标识
             event: 事件对象
         """
-        # 如果有活动编辑，主动验证当前输入
-        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
-            is_valid, error_msg = self._validate_current_inline_edit()
-            if not is_valid:
-                self._inline_edit_validation_failed = True
-                self.show_error("", error_msg)
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
-            # 输入有效，先尝试保存当前编辑
-            self.on_generic_inline_edit_save(None)
-            # 检查保存是否成功（编辑控件是否已被销毁）
-            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
-                # 保存失败，保持当前编辑状态
-                self.root.after(1, self._refocus_inline_edit)
-                return 'break'
+        result = self._handle_inline_edit_validation_before_click()
+        if result == 'break':
+            return result
         
         # 检查是否有注册的配置和处理器
         if tree_name not in self._inline_edit_configs:
@@ -13504,7 +13466,29 @@ class SubnetPlannerApp:
                     return is_valid, error_msg
         
         return True, None
-    
+
+    def _handle_inline_edit_validation_before_click(self):
+        """处理点击前的内联编辑验证逻辑
+        
+        在点击其他行或控件前，验证当前编辑内容并尝试保存。
+        如果验证失败或保存失败，返回 'break' 阻止后续处理。
+        
+        Returns:
+            str or None: 'break' 表示需要阻止后续处理，None 表示允许继续
+        """
+        if hasattr(self, 'inline_edit_data') and self.inline_edit_data:
+            is_valid, error_msg = self._validate_current_inline_edit()
+            if not is_valid:
+                self._inline_edit_validation_failed = True
+                self.show_error("", error_msg)
+                self.root.after(1, self._refocus_inline_edit)
+                return 'break'
+            self.on_generic_inline_edit_save(None)
+            if hasattr(self, 'inline_edit_widget') and self.inline_edit_widget.winfo_exists():
+                self.root.after(1, self._refocus_inline_edit)
+                return 'break'
+        return None
+
     def on_generic_inline_edit_cancel(self, event):
         """通用的取消内联编辑方法
         """
