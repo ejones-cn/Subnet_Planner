@@ -18,7 +18,7 @@ from i18n import translate as _
 from validators import IPAMValidator
 
 import ipaddress
-from ip_subnet_calculator import ip_to_int
+from ip_subnet_calculator import ip_to_int, handle_ip_subnet_error
 
 
 class IPAMSQLite:
