@@ -1043,7 +1043,11 @@ class NetworkTopologyVisualizer:
             allocated = ip_info.get("allocated", 0)
             reserved = ip_info.get("reserved", 0)
             used_ips = allocated + reserved
-            ip_info_text = f"{used_ips}/{total_ips}"
+            
+            from ip_subnet_calculator import format_large_number
+            used_ips_str = format_large_number(used_ips, use_scientific=True)
+            total_ips_str = format_large_number(total_ips, use_scientific=True)
+            ip_info_text = f"{used_ips_str}/{total_ips_str}"
         
         ip_info_id = self.canvas.create_text(
             x + NODE_WIDTH / 2, y + NODE_HEIGHT * 3 / 4,
@@ -1970,43 +1974,52 @@ class NetworkTopologyVisualizer:
         ).pack(anchor=tk.W)
         
         if node["ip_info"]:
+            from ip_subnet_calculator import format_large_number
+            
             allocated = node["ip_info"].get("allocated", 0)
             reserved = node["ip_info"].get("reserved", 0)
             available = node["ip_info"].get("available", 0)
             total = node["ip_info"].get("total", 0)
             network_broadcast = 2 if total > 2 else 0
             remaining = max(0, total - network_broadcast - allocated - reserved)
+            
+            allocated_str = format_large_number(allocated, use_scientific=True)
+            reserved_str = format_large_number(reserved, use_scientific=True)
+            available_str = format_large_number(available, use_scientific=True)
+            remaining_str = format_large_number(remaining, use_scientific=True)
+            total_str = format_large_number(total, use_scientific=True)
+            
             tk.Label(
                 frame, 
-                text=f"已分配: {allocated}", 
+                text=f"已分配: {allocated_str}", 
                 font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
-                text=f"已保留: {reserved}", 
+                text=f"已保留: {reserved_str}", 
                 font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
-                text=f"已释放: {available}", 
+                text=f"已释放: {available_str}", 
                 font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
-                text=f"剩余IP: {remaining}", 
+                text=f"剩余IP: {remaining_str}", 
                 font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
                 frame, 
-                text=f"总IP: {total}", 
+                text=f"总IP: {total_str}", 
                 font=(font_family, font_size - 1), 
                 fg="#ddd", 
                 bg="#333"

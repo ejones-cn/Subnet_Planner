@@ -2,11 +2,11 @@
   "version": "1.0",
   "language": "zh",
   "window": {
-    "width": 1200,
+    "width": 1050,
     "height": 950,
     "maximized": false,
-    "x": 812,
-    "y": 106
+    "x": 456,
+    "y": 71
   },
   "auto_backup": {
     "enabled": true,

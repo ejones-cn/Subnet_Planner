@@ -691,7 +691,7 @@ class IPAMSQLite:
                         if isinstance(network_item, tuple) and len(network_item) >= 6:
                             network_id: int = int(network_item[0])
                             network_address: str = str(network_item[1])
-                            description: str = str(network_item[2]) if network_item[2] else ''
+                            description: str = str(network_item[2]).strip() if network_item[2] else ''
                             vlan: str = str(network_item[3]) if network_item[3] else ''
                             created_at: str = str(network_item[4]) if network_item[4] else ''
                             updated_at: str = str(network_item[5]) if network_item[5] else ''
@@ -1284,150 +1284,122 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"批量更新IP地址过期日期失败: {str(e)}", 0
     
-    def export_network_data(self, file_path: str, format: str = 'csv', networks: list[str] | None = None) -> bool:
-        """导出网段数据
-        
+    def export_data_to_xlsx(self, file_path: str, networks: list[str] | None = None,
+                            include_ips: bool = False, ip_networks: list[str] | None = None) -> bool:
+        """导出数据到xlsx文件（双sheet：网段表 + IP地址表）
+
         Args:
             file_path: 导出文件路径
-            format: 导出格式，支持 'csv' 和 'json'
             networks: 要导出的网段列表，None表示导出所有网段
-            
+            include_ips: 是否同时导出IP地址数据
+            ip_networks: IP地址导出范围，None表示导出所有IP
+
         Returns:
             bool: 是否导出成功
         """
         try:
-            # 获取所有网络
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+
+            wb = Workbook()
+
             all_networks = self.get_all_networks()
-            
-            # 过滤网络
             if networks:
                 filtered_networks = [net for net in all_networks if net['network'] in networks]
             else:
                 filtered_networks = all_networks
-            
-            if format == 'csv':
-                import csv
-                with open(file_path, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.writer(f)
-                    # 写入表头
-                    writer.writerow(['Network', 'Description', 'Created At', 'IP Count'])
-                    # 写入数据
-                    for net in filtered_networks:
-                        writer.writerow([
-                            net['network'],
-                            net['description'],
-                            net['created_at'],
-                            net['ip_count']
-                        ])
-            elif format == 'json':
-                import json
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(filtered_networks, f, ensure_ascii=False, indent=2)
-            else:
-                return False
-            
+
+            ws_net = wb.active
+            ws_net.title = _('network_sheet_name')
+            header_font = Font(bold=True)
+            header_fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
+            thin_border = Border(
+                left=Side(style='thin'), right=Side(style='thin'),
+                top=Side(style='thin'), bottom=Side(style='thin')
+            )
+            center_align = Alignment(horizontal='center', vertical='center')
+
+            net_headers = [_('col_network'), _('col_description'), 'VLAN', _('col_created_at')]
+            for col_idx, header in enumerate(net_headers, 1):
+                cell = ws_net.cell(row=1, column=col_idx, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.border = thin_border
+                cell.alignment = center_align
+
+            for row_idx, net in enumerate(filtered_networks, 2):
+                ws_net.cell(row=row_idx, column=1, value=net['network']).border = thin_border
+                ws_net.cell(row=row_idx, column=2, value=net['description'] or '').border = thin_border
+                ws_net.cell(row=row_idx, column=3, value=net.get('vlan', '') or '').border = thin_border
+                ws_net.cell(row=row_idx, column=4, value=net['created_at'] or '').border = thin_border
+
+            for col_idx in range(1, len(net_headers) + 1):
+                ws_net.column_dimensions[chr(64 + col_idx)].width = 22
+
+            if include_ips:
+                ws_ip = wb.create_sheet(title=_('ip_sheet_name'))
+
+                ip_headers = [_('col_ip_address'), _('col_status'), _('col_hostname'),
+                              _('col_mac_address'), _('col_description'), _('col_expiry_date')]
+                for col_idx, header in enumerate(ip_headers, 1):
+                    cell = ws_ip.cell(row=1, column=col_idx, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.border = thin_border
+                    cell.alignment = center_align
+
+                ip_data = self._get_ip_data_for_export(ip_networks)
+                for row_idx, ip_item in enumerate(ip_data, 2):
+                    ws_ip.cell(row=row_idx, column=1, value=ip_item['ip_address']).border = thin_border
+                    ws_ip.cell(row=row_idx, column=2, value=ip_item['status'] or '').border = thin_border
+                    ws_ip.cell(row=row_idx, column=3, value=ip_item['hostname'] or '').border = thin_border
+                    ws_ip.cell(row=row_idx, column=4, value=ip_item['mac_address'] or '').border = thin_border
+                    ws_ip.cell(row=row_idx, column=5, value=ip_item['description'] or '').border = thin_border
+                    ws_ip.cell(row=row_idx, column=6, value=ip_item['expiry_date'] or '').border = thin_border
+
+                for col_idx in range(1, len(ip_headers) + 1):
+                    ws_ip.column_dimensions[chr(64 + col_idx)].width = 20
+
+            wb.save(file_path)
             return True
         except Exception as e:
-            print(f"导出网段数据失败: {str(e)}")
+            print(f"导出数据失败: {str(e)}")
             return False
-    
-    def import_network_data(self, file_path: str, format: str = 'csv') -> bool:
-        """导入网段数据
-        
+
+    def _get_ip_data_for_export(self, networks: list[str] | None = None) -> list[dict]:
+        """获取用于导出的IP地址数据
+
         Args:
-            file_path: 导入文件路径
-            format: 导入格式，支持 'csv' 和 'json'
-            
+            networks: 网段列表，None表示获取所有IP地址
+
         Returns:
-            bool: 是否导入成功
-        """
-        try:
-            networks_to_import = []
-            
-            if format == 'csv':
-                import csv
-                with open(file_path, 'r', encoding='utf-8-sig') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        network = row.get('Network', '').strip()
-                        description = row.get('Description', '').strip()
-                        if network:
-                            networks_to_import.append((network, description))
-            elif format == 'json':
-                import json
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    for item in data:
-                        network = item.get('network', '').strip()
-                        description = item.get('description', '').strip()
-                        if network:
-                            networks_to_import.append((network, description))
-            else:
-                return False
-            
-            # 导入网段
-            with sqlite3.connect(self.db_file) as conn:
-                cursor = conn.cursor()
-                for network, description in networks_to_import:
-                    # 检查网络是否已存在
-                    _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network,))
-                    if not cursor.fetchone():
-                        # 添加新网络
-                        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        _ = cursor.execute('''
-                        INSERT INTO networks (network_address, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?)
-                        ''', (network, description, created_at, created_at))
-                conn.commit()
-            
-            return True
-        except Exception as e:
-            print(f"导入网段数据失败: {str(e)}")
-            return False
-    
-    def export_ip_data(self, file_path: str, format: str = 'csv', networks: list[str] | None = None) -> bool:
-        """导出IP地址数据
-        
-        Args:
-            file_path: 导出文件路径
-            format: 导出格式，支持 'csv' 和 'json'
-            networks: 要导出的网段列表，None表示导出所有网段的IP地址
-            
-        Returns:
-            bool: 是否导出成功
+            list[dict]: IP地址数据列表
         """
         try:
             conn = sqlite3.connect(self.db_file)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            
+
             if networks:
                 ip_data = []
                 for network_str in networks:
                     try:
                         network = ipaddress.ip_network(network_str, strict=False)
                         _ = cursor.execute('''
-                        SELECT ip_address, status, hostname, mac_address, description, 
-                               allocated_at, allocated_by, expiry_date, created_at, updated_at
+                        SELECT ip_address, status, hostname, mac_address, description, expiry_date
                         FROM ip_addresses
                         ''')
                         for row in cursor.fetchall():
-                            ip_addr = row['ip_address']
                             try:
-                                ip = ipaddress.ip_address(ip_addr)
+                                ip = ipaddress.ip_address(row['ip_address'])
                                 if ip in network:
                                     ip_data.append({
-                                        'network': network_str,
                                         'ip_address': row['ip_address'],
                                         'status': row['status'],
                                         'hostname': row['hostname'],
                                         'mac_address': row['mac_address'],
                                         'description': row['description'],
-                                        'allocated_at': row['allocated_at'],
-                                        'allocated_by': row['allocated_by'],
-                                        'expiry_date': row['expiry_date'],
-                                        'created_at': row['created_at'],
-                                        'updated_at': row['updated_at']
+                                        'expiry_date': row['expiry_date']
                                     })
                             except ValueError:
                                 pass
@@ -1435,8 +1407,7 @@ class IPAMSQLite:
                         pass
             else:
                 _ = cursor.execute('''
-                SELECT ip_address, status, hostname, mac_address, description, 
-                       allocated_at, allocated_by, expiry_date, created_at, updated_at
+                SELECT ip_address, status, hostname, mac_address, description, expiry_date
                 FROM ip_addresses
                 ''')
                 ip_data = []
@@ -1447,158 +1418,355 @@ class IPAMSQLite:
                         'hostname': row['hostname'],
                         'mac_address': row['mac_address'],
                         'description': row['description'],
-                        'allocated_at': row['allocated_at'],
-                        'allocated_by': row['allocated_by'],
-                        'expiry_date': row['expiry_date'],
-                        'created_at': row['created_at'],
-                        'updated_at': row['updated_at']
+                        'expiry_date': row['expiry_date']
                     })
-            
+
             conn.close()
-            
-            if format == 'csv':
-                import csv
-                with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
-                    writer = csv.writer(f)
-                    if networks:
-                        writer.writerow(['Network', 'IP Address', 'Status', 'Hostname', 'MAC Address', 
-                                        'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
-                        for item in ip_data:
-                            writer.writerow([
-                                item['network'],
-                                item['ip_address'],
-                                item['status'],
-                                item['hostname'] or '',
-                                item['mac_address'] or '',
-                                item['description'] or '',
-                                item['allocated_at'] or '',
-                                item['allocated_by'] or '',
-                                item['expiry_date'] or ''
-                            ])
-                    else:
-                        writer.writerow(['IP Address', 'Status', 'Hostname', 'MAC Address', 
-                                        'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
-                        for item in ip_data:
-                            writer.writerow([
-                                item['ip_address'],
-                                item['status'],
-                                item['hostname'] or '',
-                                item['mac_address'] or '',
-                                item['description'] or '',
-                                item['allocated_at'] or '',
-                                item['allocated_by'] or '',
-                                item['expiry_date'] or ''
-                            ])
-            elif format == 'json':
-                import json
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(ip_data, f, ensure_ascii=False, indent=2)
-            else:
-                return False
-            
-            return True
+            return ip_data
         except Exception as e:
-            print(f"导出IP地址数据失败: {str(e)}")
-            return False
-    
-    def import_ip_data(self, file_path: str, format: str = 'csv') -> bool:
-        """导入IP地址数据
-        
+            print(f"获取IP数据失败: {str(e)}")
+            return []
+
+    def parse_xlsx_for_import(self, file_path: str) -> dict:
+        """解析xlsx文件用于导入比对
+
         Args:
-            file_path: 导入文件路径
-            format: 导入格式，支持 'csv' 和 'json'
-            
+            file_path: xlsx文件路径
+
         Returns:
-            bool: 是否导入成功
+            dict: {'networks': [...], 'ips': [...]} 包含网段和IP地址数据
         """
         try:
-            ips_to_import = []
-            
-            if format == 'csv':
-                import csv
-                with open(file_path, 'r', encoding='utf-8-sig') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        ip_address = row.get('IP Address', '').strip() or row.get('ip_address', '').strip()
-                        if ip_address:
-                            ips_to_import.append({
-                                'ip_address': ip_address,
-                                'status': row.get('Status', '').strip() or row.get('status', 'available').strip(),
-                                'hostname': row.get('Hostname', '').strip() or row.get('hostname', '').strip(),
-                                'mac_address': row.get('MAC Address', '').strip() or row.get('mac_address', '').strip(),
-                                'description': row.get('Description', '').strip() or row.get('description', '').strip(),
-                                'allocated_at': row.get('Allocated At', '').strip() or row.get('allocated_at', '').strip(),
-                                'allocated_by': row.get('Allocated By', '').strip() or row.get('allocated_by', '').strip(),
-                                'expiry_date': row.get('Expiry Date', '').strip() or row.get('expiry_date', '').strip()
+            from openpyxl import load_workbook
+
+            wb = load_workbook(file_path, read_only=True)
+            result = {'networks': [], 'ips': []}
+
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                rows = list(ws.iter_rows(min_row=1, values_only=True))
+                if not rows:
+                    continue
+
+                headers = [str(h).strip() if h else '' for h in rows[0]]
+
+                if any(h in headers for h in [_('col_network'), 'Network', 'network']):
+                    net_col = self._find_col(headers, [_('col_network'), 'Network', 'network'])
+                    desc_col = self._find_col(headers, [_('col_description'), 'Description', 'description'])
+                    vlan_col = self._find_col(headers, ['VLAN', 'vlan'])
+
+                    for row in rows[1:]:
+                        if not row or not any(row):
+                            continue
+                        network = str(row[net_col]).strip() if net_col is not None and net_col < len(row) and row[net_col] else ''
+                        description = str(row[desc_col]).strip() if desc_col is not None and desc_col < len(row) and row[desc_col] else ''
+                        vlan = str(row[vlan_col]).strip() if vlan_col is not None and vlan_col < len(row) and row[vlan_col] else ''
+                        if network:
+                            result['networks'].append({
+                                'network': network,
+                                'description': description,
+                                'vlan': vlan
                             })
-            elif format == 'json':
-                import json
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    for item in data:
-                        ip_address = item.get('ip_address', '').strip()
+
+                elif any(h in headers for h in [_('col_ip_address'), 'IP Address', 'ip_address']):
+                    ip_col = self._find_col(headers, [_('col_ip_address'), 'IP Address', 'ip_address'])
+                    status_col = self._find_col(headers, [_('col_status'), 'Status', 'status'])
+                    hostname_col = self._find_col(headers, [_('col_hostname'), 'Hostname', 'hostname'])
+                    mac_col = self._find_col(headers, [_('col_mac_address'), 'MAC Address', 'mac_address'])
+                    desc_col = self._find_col(headers, [_('col_description'), 'Description', 'description'])
+                    expiry_col = self._find_col(headers, [_('col_expiry_date'), 'Expiry Date', 'expiry_date'])
+
+                    status_mapping = {
+                        _('status_allocated'): 'allocated',
+                        _('status_reserved'): 'reserved',
+                        _('status_available'): 'available',
+                        _('status_conflict'): 'conflict',
+                        'allocated': 'allocated',
+                        'reserved': 'reserved',
+                        'available': 'available',
+                        'conflict': 'conflict'
+                    }
+
+                    for row in rows[1:]:
+                        if not row or not any(row):
+                            continue
+                        ip_address = str(row[ip_col]).strip() if ip_col is not None and ip_col < len(row) and row[ip_col] else ''
                         if ip_address:
-                            ips_to_import.append({
+                            status_str = str(row[status_col]).strip() if status_col is not None and status_col < len(row) and row[status_col] else ''
+                            status = status_mapping.get(status_str, 'available')
+                            result['ips'].append({
                                 'ip_address': ip_address,
-                                'status': item.get('status', 'available'),
-                                'hostname': item.get('hostname', ''),
-                                'mac_address': item.get('mac_address', ''),
-                                'description': item.get('description', ''),
-                                'allocated_at': item.get('allocated_at', ''),
-                                'allocated_by': item.get('allocated_by', ''),
-                                'expiry_date': item.get('expiry_date', '')
+                                'status': status,
+                                'hostname': str(row[hostname_col]).strip() if hostname_col is not None and hostname_col < len(row) and row[hostname_col] else '',
+                                'mac_address': str(row[mac_col]).strip() if mac_col is not None and mac_col < len(row) and row[mac_col] else '',
+                                'description': str(row[desc_col]).strip() if desc_col is not None and desc_col < len(row) and row[desc_col] else '',
+                                'expiry_date': str(row[expiry_col]).strip() if expiry_col is not None and expiry_col < len(row) and row[expiry_col] else ''
                             })
-            else:
-                return False
-            
+
+            wb.close()
+            return result
+        except Exception as e:
+            print(f"解析xlsx文件失败: {str(e)}")
+            return {'networks': [], 'ips': []}
+
+    def _find_col(self, headers: list[str], names: list[str]) -> int | None:
+        """在表头中查找列索引
+
+        Args:
+            headers: 表头列表
+            names: 可能的列名列表
+
+        Returns:
+            int | None: 列索引，未找到返回None
+        """
+        for name in names:
+            if name in headers:
+                return headers.index(name)
+        return None
+
+    def validate_import_data(self, data: dict) -> dict:
+        """验证导入数据，与现有数据比对
+
+        Args:
+            data: parse_xlsx_for_import返回的数据
+
+        Returns:
+            dict: {'networks': {'new': [...], 'existing': [...], 'invalid': [...]},
+                   'ips': {'new': [...], 'existing': [...], 'invalid': [...]}}
+        """
+        result = {
+            'networks': {'new': [], 'existing': [], 'invalid': []},
+            'ips': {'new': [], 'existing': [], 'invalid': []}
+        }
+
+        existing_networks = set()
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            _ = cursor.execute('SELECT network_address FROM networks')
+            for row in cursor.fetchall():
+                existing_networks.add(row[0])
+            conn.close()
+        except Exception:
+            pass
+
+        for net in data.get('networks', []):
+            network = net['network']
+            try:
+                ipaddress.ip_network(network, strict=False)
+                if network in existing_networks:
+                    result['networks']['existing'].append(net)
+                else:
+                    result['networks']['new'].append(net)
+            except ValueError:
+                result['networks']['invalid'].append(net)
+
+        existing_ips = set()
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            _ = cursor.execute('SELECT ip_address FROM ip_addresses')
+            for row in cursor.fetchall():
+                existing_ips.add(row[0])
+            conn.close()
+        except Exception:
+            pass
+
+        valid_statuses = {'available', 'allocated', 'reserved'}
+        for ip in data.get('ips', []):
+            ip_address = ip['ip_address']
+            try:
+                ipaddress.ip_address(ip_address)
+                status = (ip.get('status') or 'available').strip().lower()
+                if status not in valid_statuses:
+                    ip['error'] = _('invalid_status_value')
+                    result['ips']['invalid'].append(ip)
+                elif ip_address in existing_ips:
+                    result['ips']['existing'].append(ip)
+                else:
+                    result['ips']['new'].append(ip)
+            except ValueError:
+                ip['error'] = _('invalid_ip_format')
+                result['ips']['invalid'].append(ip)
+
+        return result
+
+    def import_validated_data(self, data: dict, import_networks: bool = True, import_ips: bool = True,
+                              overwrite_existing: bool = False) -> dict:
+        """导入验证后的数据
+
+        Args:
+            data: validate_import_data返回的比对结果
+            import_networks: 是否导入网段数据
+            import_ips: 是否导入IP地址数据
+            overwrite_existing: 是否覆盖已存在的数据
+
+        Returns:
+            dict: 导入统计 {'networks_added': int, 'networks_updated': int,
+                           'ips_added': int, 'ips_updated': int}
+        """
+        stats = {'networks_added': 0, 'networks_updated': 0, 'ips_added': 0, 'ips_updated': 0}
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        try:
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-                for ip_item in ips_to_import:
-                    ip_address = ip_item['ip_address']
-                    _ = cursor.execute('SELECT id FROM ip_addresses WHERE ip_address = ?', (ip_address,))
-                    existing = cursor.fetchone()
-                    
-                    if existing:
-                        _ = cursor.execute('''
-                        UPDATE ip_addresses SET status = ?, hostname = ?, mac_address = ?, description = ?,
-                               allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
-                        WHERE ip_address = ?
-                        ''', (
-                            ip_item['status'] or 'available',
-                            ip_item['hostname'],
-                            ip_item['mac_address'],
-                            ip_item['description'],
-                            ip_item['allocated_at'] or now if ip_item['status'] == 'allocated' else '',
-                            ip_item['allocated_by'] or 'admin',
-                            self._validate_expiry_date(ip_item['expiry_date']),
-                            now,
-                            ip_address
-                        ))
-                    else:
-                        _ = cursor.execute('''
-                        INSERT INTO ip_addresses (ip_address, status, hostname, mac_address, description,
-                               allocated_at, allocated_by, expiry_date, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            ip_address,
-                            ip_item['status'] or 'available',
-                            ip_item['hostname'],
-                            ip_item['mac_address'],
-                            ip_item['description'],
-                            ip_item['allocated_at'] or now if ip_item['status'] == 'allocated' else '',
-                            ip_item['allocated_by'] or 'admin',
-                            self._validate_expiry_date(ip_item['expiry_date']),
-                            now,
-                            now
-                        ))
-                
+
+                if import_networks:
+                    for net in data['networks']['new']:
+                        try:
+                            ipaddress.ip_network(net['network'], strict=False)
+                            _ = cursor.execute('''
+                            INSERT INTO networks (network_address, description, vlan, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?)
+                            ''', (net['network'], net.get('description', ''), net.get('vlan', ''), now, now))
+                            stats['networks_added'] += 1
+                        except (sqlite3.IntegrityError, ValueError):
+                            pass
+
+                    if overwrite_existing:
+                        for net in data['networks']['existing']:
+                            _ = cursor.execute('''
+                            UPDATE networks SET description = ?, vlan = ?, updated_at = ?
+                            WHERE network_address = ?
+                            ''', (net.get('description', ''), net.get('vlan', ''), now, net['network']))
+                            stats['networks_updated'] += 1
+
+                if import_ips:
+                    for ip in data['ips']['new']:
+                        try:
+                            ipaddress.ip_address(ip['ip_address'])
+                            status = (ip.get('status') or 'available').strip().lower()
+                            _ = cursor.execute('''
+                            INSERT INTO ip_addresses (ip_address, status, hostname, mac_address, description,
+                                   allocated_at, allocated_by, expiry_date, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                ip['ip_address'],
+                                status,
+                                ip.get('hostname', ''),
+                                ip.get('mac_address', ''),
+                                ip.get('description', ''),
+                                ip.get('allocated_at', '') or now if status == 'allocated' else '',
+                                ip.get('allocated_by', '') or 'admin',
+                                self._validate_expiry_date(ip.get('expiry_date', '')),
+                                now, now
+                            ))
+                            stats['ips_added'] += 1
+                        except (sqlite3.IntegrityError, ValueError):
+                            pass
+
+                    if overwrite_existing:
+                        for ip in data['ips']['existing']:
+                            status = (ip.get('status') or 'available').strip().lower()
+                            _ = cursor.execute('''
+                            UPDATE ip_addresses SET status = ?, hostname = ?, mac_address = ?, description = ?,
+                                   allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
+                            WHERE ip_address = ?
+                            ''', (
+                                status,
+                                ip.get('hostname', ''),
+                                ip.get('mac_address', ''),
+                                ip.get('description', ''),
+                                ip.get('allocated_at', '') or now if status == 'allocated' else '',
+                                ip.get('allocated_by', '') or 'admin',
+                                self._validate_expiry_date(ip.get('expiry_date', '')),
+                                now,
+                                ip['ip_address']
+                            ))
+                            stats['ips_updated'] += 1
+
                 conn.commit()
-            
+        except Exception as e:
+            print(f"导入数据失败: {str(e)}")
+
+        return stats
+
+    def generate_template_xlsx(self, file_path: str, include_networks: bool = True, include_ips: bool = True) -> bool:
+        """生成导入模板xlsx文件
+
+        Args:
+            file_path: 文件保存路径
+            include_networks: 是否包含网段模板
+            include_ips: 是否包含IP地址模板
+
+        Returns:
+            bool: 是否生成成功
+        """
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+
+            if not include_networks and not include_ips:
+                return False
+
+            wb = Workbook()
+            header_font = Font(bold=True)
+            header_fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
+            thin_border = Border(
+                left=Side(style='thin'), right=Side(style='thin'),
+                top=Side(style='thin'), bottom=Side(style='thin')
+            )
+            center_align = Alignment(horizontal='center', vertical='center')
+
+            if include_networks:
+                ws_net = wb.active
+                ws_net.title = _('network_sheet_name')
+                net_headers = [_('col_network'), _('col_description'), 'VLAN']
+                for col_idx, header in enumerate(net_headers, 1):
+                    cell = ws_net.cell(row=1, column=col_idx, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.border = thin_border
+                    cell.alignment = center_align
+
+                examples = [
+                    ['192.168.1.0/24', _('template_network_desc1'), '10'],
+                    ['10.0.0.0/8', _('template_network_desc2'), ''],
+                ]
+                for row_idx, example in enumerate(examples, 2):
+                    for col_idx, val in enumerate(example, 1):
+                        ws_net.cell(row=row_idx, column=col_idx, value=val).border = thin_border
+
+                for col_idx in range(1, len(net_headers) + 1):
+                    ws_net.column_dimensions[chr(64 + col_idx)].width = 22
+
+            if include_ips:
+                if include_networks:
+                    ws_ip = wb.create_sheet(title=_('ip_sheet_name'))
+                else:
+                    ws_ip = wb.active
+                    ws_ip.title = _('ip_sheet_name')
+
+                ip_headers = [_('col_ip_address'), _('col_status'), _('col_hostname'),
+                              _('col_mac_address'), _('col_description'), _('col_expiry_date')]
+                for col_idx, header in enumerate(ip_headers, 1):
+                    cell = ws_ip.cell(row=1, column=col_idx, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.border = thin_border
+                    cell.alignment = center_align
+
+                ip_examples = [
+                    ['192.168.1.10', _('status_allocated'), 'server-01', '00:11:22:33:44:55',
+                     _('template_ip_desc1'), '2026-12-31 23:59:59'],
+                    ['192.168.1.11', _('status_reserved'), '', '', _('template_ip_desc2'), ''],
+                    ['192.168.1.12', _('status_available'), '', '', '', ''],
+                ]
+                for row_idx, example in enumerate(ip_examples, 2):
+                    for col_idx, val in enumerate(example, 1):
+                        ws_ip.cell(row=row_idx, column=col_idx, value=val).border = thin_border
+
+                for col_idx in range(1, len(ip_headers) + 1):
+                    ws_ip.column_dimensions[chr(64 + col_idx)].width = 20
+
+            if include_networks and include_ips:
+                wb.active = wb.sheetnames.index(_('network_sheet_name'))
+
+            wb.save(file_path)
             return True
         except Exception as e:
-            print(f"导入IP地址数据失败: {str(e)}")
+            print(f"生成模板失败: {str(e)}")
             return False
     
     def _validate_expiry_date(self, expiry_date: str | None) -> str | None:

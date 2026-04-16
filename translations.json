@@ -225,11 +225,11 @@
     "ko": "성공적으로 내보낸 결과: {file_path}"
   },
   "export_failed": {
-    "zh": "导出失败: {error}",
-    "zh_tw": "匯出失敗：{error}",
-    "en": "Export failed: {error}",
-    "ja": "エクスポートに失敗しました：{error}",
-    "ko": "내보내기 실패: {error}"
+    "zh": "数据导出失败",
+    "zh_tw": "資料匯出失敗",
+    "en": "Data export failed",
+    "ja": "データのエクスポートに失敗しました",
+    "ko": "데이터 내보내기 실패"
   },
   "apply_theme": {
     "zh": "应用主题",
@@ -459,7 +459,7 @@
     "zh": "从文件导入",
     "zh_tw": "從檔案匯入",
     "en": "Import from File",
-    "ja": "ファイルから取込",
+    "ja": "ファイルからインポート",
     "ko": "파일에서 가져오기"
   },
   "select_file_to_import": {
@@ -512,11 +512,11 @@
     "ko": "계획 내보내기"
   },
   "sync_to_ipam": {
-    "zh": "同步到IPAM",
-    "zh_tw": "同步到IPAM",
-    "en": "Sync to IPAM",
-    "ja": "IPAMに同期",
-    "ko": "IPAM에 동기화"
+    "zh": "导入到IPAM",
+    "zh_tw": "導入到IPAM",
+    "en": "Import to IPAM",
+    "ja": "IPAMにインポート",
+    "ko": "IPAM에 가져오기"
   },
   "sync_success": {
     "zh": "成功同步 {count} 个子网到地址管理",
@@ -1633,9 +1633,9 @@
   },
   "download_template": {
     "zh": "下载模板",
+    "zh_tw": "下載範本",
     "en": "Download Template",
     "ja": "テンプレートをダウンロード",
-    "zh_tw": "下載範本",
     "ko": "템플릿 다운로드"
   },
   "download_template_failed": {
@@ -2318,11 +2318,11 @@
     "ko": "데이터 내보내기"
   },
   "import_data": {
-    "zh": "导入数据",
-    "zh_tw": "匯入數據",
-    "en": "Import Data",
-    "ja": "データをインポート",
-    "ko": "데이터 가져오기"
+    "zh": "导入/导出",
+    "zh_tw": "匯入/匯出",
+    "en": "Import/Export",
+    "ja": "インポート/エクスポート",
+    "ko": "가져오기/내보내기"
   },
   "backup_data": {
     "zh": "备份数据",
@@ -2717,11 +2717,11 @@
     "ko": "네트워크 추가 실패"
   },
   "please_select_network": {
-    "zh": "请选择网络",
-    "zh_tw": "請選擇網路",
-    "en": "Please select network",
-    "ja": "ネットワークを選択してください",
-    "ko": "네트워크를 선택하십시오"
+    "zh": "请先选择要导出的网段",
+    "zh_tw": "請先選擇要匯出的網段",
+    "en": "Please select networks to export",
+    "ja": "エクスポートするネットワークを選択してください",
+    "ko": "내보낼 네트워크를 선택하세요"
   },
   "please_enter_network": {
     "zh": "请输入网络",
@@ -4257,11 +4257,11 @@
     "ko": "호스트 수는 정수여야 합니다."
   },
   "invalid_ip_format": {
-    "zh": "无效的IP地址格式",
-    "en": "Invalid IP address format",
-    "ja": "無効なIPアドレス形式",
-    "zh_tw": "無效的IP位址格式",
-    "ko": "잘못된 IP 주소 형식"
+    "zh": "无效的IP格式",
+    "zh_tw": "無效的IP格式",
+    "en": "Invalid IP format",
+    "ja": "無効なIP形式",
+    "ko": "잘못된 IP 형식"
   },
   "ipv4_mapped_address": {
     "zh": "IPv4映射地址",
@@ -4626,5 +4626,376 @@
     "en": "Import Options",
     "ja": "インポートオプション",
     "ko": "가져오기 옵션"
+  },
+  "sync_export_ips": {
+    "zh": "同步导出IP地址",
+    "zh_tw": "同步匯出IP位址",
+    "en": "Sync Export IP Addresses",
+    "ja": "IPアドレスを同時エクスポート",
+    "ko": "IP 주소 동시 내보내기"
+  },
+  "include_network_template": {
+    "zh": "包含网段模板",
+    "zh_tw": "包含網段範本",
+    "en": "Include Network Template",
+    "ja": "ネットワークテンプレートを含む",
+    "ko": "네트워크 템플릿 포함"
+  },
+  "include_ip_template": {
+    "zh": "包含IP地址模板",
+    "zh_tw": "包含IP位址範本",
+    "en": "Include IP Address Template",
+    "ja": "IPアドレステンプレートを含む",
+    "ko": "IP 주소 템플릿 포함"
+  },
+  "download": {
+    "zh": "下载",
+    "zh_tw": "下載",
+    "en": "Download",
+    "ja": "ダウンロード",
+    "ko": "다운로드"
+  },
+  "import_data_compare": {
+    "zh": "导入数据",
+    "zh_tw": "匯入資料",
+    "en": "Import Data",
+    "ja": "インポートデータ比較",
+    "ko": "가져오기 데이터 비교"
+  },
+  "network_data_summary": {
+    "zh": "网段数据统计",
+    "zh_tw": "網段資料統計",
+    "en": "Network Data Summary",
+    "ja": "ネットワークデータ統計",
+    "ko": "네트워크 데이터 요약"
+  },
+  "ip_data_summary": {
+    "zh": "IP地址数据统计",
+    "zh_tw": "IP位址資料統計",
+    "en": "IP Address Data Summary",
+    "ja": "IPアドレスデータ統計",
+    "ko": "IP 주소 데이터 요약"
+  },
+  "new_count": {
+    "zh": "新增",
+    "zh_tw": "新增",
+    "en": "New",
+    "ja": "新規",
+    "ko": "신규"
+  },
+  "existing_count": {
+    "zh": "已存在",
+    "zh_tw": "已存在",
+    "en": "Existing",
+    "ja": "既存",
+    "ko": "기존"
+  },
+  "invalid_count": {
+    "zh": "无效",
+    "zh_tw": "無效",
+    "en": "Invalid",
+    "ja": "無効",
+    "ko": "무효"
+  },
+  "network_sheet_name": {
+    "zh": "网段表",
+    "zh_tw": "網段表",
+    "en": "Networks",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
+  },
+  "ip_sheet_name": {
+    "zh": "地址表",
+    "zh_tw": "位址表",
+    "en": "Address Table",
+    "ja": "アドレステーブル",
+    "ko": "주소 테이블"
+  },
+  "col_network": {
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Network",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
+  },
+  "col_description": {
+    "zh": "描述",
+    "zh_tw": "描述",
+    "en": "Description",
+    "ja": "説明",
+    "ko": "설명"
+  },
+  "col_created_at": {
+    "zh": "创建时间",
+    "zh_tw": "建立時間",
+    "en": "Created At",
+    "ja": "作成日時",
+    "ko": "생성 시간"
+  },
+  "col_ip_address": {
+    "zh": "IP地址",
+    "zh_tw": "IP位址",
+    "en": "IP Address",
+    "ja": "IPアドレス",
+    "ko": "IP 주소"
+  },
+  "col_status": {
+    "zh": "状态",
+    "zh_tw": "狀態",
+    "en": "Status",
+    "ja": "ステータス",
+    "ko": "상태"
+  },
+  "col_hostname": {
+    "zh": "主机名",
+    "zh_tw": "主機名稱",
+    "en": "Hostname",
+    "ja": "ホスト名",
+    "ko": "호스트명"
+  },
+  "col_mac_address": {
+    "zh": "MAC地址",
+    "zh_tw": "MAC位址",
+    "en": "MAC Address",
+    "ja": "MACアドレス",
+    "ko": "MAC 주소"
+  },
+  "col_allocated_at": {
+    "zh": "分配时间",
+    "zh_tw": "分配時間",
+    "en": "Allocated At",
+    "ja": "割当日時",
+    "ko": "할당 시간"
+  },
+  "col_allocated_by": {
+    "zh": "分配人",
+    "zh_tw": "分配人",
+    "en": "Allocated By",
+    "ja": "割当者",
+    "ko": "할당자"
+  },
+  "col_expiry_date": {
+    "zh": "过期日期",
+    "zh_tw": "過期日期",
+    "en": "Expiry Date",
+    "ja": "有効期限",
+    "ko": "만료일"
+  },
+  "col_compare_status": {
+    "zh": "比对状态",
+    "zh_tw": "比對狀態",
+    "en": "Compare Status",
+    "ja": "比較ステータス",
+    "ko": "비교 상태"
+  },
+  "status_new": {
+    "zh": "新增",
+    "zh_tw": "新增",
+    "en": "New",
+    "ja": "新規",
+    "ko": "신규"
+  },
+  "status_existing": {
+    "zh": "已存在",
+    "zh_tw": "已存在",
+    "en": "Existing",
+    "ja": "既存",
+    "ko": "기존"
+  },
+  "status_invalid": {
+    "zh": "无效",
+    "zh_tw": "無效",
+    "en": "Invalid",
+    "ja": "無効",
+    "ko": "무효"
+  },
+  "import_network_data": {
+    "zh": "导入网段数据",
+    "zh_tw": "匯入網段資料",
+    "en": "Import Network Data",
+    "ja": "ネットワークデータをインポート",
+    "ko": "네트워크 데이터 가져오기"
+  },
+  "import_ip_data": {
+    "zh": "导入IP地址数据",
+    "zh_tw": "匯入IP位址資料",
+    "en": "Import IP Address Data",
+    "ja": "IPアドレスデータをインポート",
+    "ko": "IP 주소 데이터 가져오기"
+  },
+  "overwrite_existing": {
+    "zh": "覆盖已存在数据",
+    "zh_tw": "覆蓋已存在資料",
+    "en": "Overwrite Existing",
+    "ja": "既存データを上書き",
+    "ko": "기존 데이터 덮어쓰기"
+  },
+  "confirm_import": {
+    "zh": "确认导入",
+    "zh_tw": "確認匯入",
+    "en": "Confirm Import",
+    "ja": "インポート確認",
+    "ko": "가져오기 확인"
+  },
+  "please_select_import_data": {
+    "zh": "请至少选择一项要导入的数据",
+    "zh_tw": "請至少選擇一項要匯入的資料",
+    "en": "Please select at least one data type to import",
+    "ja": "インポートするデータを少なくとも1つ選択してください",
+    "ko": "가져올 데이터를 최소 하나 선택하세요"
+  },
+  "please_select_template": {
+    "zh": "请至少选择一个模板类型",
+    "zh_tw": "請至少選擇一個範本類型",
+    "en": "Please select at least one template type",
+    "ja": "テンプレートタイプを少なくとも1つ選択してください",
+    "ko": "템플릿 유형을 최소 하나 선택하세요"
+  },
+  "export_success": {
+    "zh": "数据导出成功",
+    "zh_tw": "資料匯出成功",
+    "en": "Data exported successfully",
+    "ja": "データのエクスポートに成功しました",
+    "ko": "데이터 내보내기 성공"
+  },
+  "import_success": {
+    "zh": "数据导入成功",
+    "zh_tw": "資料匯入成功",
+    "en": "Data imported successfully",
+    "ja": "データのインポートに成功しました",
+    "ko": "데이터 가져오기 성공"
+  },
+  "import_failed": {
+    "zh": "数据导入失败",
+    "zh_tw": "資料匯入失敗",
+    "en": "Data import failed",
+    "ja": "データのインポートに失敗しました",
+    "ko": "데이터 가져오기 실패"
+  },
+  "no_data_imported": {
+    "zh": "没有数据被导入",
+    "zh_tw": "沒有資料被匯入",
+    "en": "No data was imported",
+    "ja": "インポートされたデータはありません",
+    "ko": "가져온 데이터가 없습니다"
+  },
+  "networks_added": {
+    "zh": "新增网段",
+    "zh_tw": "新增網段",
+    "en": "Networks Added",
+    "ja": "追加ネットワーク",
+    "ko": "추가된 네트워크"
+  },
+  "networks_updated": {
+    "zh": "更新网段",
+    "zh_tw": "更新網段",
+    "en": "Networks Updated",
+    "ja": "更新ネットワーク",
+    "ko": "업데이트된 네트워크"
+  },
+  "ips_added": {
+    "zh": "新增IP",
+    "zh_tw": "新增IP",
+    "en": "IPs Added",
+    "ja": "追加IP",
+    "ko": "추가된 IP"
+  },
+  "ips_updated": {
+    "zh": "更新IP",
+    "zh_tw": "更新IP",
+    "en": "IPs Updated",
+    "ja": "更新IP",
+    "ko": "업데이트된 IP"
+  },
+  "invalid_status_value": {
+    "zh": "无效的状态值",
+    "zh_tw": "無效的狀態值",
+    "en": "Invalid status value",
+    "ja": "無効なステータス値",
+    "ko": "잘못된 상태 값"
+  },
+  "template_network_desc1": {
+    "zh": "示例网段1",
+    "zh_tw": "示例網段1",
+    "en": "Example Network 1",
+    "ja": "サンプルネットワーク1",
+    "ko": "예시 네트워크 1"
+  },
+  "template_network_desc2": {
+    "zh": "示例网段2",
+    "zh_tw": "示例網段2",
+    "en": "Example Network 2",
+    "ja": "サンプルネットワーク2",
+    "ko": "예시 네트워크 2"
+  },
+  "status_allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "ko": "할당됨"
+  },
+  "status_reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済み",
+    "ko": "예약됨"
+  },
+  "status_available": {
+    "zh": "可用",
+    "zh_tw": "可用",
+    "en": "Available",
+    "ja": "利用可能",
+    "ko": "사용 가능"
+  },
+  "status_conflict": {
+    "zh": "冲突",
+    "zh_tw": "衝突",
+    "en": "Conflict",
+    "ja": "競合",
+    "ko": "충돌"
+  },
+  "template_ip_desc1": {
+    "zh": "Web服务器",
+    "zh_tw": "Web伺服器",
+    "en": "Web Server",
+    "ja": "Webサーバー",
+    "ko": "웹 서버"
+  },
+  "template_ip_desc2": {
+    "zh": "预留用于备份",
+    "zh_tw": "預留用於備份",
+    "en": "Reserved for backup",
+    "ja": "バックアップ用予約",
+    "ko": "백업용 예약"
+  },
+  "backup_ipam_data": {
+    "zh": "备份IPAM数据",
+    "zh_tw": "備份IPAM數據",
+    "en": "Backup IPAM Data",
+    "ja": "IPAMデータのバックアップ",
+    "ko": "IPAM 데이터 백업"
+  },
+  "backup_success": {
+    "zh": "数据备份成功",
+    "zh_tw": "數據備份成功",
+    "en": "Backup successful",
+    "ja": "バックアップ成功",
+    "ko": "백업 성공"
+  },
+  "backup_failed": {
+    "zh": "数据备份失败",
+    "zh_tw": "數據備份失敗",
+    "en": "Backup failed",
+    "ja": "バックアップ失敗",
+    "ko": "백업 실패"
+  },
+  "restore_failed": {
+    "zh": "恢复失败",
+    "zh_tw": "恢復失敗",
+    "en": "Restore failed",
+    "ja": "復元失敗",
+    "ko": "복원 실패"
   }
 }
