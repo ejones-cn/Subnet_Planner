@@ -4556,5 +4556,75 @@
     "en": "Invalid IP address",
     "ja": "無効なIPアドレス",
     "ko": "유효하지 않은 IP 주소"
+  },
+  "export_selected_networks": {
+    "zh": "导出选中网段",
+    "zh_tw": "匯出選中網段",
+    "en": "Export Selected Networks",
+    "ja": "選択したネットワークをエクスポート",
+    "ko": "선택한 네트워크 내보내기"
+  },
+  "export_all_networks": {
+    "zh": "导出所有网段",
+    "zh_tw": "匯出所有網段",
+    "en": "Export All Networks",
+    "ja": "すべてのネットワークをエクスポート",
+    "ko": "모든 네트워크 내보내기"
+  },
+  "export_selected_ips": {
+    "zh": "导出选中网段IP",
+    "zh_tw": "匯出選中網段IP",
+    "en": "Export IPs of Selected Networks",
+    "ja": "選択したネットワークのIPをエクスポート",
+    "ko": "선택한 네트워크 IP 내보내기"
+  },
+  "export_all_ips": {
+    "zh": "导出所有IP",
+    "zh_tw": "匯出所有IP",
+    "en": "Export All IPs",
+    "ja": "すべてのIPをエクスポート",
+    "ko": "모든 IP 내보내기"
+  },
+  "import_networks": {
+    "zh": "导入网段",
+    "zh_tw": "匯入網段",
+    "en": "Import Networks",
+    "ja": "ネットワークをインポート",
+    "ko": "네트워크 가져오기"
+  },
+  "download_network_template": {
+    "zh": "下载网段模板",
+    "zh_tw": "下載網段範本",
+    "en": "Download Network Template",
+    "ja": "ネットワークテンプレートをダウンロード",
+    "ko": "네트워크 템플릿 다운로드"
+  },
+  "import_ips": {
+    "zh": "导入IP地址",
+    "zh_tw": "匯入IP位址",
+    "en": "Import IP Addresses",
+    "ja": "IPアドレスをインポート",
+    "ko": "IP 주소 가져오기"
+  },
+  "download_ip_template": {
+    "zh": "下载IP模板",
+    "zh_tw": "下載IP範本",
+    "en": "Download IP Template",
+    "ja": "IPテンプレートをダウンロード",
+    "ko": "IP 템플릿 다운로드"
+  },
+  "export_options": {
+    "zh": "导出选项",
+    "zh_tw": "匯出選項",
+    "en": "Export Options",
+    "ja": "エクスポートオプション",
+    "ko": "내보내기 옵션"
+  },
+  "import_options": {
+    "zh": "导入选项",
+    "zh_tw": "匯入選項",
+    "en": "Import Options",
+    "ja": "インポートオプション",
+    "ko": "가져오기 옵션"
   }
 }

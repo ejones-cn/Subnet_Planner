@@ -3,10 +3,10 @@
   "language": "zh",
   "window": {
     "width": 1200,
-    "height": 800,
+    "height": 950,
     "maximized": false,
-    "x": null,
-    "y": null
+    "x": 812,
+    "y": 106
   },
   "auto_backup": {
     "enabled": true,

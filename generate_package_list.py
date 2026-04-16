@@ -60,7 +60,7 @@ def generate_package_list() -> PackageInfo:
     ]
 
     excluded_items = [
-        "ipam_data.db",
+        "SubnetPlanner_data.db",
         "ipam_backups",
         "*.db"
     ]
@@ -96,7 +96,7 @@ def generate_package_list() -> PackageInfo:
 
     runtime_files: list[RuntimeFile] = [
         {
-            "name": "ipam_data.db",
+            "name": "SubnetPlanner_data.db",
             "description": "主数据库文件，运行时在程序所在目录创建"
         },
         {

@@ -14,7 +14,7 @@
     }
   ],
   "excluded_files": [
-    "ipam_data.db",
+    "SubnetPlanner_data.db",
     "ipam_backups",
     "*.db"
   ],
@@ -28,7 +28,7 @@
   ],
   "runtime_generated": [
     {
-      "name": "ipam_data.db",
+      "name": "SubnetPlanner_data.db",
       "description": "主数据库文件，运行时在程序所在目录创建"
     },
     {

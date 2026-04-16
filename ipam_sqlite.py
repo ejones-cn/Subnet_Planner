@@ -34,7 +34,7 @@ class IPAMSQLite:
         
         if db_file is None:
             # 使用应用程序目录作为数据库位置
-            db_file = os.path.join(self.app_dir, "ipam_data.db")
+            db_file = os.path.join(self.app_dir, "SubnetPlanner_data.db")
         
         self.db_file: str = db_file
         # 备份目录始终在应用程序目录下，确保数据持久化
@@ -623,9 +623,9 @@ class IPAMSQLite:
                             ip_id: int = int(ip_item[0])
                             ip_address: str = str(ip_item[1])
                             status: str = str(ip_item[2])
-                            hostname: str | None = str(ip_item[3]) if ip_item[3] else None
-                            mac_address: str | None = str(ip_item[4]) if ip_item[4] else None
-                            description: str | None = str(ip_item[5]) if ip_item[5] else None
+                            hostname: str | None = ip_item[3] if ip_item[3] else None
+                            mac_address: str | None = ip_item[4] if ip_item[4] else None
+                            description: str | None = ip_item[5] if ip_item[5] else None
                             allocated_at: str | None = str(ip_item[6]) if ip_item[6] else None
                             allocated_by: str | None = str(ip_item[7]) if ip_item[7] else None
                             expiry_date: str | None = str(ip_item[8]) if ip_item[8] else None
@@ -971,10 +971,10 @@ class IPAMSQLite:
                         'id': int(row[0]),
                         'ip_address': ip_address,
                         'status': str(row[1]),
-                        'hostname': str(row[2]) if row[2] else None,
-                        'description': str(row[3]) if row[3] else None,
+                        'hostname': row[2] if row[2] else None,
+                        'description': row[3] if row[3] else None,
                         'allocated_at': str(row[4]) if row[4] else None,
-                        'allocated_by': str(row[5]) if row[5] else None,
+                        'allocated_by': row[5] if row[5] else None,
                         'expiry_date': str(row[6]) if row[6] else None,
                         'created_at': str(row[7]) if row[7] else None,
                         'updated_at': str(row[8]) if row[8] else None
@@ -1011,10 +1011,10 @@ class IPAMSQLite:
                     'id': record_id,
                     'ip_address': str(row[0]),
                     'status': str(row[1]),
-                    'hostname': str(row[2]) if row[2] else None,
-                    'description': str(row[3]) if row[3] else None,
+                    'hostname': row[2] if row[2] else None,
+                    'description': row[3] if row[3] else None,
                     'allocated_at': str(row[4]) if row[4] else None,
-                    'allocated_by': str(row[5]) if row[5] else None,
+                    'allocated_by': row[5] if row[5] else None,
                     'expiry_date': str(row[6]) if row[6] else None,
                     'created_at': str(row[7]) if row[7] else None,
                     'updated_at': str(row[8]) if row[8] else None
@@ -1028,18 +1028,21 @@ class IPAMSQLite:
     
     def update_ip_record(self, record_id: int, hostname: str, mac_address: str, description: str, expiry_date: str | None = None) -> tuple[bool, str]:
         """更新IP地址记录
-        
+
         Args:
             record_id: 记录ID
             hostname: 主机名
             mac_address: MAC地址
             description: 描述
             expiry_date: 过期日期
-        
+
         Returns:
             tuple[bool, str]: (是否更新成功, 错误信息)
         """
-        # 处理字符串 "None" 的情况
+        is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+        if not is_valid:
+            return False, error_msg or "验证失败"
+        
         if expiry_date == "None" or expiry_date == "":
             expiry_date = None
         
@@ -1382,6 +1385,222 @@ class IPAMSQLite:
             print(f"导入网段数据失败: {str(e)}")
             return False
     
+    def export_ip_data(self, file_path: str, format: str = 'csv', networks: list[str] | None = None) -> bool:
+        """导出IP地址数据
+        
+        Args:
+            file_path: 导出文件路径
+            format: 导出格式，支持 'csv' 和 'json'
+            networks: 要导出的网段列表，None表示导出所有网段的IP地址
+            
+        Returns:
+            bool: 是否导出成功
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            if networks:
+                ip_data = []
+                for network_str in networks:
+                    try:
+                        network = ipaddress.ip_network(network_str, strict=False)
+                        _ = cursor.execute('''
+                        SELECT ip_address, status, hostname, mac_address, description, 
+                               allocated_at, allocated_by, expiry_date, created_at, updated_at
+                        FROM ip_addresses
+                        ''')
+                        for row in cursor.fetchall():
+                            ip_addr = row['ip_address']
+                            try:
+                                ip = ipaddress.ip_address(ip_addr)
+                                if ip in network:
+                                    ip_data.append({
+                                        'network': network_str,
+                                        'ip_address': row['ip_address'],
+                                        'status': row['status'],
+                                        'hostname': row['hostname'],
+                                        'mac_address': row['mac_address'],
+                                        'description': row['description'],
+                                        'allocated_at': row['allocated_at'],
+                                        'allocated_by': row['allocated_by'],
+                                        'expiry_date': row['expiry_date'],
+                                        'created_at': row['created_at'],
+                                        'updated_at': row['updated_at']
+                                    })
+                            except ValueError:
+                                pass
+                    except ValueError:
+                        pass
+            else:
+                _ = cursor.execute('''
+                SELECT ip_address, status, hostname, mac_address, description, 
+                       allocated_at, allocated_by, expiry_date, created_at, updated_at
+                FROM ip_addresses
+                ''')
+                ip_data = []
+                for row in cursor.fetchall():
+                    ip_data.append({
+                        'ip_address': row['ip_address'],
+                        'status': row['status'],
+                        'hostname': row['hostname'],
+                        'mac_address': row['mac_address'],
+                        'description': row['description'],
+                        'allocated_at': row['allocated_at'],
+                        'allocated_by': row['allocated_by'],
+                        'expiry_date': row['expiry_date'],
+                        'created_at': row['created_at'],
+                        'updated_at': row['updated_at']
+                    })
+            
+            conn.close()
+            
+            if format == 'csv':
+                import csv
+                with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
+                    writer = csv.writer(f)
+                    if networks:
+                        writer.writerow(['Network', 'IP Address', 'Status', 'Hostname', 'MAC Address', 
+                                        'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
+                        for item in ip_data:
+                            writer.writerow([
+                                item['network'],
+                                item['ip_address'],
+                                item['status'],
+                                item['hostname'] or '',
+                                item['mac_address'] or '',
+                                item['description'] or '',
+                                item['allocated_at'] or '',
+                                item['allocated_by'] or '',
+                                item['expiry_date'] or ''
+                            ])
+                    else:
+                        writer.writerow(['IP Address', 'Status', 'Hostname', 'MAC Address', 
+                                        'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
+                        for item in ip_data:
+                            writer.writerow([
+                                item['ip_address'],
+                                item['status'],
+                                item['hostname'] or '',
+                                item['mac_address'] or '',
+                                item['description'] or '',
+                                item['allocated_at'] or '',
+                                item['allocated_by'] or '',
+                                item['expiry_date'] or ''
+                            ])
+            elif format == 'json':
+                import json
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(ip_data, f, ensure_ascii=False, indent=2)
+            else:
+                return False
+            
+            return True
+        except Exception as e:
+            print(f"导出IP地址数据失败: {str(e)}")
+            return False
+    
+    def import_ip_data(self, file_path: str, format: str = 'csv') -> bool:
+        """导入IP地址数据
+        
+        Args:
+            file_path: 导入文件路径
+            format: 导入格式，支持 'csv' 和 'json'
+            
+        Returns:
+            bool: 是否导入成功
+        """
+        try:
+            ips_to_import = []
+            
+            if format == 'csv':
+                import csv
+                with open(file_path, 'r', encoding='utf-8-sig') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        ip_address = row.get('IP Address', '').strip() or row.get('ip_address', '').strip()
+                        if ip_address:
+                            ips_to_import.append({
+                                'ip_address': ip_address,
+                                'status': row.get('Status', '').strip() or row.get('status', 'available').strip(),
+                                'hostname': row.get('Hostname', '').strip() or row.get('hostname', '').strip(),
+                                'mac_address': row.get('MAC Address', '').strip() or row.get('mac_address', '').strip(),
+                                'description': row.get('Description', '').strip() or row.get('description', '').strip(),
+                                'allocated_at': row.get('Allocated At', '').strip() or row.get('allocated_at', '').strip(),
+                                'allocated_by': row.get('Allocated By', '').strip() or row.get('allocated_by', '').strip(),
+                                'expiry_date': row.get('Expiry Date', '').strip() or row.get('expiry_date', '').strip()
+                            })
+            elif format == 'json':
+                import json
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    for item in data:
+                        ip_address = item.get('ip_address', '').strip()
+                        if ip_address:
+                            ips_to_import.append({
+                                'ip_address': ip_address,
+                                'status': item.get('status', 'available'),
+                                'hostname': item.get('hostname', ''),
+                                'mac_address': item.get('mac_address', ''),
+                                'description': item.get('description', ''),
+                                'allocated_at': item.get('allocated_at', ''),
+                                'allocated_by': item.get('allocated_by', ''),
+                                'expiry_date': item.get('expiry_date', '')
+                            })
+            else:
+                return False
+            
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                for ip_item in ips_to_import:
+                    ip_address = ip_item['ip_address']
+                    _ = cursor.execute('SELECT id FROM ip_addresses WHERE ip_address = ?', (ip_address,))
+                    existing = cursor.fetchone()
+                    
+                    if existing:
+                        _ = cursor.execute('''
+                        UPDATE ip_addresses SET status = ?, hostname = ?, mac_address = ?, description = ?,
+                               allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
+                        WHERE ip_address = ?
+                        ''', (
+                            ip_item['status'] or 'available',
+                            ip_item['hostname'],
+                            ip_item['mac_address'],
+                            ip_item['description'],
+                            ip_item['allocated_at'] or now if ip_item['status'] == 'allocated' else '',
+                            ip_item['allocated_by'] or 'admin',
+                            self._validate_expiry_date(ip_item['expiry_date']),
+                            now,
+                            ip_address
+                        ))
+                    else:
+                        _ = cursor.execute('''
+                        INSERT INTO ip_addresses (ip_address, status, hostname, mac_address, description,
+                               allocated_at, allocated_by, expiry_date, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            ip_address,
+                            ip_item['status'] or 'available',
+                            ip_item['hostname'],
+                            ip_item['mac_address'],
+                            ip_item['description'],
+                            ip_item['allocated_at'] or now if ip_item['status'] == 'allocated' else '',
+                            ip_item['allocated_by'] or 'admin',
+                            self._validate_expiry_date(ip_item['expiry_date']),
+                            now,
+                            now
+                        ))
+                
+                conn.commit()
+            
+            return True
+        except Exception as e:
+            print(f"导入IP地址数据失败: {str(e)}")
+            return False
+    
     def _validate_expiry_date(self, expiry_date: str | None) -> str | None:
         """验证并标准化过期日期格式
         
@@ -1541,12 +1760,12 @@ class IPAMSQLite:
                     ip_id: int = int(row[0])
                     ip_address: str = str(row[1])
                     status: str = str(row[2])
-                    hostname: str | None = str(row[3]) if row[3] else None
-                    description: str | None = str(row[4]) if row[4] else None
+                    hostname: str | None = row[3] if row[3] else None
+                    description: str | None = row[4] if row[4] else None
                     allocated_at: str | None = str(row[5]) if row[5] else None
-                    _allocated_by: str | None = str(row[6]) if row[6] else None
+                    _allocated_by: str | None = row[6] if row[6] else None
                     expiry_date: str | None = str(row[7]) if row[7] else None
-                    mac_address: str | None = str(row[8]) if row[8] else None
+                    mac_address: str | None = row[8] if row[8] else None
                     expired_ips.append({
                         'id': ip_id,
                         'ip_address': ip_address,
@@ -1632,8 +1851,8 @@ class IPAMSQLite:
                     ip_id: int = int(row[0])
                     ip_address: str = str(row[1])
                     status: str = str(row[2])
-                    hostname: str | None = str(row[3]) if row[3] else None
-                    description: str | None = str(row[4]) if row[4] else None
+                    hostname: str | None = row[3] if row[3] else None
+                    description: str | None = row[4] if row[4] else None
                     allocated_at: str | None = str(row[5]) if row[5] else None
                     expiry_date: str | None = str(row[6]) if row[6] else None
                     expiring_ips.append({

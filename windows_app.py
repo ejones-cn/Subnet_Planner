@@ -9102,8 +9102,8 @@ class SubnetPlannerApp:
         ttk.Button(button_frame, text=_('remove_network'), command=self.remove_ipam_network).grid(row=0, column=1, padx=2, pady=2, sticky="ew")
         ttk.Button(button_frame, text=_('check_conflicts'), command=self.check_ip_conflicts).grid(row=0, column=2, padx=2, pady=2, sticky="ew")
         ttk.Button(button_frame, text=_('auto_scan'), command=self.auto_scan_network).grid(row=0, column=3, padx=2, pady=2, sticky="ew")
-        ttk.Button(button_frame, text=_('import_export'), command=self.import_export_network_data).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
-        ttk.Button(button_frame, text=_('backup_restore'), command=self.backup_restore_data).grid(row=0, column=5, padx=(2, 10), pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('backup_restore'), command=self.backup_restore_data).grid(row=0, column=4, padx=2, pady=2, sticky="ew")
+        ttk.Button(button_frame, text=_('import_export'), command=self.import_export_network_data).grid(row=0, column=5, padx=(2, 10), pady=2, sticky="ew")
         
         # 创建表格容器 - 专门用来容纳表格和滚动条
         table_container = ttk.Frame(network_frame)
@@ -9682,9 +9682,9 @@ class SubnetPlannerApp:
                 self.ipam_ip_tree.insert('', tk.END, iid=str(record_id), values=(
                     ip['ip_address'],
                     status_text,
-                    ip.get('hostname', ''),
-                    ip.get('mac_address', ''),
-                    ip.get('description', ''),
+                    ip.get('hostname') or '',
+                    ip.get('mac_address') or '',
+                    ip.get('description') or '',
                     formatted_allocated_at,
                     formatted_expiry_date
                 ))
@@ -10906,29 +10906,165 @@ class SubnetPlannerApp:
         """导入/导出网段数据对话框"""
         try:
             # 创建对话框，使用统一的create_dialog方法
-            dialog = self.create_dialog(_('network_import_export'), 400, 220)
+            dialog = self.create_dialog(_('network_import_export'), 600, 300)
             
-            # 对话框内容
-            ttk.Label(dialog, text=_('choose_import_export_method')).pack(pady=20)
+            # 配置对话框的行和列
+            dialog.grid_rowconfigure(0, weight=0)
+            dialog.grid_rowconfigure(1, weight=1)
+            dialog.grid_columnconfigure(0, weight=1)
+            dialog.grid_columnconfigure(1, weight=1)
             
-            # 按钮框架
-            button_frame = ttk.Frame(dialog)
-            button_frame.pack(pady=10)
+            # 对话框标题
+            ttk.Label(dialog, text=_('choose_import_export_method'), font=('', 11, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
             
-            # 第一行按钮
-            row1_frame = ttk.Frame(button_frame)
-            row1_frame.pack(pady=5)
-            ttk.Button(row1_frame, text=_('export_selected'), command=lambda: self.export_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
-            ttk.Button(row1_frame, text=_('export_all'), command=lambda: self.export_all_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
+            # 导出选项框架
+            export_frame = ttk.LabelFrame(dialog, text=_('export_options'))
+            export_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+            export_frame.grid_rowconfigure(0, weight=1)
+            export_frame.grid_columnconfigure(0, weight=1)
             
-            # 第二行按钮
-            row2_frame = ttk.Frame(button_frame)
-            row2_frame.pack(pady=5)
-            ttk.Button(row2_frame, text=_('import_data'), command=lambda: self.import_network_data()).pack(side=tk.LEFT, padx=10, pady=5)
-            ttk.Button(row2_frame, text=_('download_template'), command=lambda: self.download_network_template()).pack(side=tk.LEFT, padx=10, pady=5)
+            export_button_frame = ttk.Frame(export_frame)
+            export_button_frame.pack(pady=10, fill="both", expand=True)
+            
+            # 网段导出按钮
+            ttk.Button(export_button_frame, text=_('export_selected_networks'), 
+                      command=lambda: self.export_network_data()).pack(fill="x", padx=10, pady=5)
+            ttk.Button(export_button_frame, text=_('export_all_networks'), 
+                      command=lambda: self.export_all_network_data()).pack(fill="x", padx=10, pady=5)
+            
+            # IP地址导出按钮
+            ttk.Button(export_button_frame, text=_('export_selected_ips'), 
+                      command=lambda: self.export_selected_ip_data()).pack(fill="x", padx=10, pady=5)
+            ttk.Button(export_button_frame, text=_('export_all_ips'), 
+                      command=lambda: self.export_all_ip_data()).pack(fill="x", padx=10, pady=5)
+            
+            # 导入选项框架
+            import_frame = ttk.LabelFrame(dialog, text=_('import_options'))
+            import_frame.grid(row=1, column=1, padx=10, pady=5, sticky="nsew")
+            import_frame.grid_rowconfigure(0, weight=1)
+            import_frame.grid_columnconfigure(0, weight=1)
+            
+            import_button_frame = ttk.Frame(import_frame)
+            import_button_frame.pack(pady=10, fill="both", expand=True)
+            
+            # 网段导入按钮
+            ttk.Button(import_button_frame, text=_('import_networks'), 
+                      command=lambda: self.import_network_data()).pack(fill="x", padx=10, pady=5)
+            ttk.Button(import_button_frame, text=_('download_network_template'), 
+                      command=lambda: self.download_network_template()).pack(fill="x", padx=10, pady=5)
+            
+            # IP地址导入按钮
+            ttk.Button(import_button_frame, text=_('import_ips'), 
+                      command=lambda: self.import_ip_data()).pack(fill="x", padx=10, pady=5)
+            ttk.Button(import_button_frame, text=_('download_ip_template'), 
+                      command=lambda: self.download_ip_template()).pack(fill="x", padx=10, pady=5)
             
         except Exception as e:
             self.show_error(_('error'), f"操作失败: {str(e)}")
+    
+    def export_selected_ip_data(self):
+        """导出选中网段的IP地址数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"ip_export_selected_{timestamp}.csv"
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
+                initialfile=default_filename
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                
+                selected_items = self.ipam_network_tree.selection()
+                selected_networks = []
+                
+                if selected_items:
+                    for item in selected_items:
+                        network = self.ipam_network_tree.item(item, 'values')[0]
+                        selected_networks.append(network)
+                    
+                    if self.ipam.export_ip_data(file_path, format, networks=selected_networks):
+                        self.show_info(_('success'), f"IP地址数据导出成功: {file_path}")
+                    else:
+                        self.show_error(_('error'), "IP地址数据导出失败")
+                else:
+                    self.show_info(_('hint'), "请先选择网段")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def export_all_ip_data(self):
+        """导出所有IP地址数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"ip_export_all_{timestamp}.csv"
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
+                initialfile=default_filename
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                
+                if self.ipam.export_ip_data(file_path, format):
+                    self.show_info(_('success'), f"IP地址数据导出成功: {file_path}")
+                else:
+                    self.show_error(_('error'), "IP地址数据导出失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导出失败: {str(e)}")
+    
+    def import_ip_data(self):
+        """导入IP地址数据"""
+        try:
+            import tkinter.filedialog as filedialog
+            file_path = filedialog.askopenfilename(
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")]
+            )
+            if file_path:
+                format = 'csv' if file_path.endswith('.csv') else 'json'
+                if self.ipam.import_ip_data(file_path, format):
+                    self.show_info(_('success'), f"IP地址数据导入成功: {file_path}")
+                    self.refresh_ipam_networks()
+                    self.refresh_ipam_stats()
+                else:
+                    self.show_error(_('error'), "IP地址数据导入失败")
+        except Exception as e:
+            self.show_error(_('error'), f"导入失败: {str(e)}")
+    
+    def download_ip_template(self):
+        """下载IP地址导入模板"""
+        try:
+            import tkinter.filedialog as filedialog
+            from datetime import datetime
+            import csv
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"ip_import_template_{timestamp}.csv"
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv")],
+                initialfile=default_filename
+            )
+            
+            if file_path:
+                with open(file_path, 'w', newline='', encoding='utf-8-sig') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(['IP Address', 'Status', 'Hostname', 'MAC Address', 
+                                    'Description', 'Allocated At', 'Allocated By', 'Expiry Date'])
+                    writer.writerow(['192.168.1.10', 'allocated', 'server-01', '00:11:22:33:44:55', 
+                                    'Web Server', '2026-01-01 00:00:00', 'admin', '2026-12-31 23:59:59'])
+                    writer.writerow(['192.168.1.11', 'reserved', '', '', 'Reserved for backup', '', '', ''])
+                    writer.writerow(['192.168.1.12', 'available', '', '', '', '', '', ''])
+                
+                self.show_info(_('success'), f"{_('download_template_success')}: {file_path}")
+        except Exception as e:
+            self.show_error(_('error'), f"{_('download_template_failed')}: {str(e)}")
     
     def export_network_data(self):
         """导出选中的网段数据"""
@@ -15261,9 +15397,10 @@ class SubnetPlannerApp:
             try:
                 record_id = int(item)
                 values = self.ipam_ip_tree.item(item, 'values')
-                ip_address = values[0]
-                ip_records.append({'id': record_id, 'ip_address': ip_address})
-            except ValueError:
+                if values and len(values) > 0:
+                    ip_address = values[0]
+                    ip_records.append({'id': record_id, 'ip_address': ip_address})
+            except (ValueError, IndexError):
                 pass
         
         if not ip_records:
@@ -15592,7 +15729,7 @@ class SubnetPlannerApp:
         
         # 按钮框架
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 15), padx=15)
         
         # 验证MAC地址格式
         def validate_mac_address(mac):
@@ -15613,9 +15750,10 @@ class SubnetPlannerApp:
             description = description_entry.get().strip()
             expiry_date = expiry_var.get().strip()
             
-            # 验证描述不能为空（分配和保留时）
-            if not description:
-                self.show_error(_('error'), _('please_enter_description'))
+            # 使用统一验证规则：主机名和描述不能同时为空
+            is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+            if not is_valid:
+                self.show_error(_('error'), error_msg or _('please_enter_description'))
                 return False
             
             # 验证MAC地址格式
@@ -15990,6 +16128,7 @@ class SubnetPlannerApp:
 if __name__ == "__main__":
     # 导入窗口工具模块
     from window_utils import setup_window_settings
+    from config_manager import get_config
     
     # 创建主窗口
     root = tk.Tk()
@@ -16021,12 +16160,32 @@ if __name__ == "__main__":
     BASE_WIDTH = 1050
     BASE_HEIGHT = 950
     
-    # 使用原始窗口大小，不进行额外缩放
-    WINDOW_WIDTH = int(BASE_WIDTH)
-    WINDOW_HEIGHT = int(BASE_HEIGHT)
+    # 从配置管理器读取窗口配置
+    config = get_config()
+    window_width, window_height = config.get_window_size()
+    window_maximized = config.get_window_maximized()
+    window_position = config.get_window_position()
+    
+    # 使用配置的窗口大小，如果配置无效则使用默认值
+    WINDOW_WIDTH = window_width if window_width >= BASE_WIDTH else BASE_WIDTH
+    WINDOW_HEIGHT = window_height if window_height >= BASE_HEIGHT else BASE_HEIGHT
     
     # 调用窗口设置函数
-    setup_window_settings(root, WINDOW_WIDTH, WINDOW_HEIGHT, lock_width=False, min_width=BASE_WIDTH, min_height=BASE_HEIGHT, max_width=10000, max_height=10000)
+    setup_window_settings(
+        root, 
+        WINDOW_WIDTH, 
+        WINDOW_HEIGHT, 
+        lock_width=False, 
+        min_width=BASE_WIDTH, 
+        min_height=BASE_HEIGHT, 
+        max_width=10000, 
+        max_height=10000,
+        position=window_position
+    )
+    
+    # 如果上次是最大化状态，恢复最大化
+    if window_maximized:
+        root.after(100, lambda: root.state('zoomed'))
     
     # 创建应用实例
     app = SubnetPlannerApp(root)
@@ -16035,6 +16194,31 @@ if __name__ == "__main__":
     def on_main_window_close():
         """主窗口关闭事件处理函数"""
         print("正在关闭应用程序...")
+        
+        # 保存窗口状态
+        try:
+            from config_manager import get_config
+            config = get_config()
+            
+            # 保存窗口大小（非最大化状态下）
+            if root.state() != 'zoomed':
+                window_width = root.winfo_width()
+                window_height = root.winfo_height()
+                config.set_window_size(window_width, window_height)
+                
+                # 保存窗口位置
+                window_x = root.winfo_x()
+                window_y = root.winfo_y()
+                config.set_window_position(window_x, window_y)
+            
+            # 保存最大化状态
+            is_maximized = root.state() == 'zoomed'
+            config.set_window_maximized(is_maximized)
+            
+            print(f"窗口状态已保存: 最大化: {is_maximized}")
+        except Exception as e:
+            print(f"保存窗口状态失败: {e}")
+        
         # 销毁所有窗口和组件
         root.destroy()
         print("应用程序已关闭")

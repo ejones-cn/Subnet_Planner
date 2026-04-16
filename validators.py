@@ -1,5 +1,5 @@
 class IPAMValidator:
-    ALLOW_EMPTY_FIELDS = ('expiry_date', 'vlan', 'hostname', 'mac_address')
+    ALLOW_EMPTY_FIELDS = ('expiry_date', 'vlan', 'hostname', 'mac_address', 'description')
     
     @staticmethod
     def validate_allocation_params(hostname, description):

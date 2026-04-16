@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 
 # 数据库文件路径
-db_file = os.path.join(os.path.dirname(__file__), 'ipam_data.db')
+db_file = os.path.join(os.path.dirname(__file__), 'SubnetPlanner_data.db')
 
 
 def init_database():

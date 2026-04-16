@@ -331,7 +331,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     
     # 在编译前将数据库和备份目录移到临时位置，避免被打包
     temp_db_dir = os.path.join(os.path.expanduser("~"), ".subnet_planner_temp")
-    original_db = "ipam_data.db"
+    original_db = "SubnetPlanner_data.db"
     original_backup_dir = "ipam_backups"
     should_restore = False
     
