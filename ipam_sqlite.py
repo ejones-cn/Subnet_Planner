@@ -18,6 +18,7 @@ from i18n import translate as _
 from validators import IPAMValidator
 
 import ipaddress
+from ip_subnet_calculator import ip_to_int
 
 
 class IPAMSQLite:
@@ -1378,33 +1379,45 @@ class IPAMSQLite:
         try:
             conn = sqlite3.connect(self.db_file)
             conn.row_factory = sqlite3.Row
+            
+            conn.create_function('ip_to_int', 1, ip_to_int)
+            
             cursor = conn.cursor()
 
             if networks:
                 ip_data = []
+                ip_ranges = []
+                
                 for network_str in networks:
                     try:
                         network = ipaddress.ip_network(network_str, strict=False)
-                        _ = cursor.execute('''
-                        SELECT ip_address, status, hostname, mac_address, description, expiry_date
-                        FROM ip_addresses
-                        ''')
-                        for row in cursor.fetchall():
-                            try:
-                                ip = ipaddress.ip_address(row['ip_address'])
-                                if ip in network:
-                                    ip_data.append({
-                                        'ip_address': row['ip_address'],
-                                        'status': row['status'],
-                                        'hostname': row['hostname'],
-                                        'mac_address': row['mac_address'],
-                                        'description': row['description'],
-                                        'expiry_date': row['expiry_date']
-                                    })
-                            except ValueError:
-                                pass
+                        network_int = int(network.network_address)
+                        broadcast_int = int(network.broadcast_address)
+                        ip_ranges.append((network_int, broadcast_int))
                     except ValueError:
                         pass
+                
+                if ip_ranges:
+                    placeholders = ' OR '.join(['(ip_to_int(ip_address) BETWEEN ? AND ?)'] * len(ip_ranges))
+                    query = f'''
+                    SELECT ip_address, status, hostname, mac_address, description, expiry_date
+                    FROM ip_addresses
+                    WHERE {placeholders}
+                    '''
+                    params = []
+                    for start, end in ip_ranges:
+                        params.extend([start, end])
+                    
+                    _ = cursor.execute(query, params)
+                    for row in cursor.fetchall():
+                        ip_data.append({
+                            'ip_address': row['ip_address'],
+                            'status': row['status'],
+                            'hostname': row['hostname'],
+                            'mac_address': row['mac_address'],
+                            'description': row['description'],
+                            'expiry_date': row['expiry_date']
+                        })
             else:
                 _ = cursor.execute('''
                 SELECT ip_address, status, hostname, mac_address, description, expiry_date
