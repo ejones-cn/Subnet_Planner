@@ -30,7 +30,7 @@ class IPAMSQLite:
             db_file: 数据库文件路径，为None时自动使用程序所在目录
         """
         # 获取应用程序所在目录（确保在单文件模式下也能正确获取）
-        self.app_dir = self._get_app_directory()
+        self.app_dir: str = self._get_app_directory()
         
         if db_file is None:
             # 使用应用程序目录作为数据库位置
@@ -453,7 +453,7 @@ class IPAMSQLite:
                 VALUES (?, ?, ?, ?, ?)
                 ''', (network_str, description, vlan, created_at, created_at))
                 
-                network_id = cursor.lastrowid
+                _network_id = cursor.lastrowid
                 
                 conn.commit()
                 return True, "网络添加成功"
@@ -483,7 +483,7 @@ class IPAMSQLite:
                 return False, "IP地址不能为空"
             is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
             if not is_valid:
-                return False, error_msg
+                return False, error_msg or "验证失败"
             
             # 验证IP地址格式
             try:
@@ -508,9 +508,9 @@ class IPAMSQLite:
                     network_row = cursor.fetchone()
                     if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
                         return False, "网络不存在"
-                    network_id = int(network_row[0])
+                    _network_id = int(network_row[0])
             else:
-                network_id = int(most_specific_network['id'])
+                _network_id = int(most_specific_network['id'])
             
             with sqlite3.connect(self.db_file) as conn:
                 conn.execute('BEGIN EXCLUSIVE')
@@ -715,7 +715,7 @@ class IPAMSQLite:
             print(f"获取所有网络失败: {str(e)}")
             return []
     
-    def get_network_ip_count(self, network_address: str, ip_objects: list[ipaddress.IPv4Address | ipaddress.IPv6Address] | None = None) -> int:
+    def get_network_ip_count(self, network_address: str, _ip_objects: list[ipaddress.IPv4Address | ipaddress.IPv6Address] | None = None) -> int:
         """计算网络及其所有子网络的IP数量（只计算已分配和已保留的）
         
         Args:
@@ -1227,8 +1227,8 @@ class IPAMSQLite:
                         if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 2:
                             continue
                         
-                        hostname_val: str = str(ip_row[0]) if ip_row[0] else ''
-                        description_val: str = str(ip_row[1]) if ip_row[1] else ''
+                        hostname_val = str(ip_row[0]) if ip_row[0] else ''
+                        description_val = str(ip_row[1]) if ip_row[1] else ''
                         
                         # 更新IP地址过期日期
                         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1544,7 +1544,7 @@ class IPAMSQLite:
                     hostname: str | None = str(row[3]) if row[3] else None
                     description: str | None = str(row[4]) if row[4] else None
                     allocated_at: str | None = str(row[5]) if row[5] else None
-                    allocated_by: str | None = str(row[6]) if row[6] else None
+                    _allocated_by: str | None = str(row[6]) if row[6] else None
                     expiry_date: str | None = str(row[7]) if row[7] else None
                     mac_address: str | None = str(row[8]) if row[8] else None
                     expired_ips.append({
@@ -1673,7 +1673,7 @@ class IPAMSQLite:
                 return False, "IP地址不能为空"
             is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
             if not is_valid:
-                return False, error_msg
+                return False, error_msg or "验证失败"
             
             # 验证IP地址格式
             try:
@@ -1699,10 +1699,10 @@ class IPAMSQLite:
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
                     conn.close()
                     return False, "网络不存在"
-                network_id = int(network_row[0])
+                _network_id = int(network_row[0])
                 conn.close()
             else:
-                network_id = int(most_specific_network['id'])
+                _network_id = int(most_specific_network['id'])
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -2474,7 +2474,7 @@ class IPAMSQLite:
             print(f"获取最后备份时间失败: {str(e)}")
             return None
     
-    def get_network_by_id(self, network_id: int) -> dict[str, str | int] | None:
+    def get_network_by_id(self, net_id: int) -> dict[str, str | int] | None:
         """根据ID获取网络信息
         
         Args:
@@ -2488,7 +2488,7 @@ class IPAMSQLite:
             cursor = conn.cursor()
             
             # 查询网络信息
-            _ = cursor.execute('SELECT id, network_address, description, created_at, updated_at FROM networks WHERE id = ?', (network_id,))
+            _ = cursor.execute('SELECT id, network_address, description, created_at, updated_at FROM networks WHERE id = ?', (net_id,))
             network_row = cursor.fetchone()
             
             conn.close()
@@ -2573,8 +2573,8 @@ class IPAMSQLite:
                     conn.close()
                     return False, "IP地址记录不存在"
                 
-                ip_id = int(ip_row[0])
-                status = str(ip_row[1])
+                _ip_id = int(ip_row[0])
+                _status = str(ip_row[1])
                 hostname = str(ip_row[2]) if ip_row[2] else ''
                 description = str(ip_row[3]) if ip_row[3] else ''
                 
@@ -2654,7 +2654,7 @@ class IPAMSQLite:
                 ip_mapping = []  # 记录IP地址的映射关系
                 
                 skipped_ips = []
-                new_ip_index = 0
+                _new_ip_index = 0
                 for record in ip_records:
                     try:
                         ip_id = int(record['id'])
@@ -2667,13 +2667,13 @@ class IPAMSQLite:
                             skipped_ips.append(f"{old_ip_address} (记录不存在)")
                             continue
                         
-                        status = str(ip_row[0])
+                        _status = str(ip_row[0])
                         hostname = str(ip_row[1]) if ip_row[1] else ''
                         desc = str(ip_row[2]) if ip_row[2] else ''
-                        mac_address = str(ip_row[3]) if ip_row[3] else ''
-                        allocated_at = str(ip_row[4]) if ip_row[4] else ''
-                        allocated_by = str(ip_row[5]) if ip_row[5] else ''
-                        expiry_date = str(ip_row[6]) if ip_row[6] else None
+                        _mac_address = str(ip_row[3]) if ip_row[3] else ''
+                        _allocated_at = str(ip_row[4]) if ip_row[4] else ''
+                        _allocated_by = str(ip_row[5]) if ip_row[5] else ''
+                        _expiry_date = str(ip_row[6]) if ip_row[6] else None
                         
                         # 检查原IP是否已经在目标网络中（通过IP地址计算）
                         try:

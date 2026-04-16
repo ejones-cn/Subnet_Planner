@@ -3,7 +3,37 @@
 max-line-length = 120
 
 # 忽略特定的文件或目录
-exclude = .git,__pycache__,build,dist,.venv
+exclude = .git,__pycache__,build,dist,.venv,
+    remove_search_ip.py,
+    shorten_japanese_dropdown.py,
+    debug_expired.py,
+    add_translations.py,
+    debug_app_init.py,
+    fix_expiry_date.py,
+    check_expiry_date.py,
+    shorten_address_mgmt_abbr.py,
+    shorten_korean_dropdown.py,
+    test_get_expired.py,
+    test_app_flow.py,
+    check_db.py,
+    debug_get_expired.py,
+    shorten_japanese_more.py,
+    shorten_korean.py,
+    update_addr_full.py,
+    update_japanese_import_export.py,
+    shorten_address_management.py,
+    add_invalid_ip.py,
+    fix_encoding.py,
+    update_addr_networks.py,
+    check_translation.py,
+    check_db_status.py,
+    shorten_japanese_final.py,
+    check_dates.py,
+    add_more_translations.py,
+    add_batch_generate.py,
+    fix_translations.py,
+    shorten_english.py,
+    shorten_japanese.py
 
 # 忽略某些不相关的警告
 # E501: line too long

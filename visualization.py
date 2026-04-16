@@ -157,14 +157,14 @@ class NetworkTopologyVisualizer:
         try:
             self.double_click_threshold: int = int(self.canvas.tk.call('tk', 'getDoubleClickTime'))
         except Exception:
-            self.double_click_threshold: int = 500  # 默认值（毫秒）
+            self.double_click_threshold = 500
         self.double_click_distance: int = 5  # 双击位置距离阈值（像素）
         self.click_count: int = 0
         self.click_timer: int | None = None
         
         # 双击冷却相关
         self._in_double_click_cooldown: bool = False
-        self._double_click_cooldown_timer: int | None = None
+        self._double_click_cooldown_timer: str | None = None
         self._last_double_click_scale: float = 1.0
         self._last_double_click_offset: tuple[float, float] = (0.0, 0.0)
         
@@ -422,7 +422,7 @@ class NetworkTopologyVisualizer:
         if event.delta > 0:
             new_scale: float = self.scale * 1.1
         else:
-            new_scale: float = self.scale * 0.9
+            new_scale = self.scale * 0.9
         
         # 限制缩放范围
         new_scale = max(0.5, min(new_scale, 1.0))
@@ -890,7 +890,6 @@ class NetworkTopologyVisualizer:
         elif shape == "trapezoid":
             # 创建梯形
             top_width = width * 0.7
-            bottom_width = width
             
             # 创建渐变效果
             for i in range(3):
@@ -1389,7 +1388,7 @@ class NetworkTopologyVisualizer:
         parent_to_children = {}
         root_nodes = []
         
-        for node_id, node in self.nodes.items():
+        for _node_id, node in self.nodes.items():
             parent_id = node.get("parent_id")
             if parent_id is None or parent_id not in self.nodes:
                 root_nodes.append(node)
@@ -1416,33 +1415,11 @@ class NetworkTopologyVisualizer:
         
         # 获取节点的实际高度（考虑特殊形状）
         def get_node_height(node):
-            device_type = node.get("device_type", "default")
+            _device_type = node.get("device_type", "default")
             base_height = NODE_HEIGHT
             # 所有形状的实际边界框高度都是 NODE_HEIGHT
             # 不需要额外空间，因为所有形状的顶点都在边界框边缘
             return base_height
-        
-        # 获取形状的重心 Y 偏移（相对于形状边界框顶部）
-        def get_center_offset(node):
-            """返回形状重心相对于边界框中心的 Y 偏移量"""
-            device_type = node.get("device_type", "default")
-            # 椭圆、矩形、菱形、六边形的重心在中心
-            if device_type in ["ellipse", "circle", "rectangle", "rounded_rectangle", "diamond", "hexagon"]:
-                return 0
-            # 三角形的重心在从底部算 1/3 高度处，即从顶部算 2/3 高度处
-            # 边界框中心在 height/2，重心在 2*height/3，偏移 = 2*height/3 - height/2 = height/6
-            elif device_type == "triangle":
-                return NODE_HEIGHT / 6
-            # 五边形的重心略偏上
-            elif device_type == "pentagon":
-                return NODE_HEIGHT / 12
-            # 星形的重心略偏上
-            elif device_type == "star":
-                return NODE_HEIGHT / 12
-            # 梯形的重心略偏下
-            elif device_type == "trapezoid":
-                return -NODE_HEIGHT / 12
-            return 0
         
         # 递归计算子树高度
         def calculate_subtree_height(node):
@@ -1866,7 +1843,7 @@ class NetworkTopologyVisualizer:
 
     def _restore_all_hover_styles(self):
         """恢复所有处于悬停状态的节点的原始样式"""
-        for node_id, node in list(self.nodes.items()):
+        for _node_id, node in list(self.nodes.items()):
             if "original_style" in node:
                 self._restore_node_style(node)
 
@@ -1964,7 +1941,7 @@ class NetworkTopologyVisualizer:
         frame.pack()
         
         # 绑定tooltip的Leave事件：当鼠标离开tooltip时也恢复样式
-        def on_tooltip_leave(event):
+        def on_tooltip_leave(_event):
             self._restore_all_hover_styles()
             self.hovered_node = None
             self.hide_tooltip()
@@ -2098,7 +2075,7 @@ class NetworkTopologyVisualizer:
                 pass
             self.tooltip = None
     
-    def on_canvas_leave(self, event):
+    def on_canvas_leave(self, _event):
         """鼠标离开画布事件处理"""
         # 停止轮询检测
         self._stop_hover_polling()
@@ -2126,7 +2103,7 @@ class NetworkTopologyVisualizer:
     
     def _create_fullscreen_button(self):
         """创建全屏显示按钮"""
-        self.fullscreen_button = tk.Button(
+        self.fullscreen_button: tk.Button = tk.Button(
             self.canvas,
             text="⛶",
             command=self.toggle_fullscreen,
@@ -2771,7 +2748,7 @@ class NetworkTopologyVisualizer:
                 target_y = window_y
                 
                 min_dist = float('inf')
-                for node_id, node in self.nodes.items():
+                for _node_id, node in self.nodes.items():
                     shape = node.get("shape")
                     if shape is None:
                         continue

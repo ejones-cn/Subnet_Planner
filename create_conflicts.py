@@ -133,7 +133,7 @@ def create_conflicts():
         }
         
         # 为每个IP地址创建多个分配记录
-        for net, ips in conflict_ips.items():
+        for _net, ips in conflict_ips.items():
             for ip in ips:
                 now = datetime.now().isoformat()
                 # 第一条记录
