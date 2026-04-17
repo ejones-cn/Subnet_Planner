@@ -496,7 +496,7 @@ class SubnetPlannerApp:
     """
     
     # 状态相关的类常量
-    VALID_STATUSES = {'available', 'allocated', 'reserved'}
+    VALID_STATUSES = {'released', 'allocated', 'reserved'}
     
     @classmethod
     def _get_status_map(cls):
@@ -506,7 +506,7 @@ class SubnetPlannerApp:
             dict: 本地化状态到英文状态的映射
         """
         return {
-            _('available'): 'available',
+            _('released'): 'released',
             _('allocated'): 'allocated',
             _('reserved'): 'reserved'
         }
@@ -2636,7 +2636,7 @@ class SubnetPlannerApp:
             'name': 80,  # 减小默认宽度，让name列能自适应
             'cidr': 80,  # 增加CIDR列的默认宽度，确保能显示完整的CIDR和中文标题
             'required': 70,
-            'available': 70,
+            'released': 70,
             'network': 100,  # 增加网络地址列的默认宽度，确保能显示完整的中文标题
             'netmask': 100,  # 增加子网掩码列的默认宽度，确保能显示完整的中文标题
             'broadcast': 120,  # 适中的广播地址列宽度，确保能显示完整的中文标题
@@ -9250,7 +9250,7 @@ class SubnetPlannerApp:
         self.search_mode.grid(row=0, column=5, sticky="ew", padx=5, pady=0)
         
         ttk.Label(search_frame, text=_('status') + ':').grid(row=0, column=6, sticky="e", padx=5, pady=0)
-        self.ipam_status_filter = ttk.Combobox(search_frame, values=[_('all'), _('allocated'), _('reserved'), _('available')], width=6)
+        self.ipam_status_filter = ttk.Combobox(search_frame, values=[_('all'), _('allocated'), _('reserved'), _('released')], width=6)
         self.ipam_status_filter.set(_('all'))
         self.ipam_status_filter.grid(row=0, column=7, sticky="ew", padx=5, pady=0)
         
@@ -9330,7 +9330,7 @@ class SubnetPlannerApp:
                 6: 'datepicker'  # 过期日期列使用日期选择器
             },
             'combobox_values': {
-                1: [_('available'), _('allocated'), _('reserved')]  # 状态选项
+                1: [_('released'), _('allocated'), _('reserved')]  # 状态选项
             }
         })
         
@@ -9397,7 +9397,7 @@ class SubnetPlannerApp:
             ('ipv6_ips', _('stats_ipv6_ips')),
             ('allocated_ips', _('stats_allocated_ips')),
             ('reserved_ips', _('stats_reserved_ips')),
-            ('available_ips', _('stats_available_ips')),
+            ('available_ips', _('stats_released_ips')),
             ('expired_ips', _('stats_expired_ips')),
             ('expiring_ips', _('stats_expiring_ips')),
             ('named_ips', _('stats_named_ips')),
@@ -9650,8 +9650,8 @@ class SubnetPlannerApp:
             # 翻译状态文本
             if status_text == 'reserved':
                 status_text = _('reserved')
-            elif status_text == 'available':
-                status_text = _('available')
+            elif status_text == 'released':
+                status_text = _('released')
             elif status_text == 'allocated':
                 status_text = _('allocated')
             
@@ -9712,7 +9712,7 @@ class SubnetPlannerApp:
                     # 记录释放失败的原因
                     print(f"释放IP {ip_address} 失败: {message}")
             else:
-                # 跳过已经是可用状态的IP地址
+                # 跳过已经是已释放状态的IP地址
                 print(f"跳过IP {ip_address}，状态为: {status}")
         
         if success_count > 0:
@@ -9724,7 +9724,7 @@ class SubnetPlannerApp:
             all_available = True
             for item in selected_ip_items:
                 status = self.ipam_ip_tree.item(item, 'values')[1]
-                if status not in [_('available')]:
+                if status not in [_('released')]:
                     all_available = False
                     break
             
@@ -10112,8 +10112,8 @@ class SubnetPlannerApp:
         """获取本地化的状态文本"""
         if status == 'reserved':
             return _('reserved')
-        elif status == 'available':
-            return _('available')
+        elif status == 'released':
+            return _('released')
         elif status == 'allocated':
             return _('allocated')
         return status
@@ -10233,8 +10233,8 @@ class SubnetPlannerApp:
             # 翻译状态文本
             if status_text == 'reserved':
                 status_text = _('reserved')
-            elif status_text == 'available':
-                status_text = _('available')
+            elif status_text == 'released':
+                status_text = _('released')
             elif status_text == 'allocated':
                 status_text = _('allocated')
             
@@ -10502,8 +10502,8 @@ class SubnetPlannerApp:
         for conflict in conflicts:
             # 翻译状态值
             status = conflict['status']
-            if status == 'available':
-                translated_status = _('available')
+            if status == 'released':
+                translated_status = _('released')
             elif status == 'allocated':
                 translated_status = _('allocated')
             elif status == 'reserved':
@@ -10764,8 +10764,8 @@ class SubnetPlannerApp:
             for conflict in updated_conflicts:
                 # 翻译状态值
                 status = conflict['status']
-                if status == 'available':
-                    translated_status = _('available')
+                if status == 'released':
+                    translated_status = _('released')
                 elif status == 'allocated':
                     translated_status = _('allocated')
                 elif status == 'reserved':
@@ -10801,7 +10801,7 @@ class SubnetPlannerApp:
     def import_export_network_data(self):
         """导入/导出网段数据对话框"""
         try:
-            dialog = self.create_dialog(_('network_import_export'), 550, 380)
+            dialog = self.create_dialog(_('network_import_export'), 550, 340)
 
             main_frame = ttk.Frame(dialog, padding="30")
             main_frame.pack(fill=tk.BOTH, expand=True)
@@ -10888,8 +10888,9 @@ class SubnetPlannerApp:
                     return
                 selected_networks = [self.ipam_network_tree.item(item, 'values')[0] for item in selected_items]
                 ip_networks = selected_networks if include_ips else None
-                if self.ipam.export_data_to_xlsx(file_path, networks=selected_networks,
-                                                  include_ips=include_ips, ip_networks=ip_networks):
+                if self.ipam.export_data_to_xlsx(
+                        file_path, networks=selected_networks,
+                        include_ips=include_ips, ip_networks=ip_networks):
                     self.show_info(_('success'), _('export_success'))
                 else:
                     self.show_error(_('error'), _('export_failed'))
@@ -11038,7 +11039,7 @@ class SubnetPlannerApp:
             status_mapping = {
                 'allocated': _('status_allocated'),
                 'reserved': _('status_reserved'),
-                'available': _('status_available'),
+                'released': _('status_released'),
                 'conflict': _('status_conflict')
             }
 
@@ -11883,7 +11884,7 @@ class SubnetPlannerApp:
                 return
             
             colors = ["#4CAF50", "#2196F3", "#E0E0E0"]
-            labels = [_('stats_allocated'), _('stats_reserved'), _('stats_available')]
+            labels = [_('stats_allocated'), _('stats_reserved'), _('stats_released')]
             values = [allocated, reserved, available]
             
             legend_x = 15
@@ -12035,7 +12036,7 @@ class SubnetPlannerApp:
         
         # 按钮框架
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
         
         # 配置按钮框架的网格布局，使按钮靠右对齐
         button_frame.grid_columnconfigure(0, weight=1)
@@ -12506,8 +12507,8 @@ class SubnetPlannerApp:
                 status_text = ip['status']
                 if status_text == 'reserved':
                     status_text = _('reserved')
-                elif status_text == 'available':
-                    status_text = _('available')
+                elif status_text == 'released':
+                    status_text = _('released')
                 elif status_text == 'allocated':
                     status_text = _('allocated')
                 
@@ -12594,20 +12595,20 @@ class SubnetPlannerApp:
             
             # 根据选中行的状态动态添加菜单项
             has_commands = False
-            if any(status != _('available') for status in statuses):
+            if any(status != _('released') for status in statuses):
                 menu.add_command(label=_('release_address'), command=lambda: self.on_ip_menu_action('release'))
                 has_commands = True
             
             has_quick_actions = False
             
-            if _('available') in statuses or _('reserved') in statuses:
+            if _('released') in statuses or _('reserved') in statuses:
                 if has_commands:
                     menu.add_separator()
                 menu.add_command(label=_('convert_to_allocated'), command=lambda: self.on_ip_menu_action('quick_allocate'))
                 has_quick_actions = True
                 has_commands = True
             
-            if _('available') in statuses or _('allocated') in statuses:
+            if _('released') in statuses or _('allocated') in statuses:
                 if has_commands and not has_quick_actions:
                     menu.add_separator()
                 menu.add_command(label=_('convert_to_reserved'), command=lambda: self.on_ip_menu_action('quick_reserve'))
@@ -12618,7 +12619,7 @@ class SubnetPlannerApp:
                 row_values = self.ipam_ip_tree.item(selected_items[0], 'values')
                 current_status = row_values[1]
                 
-                if current_status == _('available'):
+                if current_status == _('released'):
                     if has_commands:
                         menu.add_separator()
                     menu.add_command(label=_('reallocate_address'), command=lambda: self.on_ip_menu_action('allocate'))
@@ -13798,7 +13799,7 @@ class SubnetPlannerApp:
                 return False, _('ip_not_in_network'), None
         elif column_name == 'status':
             # 验证状态合法性
-            valid_statuses = [_('available'), _('allocated'), _('reserved')]
+            valid_statuses = [_('released'), _('allocated'), _('reserved')]
             if new_value not in valid_statuses:
                 return False, _('invalid_status'), None
         elif column_name == 'hostname':
@@ -13859,14 +13860,14 @@ class SubnetPlannerApp:
             if column_name == 'status':
                 # 状态转换映射
                 status_map = {
-                    _('available'): 'available',
+                    _('released'): 'released',
                     _('allocated'): 'allocated',
                     _('reserved'): 'reserved'
                 }
                 actual_status = status_map.get(new_value, new_value)
                 
                 # 根据状态执行不同的操作
-                if actual_status == 'available':
+                if actual_status == 'released':
                     # 释放IP
                     success, message = self.ipam.release_ip(row_data['ip_address'])
                 elif actual_status == 'allocated':
@@ -14225,7 +14226,7 @@ class SubnetPlannerApp:
                     
                     # 只有当状态真正改变时才执行操作
                     if actual_status != current_actual_status:
-                        if actual_status == 'available':
+                        if actual_status == 'released':
                             # 释放IP
                             success, message = self.ipam.release_ip(ip_address)
                         elif actual_status == 'allocated':
@@ -14287,6 +14288,7 @@ class SubnetPlannerApp:
             success_count = 0
             error_count = 0
             
+            error_details = []
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
                 # 获取记录ID（树项的ID）
@@ -14306,6 +14308,7 @@ class SubnetPlannerApp:
                             success_count += 1
                         else:
                             error_count += 1
+                            error_details.append(f"{ip_address}: {message}")
                 except ValueError:
                     # 如果树项ID不是整数，使用默认方法
                     ip_info = self.ipam.get_ip_info(ip_address)
@@ -14318,6 +14321,10 @@ class SubnetPlannerApp:
                             success_count += 1
                         else:
                             error_count += 1
+                            error_details.append(f"{ip_address}: {message}")
+                except Exception as e:
+                    error_count += 1
+                    error_details.append(f"{ip_address}: {str(e)}")
             
             # 显示结果
             if success_count > 0:
@@ -14325,7 +14332,12 @@ class SubnetPlannerApp:
                 # 刷新IPAM数据并恢复选中状态
                 self.refresh_ipam_with_selection()
             if error_count > 0:
-                self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
+                error_msg = f"{_('failed_to_restore_ips', count=error_count)}"
+                if error_details:
+                    error_msg += "\n" + "\n".join(error_details[:5])
+                    if len(error_details) > 5:
+                        error_msg += f"\n...还有 {len(error_details) - 5} 个错误"
+                self.show_error(_('error'), error_msg)
                 
         elif action == 'allocate':
             # 重新分配IP地址 - 只处理第一个选中的IP地址
@@ -14424,6 +14436,7 @@ class SubnetPlannerApp:
             # 快速分配IP地址 - 直接修改状态为已分配，不显示对话框，支持多选
             success_count = 0
             error_count = 0
+            error_details = []
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
@@ -14453,6 +14466,7 @@ class SubnetPlannerApp:
                         success_count += 1
                     else:
                         error_count += 1
+                        error_details.append(f"{ip_address}: {message}")
                 except ValueError:
                     # 如果树项ID不是整数，使用默认方法
                     try:
@@ -14481,12 +14495,15 @@ class SubnetPlannerApp:
                                 success_count += 1
                             else:
                                 error_count += 1
+                                error_details.append(f"{ip_address}: {message}")
                     except Exception as e:
                         print(f"快速分配失败: {e}")
                         error_count += 1
+                        error_details.append(f"{ip_address}: {str(e)}")
                 except Exception as e:
                     print(f"快速分配失败: {e}")
                     error_count += 1
+                    error_details.append(f"{ip_address}: {str(e)}")
             
             # 显示结果
             if success_count > 0:
@@ -14494,11 +14511,17 @@ class SubnetPlannerApp:
                 # 刷新IPAM数据并恢复选中状态
                 self.refresh_ipam_with_selection()
             if error_count > 0:
-                self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
+                error_msg = f"{_('failed_to_restore_ips', count=error_count)}"
+                if error_details:
+                    error_msg += "\n" + "\n".join(error_details[:5])
+                    if len(error_details) > 5:
+                        error_msg += f"\n...还有 {len(error_details) - 5} 个错误"
+                self.show_error(_('error'), error_msg)
         elif action == 'quick_reserve':
             # 快速保留IP地址 - 直接修改状态为保留，不显示对话框，支持多选
             success_count = 0
             error_count = 0
+            error_details = []
             
             for ip_item in selected_items:
                 ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
@@ -14524,6 +14547,7 @@ class SubnetPlannerApp:
                         success_count += 1
                     else:
                         error_count += 1
+                        error_details.append(f"{ip_address}: {message}")
                 except ValueError:
                     # 如果树项ID不是整数，使用默认方法
                     try:
@@ -14548,12 +14572,15 @@ class SubnetPlannerApp:
                                 success_count += 1
                             else:
                                 error_count += 1
+                                error_details.append(f"{ip_address}: {message}")
                     except Exception as e:
                         print(f"快速保留失败: {e}")
                         error_count += 1
+                        error_details.append(f"{ip_address}: {str(e)}")
                 except Exception as e:
                     print(f"快速保留失败: {e}")
                     error_count += 1
+                    error_details.append(f"{ip_address}: {str(e)}")
             
             # 显示结果
             if success_count > 0:
@@ -14561,7 +14588,12 @@ class SubnetPlannerApp:
                 # 刷新IPAM数据并恢复选中状态
                 self.refresh_ipam_with_selection()
             if error_count > 0:
-                self.show_error(_('error'), f"{_('failed_to_restore_ips', count=error_count)}")
+                error_msg = f"{_('failed_to_restore_ips', count=error_count)}"
+                if error_details:
+                    error_msg += "\n" + "\n".join(error_details[:5])
+                    if len(error_details) > 5:
+                        error_msg += f"\n...还有 {len(error_details) - 5} 个错误"
+                self.show_error(_('error'), error_msg)
         elif action == 'edit':
             # 编辑IP地址信息 - 只处理第一个选中的IP地址
             # 因为编辑操作通常只针对单个IP地址
@@ -14814,7 +14846,7 @@ class SubnetPlannerApp:
                     # 记录释放失败的原因
                     print(f"释放IP {ip_address} 失败: {message}")
             else:
-                # 跳过已经是可用状态的IP地址
+                # 跳过已经是已释放状态的IP地址
                 print(f"跳过IP {ip_address}，状态为: {status}")
         
         if success_count > 0:
@@ -14826,7 +14858,7 @@ class SubnetPlannerApp:
             all_available = True
             for item in selected_ip_items:
                 status = self.ipam_ip_tree.item(item, 'values')[1]
-                if status not in [_('available')]:
+                if status not in [_('released')]:
                     all_available = False
                     break
             
@@ -14899,8 +14931,8 @@ class SubnetPlannerApp:
             
             # 翻译状态值
             status = ip['status']
-            if status == 'available':
-                translated_status = _('available')
+            if status == 'released':
+                translated_status = _('released')
             elif status == 'allocated':
                 translated_status = _('allocated')
             elif status == 'reserved':
@@ -14929,8 +14961,8 @@ class SubnetPlannerApp:
                                       command=lambda: self.cleanup_all_available_ips(dialog, available_ips))
         cleanup_all_button.pack(side=tk.LEFT, padx=5)
         
-        # 创建取消按钮
-        cancel_button = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
+        # 创建关闭按钮
+        cancel_button = ttk.Button(button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
     
     def cleanup_selected_available_ips(self, tree, dialog, available_ips):
@@ -14973,7 +15005,7 @@ class SubnetPlannerApp:
                     ''', (ip['ip_address'], 'cleanup', 'admin', now))
                     
                     # 删除可用状态的IP地址
-                    cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip['id'], 'available'))
+                    cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip['id'], 'released'))
                     cleaned_count += 1
             
             conn.commit()
@@ -14990,9 +15022,49 @@ class SubnetPlannerApp:
             if selected_network_items:
                 network = self.ipam_network_tree.item(selected_network_items[0], 'values')[0]
                 self.refresh_ipam_ips(network)
+            # 刷新对话框中的表格
+            self.refresh_available_ips_table(tree)
         
-        # 关闭对话框
-        dialog.destroy()
+        # 不关闭对话框，保持窗口打开
+    
+    def refresh_available_ips_table(self, tree):
+        """刷新可用IP地址表格
+        
+        Args:
+            tree: 树状视图控件
+        """
+        # 清空表格
+        for item in tree.get_children():
+            tree.delete(item)
+        
+        # 获取最新的可用IP地址列表
+        available_ips = self.ipam.get_available_ips()
+        
+        # 添加新数据
+        sorted_ips = self._sort_ip_list(available_ips)
+        for ip in sorted_ips:
+            network_info = self.ipam.get_most_specific_network(ip['ip_address'])
+            network = network_info['network_address'] if network_info else ''
+            
+            status = ip['status']
+            if status == 'released':
+                translated_status = _('released')
+            elif status == 'allocated':
+                translated_status = _('allocated')
+            elif status == 'reserved':
+                translated_status = _('reserved')
+            else:
+                translated_status = status
+            
+            record_id = ip.get('id', None)
+            if record_id:
+                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
+                                                                    ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                                    ip['description'] or '', ip.get('expiry_date', '') or ''))
+            else:
+                tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
+                                                ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                ip['description'] or '', ip.get('expiry_date', '') or ''))
     
     def cleanup_all_available_ips(self, dialog, available_ips):
         """清理所有可用IP地址
@@ -15081,8 +15153,8 @@ class SubnetPlannerApp:
             
             # 翻译状态值
             status = ip['status']
-            if status == 'available':
-                translated_status = _('available')
+            if status == 'released':
+                translated_status = _('released')
             elif status == 'allocated':
                 translated_status = _('allocated')
             elif status == 'reserved':
@@ -15118,8 +15190,8 @@ class SubnetPlannerApp:
                                       command=lambda: self.release_all_expired_ips(dialog, expired_ips))
         release_all_button.pack(side=tk.LEFT, padx=5)
         
-        # 创建取消按钮
-        cancel_button = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
+        # 创建关闭按钮
+        cancel_button = ttk.Button(button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
     
     def release_selected_expired_ips(self, tree, dialog, expired_ips):
@@ -15172,9 +15244,49 @@ class SubnetPlannerApp:
             self.show_info(_('success'), f"{_('successfully_released_ips', count=released_count)}")
             # 刷新IPAM数据并恢复选中状态
             self.refresh_ipam_with_selection()
+            # 刷新对话框中的表格
+            self.refresh_expired_ips_table(tree)
         
-        # 关闭对话框
-        dialog.destroy()
+        # 不关闭对话框，保持窗口打开
+    
+    def refresh_expired_ips_table(self, tree):
+        """刷新过期IP地址表格
+        
+        Args:
+            tree: 树状视图控件
+        """
+        # 清空表格
+        for item in tree.get_children():
+            tree.delete(item)
+        
+        # 获取最新的过期IP地址列表
+        expired_ips = self.ipam.get_expired_ips()
+        
+        # 添加新数据
+        sorted_ips = self._sort_ip_list(expired_ips)
+        for ip in sorted_ips:
+            network_info = self.ipam.get_most_specific_network(ip['ip_address'])
+            network = network_info['network_address'] if network_info else ''
+            
+            status = ip['status']
+            if status == 'released':
+                translated_status = _('released')
+            elif status == 'allocated':
+                translated_status = _('allocated')
+            elif status == 'reserved':
+                translated_status = _('reserved')
+            else:
+                translated_status = status
+            
+            record_id = ip.get('id', None)
+            if record_id:
+                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
+                                                                    ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                                    ip['description'] or '', ip['expiry_date'] or ''))
+            else:
+                tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
+                                                ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                                ip['description'] or '', ip['expiry_date'] or ''))
     
     def release_all_expired_ips(self, dialog, expired_ips):
         """释放所有过期IP地址
@@ -15484,7 +15596,6 @@ class SubnetPlannerApp:
         
         ttk.Button(button_frame, text=_('confirm'), command=confirm).grid(row=0, column=0, padx=10)
         ttk.Button(button_frame, text=_('clear_expiry_date'), command=clear_expiry).grid(row=0, column=1, padx=10)
-        ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).grid(row=0, column=2, padx=10)
 
     def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None, record_id=None):
         """显示IP地址分配/保留对话框
@@ -15856,7 +15967,7 @@ class SubnetPlannerApp:
                 # 计算总注册IP数量（已分配 + 已保留）
                 registered = allocated + reserved
                 # 计算可用IP数量
-                available = sum(1 for ip in subnet_ips if ip.get('status') == 'available')
+                available = sum(1 for ip in subnet_ips if ip.get('status') == 'released')
                 
                 ip_info = {
                     "total": network_total,

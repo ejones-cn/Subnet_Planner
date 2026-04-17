@@ -171,6 +171,10 @@ class IPAMSQLite:
             )
             ''')
         
+        # 迁移：将旧的 'available' 状态更新为 'released'
+        _ = cursor.execute('UPDATE ip_addresses SET status = ? WHERE status = ?', ('released', 'available'))
+        conn.commit()
+        
         # 检查是否需要迁移旧的allocation_history表（移除network_id字段）
         cursor.execute("PRAGMA table_info(allocation_history)")
         history_columns = cursor.fetchall()
@@ -323,7 +327,7 @@ class IPAMSQLite:
                                         INSERT OR IGNORE INTO ip_addresses (ip_address, status, hostname, description, 
                                         allocated_at, allocated_by, expiry_date, created_at, updated_at)
                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                        ''', (ip_str, ip_data.get('status', 'available'), 
+                                        ''', (ip_str, ip_data.get('status', 'released'), 
                                               ip_data.get('hostname', ''), ip_data.get('description', ''),
                                               ip_data.get('allocated_at'), ip_data.get('allocated_by'),
                                               ip_data.get('expiry_date'), ip_created_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -529,7 +533,7 @@ class IPAMSQLite:
                         # 使用指定的记录ID
                         _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE id = ? AND ip_address = ?', (record_id, ip_address))
                         specific_row = cursor.fetchone()
-                        if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2 and str(specific_row[1]) in ['available', 'reserved']:
+                        if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2 and str(specific_row[1]) in ['released', 'reserved']:
                             ip_id = int(specific_row[0])
                             _ = cursor.execute('''
                             UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, 
@@ -552,9 +556,14 @@ class IPAMSQLite:
                                       now, 'admin', expiry_date, now, now))
                     else:
                         # 过滤出可用或保留状态的记录
-                        available_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['available', 'reserved']]
+                        available_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['released', 'reserved']]
                         
-                        if available_rows:
+                        # 检查是否已有其他记录处于已分配状态
+                        allocated_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) == 'allocated']
+                        if allocated_rows:
+                            # IP地址已被分配
+                            success_result = (False, "IP地址已被分配")
+                        elif available_rows:
                             # 使用第一条可用记录
                             ip_id = int(available_rows[0][0])
                             _ = cursor.execute('''
@@ -563,19 +572,13 @@ class IPAMSQLite:
                             WHERE id = ?
                             ''', ('allocated', hostname, description, now, 'admin', expiry_date, now, ip_id))
                         else:
-                            # 检查是否有已分配的记录
-                            allocated_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) == 'allocated']
-                            if allocated_rows:
-                                # IP地址已被分配
-                                success_result = (False, "IP地址已被分配")
-                            else:
-                                # 新的IP地址，插入记录
-                                _ = cursor.execute('''
-                                INSERT INTO ip_addresses (ip_address, status, hostname, description, 
-                                allocated_at, allocated_by, expiry_date, created_at, updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                ''', (ip_address, 'allocated', hostname, description, 
-                                      now, 'admin', expiry_date, now, now))
+                            # 新的IP地址，插入记录
+                            _ = cursor.execute('''
+                            INSERT INTO ip_addresses (ip_address, status, hostname, description, 
+                            allocated_at, allocated_by, expiry_date, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (ip_address, 'allocated', hostname, description, 
+                                  now, 'admin', expiry_date, now, now))
                     
                     if success_result is None:
                         # 记录分配历史
@@ -670,7 +673,7 @@ class IPAMSQLite:
                 network_rows = cursor.fetchall()
                 
                 # 一次性获取所有IP地址，避免多次数据库查询
-                _ = cursor.execute('SELECT ip_address FROM ip_addresses')
+                cursor.execute('SELECT ip_address FROM ip_addresses')
                 all_ips = cursor.fetchall()
                 
                 # 预处理IP地址，避免重复创建ipaddress对象
@@ -802,7 +805,7 @@ class IPAMSQLite:
                         return False, "指定的记录不存在或不属于该IP地址"
                     
                     status = str(specific_row[1])
-                    if status == 'available':
+                    if status == 'released':
                         return False, "IP地址未被分配或已被释放"
                     
                     rows_to_release = [specific_row]
@@ -820,7 +823,7 @@ class IPAMSQLite:
                         try:
                             if isinstance(row, tuple) and len(row) >= 3:
                                 status = str(row[1])
-                                if status != 'available':
+                                if status != 'released':
                                     # 根据策略过滤
                                     if release_strategy == "all":
                                         allocatable_rows.append(row)
@@ -859,7 +862,7 @@ class IPAMSQLite:
                             ip_id: int = int(ip_row_item[0])
                             
                             # 释放IP地址
-                            _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', ('available', now, ip_id))
+                            _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', ('released', now, ip_id))
                             
                             # 记录释放历史
                             _ = cursor.execute('''
@@ -1311,6 +1314,7 @@ class IPAMSQLite:
                 filtered_networks = all_networks
 
             ws_net = wb.active
+            assert ws_net is not None
             ws_net.title = _('network_sheet_name')
             header_font = Font(bold=True)
             header_fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
@@ -1380,7 +1384,7 @@ class IPAMSQLite:
             conn = sqlite3.connect(self.db_file)
             conn.row_factory = sqlite3.Row
             
-            conn.create_function('ip_to_int', 1, ip_to_int)
+            conn.create_function('ip_to_int', 1, ip_to_int)  # pyright: ignore[reportArgumentType]
             
             cursor = conn.cursor()
 
@@ -1492,11 +1496,11 @@ class IPAMSQLite:
                     status_mapping = {
                         _('status_allocated'): 'allocated',
                         _('status_reserved'): 'reserved',
-                        _('status_available'): 'available',
+                        _('status_released'): 'released',
                         _('status_conflict'): 'conflict',
                         'allocated': 'allocated',
                         'reserved': 'reserved',
-                        'available': 'available',
+                        'released': 'released',
                         'conflict': 'conflict'
                     }
 
@@ -1506,7 +1510,7 @@ class IPAMSQLite:
                         ip_address = str(row[ip_col]).strip() if ip_col is not None and ip_col < len(row) and row[ip_col] else ''
                         if ip_address:
                             status_str = str(row[status_col]).strip() if status_col is not None and status_col < len(row) and row[status_col] else ''
-                            status = status_mapping.get(status_str, 'available')
+                            status = status_mapping.get(status_str, 'released')
                             result['ips'].append({
                                 'ip_address': ip_address,
                                 'status': status,
@@ -1556,7 +1560,7 @@ class IPAMSQLite:
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            _ = cursor.execute('SELECT network_address FROM networks')
+            cursor.execute('SELECT network_address FROM networks')
             for row in cursor.fetchall():
                 existing_networks.add(row[0])
             conn.close()
@@ -1578,19 +1582,19 @@ class IPAMSQLite:
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            _ = cursor.execute('SELECT ip_address FROM ip_addresses')
+            cursor.execute('SELECT ip_address FROM ip_addresses')
             for row in cursor.fetchall():
                 existing_ips.add(row[0])
             conn.close()
         except Exception:
             pass
 
-        valid_statuses = {'available', 'allocated', 'reserved'}
+        valid_statuses = {'released', 'allocated', 'reserved'}
         for ip in data.get('ips', []):
             ip_address = ip['ip_address']
             try:
                 ipaddress.ip_address(ip_address)
-                status = (ip.get('status') or 'available').strip().lower()
+                status = (ip.get('status') or 'released').strip().lower()
                 if status not in valid_statuses:
                     ip['error'] = _('invalid_status_value')
                     result['ips']['invalid'].append(ip)
@@ -1649,7 +1653,7 @@ class IPAMSQLite:
                     for ip in data['ips']['new']:
                         try:
                             ipaddress.ip_address(ip['ip_address'])
-                            status = (ip.get('status') or 'available').strip().lower()
+                            status = (ip.get('status') or 'released').strip().lower()
                             _ = cursor.execute('''
                             INSERT INTO ip_addresses (ip_address, status, hostname, mac_address, description,
                                    allocated_at, allocated_by, expiry_date, created_at, updated_at)
@@ -1671,7 +1675,7 @@ class IPAMSQLite:
 
                     if overwrite_existing:
                         for ip in data['ips']['existing']:
-                            status = (ip.get('status') or 'available').strip().lower()
+                            status = (ip.get('status') or 'released').strip().lower()
                             _ = cursor.execute('''
                             UPDATE ip_addresses SET status = ?, hostname = ?, mac_address = ?, description = ?,
                                    allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
@@ -1724,6 +1728,7 @@ class IPAMSQLite:
 
             if include_networks:
                 ws_net = wb.active
+                assert ws_net is not None
                 ws_net.title = _('network_sheet_name')
                 net_headers = [_('col_network'), _('col_description'), 'VLAN']
                 for col_idx, header in enumerate(net_headers, 1):
@@ -1749,6 +1754,7 @@ class IPAMSQLite:
                     ws_ip = wb.create_sheet(title=_('ip_sheet_name'))
                 else:
                     ws_ip = wb.active
+                    assert ws_ip is not None
                     ws_ip.title = _('ip_sheet_name')
 
                 ip_headers = [_('col_ip_address'), _('col_status'), _('col_hostname'),
@@ -1764,7 +1770,7 @@ class IPAMSQLite:
                     ['192.168.1.10', _('status_allocated'), 'server-01', '00:11:22:33:44:55',
                      _('template_ip_desc1'), '2026-12-31 23:59:59'],
                     ['192.168.1.11', _('status_reserved'), '', '', _('template_ip_desc2'), ''],
-                    ['192.168.1.12', _('status_available'), '', '', '', ''],
+                    ['192.168.1.12', _('status_released'), '', '', '', ''],
                 ]
                 for row_idx, example in enumerate(ip_examples, 2):
                     for col_idx, val in enumerate(example, 1):
@@ -1833,7 +1839,7 @@ class IPAMSQLite:
             SELECT id, ip_address, status, hostname, mac_address, description, expiry_date 
             FROM ip_addresses 
             WHERE status = ?
-            ''', ('available',))
+            ''', ('released',))
             available_ips = cursor.fetchall()
             
             conn.close()
@@ -1866,7 +1872,7 @@ class IPAMSQLite:
             cursor = conn.cursor()
             
             # 查找所有可用状态的IP地址
-            _ = cursor.execute('SELECT id, ip_address FROM ip_addresses WHERE status = ?', ('available',))
+            _ = cursor.execute('SELECT id, ip_address FROM ip_addresses WHERE status = ?', ('released',))
             available_ips = cursor.fetchall()
             
             if not available_ips:
@@ -1885,7 +1891,7 @@ class IPAMSQLite:
                     ''', (ip_address, 'cleanup', 'admin', now))
             
             # 删除可用状态的IP地址
-            _ = cursor.execute('DELETE FROM ip_addresses WHERE status = ?', ('available',))
+            _ = cursor.execute('DELETE FROM ip_addresses WHERE status = ?', ('released',))
             
             conn.commit()
             conn.close()
@@ -1914,9 +1920,9 @@ class IPAMSQLite:
             if result and isinstance(result, tuple) and len(result) >= 1:
                 status: str = str(result[0])
                 return status
-            return 'available'
+            return 'released'
         except Exception:
-            return 'available'
+            return 'released'
     
     def get_expired_ips(self) -> list[dict[str, str | int | None]]:
         """获取所有过期的IP地址
@@ -1980,7 +1986,7 @@ class IPAMSQLite:
             for ip in expired_ips:
                 # 释放IP地址
                 _ = cursor.execute('UPDATE ip_addresses SET status = ?, updated_at = ? WHERE id = ?', 
-                             ('available', datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ip['id']))
+                             ('released', datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ip['id']))
                 
                 # 记录释放历史
                 _ = cursor.execute('''
@@ -2113,31 +2119,24 @@ class IPAMSQLite:
                 # 使用指定的记录ID
                 _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE id = ? AND ip_address = ?', (record_id, ip_address))
                 specific_row = cursor.fetchone()
-                if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2 and str(specific_row[1]) == 'available':
+                if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2 and str(specific_row[1]) == 'released':
                     ip_id = int(specific_row[0])
                     _ = cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
                                  ('reserved', hostname, description, now, ip_id))
                 else:
-                    # 检查是否有已分配或已保留的记录
-                    _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
-                    ip_rows = cursor.fetchall()
-                    allocated_or_reserved_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['allocated', 'reserved']]
-                    if allocated_or_reserved_rows:
-                        # IP地址已被分配或保留
-                        return False, "IP地址已被分配或保留"
-                    else:
-                        # 创建新的IP地址记录
-                        _ = cursor.execute('''
-                        INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (ip_address, 'reserved', hostname, description, now, now))
+                    # 允许在已分配状态下创建保留记录
+                    # 创建新的IP地址记录（允许多个保留记录存在）
+                    _ = cursor.execute('''
+                    INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (ip_address, 'reserved', hostname, description, now, now))
             else:
                 # 查找所有该IP地址的记录
                 _ = cursor.execute('SELECT id, status FROM ip_addresses WHERE ip_address = ?', (ip_address,))
                 ip_rows = cursor.fetchall()
                 
-                # 过滤出可用状态的记录
-                available_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) == 'available']
+                # 过滤出可用状态的记录（允许在已分配状态下创建新的保留记录）
+                available_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) == 'released']
                 
                 if available_rows:
                     # 使用第一条可用记录
@@ -2145,17 +2144,11 @@ class IPAMSQLite:
                     _ = cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
                                  ('reserved', hostname, description, now, ip_id))
                 else:
-                    # 检查是否有已分配或已保留的记录
-                    allocated_or_reserved_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['allocated', 'reserved']]
-                    if allocated_or_reserved_rows:
-                        # IP地址已被分配或保留
-                        return False, "IP地址已被分配或保留"
-                    else:
-                        # 创建新的IP地址记录
-                        _ = cursor.execute('''
-                        INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (ip_address, 'reserved', hostname, description, now, now))
+                    # 创建新的IP地址记录
+                    _ = cursor.execute('''
+                    INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (ip_address, 'reserved', hostname, description, now, now))
             
             # 记录保留历史
             _ = cursor.execute('''
@@ -2499,7 +2492,7 @@ class IPAMSQLite:
             reserved_ips = int(reserved_ips_result[0]) if reserved_ips_result and isinstance(reserved_ips_result, tuple) and len(reserved_ips_result) >= 1 else 0
             
             # 获取可用IP数
-            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE status = ?', ('available',))
+            _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE status = ?', ('released',))
             available_ips_result = cursor.fetchone()
             available_ips = int(available_ips_result[0]) if available_ips_result and isinstance(available_ips_result, tuple) and len(available_ips_result) >= 1 else 0
             
@@ -3122,7 +3115,7 @@ class IPAMSQLite:
                         ''', (new_ip_address, now, ip_id))
                         
                         # 删除其他具有相同原IP地址的记录，确保原地址完全消失
-                        _ = cursor.execute('DELETE FROM ip_addresses WHERE ip_address = ? AND status = ? AND id != ?', (old_ip_address, 'available', ip_id))
+                        _ = cursor.execute('DELETE FROM ip_addresses WHERE ip_address = ? AND status = ? AND id != ?', (old_ip_address, 'released', ip_id))
                         
                         # 记录迁移历史
                         _ = cursor.execute('''

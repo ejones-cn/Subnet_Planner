@@ -2052,18 +2052,18 @@
     "ko": "주소 재예약"
   },
   "convert_to_reserved": {
-    "zh": "转为保留IP",
-    "en": "Convert to Reserved",
+    "zh": "保留地址",
+    "en": "Reserve Address",
     "ja": "予約済みに変換",
-    "zh_tw": "轉為保留IP",
-    "ko": "예약된 상태로 변환"
+    "zh_tw": "保留地址",
+    "ko": "주소 예약"
   },
   "convert_to_allocated": {
-    "zh": "转为已分配",
-    "en": "Convert to Allocated",
+    "zh": "分配地址",
+    "en": "Allocate Address",
     "ja": "割り当て済みに変換",
-    "zh_tw": "轉為已分配",
-    "ko": "할당된 상태로 변환"
+    "zh_tw": "分配地址",
+    "ko": "주소 할당"
   },
   "clear_expiry_date": {
     "zh": "清除过期日期",
@@ -2094,11 +2094,11 @@
     "ko": "{count} 개의 IP 주소가 예약된 상태로 성공적으로 복원되었습니다"
   },
   "failed_to_restore_ips": {
-    "zh": "恢复失败 {count} 个IP地址",
-    "en": "Failed to restore {count} IP addresses",
-    "ja": "{count} 個のIPアドレスの復元に失敗しました",
-    "zh_tw": "恢復失敗 {count} 個IP位址",
-    "ko": "{count} 개의 IP 주소 복원 실패"
+    "zh": "恢复失败 {count} 个IP地址，请检查是否存在重复分配或冲突",
+    "en": "Failed to restore {count} IP addresses. Please check for duplicate allocations or conflicts",
+    "ja": "{count} 個のIPアドレスの復元に失敗しました。重複した割り当てまたは競合がないか確認してください",
+    "zh_tw": "恢復失敗 {count} 個IP位址，請檢查是否存在重複分配或衝突",
+    "ko": "{count} 개의 IP 주소 복원 실패. 중복 할당 또는 충돌이 없는지 확인하세요"
   },
   "ip_already_available_no_need_to_release": {
     "zh": "所选IP地址已经是可用状态，无需释放",
@@ -4277,12 +4277,12 @@
     "zh_tw": "值表示",
     "ko": "값 표현"
   },
-  "available": {
-    "zh": "可用",
-    "en": "Available",
-    "ja": "利用可",
-    "zh_tw": "可用",
-    "ko": "사용가능"
+  "released": {
+    "zh": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "zh_tw": "已释放",
+    "ko": "해제됨"
   },
   "timestamp": {
     "zh": "时间戳",
@@ -4452,12 +4452,12 @@
     "ja": "予約IP:",
     "ko": "예약 IP:"
   },
-  "stats_available_ips": {
-    "zh": "可用IP:",
-    "zh_tw": "可用IP:",
-    "en": "Available IPs:",
-    "ja": "利用可能IP:",
-    "ko": "사용 가능 IP:"
+  "stats_released_ips": {
+    "zh": "已释放IP:",
+    "zh_tw": "已释放IP:",
+    "en": "Released IPs:",
+    "ja": "解放済みIP:",
+    "ko": "해제된 IP:"
   },
   "stats_expired_ips": {
     "zh": "过期IP:",
@@ -4515,12 +4515,12 @@
     "ja": "予約",
     "ko": "예약됨"
   },
-  "stats_available": {
-    "zh": "可用",
-    "zh_tw": "可用",
-    "en": "Available",
-    "ja": "利用可能",
-    "ko": "사용 가능"
+  "stats_released": {
+    "zh": "已释放",
+    "zh_tw": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
   },
   "batch_reserve": {
     "zh": "批量保留",
@@ -4942,12 +4942,12 @@
     "ja": "予約済み",
     "ko": "예약됨"
   },
-  "status_available": {
-    "zh": "可用",
-    "zh_tw": "可用",
-    "en": "Available",
-    "ja": "利用可能",
-    "ko": "사용 가능"
+  "status_released": {
+    "zh": "已释放",
+    "zh_tw": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
   },
   "status_conflict": {
     "zh": "冲突",
