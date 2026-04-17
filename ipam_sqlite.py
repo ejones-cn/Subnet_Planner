@@ -172,8 +172,13 @@ class IPAMSQLite:
             ''')
         
         # 迁移：将旧的 'available' 状态更新为 'released'
-        _ = cursor.execute('UPDATE ip_addresses SET status = ? WHERE status = ?', ('released', 'available'))
-        conn.commit()
+        conn.execute('BEGIN TRANSACTION')
+        try:
+            cursor.execute('UPDATE ip_addresses SET status = ? WHERE status = ?', ('released', 'available'))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise e
         
         # 检查是否需要迁移旧的allocation_history表（移除network_id字段）
         cursor.execute("PRAGMA table_info(allocation_history)")
@@ -669,7 +674,7 @@ class IPAMSQLite:
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 
-                _ = cursor.execute('SELECT id, network_address, description, vlan, created_at, updated_at FROM networks')
+                cursor.execute('SELECT id, network_address, description, vlan, created_at, updated_at FROM networks')
                 network_rows = cursor.fetchall()
                 
                 # 一次性获取所有IP地址，避免多次数据库查询
@@ -2753,20 +2758,11 @@ class IPAMSQLite:
             conn.commit()
             conn.close()
             
-            # 更新备份配置文件
+            # 更新备份配置文件（只记录必要的备份时间，避免冗余）
             try:
                 backup_config_file = os.path.join(self.backup_dir, 'backup_config.json')
-                config = {}
-                if os.path.exists(backup_config_file):
-                    try:
-                        with open(backup_config_file, 'r', encoding='utf-8') as f:
-                            config = json.load(f)
-                    except Exception:
-                        pass
-                
-                # 更新最后备份时间和频率
-                config['last_backup_time'] = datetime.now().isoformat()
-                config['last_backup_frequency'] = frequency
+                # 只保留必要字段，移除冗余的频率配置
+                config = {'last_backup_time': datetime.now().isoformat()}
                 
                 # 保存配置文件
                 with open(backup_config_file, 'w', encoding='utf-8') as f:
@@ -2844,22 +2840,23 @@ class IPAMSQLite:
     def get_last_backup_time(self) -> datetime | None:
         """获取最后一次备份的时间
         
+        从 backup_config.json 读取，避免恢复数据库后备份时间回退的问题
+        
         Returns:
             datetime | None: 最后一次备份的时间，或None
         """
         try:
-            conn = sqlite3.connect(self.db_file)
-            cursor = conn.cursor()
+            backup_config_file = os.path.join(self.backup_dir, 'backup_config.json')
+            if not os.path.exists(backup_config_file):
+                return None
             
-            # 查询最后一次备份的时间
-            _ = cursor.execute('SELECT backup_time FROM backups WHERE backup_type = "auto" ORDER BY backup_time DESC LIMIT 1')
-            result = cursor.fetchone()
-            conn.close()
+            with open(backup_config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
             
-            if result:
-                backup_time_str = result[0]
+            if 'last_backup_time' in config:
+                last_backup_time_str = config['last_backup_time']
                 try:
-                    return datetime.strptime(backup_time_str, "%Y-%m-%d %H:%M:%S")
+                    return datetime.fromisoformat(last_backup_time_str)
                 except (ValueError, TypeError):
                     return None
             return None
