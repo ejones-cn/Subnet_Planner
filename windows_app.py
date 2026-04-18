@@ -11562,7 +11562,7 @@ class SubnetPlannerApp:
             
             # 配置对话框的行和列，移除默认的垂直居中设置
             # 清除所有现有的行配置
-            for i in range(101):  # 清除DialogBase中设置的101行
+            for i in range(dialog.content_frame.grid_size()[1]):  # 动态获取行数
                 try:
                     dialog.content_frame.grid_rowconfigure(i, weight=0)
                 except:
@@ -11652,7 +11652,7 @@ class SubnetPlannerApp:
             
             # 左侧按钮区域
             left_buttons = ttk.Frame(button_frame)
-            left_buttons.pack(side=tk.LEFT, padx=0, pady=10)
+            left_buttons.pack(side=tk.LEFT, padx=0, pady=(0, 10))
             
             # 添加一个占位框架，增加左右区域之间的间距
             spacer = ttk.Frame(button_frame)
@@ -11660,7 +11660,7 @@ class SubnetPlannerApp:
             
             # 右侧自动备份设置区域
             right_settings = ttk.Frame(button_frame)
-            right_settings.pack(side=tk.RIGHT, padx=10)
+            right_settings.pack(side=tk.RIGHT, padx=10, pady=(0, 10))
             
             def on_restore():
                 selected_items = backup_tree.selection()
