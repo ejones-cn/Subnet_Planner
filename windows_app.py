@@ -110,7 +110,7 @@ DIALOG_SELECT = (500, 300)          # 选择对话框
 # 复杂对话框尺寸
 DIALOG_SMALL = (400, 200)           # 小型对话框（简单表单）
 DIALOG_MEDIUM = (500, 300)          # 中型对话框（中等复杂度）
-DIALOG_LARGE = (600, 400)           # 大型对话框（复杂表单）
+DIALOG_LARGE = (700, 500)           # 大型对话框（复杂表单）
 DIALOG_TABLE = (800, 400)           # 数据表格对话框
 
 # IPAM网络管理按钮数量
@@ -11209,7 +11209,7 @@ class SubnetPlannerApp:
     def import_export_network_data(self):
         """导入/导出网段数据对话框"""
         try:
-            dialog = ComplexDialog(self.root, _('network_import_export'), 400, 200, resizable=False, modal=True)
+            dialog = ComplexDialog(self.root, _('network_import_export'), 500, 350, resizable=False, modal=True)
 
             main_frame = ttk.Frame(dialog.content_frame, padding="30")
             main_frame.pack(fill=tk.BOTH, expand=True)
@@ -11256,6 +11256,9 @@ class SubnetPlannerApp:
                            command=lambda: self._validate_template_checks(False, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=10)
             ttk.Button(template_inner, text=_('download'),
                       command=lambda: self._do_download_template(dialog, tmpl_net_var, tmpl_ip_var)).pack(side=tk.RIGHT, padx=10)
+
+            # 显示对话框并自动调整高度
+            dialog.show()
 
         except Exception as e:
             self.show_error(_('error'), f"操作失败: {str(e)}")
@@ -11555,9 +11558,16 @@ class SubnetPlannerApp:
         """备份/恢复数据对话框"""
         try:
             # 创建对话框
-            dialog = ComplexDialog(self.root, _('backup_restore'), 600, 400, resizable=True, modal=True)
+            dialog = ComplexDialog(self.root, _('backup_restore'), 700, 500, resizable=False, modal=True)
             
-            # 配置对话框的行和列
+            # 配置对话框的行和列，移除默认的垂直居中设置
+            # 清除所有现有的行配置
+            for i in range(101):  # 清除DialogBase中设置的101行
+                try:
+                    dialog.content_frame.grid_rowconfigure(i, weight=0)
+                except:
+                    pass
+            # 重新配置行
             dialog.content_frame.grid_rowconfigure(0, weight=0)
             dialog.content_frame.grid_rowconfigure(1, weight=1)
             dialog.content_frame.grid_columnconfigure(0, weight=1)
@@ -11573,7 +11583,7 @@ class SubnetPlannerApp:
             
             # 添加统计信息
             stats_frame = ttk.Frame(dialog.content_frame)
-            stats_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
+            stats_frame.grid(row=0, column=0, sticky="ew", padx=10)
             
             # 获取当前系统中的网络和IP数量
             stats = self.ipam.get_overall_stats()
@@ -11586,7 +11596,7 @@ class SubnetPlannerApp:
             
             # 创建一个框架来包含表格和滚动条
             tree_frame = ttk.Frame(dialog.content_frame, borderwidth=0, relief="flat")
-            tree_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(10, 10))
+            tree_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=(10, 10))
             
             # 创建树状视图显示备份信息
             backup_tree = ttk.Treeview(tree_frame, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
@@ -11637,13 +11647,16 @@ class SubnetPlannerApp:
             # 初始加载备份列表
             refresh_backup_list()
             
-            # 按钮
-            button_frame = ttk.Frame(dialog.content_frame)
-            button_frame.grid(row=2, column=0, sticky="s", pady=(10, 20))
+            # 使用DialogBase提供的button_frame
+            button_frame = dialog.button_frame
             
             # 左侧按钮区域
             left_buttons = ttk.Frame(button_frame)
-            left_buttons.pack(side=tk.LEFT, padx=10)
+            left_buttons.pack(side=tk.LEFT, padx=0, pady=10)
+            
+            # 添加一个占位框架，增加左右区域之间的间距
+            spacer = ttk.Frame(button_frame)
+            spacer.pack(side=tk.LEFT, expand=True, fill=tk.X)
             
             # 右侧自动备份设置区域
             right_settings = ttk.Frame(button_frame)
