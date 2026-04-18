@@ -15185,6 +15185,11 @@ class SubnetPlannerApp:
                                    command=lambda: self.release_selected_expired_ips(tree, dialog, expired_ips))
         release_button.pack(side=tk.LEFT, padx=5)
         
+        # 创建延期按钮
+        extend_button = ttk.Button(button_frame, text=_('extend_expiry'), 
+                                  command=lambda: self.extend_selected_expired_ips(tree, dialog, expired_ips))
+        extend_button.pack(side=tk.LEFT, padx=5)
+        
         # 创建全部释放按钮
         release_all_button = ttk.Button(button_frame, text=_('release_all'), 
                                       command=lambda: self.release_all_expired_ips(dialog, expired_ips))
@@ -15306,6 +15311,170 @@ class SubnetPlannerApp:
         
         # 关闭对话框
         dialog.destroy()
+    
+    def extend_selected_expired_ips(self, tree, dialog, expired_ips):
+        """延期选中的过期IP地址
+        
+        Args:
+            tree: 树状视图控件
+            dialog: 对话框
+            expired_ips: 过期IP地址列表
+        """
+        selected_items = tree.selection()
+        if not selected_items:
+            self.show_info(_('hint'), _('please_select_ip_address'))
+            return
+        
+        # 获取选中的IP地址
+        selected_ips = []
+        for item in selected_items:
+            ip_address = tree.item(item, 'values')[1]
+            # 查找对应的IP对象
+            for ip in expired_ips:
+                if ip['ip_address'] == ip_address:
+                    selected_ips.append(ip)
+                    break
+        
+        # 显示延期对话框
+        self.show_extend_expiry_dialog(selected_ips, tree, dialog)
+    
+    def show_extend_expiry_dialog(self, selected_ips, tree, parent_dialog):
+        """显示延期对话框
+        
+        Args:
+            selected_ips: 选中的IP地址列表
+            tree: 树状视图控件
+            parent_dialog: 父对话框
+        """
+        # 创建对话框
+        dialog = self.create_dialog(_('extend_expiry'), 450, 240, resizable=False, modal=True, parent=parent_dialog)
+        
+        # 设置字体
+        font_family, font_size = get_current_font_settings()
+        
+        # 创建主框架
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建标题
+        title_label = ttk.Label(
+            main_frame, 
+            text=_('select_extend_duration'), 
+            font=(font_family, font_size + 2, 'bold'),
+            foreground='#333333'
+        )
+        title_label.pack(pady=(0, 20))
+        
+        # 延期时间选项
+        extend_options = [
+            (_('1_month'), 30),
+            (_('3_months'), 90),
+            (_('6_months'), 180),
+            (_('1_year'), 365),
+            (_('3_years'), 1095),
+            (_('5_years'), 1825)
+        ]
+        
+        # 变量
+        selected_option = tk.StringVar()
+        selected_option.set(extend_options[0][0])
+        
+        # 创建选项菜单
+        option_frame = ttk.Frame(main_frame)
+        option_frame.pack(fill=tk.X, pady=10)
+        
+        # 创建三列布局
+        left_frame = ttk.Frame(option_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        
+        middle_frame = ttk.Frame(option_frame)
+        middle_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        
+        right_frame = ttk.Frame(option_frame)
+        right_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        
+        # 分配选项到三列
+        for i, (text, days) in enumerate(extend_options):
+            if i % 3 == 0:
+                frame = left_frame
+            elif i % 3 == 1:
+                frame = middle_frame
+            else:
+                frame = right_frame
+            
+            radiobutton = ttk.Radiobutton(
+                frame, 
+                text=text, 
+                variable=selected_option, 
+                value=text
+            )
+            radiobutton.pack(anchor=tk.W, pady=5)
+        
+        # 创建按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=15)
+        
+        # 创建确定按钮
+        def on_confirm():
+            # 获取选中的延期天数
+            selected_text = selected_option.get()
+            days = None
+            for text, d in extend_options:
+                if text == selected_text:
+                    days = d
+                    break
+            
+            if days is not None:
+                # 执行延期操作
+                extended_count = 0
+                for ip in selected_ips:
+                    # 计算新的过期日期
+                    import datetime
+                    current_expiry = ip.get('expiry_date', None)
+                    if current_expiry:
+                        try:
+                            # 从当前时间开始计算新的过期日期
+                            expiry_date = datetime.datetime.now()
+                            
+                            # 计算新的过期日期
+                            new_expiry = expiry_date + datetime.timedelta(days=days)
+                            new_expiry_str = new_expiry.strftime('%Y-%m-%d %H:%M:%S')
+                            
+                            # 更新过期日期
+                            record_id = ip.get('id', None)
+                            success, message = self.ipam.update_ip_expiry(ip['ip_address'], new_expiry_str, record_id)
+                            if success:
+                                extended_count += 1
+                        except Exception as e:
+                            self.show_error(_('error'), f"更新过期日期失败: {str(e)}")
+                
+                if extended_count > 0:
+                    self.show_info(_('success'), f"{_('successfully_extended_ips', count=extended_count)}")
+                    # 刷新IPAM数据并恢复选中状态
+                    self.refresh_ipam_with_selection()
+                    # 刷新对话框中的表格
+                    self.refresh_expired_ips_table(tree)
+                
+                # 关闭对话框
+                dialog.destroy()
+        
+        # 创建确定按钮
+        confirm_button = ttk.Button(
+            button_frame, 
+            text=_('confirm'), 
+            command=on_confirm,
+            width=10
+        )
+        confirm_button.pack(side=tk.RIGHT, padx=10)
+        
+        # 创建取消按钮
+        cancel_button = ttk.Button(
+            button_frame, 
+            text=_('cancel'), 
+            command=dialog.destroy,
+            width=10
+        )
+        cancel_button.pack(side=tk.RIGHT, padx=10)
     
     def refresh_ipam_with_selection(self):
         """刷新IPAM数据并恢复选中状态

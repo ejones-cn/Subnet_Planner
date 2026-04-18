@@ -1673,6 +1673,97 @@
     "zh_tw": "網路數",
     "ko": "네트워크 수"
   },
+  "extend_expiry": {
+    "zh": "延期",
+    "zh_tw": "延期",
+    "en": "Extend Expiry",
+    "ja": "期限延長",
+    "ko": "만료 연장"
+  },
+  "select_extend_duration": {
+    "zh": "选择延期时间",
+    "zh_tw": "選擇延期時間",
+    "en": "Select Extend Duration",
+    "ja": "延長期間を選択",
+    "ko": "연장 기간 선택"
+  },
+  "1_day": {
+    "zh": "1天",
+    "zh_tw": "1天",
+    "en": "1 Day",
+    "ja": "1日",
+    "ko": "1일"
+  },
+  "3_days": {
+    "zh": "3天",
+    "zh_tw": "3天",
+    "en": "3 Days",
+    "ja": "3日",
+    "ko": "3일"
+  },
+  "1_week": {
+    "zh": "1周",
+    "zh_tw": "1周",
+    "en": "1 Week",
+    "ja": "1週間",
+    "ko": "1주일"
+  },
+  "2_weeks": {
+    "zh": "2周",
+    "zh_tw": "2周",
+    "en": "2 Weeks",
+    "ja": "2週間",
+    "ko": "2주일"
+  },
+  "1_month": {
+    "zh": "1个月",
+    "zh_tw": "1個月",
+    "en": "1 Month",
+    "ja": "1ヶ月",
+    "ko": "1개월"
+  },
+  "3_months": {
+    "zh": "3个月",
+    "zh_tw": "3個月",
+    "en": "3 Months",
+    "ja": "3ヶ月",
+    "ko": "3개월"
+  },
+  "6_months": {
+    "zh": "6个月",
+    "zh_tw": "6個月",
+    "en": "6 Months",
+    "ja": "6ヶ月",
+    "ko": "6개월"
+  },
+  "1_year": {
+    "zh": "1年",
+    "zh_tw": "1年",
+    "en": "1 Year",
+    "ja": "1年",
+    "ko": "1년"
+  },
+  "3_years": {
+    "zh": "3年",
+    "zh_tw": "3年",
+    "en": "3 Years",
+    "ja": "3年",
+    "ko": "3년"
+  },
+  "5_years": {
+    "zh": "5年",
+    "zh_tw": "5年",
+    "en": "5 Years",
+    "ja": "5年",
+    "ko": "5년"
+  },
+  "successfully_extended_ips": {
+    "zh": "成功延期了{count}个IP地址",
+    "zh_tw": "成功延期了{count}個IP位址",
+    "en": "Successfully extended {count} IP addresses",
+    "ja": "{count}個のIPアドレスの期限を延長しました",
+    "ko": "{count}개의 IP 주소를 성공적으로 연장했습니다"
+  },
   "backup": {
     "zh": "备份",
     "en": "Backup",
