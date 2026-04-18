@@ -11879,30 +11879,51 @@ class SubnetPlannerApp:
         # 创建自动扫描网络对话框
         dialog = ComplexDialog(self.root, _('auto_scan_network'), 400, 200, resizable=False, modal=True)
         
-        # 网络输入 - 水平布局
-        network_frame = ttk.Frame(dialog.content_frame)
-        network_frame.grid(row=1, column=0, pady=10, padx=20, sticky=tk.W)
-        ttk.Label(network_frame, text=_('network_address_cidr_format') + ':').pack(side=tk.LEFT, padx=10)
-        network_border, network_entry = create_bordered_entry(network_frame, width=30)
-        network_border.pack(side=tk.LEFT, padx=10)
+        # 创建内容容器，包含所有输入控件
+        content_container = ttk.Frame(dialog.content_frame)
+        content_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        # 配置grid列权重
+        content_container.grid_columnconfigure(1, weight=1)  # 网络地址文本框列
+        content_container.grid_columnconfigure(3, weight=1)  # 线程数文本框列
+        content_container.grid_columnconfigure(5, weight=1)  # 超时时间文本框列
+        
+        # 网络地址标签和输入框
+        network_label = ttk.Label(content_container, text=_('network_address_cidr_format') + ':')
+        network_label.grid(row=0, column=0, padx=5, pady=(5, 15), sticky=tk.W)
+        network_border, network_entry = create_bordered_entry(content_container)
+        network_border.grid(row=0, column=1, padx=5, pady=(5, 15), sticky=tk.EW, columnspan=5)
         
 
         
-        # 线程数和超时时间 - 水平布局（左右放置）
-        options_frame = ttk.Frame(dialog.content_frame)
-        options_frame.grid(row=2, column=0, pady=10, padx=20, sticky=tk.W)
+        # 线程数和超时时间区域
+        options_frame = ttk.Frame(content_container)
+        options_frame.grid(row=1, column=0, columnspan=6, pady=5, sticky=tk.EW)
         
-        # 线程数（左侧）
-        ttk.Label(options_frame, text=_('thread_count') + ':').pack(side=tk.LEFT, padx=10)
+        # 配置grid列权重
+        options_frame.grid_columnconfigure(1, weight=1)
+        options_frame.grid_columnconfigure(3, weight=1)
+        
+        # 线程数标签和输入框
+        thread_label = ttk.Label(options_frame, text=_('thread_count') + ':')
+        thread_label.grid(row=0, column=0, padx=5, sticky=tk.W)
         thread_var = tk.StringVar(value="10")
-        thread_border, thread_entry = create_bordered_entry(options_frame, width=10, textvariable=thread_var)
-        thread_border.pack(side=tk.LEFT, padx=10)
+        thread_border, thread_entry = create_bordered_entry(options_frame, textvariable=thread_var)
+        thread_border.grid(row=0, column=1, padx=5, sticky=tk.EW)
         
-        # 超时时间（右侧）
-        ttk.Label(options_frame, text=_('timeout_ms') + ':').pack(side=tk.LEFT, padx=20)
+        # 超时时间标签和输入框
+        timeout_label = ttk.Label(options_frame, text=_('timeout_ms') + ':')
+        timeout_label.grid(row=0, column=2, padx=10, sticky=tk.W)
         timeout_var = tk.StringVar(value="500")
-        timeout_border, timeout_entry = create_bordered_entry(options_frame, width=10, textvariable=timeout_var)
-        timeout_border.pack(side=tk.LEFT, padx=10)
+        timeout_border, timeout_entry = create_bordered_entry(options_frame, textvariable=timeout_var)
+        timeout_border.grid(row=0, column=3, padx=5, sticky=tk.EW)
+        
+        # 确保标签列有足够的宽度
+        content_container.update_idletasks()
+        network_label_width = network_label.winfo_width()
+        thread_label_width = thread_label.winfo_width()
+        timeout_label_width = timeout_label.winfo_width()
+        content_container.grid_columnconfigure(0, minsize=max(network_label_width, thread_label_width, timeout_label_width) + 10)
         
         def on_scan():
             network = network_entry.get().strip()

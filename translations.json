@@ -1942,21 +1942,21 @@
   "network_address_cidr_format": {
     "zh": "网络地址 (CIDR)",
     "en": "Network Addr (CIDR)",
-    "ja": "ネットワークアドレス (CIDR)",
+    "ja": "ネットアドレス (CIDR)",
     "zh_tw": "網路位址 (CIDR)",
     "ko": "네트워크 주소 (CIDR)"
   },
   "thread_count": {
     "zh": "线程数",
     "en": "Thread Count",
-    "ja": "スレッド数",
+    "ja": "スレッド",
     "zh_tw": "執行緒數",
     "ko": "스레드 수"
   },
   "timeout_ms": {
     "zh": "超时时间 (毫秒)",
     "en": "Timeout (milliseconds)",
-    "ja": "タイムアウト (ミリ秒)",
+    "ja": "タイムアウト (ms)",
     "zh_tw": "逾時時間 (毫秒)",
     "ko": "타임아웃 (밀리초)"
   },
@@ -2010,11 +2010,11 @@
     "ko": "데이터 추가 준비 중..."
   },
   "start_scan": {
-    "zh": "开始扫描",
-    "en": "Start Scan",
-    "ja": "スキャン開始",
-    "zh_tw": "開始掃描",
-    "ko": "스캔 시작"
+    "zh": "扫描",
+    "en": "Scan",
+    "ja": "スキャン",
+    "zh_tw": "掃描",
+    "ko": "스캔"
   },
   "check_expired_ips": {
     "zh": "检查过期",
