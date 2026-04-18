@@ -11557,7 +11557,8 @@ class SubnetPlannerApp:
             
             # 配置对话框的行和列，移除默认的垂直居中设置
             # 清除所有现有的行配置
-            for i in range(dialog.content_frame.grid_size()[1]):  # 动态获取行数
+            rows = dialog.content_frame.grid_size()[1] if dialog.content_frame.grid_size()[1] > 0 else 1
+            for i in range(rows):  # 动态获取行数，确保至少执行一次
                 try:
                     dialog.content_frame.grid_rowconfigure(i, weight=0)
                 except:
@@ -14925,74 +14926,6 @@ class SubnetPlannerApp:
                     if len(error_details) > 5:
                         error_msg += f"\n...还有 {len(error_details) - 5} 个错误"
                 self.show_error(_('error'), error_msg)
-        elif action == 'edit':
-            # 编辑IP地址信息 - 只处理第一个选中的IP地址
-            # 因为编辑操作通常只针对单个IP地址
-            ip_item = selected_items[0]
-            ip_address = self.ipam_ip_tree.item(ip_item, 'values')[0]
-            # 获取记录ID（树项的ID）
-            record_id = ip_item
-            
-            # 首先获取当前IP地址的信息
-            try:
-                # 尝试将树项ID转换为整数
-                record_id_int = int(record_id)
-                # 根据记录ID获取特定记录的信息
-                ip_info = self.ipam.get_ip_record_by_id(record_id_int)
-            except ValueError:
-                # 如果树项ID不是整数，使用默认方法
-                ip_info = self.ipam.get_ip_info(ip_address)
-                record_id_int = None
-            
-            if ip_info:
-                # 显示编辑对话框
-                dialog = ComplexDialog(self.root, _('edit_ip'), 400, 200, resizable=False, modal=True)
-                
-                # 创建主框架
-                main_frame = ttk.Frame(dialog.content_frame, padding="10")
-                main_frame.pack(fill=tk.BOTH, expand=True)
-                
-                # 主机名输入
-                ttk.Label(main_frame, text=_('hostname')).grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
-                hostname_border, hostname_entry = create_bordered_entry(main_frame)
-                hostname_entry.insert(0, ip_info.get('hostname', ''))
-                hostname_border.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
-                
-                # 描述输入
-                ttk.Label(main_frame, text=_('description')).grid(row=1, column=0, sticky="e", pady=5, padx=(0, 10))
-                desc_border, description_entry = create_bordered_entry(main_frame)
-                description_entry.insert(0, ip_info.get('description', ''))
-                desc_border.grid(row=1, column=1, sticky="ew", pady=5, padx=(0, 10))
-                
-                def on_ok():
-                    hostname = hostname_entry.get().strip()
-                    description = description_entry.get().strip()
-                    mac_address = ip_info.get('mac_address', '')
-                    # 更新IP地址信息
-                    if record_id_int:
-                        # 使用记录ID更新特定记录
-                        success, message = self.ipam.update_ip_record(record_id_int, hostname, mac_address, description)
-                    else:
-                        # 使用默认方法更新
-                        success, message = self.ipam.update_ip_info(ip_address, hostname, description)
-                    if success:
-                        self.show_info(_('success'), message)
-                        # 刷新IPAM数据并恢复选中状态
-                        self.refresh_ipam_with_selection()
-                        dialog.destroy()
-                    else:
-                        self.show_error(_('error'), message)
-                
-                def on_cancel():
-                    dialog.destroy()
-                
-                # 添加按钮
-                dialog.add_button(_('ok'), on_ok, column=1)
-                dialog.add_button(_('cancel'), on_cancel, column=2)
-                
-                dialog.wait_window()
-            else:
-                self.show_error(_('error'), _('ip_not_found'))
     
     def sort_ip_table(self, column):
         """排序IP地址表格"""
