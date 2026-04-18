@@ -111,7 +111,7 @@ DIALOG_SELECT = (500, 300)          # 选择对话框
 DIALOG_SMALL = (400, 200)           # 小型对话框（简单表单）
 DIALOG_MEDIUM = (500, 300)          # 中型对话框（中等复杂度）
 DIALOG_LARGE = (700, 500)           # 大型对话框（复杂表单）
-DIALOG_TABLE = (800, 400)           # 数据表格对话框
+DIALOG_TABLE = (800, 600)           # 数据表格对话框
 
 # IPAM网络管理按钮数量
 NETWORK_MANAGEMENT_BUTTON_COUNT = 6
@@ -220,7 +220,7 @@ class DialogBase:
         
         # 按钮框架
         self.button_frame = ttk.Frame(self.main_frame)
-        self.button_frame.pack(fill=tk.X, pady=(5, 0))
+        self.button_frame.pack(fill=tk.X, pady=(0, 0))
         
         # 配置按钮框架的内部布局，使用pack而不是grid
         self.button_frame.pack_propagate(True)
@@ -3792,11 +3792,11 @@ class SubnetPlannerApp:
         font_family, font_size = get_current_font_settings()
         
         # 创建导入结果对话框
-        dialog = ComplexDialog(self.root, _("import_data"), 800, 400, resizable=True)
+        dialog = ComplexDialog(self.root, _("import_data"), 800, 600, resizable=True)
 
         dialog.dialog.focus_force()
 
-        main_frame = ttk.Frame(dialog.content_frame, padding="20")
+        main_frame = ttk.Frame(dialog.content_frame, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # 统计信息
@@ -3804,12 +3804,16 @@ class SubnetPlannerApp:
         total_count = len(data_list)
         valid_count = total_count - error_count
 
+        # 创建统计信息框架，左对齐显示
+        stats_frame = ttk.Frame(main_frame)
+        stats_frame.pack(fill=tk.X, pady=(0, 10))
+        
         summary_text = _("data_import_summary").format(total_count=total_count, valid_count=valid_count, error_count=error_count)
-        ttk.Label(main_frame, text=summary_text, font=(font_family, font_size, 'bold')).pack(pady=(0, 10))
+        ttk.Label(stats_frame, text=summary_text, font=(font_family, font_size)).pack(anchor=tk.W)
 
         # 创建表格显示所有数据
         tree_frame = ttk.Frame(main_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        tree_frame.pack(fill=tk.BOTH, expand=True)
 
         result_tree = ttk.Treeview(tree_frame, columns=("row", "name", "hosts", "status"),
                                   show="headings", height=12)
@@ -3871,20 +3875,18 @@ class SubnetPlannerApp:
         # 预先计算有效数据列表，避免在按钮点击时重复计算
         valid_data = [d for d in data_list if d.get("row", 0) not in error_dict]
 
-        # 导入到需求池表按钮
-        import_pool_btn = ttk.Button(dialog.content_frame, text=_("import_requirements_pool"),
-                                     command=lambda: self._import_valid_data(valid_data, "pool", dialog),
-                                     width=18)
-        import_pool_btn.pack(side=tk.LEFT, padx=5)
-
-        # 导入到子网需求表按钮
-        import_req_btn = ttk.Button(dialog.content_frame, text=_("import_subnet_requirements"),
-                                    command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
-                                    width=18)
-        import_req_btn.pack(side=tk.LEFT, padx=5)
-
-        # 取消按钮
-        dialog.add_button(_("cancel"), dialog.destroy, column=1)
+        # 使用dialog.button_frame放置按钮
+        # 左侧按钮
+        ttk.Button(dialog.button_frame, text=_('import_requirements_pool'),
+                  command=lambda: self._import_valid_data(valid_data, "pool", dialog),
+                  width=15).pack(side=tk.LEFT, padx=5)
+        ttk.Button(dialog.button_frame, text=_('import_subnet_requirements'),
+                  command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
+                  width=15).pack(side=tk.LEFT, padx=5)
+        # 右侧取消按钮
+        ttk.Button(dialog.button_frame, text=_('cancel'),
+                  command=dialog.destroy,
+                  width=10).pack(side=tk.RIGHT, padx=5)
 
     def _import_valid_data(self, valid_data, target_table, dialog=None):
         """导入有效数据
@@ -10863,37 +10865,45 @@ class SubnetPlannerApp:
             selected_networks = []
         
         # 创建窗口
-        dialog = ComplexDialog(self.root, _('ip_conflicts'), 800, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('ip_conflicts'), 800, 600, resizable=True, modal=True)
+        
+        # 设置字体
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
         
         # 创建主框架
         main_frame = ttk.Frame(dialog.content_frame, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        main_frame.grid_rowconfigure(0, weight=1)
-        main_frame.grid_columnconfigure(0, weight=1)
-        main_frame.grid_columnconfigure(1, weight=0)
         
-        # 创建结果树 - 添加ID列用于内部处理
-        columns = ('id', _('network'), _('ip_address'), _('status'), _('hostname'), _('mac_address'), _('description'), _('allocated_at'))
+        # 添加统计信息
+        stats_frame = ttk.Frame(main_frame)
+        stats_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 显示统计信息
+        stats_label = ttk.Label(stats_frame, text=f"共发现 {len(conflicts)} 个IP冲突", font=(font_family, font_size))
+        stats_label.pack(anchor=tk.W)
+        
+        # 创建结果树 - 不显示ID和网络地址列，使用item的iid存储ID
+        columns = ('ip_address', 'status', 'hostname', 'mac_address', 'description', 'allocated_at')
         tree = ttk.Treeview(main_frame, columns=columns, show='headings', selectmode='extended')
         
-        # 隐藏ID列
-        tree.column('id', width=0, stretch=False)
-        tree.heading('id', text='ID')
-        
         # 设置列宽
-        tree.column(_('network'), width=100, stretch=False)
-        tree.column(_('ip_address'), width=90, stretch=False)
-        tree.column(_('status'), width=60, stretch=False)
-        tree.column(_('hostname'), width=100, stretch=False)
-        tree.column(_('mac_address'), width=110, stretch=False)
-        tree.column(_('description'), width=100, stretch=True)
-        tree.column(_('allocated_at'), width=110, stretch=False)
+        tree.column('ip_address', width=90, stretch=False)
+        tree.column('status', width=60, stretch=False)
+        tree.column('hostname', width=100, stretch=False)
+        tree.column('mac_address', width=110, stretch=False)
+        tree.column('description', width=100, stretch=True)
+        tree.column('allocated_at', width=110, stretch=False)
         
         # 设置表头
-        for col in columns[1:]:  # 跳过ID列
-            tree.heading(col, text=col)
+        tree.heading('ip_address', text=_('ip_address'))
+        tree.heading('status', text=_('status'))
+        tree.heading('hostname', text=_('hostname'))
+        tree.heading('mac_address', text=_('mac_address'))
+        tree.heading('description', text=_('description'))
+        tree.heading('allocated_at', text=_('allocated_at'))
         
-        # 添加冲突数据
+        # 添加冲突数据，使用ID作为item的iid
         for conflict in conflicts:
             # 翻译状态值
             status = conflict['status']
@@ -10906,33 +10916,45 @@ class SubnetPlannerApp:
             else:
                 translated_status = status
             
-            tree.insert('', tk.END, values=(
-                conflict['id'],
-                conflict['network'],
+            # 处理分配时间，只显示日期部分
+            allocated_at = conflict.get('allocated_at', '')
+            if allocated_at:
+                # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
+                if ' ' in allocated_at:
+                    allocated_at = allocated_at.split(' ')[0]
+                elif 'T' in allocated_at:
+                    allocated_at = allocated_at.split('T')[0]
+            
+            tree.insert('', tk.END, iid=str(conflict['id']), values=(
                 conflict['ip_address'],
                 translated_status,
                 conflict['hostname'],
                 conflict.get('mac_address', ''),
                 conflict['description'],
-                conflict.get('allocated_at', '')
+                allocated_at
             ))
         
         # 添加滚动条
         scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
         
-        # 使用grid布局
-        tree.grid(row=0, column=0, sticky='nsew')
-        scrollbar.grid(row=0, column=1, sticky='ns')
+        # 创建滚动条回调函数，实现自动隐藏功能
+        def scrollbar_callback(*args):
+            scrollbar.set(*args)
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                scrollbar.pack_forget()
+            else:
+                scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # 统计信息 - 与表格内容右对齐
-        stats_frame = ttk.Frame(main_frame)
-        stats_frame.grid(row=1, column=0, sticky='ew', pady=5)
-        ttk.Label(stats_frame, text=f"{_('total_conflicts')}: {len(conflicts)}").pack(side=tk.RIGHT)
+        # 配置滚动条和Treeview
+        tree.configure(yscroll=scrollbar_callback)
+        scrollbar.config(command=tree.yview)
         
-        # 按钮框架
-        button_frame = ttk.Frame(dialog.content_frame)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
+        # 使用pack布局
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 初始调用回调函数
+        scrollbar_callback(0.0, 1.0)
         
         # 处理冲突按钮
         def handle_conflict():
@@ -10945,10 +10967,10 @@ class SubnetPlannerApp:
             selected_records = []
             for item in selected_items:
                 item_values = tree.item(item, 'values')
-                if len(item_values) >= 3:
+                if len(item_values) >= 1:
                     selected_records.append({
-                        'id': item_values[0],
-                        'ip_address': item_values[2]
+                        'id': item,  # 使用item的iid作为ID
+                        'ip_address': item_values[0]  # IP地址现在是第一个值
                     })
             
             # 打开冲突处理对话框（处理第一个选中的记录）
@@ -10956,10 +10978,12 @@ class SubnetPlannerApp:
                 first_record = selected_records[0]
                 self.show_conflict_resolution_dialog(dialog, tree, first_record['id'], first_record['ip_address'], conflicts, selected_records, selected_networks)
         
-        # 按钮
-        ttk.Button(button_frame, text=_('handle_conflict'), command=handle_conflict).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text=_('refresh'), command=lambda: self.refresh_conflicts(tree, conflicts, selected_networks)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text=_('close'), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        # 使用dialog.button_frame放置按钮
+        # 左侧按钮
+        ttk.Button(dialog.button_frame, text=_('handle_conflict'), command=handle_conflict).pack(side=tk.LEFT, padx=5)
+        ttk.Button(dialog.button_frame, text=_('refresh'), command=lambda: self.refresh_conflicts(tree, conflicts, selected_networks)).pack(side=tk.LEFT, padx=5)
+        # 右侧关闭按钮
+        ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
     
     def show_conflict_resolution_dialog(self, parent_dialog, tree, ip_id, ip_address, conflicts, selected_records=None, selected_networks=None):
         """显示冲突处理对话框
@@ -11176,14 +11200,22 @@ class SubnetPlannerApp:
                 else:
                     translated_status = status
                 
-                tree.insert('', tk.END, values=(
-                    conflict['id'],
-                    conflict['network'],
+                # 处理分配时间，只显示日期部分
+                allocated_at = conflict.get('allocated_at', '')
+                if allocated_at:
+                    # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
+                    if ' ' in allocated_at:
+                        allocated_at = allocated_at.split(' ')[0]
+                    elif 'T' in allocated_at:
+                        allocated_at = allocated_at.split('T')[0]
+                
+                tree.insert('', tk.END, iid=str(conflict['id']), values=(
                     conflict['ip_address'],
                     translated_status,
                     conflict['hostname'],
+                    conflict.get('mac_address', ''),
                     conflict['description'],
-                    conflict.get('allocated_at', '')
+                    allocated_at
                 ))
             
             # 如果没有冲突了，显示提示
@@ -11338,12 +11370,24 @@ class SubnetPlannerApp:
             from style_manager import get_current_font_settings
             font_family, font_size = get_current_font_settings()
 
-            dialog = ComplexDialog(self.root, _('import_data'), 800, 400, resizable=True, modal=True)
+            dialog = ComplexDialog(self.root, _('import_data'), 800, 600, resizable=True, modal=True)
             dialog.dialog.focus_force()
 
-            main_frame = ttk.Frame(dialog.content_frame, padding="20")
+            # 清除content_frame的默认网格配置（取消垂直居中）
+            for i in range(101):  # 清除DialogBase中设置的101行
+                try:
+                    dialog.content_frame.grid_rowconfigure(i, weight=0)
+                except:
+                    pass
+
+            main_frame = ttk.Frame(dialog.content_frame)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
+            # 构建标签页内容（占据主要空间）
+            notebook = ColoredNotebook(main_frame, style=self.style)
+            notebook.pack(fill=tk.BOTH, expand=True)
+
+            # 计算数据统计
             net_data = validated_data['networks']
             ip_data = validated_data['ips']
             net_new = len(net_data['new'])
@@ -11356,14 +11400,13 @@ class SubnetPlannerApp:
             net_summary = f"{_('network_data_summary')}: {_('new_count')}={net_new}, {_('existing_count')}={net_existing}, {_('invalid_count')}={net_invalid}"
             ip_summary = f"{_('ip_data_summary')}: {_('new_count')}={ip_new}, {_('existing_count')}={ip_existing}, {_('invalid_count')}={ip_invalid}"
 
-            notebook = ColoredNotebook(main_frame, style=self.style)
-            notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-
             net_tab = ttk.Frame(notebook.content_area, padding="2", style=notebook.light_blue_style)
+            net_tab.pack(fill=tk.BOTH, expand=True)
             self._build_compare_table(net_tab, net_data, 'network')
             notebook.add_tab(f"{_('network_sheet_name')} ({net_new + net_existing + net_invalid})", net_tab, "#e3f2fd")
 
             ip_tab = ttk.Frame(notebook.content_area, padding="2", style=notebook.light_green_style)
+            ip_tab.pack(fill=tk.BOTH, expand=True)
             self._build_compare_table(ip_tab, ip_data, 'ip')
             notebook.add_tab(f"{_('ip_sheet_name')} ({ip_new + ip_existing + ip_invalid})", ip_tab, "#e8f5e9")
 
@@ -11371,32 +11414,36 @@ class SubnetPlannerApp:
                 current_width = tab["button"].cget("width")
                 tab["button"].config(width=int(current_width * 1.5))
 
-            bottom_frame = ttk.Frame(main_frame)
-            bottom_frame.pack(fill=tk.X)
-
             import_net_var = tk.BooleanVar(value=net_new > 0 or net_existing > 0)
             import_ip_var = tk.BooleanVar(value=ip_new > 0 or ip_existing > 0)
             overwrite_var = tk.BooleanVar(value=False)
 
-            check_frame = ttk.Frame(bottom_frame)
+            # 底部控件放入dialog.button_frame，天然在对话框底部
+            # 左侧放置复选框和统计信息
+            left_frame = ttk.Frame(dialog.button_frame)
+            left_frame.pack(side=tk.LEFT, fill=tk.Y)
+
+            # 复选框
+            check_frame = ttk.Frame(left_frame)
             check_frame.pack(fill=tk.X, pady=(0, 5))
 
             ttk.Checkbutton(check_frame, text=_('import_network_data'), variable=import_net_var).pack(side=tk.LEFT, padx=10)
             ttk.Checkbutton(check_frame, text=_('import_ip_data'), variable=import_ip_var).pack(side=tk.LEFT, padx=10)
             ttk.Checkbutton(check_frame, text=_('overwrite_existing'), variable=overwrite_var).pack(side=tk.LEFT, padx=10)
 
-            btn_frame = ttk.Frame(bottom_frame)
-            btn_frame.pack(fill=tk.X)
-
-            summary_label_frame = ttk.Frame(btn_frame)
-            summary_label_frame.pack(side=tk.LEFT, padx=10)
+            # 统计信息
+            summary_label_frame = ttk.Frame(left_frame)
+            summary_label_frame.pack(fill=tk.X)
 
             ttk.Label(summary_label_frame, text=net_summary, font=(font_family, font_size - 2)).pack(anchor=tk.W)
             ttk.Label(summary_label_frame, text=ip_summary, font=(font_family, font_size - 2)).pack(anchor=tk.W)
 
-            ttk.Button(btn_frame, text=_('import'),
+            # 右侧放置导入按钮（靠右下）
+            btn_container = ttk.Frame(dialog.button_frame)
+            btn_container.pack(side=tk.RIGHT, fill=tk.Y)
+            ttk.Button(btn_container, text=_('import'),
                       command=lambda: self._execute_import(dialog, validated_data,
-                                                           import_net_var, import_ip_var, overwrite_var)).pack(side=tk.RIGHT, padx=5)
+                                                           import_net_var, import_ip_var, overwrite_var)).pack(side=tk.BOTTOM)
 
         except Exception as e:
             self.show_error(_('error'), f"显示比对对话框失败: {str(e)}")
@@ -11417,7 +11464,8 @@ class SubnetPlannerApp:
                 headers = (_('col_ip_address'), _('col_status'), _('col_hostname'),
                           _('col_mac_address'), _('col_description'), _('col_compare_status'))
 
-            tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=10)
+            # 不限制高度，让表格自适应窗口大小
+            tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
             for col, header in zip(columns, headers):
                 tree.heading(col, text=header)
                 tree.column(col, width=100, minwidth=60)
@@ -11557,8 +11605,9 @@ class SubnetPlannerApp:
             
             # 配置对话框的行和列，移除默认的垂直居中设置
             # 清除所有现有的行配置
+            # 注意：grid_size()[1]可能返回0（空框架），需要确保至少执行一次循环
             rows = dialog.content_frame.grid_size()[1] if dialog.content_frame.grid_size()[1] > 0 else 1
-            for i in range(rows):  # 动态获取行数，确保至少执行一次
+            for i in range(rows):
                 try:
                     dialog.content_frame.grid_rowconfigure(i, weight=0)
                 except:
@@ -15146,7 +15195,7 @@ class SubnetPlannerApp:
             available_ips: 可用IP地址列表
         """
         # 创建对话框
-        dialog = ComplexDialog(self.root, _('available_ips_detected'), 800, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('available_ips_detected'), 800, 600, resizable=True, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
@@ -15169,24 +15218,36 @@ class SubnetPlannerApp:
         
         # 创建滚动条
         scrollbar = ttk.Scrollbar(main_frame)
+        
+        # 创建树状视图 - 不显示网络地址列
+        tree = ttk.Treeview(main_frame, columns=('ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), show="headings")
+        
+        # 创建滚动条回调函数，实现自动隐藏功能
+        def scrollbar_callback(*args):
+            scrollbar.set(*args)
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                scrollbar.pack_forget()
+            else:
+                scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 配置滚动条和Treeview
+        tree.configure(yscrollcommand=scrollbar_callback)
+        scrollbar.config(command=tree.yview)
+        
+        # 使用pack布局
+        tree.pack(fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # 创建树状视图
-        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
-        tree.pack(fill=tk.BOTH, expand=True)
+        # 初始调用回调函数
+        scrollbar_callback(0.0, 1.0)
         
         # 配置列
-        tree.heading('#0', text='')
-        tree.heading('network', text=_('network'))
         tree.heading('ip_address', text=_('ip_address'))
         tree.heading('status', text=_('status'))
         tree.heading('hostname', text=_('hostname'))
         tree.heading('mac_address', text=_('mac_address'))
         tree.heading('description', text=_('description'))
         tree.heading('expiry_date', text=_('expiry_date'))
-        
-        tree.column('#0', width=0, stretch=tk.NO)
-        tree.column('network', width=100, stretch=False)
         tree.column('ip_address', width=90, stretch=False)
         tree.column('status', width=60, stretch=False)
         tree.column('hostname', width=100, stretch=False)
@@ -15213,29 +15274,35 @@ class SubnetPlannerApp:
             else:
                 translated_status = status
             
-            tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status, 
+            # 处理过期日期，只显示日期部分
+            expiry_date = ip['expiry_date'] or ''
+            if expiry_date:
+                # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
+                if ' ' in expiry_date:
+                    expiry_date = expiry_date.split(' ')[0]
+                elif 'T' in expiry_date:
+                    expiry_date = expiry_date.split('T')[0]
+            
+            tree.insert('', tk.END, values=(ip['ip_address'], translated_status, 
                                            ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                           ip['description'] or '', ip['expiry_date'] or ''))
+                                           ip['description'] or '', expiry_date))
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
         
-        # 创建按钮框架
-        button_frame = ttk.Frame(dialog.content_frame, padding=10)
-        button_frame.pack(fill=tk.X)
-        
-        # 创建清理选中按钮
-        cleanup_selected_button = ttk.Button(button_frame, text=_('cleanup_selected'), 
+        # 使用dialog.button_frame放置按钮
+        # 左侧按钮
+        cleanup_selected_button = ttk.Button(dialog.button_frame, text=_('cleanup_selected'), 
                                            command=lambda: self.cleanup_selected_available_ips(tree, dialog, available_ips))
         cleanup_selected_button.pack(side=tk.LEFT, padx=5)
         
         # 创建全部清理按钮
-        cleanup_all_button = ttk.Button(button_frame, text=_('cleanup_all'), 
+        cleanup_all_button = ttk.Button(dialog.button_frame, text=_('cleanup_all'), 
                                       command=lambda: self.cleanup_all_available_ips(dialog, available_ips))
         cleanup_all_button.pack(side=tk.LEFT, padx=5)
         
-        # 创建关闭按钮
-        cancel_button = ttk.Button(button_frame, text=_('close'), command=dialog.destroy)
+        # 右侧关闭按钮
+        cancel_button = ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
     
     def cleanup_selected_available_ips(self, tree, dialog, available_ips):
@@ -15329,15 +15396,24 @@ class SubnetPlannerApp:
             else:
                 translated_status = status
             
+            # 处理过期日期，只显示日期部分
+            expiry_date = ip.get('expiry_date', '') or ''
+            if expiry_date:
+                # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
+                if ' ' in expiry_date:
+                    expiry_date = expiry_date.split(' ')[0]
+                elif 'T' in expiry_date:
+                    expiry_date = expiry_date.split('T')[0]
+            
             record_id = ip.get('id', None)
             if record_id:
-                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
+                tree.insert('', tk.END, iid=str(record_id), values=(ip['ip_address'], translated_status,
                                                                     ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                                                    ip['description'] or '', ip.get('expiry_date', '') or ''))
+                                                                    ip['description'] or '', expiry_date))
             else:
-                tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
+                tree.insert('', tk.END, values=(ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                                ip['description'] or '', ip.get('expiry_date', '') or ''))
+                                                ip['description'] or '', expiry_date))
     
     def cleanup_all_available_ips(self, dialog, available_ips):
         """清理所有可用IP地址
@@ -15380,7 +15456,7 @@ class SubnetPlannerApp:
             expired_ips: 过期IP地址列表
         """
         # 创建对话框
-        dialog = ComplexDialog(self.root, _('expired_ips_detected'), 800, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('expired_ips_detected'), 800, 600, resizable=True, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
@@ -15403,24 +15479,36 @@ class SubnetPlannerApp:
         
         # 创建滚动条
         scrollbar = ttk.Scrollbar(main_frame)
+        
+        # 创建树状视图 - 不显示网络地址列
+        tree = ttk.Treeview(main_frame, columns=('ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), show="headings")
+        
+        # 创建滚动条回调函数，实现自动隐藏功能
+        def scrollbar_callback(*args):
+            scrollbar.set(*args)
+            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                scrollbar.pack_forget()
+            else:
+                scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 配置滚动条和Treeview
+        tree.configure(yscrollcommand=scrollbar_callback)
+        scrollbar.config(command=tree.yview)
+        
+        # 使用pack布局
+        tree.pack(fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # 创建树状视图
-        tree = ttk.Treeview(main_frame, columns=('network', 'ip_address', 'status', 'hostname', 'mac_address', 'description', 'expiry_date'), yscrollcommand=scrollbar.set)
-        tree.pack(fill=tk.BOTH, expand=True)
+        # 初始调用回调函数
+        scrollbar_callback(0.0, 1.0)
         
         # 配置列
-        tree.heading('#0', text='')
-        tree.heading('network', text=_('network'))
         tree.heading('ip_address', text=_('ip_address'))
         tree.heading('status', text=_('status'))
         tree.heading('hostname', text=_('hostname'))
         tree.heading('mac_address', text=_('mac_address'))
         tree.heading('description', text=_('description'))
         tree.heading('expiry_date', text=_('expiry_date'))
-        
-        tree.column('#0', width=0, stretch=tk.NO)
-        tree.column('network', width=100, stretch=False)
         tree.column('ip_address', width=90, stretch=False)
         tree.column('status', width=60, stretch=False)
         tree.column('hostname', width=100, stretch=False)
@@ -15447,41 +15535,47 @@ class SubnetPlannerApp:
             else:
                 translated_status = status
             
+            # 处理过期日期，只显示日期部分
+            expiry_date = ip['expiry_date'] or ''
+            if expiry_date:
+                # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
+                if ' ' in expiry_date:
+                    expiry_date = expiry_date.split(' ')[0]
+                elif 'T' in expiry_date:
+                    expiry_date = expiry_date.split('T')[0]
+            
             # 使用记录ID作为树项的ID
             record_id = ip.get('id', None)
             if record_id:
-                tree.insert('', tk.END, iid=str(record_id), values=(network, ip['ip_address'], translated_status,
+                tree.insert('', tk.END, iid=str(record_id), values=(ip['ip_address'], translated_status,
                                                                     ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                                                    ip['description'] or '', ip['expiry_date'] or ''))
+                                                                    ip['description'] or '', expiry_date))
             else:
-                tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
+                tree.insert('', tk.END, values=(ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                                ip['description'] or '', ip['expiry_date'] or ''))
+                                                ip['description'] or '', expiry_date))
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
         
-        # 创建按钮框架
-        button_frame = ttk.Frame(dialog.content_frame, padding=10)
-        button_frame.pack(fill=tk.X)
-        
-        # 创建释放按钮
-        release_button = ttk.Button(button_frame, text=_('release_selected'), 
+        # 使用dialog.button_frame放置按钮
+        # 左侧按钮
+        release_button = ttk.Button(dialog.button_frame, text=_('release_selected'), 
                                    command=lambda: self.release_selected_expired_ips(tree, dialog, expired_ips))
         release_button.pack(side=tk.LEFT, padx=5)
         
         # 创建延期按钮
-        extend_button = ttk.Button(button_frame, text=_('extend_expiry'), 
+        extend_button = ttk.Button(dialog.button_frame, text=_('extend_expiry'), 
                                   command=lambda: self.extend_selected_expired_ips(tree, dialog, expired_ips))
         extend_button.pack(side=tk.LEFT, padx=5)
         
         # 创建全部释放按钮
-        release_all_button = ttk.Button(button_frame, text=_('release_all'), 
+        release_all_button = ttk.Button(dialog.button_frame, text=_('release_all'), 
                                       command=lambda: self.release_all_expired_ips(dialog, expired_ips))
         release_all_button.pack(side=tk.LEFT, padx=5)
         
-        # 创建关闭按钮
-        cancel_button = ttk.Button(button_frame, text=_('close'), command=dialog.destroy)
+        # 右侧关闭按钮
+        cancel_button = ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
     
     def release_selected_expired_ips(self, tree, dialog, expired_ips):
@@ -15913,7 +16007,7 @@ class SubnetPlannerApp:
             # 修复日历弹窗在主窗口置顶时被遮挡的问题
             def set_calendar_topmost():
                 # 查找日历弹窗并设置置顶属性
-                for window in dialog.winfo_children():
+                for window in dialog.dialog.winfo_children():
                     if hasattr(window, 'winfo_children'):
                         for child in window.winfo_children():
                             if child.winfo_class() == 'Toplevel':
@@ -15923,7 +16017,7 @@ class SubnetPlannerApp:
             # 绑定事件，使用ButtonRelease-1避免干扰内部处理
             def on_date_entry_release(event):
                 # 延迟执行，等待日历弹窗创建
-                dialog.after(100, set_calendar_topmost)
+                dialog.dialog.after(100, set_calendar_topmost)
             
             # 绑定释放事件
             date_entry.bind('<ButtonRelease-1>', on_date_entry_release)
