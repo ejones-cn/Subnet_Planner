@@ -671,10 +671,10 @@ class ComplexDialog(DialogBase):
         from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
-        # 添加标签
+        # 添加标签（自动添加冒号）
         label_widget = ttk.Label(
             self.content_frame, 
-            text=label, 
+            text=label + ':', 
             font=(font_family, font_size)
         )
         label_widget.grid(row=row, column=column, sticky="e", pady=10, padx=(0, 15))
