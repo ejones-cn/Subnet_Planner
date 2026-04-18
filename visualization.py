@@ -1202,7 +1202,7 @@ class NetworkTopologyVisualizer:
         # 重新计算所有节点的位置，确保父节点垂直居中在子节点中间
         self._reposition_all_nodes()
         
-        # 更新滚动区域（不强制update，避免闪现）
+        # 更新滚动区域：使用update_idletasks()替代update()以避免不必要的重绘和视觉闪烁
         self.canvas.update_idletasks()
         bbox = self.canvas.bbox(tk.ALL)
         if bbox:
