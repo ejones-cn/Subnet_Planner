@@ -3353,7 +3353,7 @@ class SubnetPlannerApp:
 
         # 子网名称 - 标签在中间列左侧，输入框在中间列右侧
         name_var = tk.StringVar()
-        label, name_entry = dialog.add_field(_("subnet_name") + ":", 1, 1, width=20)
+        label, name_entry = dialog.add_field(_("subnet_name"), 1, 1, width=20)
         name_entry.config(textvariable=name_var)
         # 自动获得焦点，方便直接输入
         name_entry.focus_set()
@@ -3368,7 +3368,7 @@ class SubnetPlannerApp:
 
         # 主机数量 - 标签在中间列左侧，输入框在中间列右侧
         hosts_var = tk.StringVar()
-        label, hosts_entry = dialog.add_field(_("host_count") + ":", 2, 1, width=20)
+        label, hosts_entry = dialog.add_field(_("host_count"), 2, 1, width=20)
         hosts_entry.config(textvariable=hosts_var)
 
         # 为主机数量添加验证
@@ -11550,14 +11550,7 @@ class SubnetPlannerApp:
     
 
     
-    def restore_ipam_data(self):
-        """恢复IPAM数据"""
-        try:
-            # 显示备份管理界面
-            self.show_backup_manager()
-        except Exception as e:
-            self.show_error(_('error'), f"{_('restore_failed')}: {str(e)}")
-    
+
     def backup_restore_data(self):
         """备份/恢复数据对话框"""
         try:
@@ -11787,93 +11780,7 @@ class SubnetPlannerApp:
         except Exception as e:
             self.show_error(_('error'), f"操作失败: {str(e)}")
     
-    def show_backup_manager(self):
-        """显示备份管理界面"""
-        # 创建备份管理对话框
-        dialog = ComplexDialog(self.root, "备份管理", 600, 400, resizable=True, modal=True)
-        
-        # 备份列表
-        ttk.Label(dialog.content_frame, text=_('backup_file_list'), font=('微软雅黑', 10, 'bold')).pack(pady=10)
-        
-        # 创建树状视图显示备份信息
-        backup_tree = ttk.Treeview(dialog.content_frame, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
-        backup_tree.heading('filename', text=_('file_name'))
-        backup_tree.heading('backup_time', text=_('backup_time'))
-        backup_tree.heading('network_count', text=_('network_count'))
-        backup_tree.heading('ip_count', text=_('ip_count'))
-        
-        backup_tree.column('filename', width=200)
-        backup_tree.column('backup_time', width=150)
-        backup_tree.column('network_count', width=80, anchor=tk.CENTER)
-        backup_tree.column('ip_count', width=80, anchor=tk.CENTER)
-        
-        # 添加滚动条
-        scrollbar = ttk.Scrollbar(dialog.content_frame, orient=tk.VERTICAL, command=backup_tree.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        backup_tree.configure(yscrollcommand=scrollbar.set)
-        backup_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        # 加载备份列表
-        backups = self.ipam.list_backups()
-        for backup in backups:
-            filename = backup['filename']
-            info = backup['info']
-            backup_tree.insert('', tk.END, values=(
-                filename,
-                info.get('backup_time', ''),
-                info.get('network_count', 0),
-                info.get('ip_count', 0)
-            ), tags=(backup['file_path'],))
-        
-        # 按钮
-        button_frame = ttk.Frame(dialog.content_frame)
-        button_frame.pack(pady=10)
-        
-        def on_restore():
-            selected_items = backup_tree.selection()
-            if not selected_items:
-                self.show_info(_('hint'), "请选择要恢复的备份")
-                return
-            
-            item = selected_items[0]
-            file_path = backup_tree.item(item, 'tags')[0]
-            
-            # 确认恢复
-            confirm = messagebox.askyesno("确认", f"确定要恢复备份: {backup_tree.item(item, 'values')[0]} 吗？")
-            if confirm:
-                if self.ipam.restore_data(file_path):
-                    self.show_info(_('success'), f"数据恢复成功: {file_path}")
-                    self.refresh_ipam_networks()
-                    self.refresh_ipam_stats()
-                    dialog.destroy()
-                else:
-                    self.show_error(_('error'), "数据恢复失败")
-        
-        def on_delete():
-            selected_items = backup_tree.selection()
-            if not selected_items:
-                self.show_info(_('hint'), "请选择要删除的备份")
-                return
-            
-            item = selected_items[0]
-            file_path = backup_tree.item(item, 'tags')[0]
-            filename = backup_tree.item(item, 'values')[0]
-            
-            # 确认删除
-            confirm = messagebox.askyesno("确认", f"确定要删除备份: {filename} 吗？")
-            if confirm:
-                try:
-                    import os
-                    os.remove(file_path)
-                    backup_tree.delete(item)
-                    self.show_info(_('success'), "备份删除成功")
-                except Exception as e:
-                    self.show_error(_('error'), f"删除失败: {str(e)}")
-        
-        ttk.Button(button_frame, text="恢复", command=on_restore).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="删除", command=on_delete).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="关闭", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def auto_scan_network(self):
         """自动扫描网络"""
         # 创建自动扫描网络对话框
@@ -16212,25 +16119,25 @@ class SubnetPlannerApp:
         
         # 主机名输入
         hostname_row = 0 if not show_ip_input else 1
-        ttk.Label(main_frame, text=_('hostname')).grid(row=hostname_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        ttk.Label(main_frame, text=_('hostname') + ':').grid(row=hostname_row, column=0, sticky="e", pady=5, padx=(0, 10))
         hostname_border, hostname_entry = create_bordered_entry(main_frame)
         hostname_border.grid(row=hostname_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
         # MAC地址输入
         mac_row = 1 if not show_ip_input else 2
-        ttk.Label(main_frame, text=_('mac_address')).grid(row=mac_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        ttk.Label(main_frame, text=_('mac_address') + ':').grid(row=mac_row, column=0, sticky="e", pady=5, padx=(0, 10))
         mac_border, mac_entry = create_bordered_entry(main_frame)
         mac_border.grid(row=mac_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
         # 描述输入
         desc_row = 2 if not show_ip_input else 3
-        ttk.Label(main_frame, text=_('description')).grid(row=desc_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        ttk.Label(main_frame, text=_('description') + ':').grid(row=desc_row, column=0, sticky="e", pady=5, padx=(0, 10))
         desc_border, description_entry = create_bordered_entry(main_frame)
         desc_border.grid(row=desc_row, column=1, sticky="ew", pady=5, padx=(0, 10))
         
         # 过期日期输入
         expiry_row = 3 if not show_ip_input else 4
-        ttk.Label(main_frame, text=_('expiry_date')).grid(row=expiry_row, column=0, sticky="e", pady=5, padx=(0, 10))
+        ttk.Label(main_frame, text=_('expiry_date') + ':').grid(row=expiry_row, column=0, sticky="e", pady=5, padx=(0, 10))
         
         if DateEntry:
             # 使用DateEntry选择日期
@@ -16246,7 +16153,7 @@ class SubnetPlannerApp:
         
         # IP地址输入
         if show_ip_input:
-            ttk.Label(main_frame, text=_('ip_address')).grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
+            ttk.Label(main_frame, text=_('ip_address') + ':').grid(row=0, column=0, sticky="e", pady=5, padx=(0, 10))
             ip_border, ip_entry = create_bordered_entry(main_frame)
             ip_border.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
             
