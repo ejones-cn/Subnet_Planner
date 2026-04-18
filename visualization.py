@@ -1144,9 +1144,6 @@ class NetworkTopologyVisualizer:
         # 重置缩放标志，允许新的自适应缩放
         self._scaled = False
         
-        # 临时移除画布，防止绘制过程中的闪现
-        self.canvas.pack_forget()
-        
         self.clear()
         
         # 存储节点ID映射
@@ -1202,98 +1199,233 @@ class NetworkTopologyVisualizer:
         # 重新计算所有节点的位置，确保父节点垂直居中在子节点中间
         self._reposition_all_nodes()
         
-        # 更新滚动区域：使用update_idletasks()替代update()以避免不必要的重绘和视觉闪烁
+        # 隐藏所有画布内容（防止闪现），但保持画布可见以获取正确尺寸
+        self._hide_all_canvas_items()
+        
+        # 确保画布可见，以便获取正确的尺寸
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # 延迟执行缩放和显示，确保画布已完成布局
+        self.canvas.after(50, self._finish_draw_with_correct_size)
+    
+    def _hide_all_canvas_items(self):
+        """隐藏画布上所有可见元素，防止缩放过程中的闪现"""
+        for item_id in self.canvas.find_all():
+            self.canvas.itemconfigure(item_id, state='hidden')
+    
+    def _show_all_canvas_items(self):
+        """显示画布上所有元素"""
+        for item_id in self.canvas.find_all():
+            self.canvas.itemconfigure(item_id, state='normal')
+    
+    def _finish_draw_with_correct_size(self):
+        """在画布可见状态下完成缩放计算和显示
+        
+        画布此时已经可见（pack状态），可以获取到正确的尺寸，
+        但所有内容元素处于hidden状态，用户看不到未缩放的内容。
+        """
         self.canvas.update_idletasks()
-        bbox = self.canvas.bbox(tk.ALL)
-        if bbox:
-            x1, y1, x2, y2 = bbox
-            content_width = x2 - x1
-            content_height = y2 - y1
-            padding = 30
-            
-            # 获取画布可视区域尺寸
-            self.canvas.update_idletasks()
-            canvas_width = self.canvas.winfo_width()
-            canvas_height = self.canvas.winfo_height()
-            
-            # 如果画布尺寸未初始化，尝试从父容器获取
-            if canvas_width <= 1 or canvas_height <= 1:
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        
+        # 如果画布尺寸还没有正确获取，尝试从父容器获取
+        if canvas_width <= 1 or canvas_height <= 1:
+            try:
                 parent = self.canvas.nametowidget(self.canvas.winfo_parent())
                 if parent:
                     parent.update_idletasks()
                     canvas_width = parent.winfo_width()
                     canvas_height = parent.winfo_height()
-            
-            # 如果仍然无法获取有效尺寸，延迟重试
-            if canvas_width <= 1 or canvas_height <= 1:
-                self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
-                self.canvas.xview_moveto(0)
-                self.canvas.yview_moveto(0)
-                # 先重新显示画布，再延迟执行缩放
-                self.canvas.pack(fill=tk.BOTH, expand=True)
-                self.canvas.after(200, self._auto_scale_canvas)
-                return
-            
-            # 计算缩放比例
-            scale_x = (canvas_width - 2 * padding) / content_width if content_width > 0 else 1.0
-            scale_y = (canvas_height - 2 * padding) / content_height if content_height > 0 else 1.0
-            scale_factor = min(scale_x, scale_y)
-            scale_factor = max(0.5, min(scale_factor, 1.0))
-            
-            # 应用缩放
-            if scale_factor < 1.0:
-                self.canvas.move(tk.ALL, -x1, -y1)
-                self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
-                
-                scaled_width = content_width * scale_factor
-                scaled_height = content_height * scale_factor
-                
-                if scaled_width <= canvas_width - 2 * padding:
-                    target_x = (canvas_width - scaled_width) / 2
-                else:
-                    target_x = padding
-                
-                if scaled_height <= canvas_height - 2 * padding:
-                    target_y = (canvas_height - scaled_height) / 2
-                else:
-                    target_y = padding
-                
-                self.canvas.move(tk.ALL, target_x, target_y)
-                
-                self.scale = scale_factor
-                if hasattr(self, 'scale_label') and self.scale_label:
-                    self.scale_label.config(text=f"{int(self.scale * 100)}%")
-            else:
-                # 不需要缩放，也要居中
-                self.canvas.move(tk.ALL, -x1, -y1)
-                
-                if content_width <= canvas_width - 2 * padding:
-                    target_x = (canvas_width - content_width) / 2
-                else:
-                    target_x = padding
-                
-                if content_height <= canvas_height - 2 * padding:
-                    target_y = (canvas_height - content_height) / 2
-                else:
-                    target_y = padding
-                
-                self.canvas.move(tk.ALL, target_x, target_y)
-            
-            # 更新滚动区域
-            final_bbox = self.canvas.bbox(tk.ALL)
-            if final_bbox:
-                self.canvas.config(scrollregion=(
-                    0, 0,
-                    max(canvas_width, final_bbox[2] + padding),
-                    max(canvas_height, final_bbox[3] + padding)
-                ))
-            
-            self.canvas.xview_moveto(0)
-            self.canvas.yview_moveto(0)
-        else:
-            self.canvas.config(scrollregion=(0, 0, 1000, 800))
+            except tk.TclError:
+                pass
         
-        # 重新显示画布
+        # 如果仍然无法获取有效尺寸，延迟重试
+        if canvas_width <= 1 or canvas_height <= 1:
+            self.canvas.after(50, self._finish_draw_with_correct_size)
+            return
+        
+        # 获取内容边界框
+        bbox = self.canvas.bbox(tk.ALL)
+        if not bbox:
+            self._show_all_canvas_items()
+            return
+        
+        x1, y1, x2, y2 = bbox
+        content_width = x2 - x1
+        content_height = y2 - y1
+        padding = 30
+        
+        if content_width <= 0 or content_height <= 0:
+            self._show_all_canvas_items()
+            return
+        
+        # 计算缩放比例（标准范围50%-100%）
+        scale_x = (canvas_width - 2 * padding) / content_width
+        scale_y = (canvas_height - 2 * padding) / content_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(0.5, min(scale_factor, 1.0))
+        
+        # 应用缩放（此时内容仍为hidden状态，用户看不到变换过程）
+        if scale_factor < 1.0:
+            self.canvas.move(tk.ALL, -x1, -y1)
+            self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
+            
+            scaled_width = content_width * scale_factor
+            scaled_height = content_height * scale_factor
+            
+            if scaled_width <= canvas_width - 2 * padding:
+                target_x = (canvas_width - scaled_width) / 2
+            else:
+                target_x = padding
+            
+            if scaled_height <= canvas_height - 2 * padding:
+                target_y = (canvas_height - scaled_height) / 2
+            else:
+                target_y = padding
+            
+            self.canvas.move(tk.ALL, target_x, target_y)
+            
+            self.scale = scale_factor
+            if hasattr(self, 'scale_label') and self.scale_label:
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 不需要缩放，居中即可
+            self.canvas.move(tk.ALL, -x1, -y1)
+            
+            if content_width <= canvas_width - 2 * padding:
+                target_x = (canvas_width - content_width) / 2
+            else:
+                target_x = padding
+            
+            if content_height <= canvas_height - 2 * padding:
+                target_y = (canvas_height - content_height) / 2
+            else:
+                target_y = padding
+            
+            self.canvas.move(tk.ALL, target_x, target_y)
+        
+        # 更新滚动区域
+        final_bbox = self.canvas.bbox(tk.ALL)
+        if final_bbox:
+            self.canvas.config(scrollregion=(
+                0, 0,
+                max(canvas_width, final_bbox[2] + padding),
+                max(canvas_height, final_bbox[3] + padding)
+            ))
+        
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+        
+        # 缩放完成后再显示所有内容（用户直接看到最终结果）
+        self._show_all_canvas_items()
+        
+        # 重置首次绘制标志
+        if self._is_first_draw:
+            self._is_first_draw = False
+    
+    def _delayed_finish_draw(self):
+        """延迟完成绘制流程（当画布尺寸未初始化时调用）
+        
+        智能等待画布尺寸稳定后，完成精确的缩放操作并显示画布
+        """
+        self.canvas.update_idletasks()
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        
+        # 如果画布尺寸还没有正确获取，尝试从父容器获取
+        if canvas_width <= 1 or canvas_height <= 1:
+            parent = self.canvas.nametowidget(self.canvas.winfo_parent())
+            if parent:
+                parent.update_idletasks()
+                canvas_width = parent.winfo_width()
+                canvas_height = parent.winfo_height()
+        
+        # 如果仍然无法获取有效尺寸，继续延迟重试
+        if canvas_width <= 1 or canvas_height <= 1:
+            self.canvas.after(100, self._delayed_finish_draw)
+            return
+        
+        # 首次加载时，验证尺寸是否足够大（确保GUI完全渲染）
+        # 合理的画布宽度应该至少为300像素
+        if self._is_first_draw and canvas_width < 300:
+            # 再次延迟100ms重试
+            self.canvas.after(100, self._delayed_finish_draw)
+            return
+        
+        # 获取内容边界框
+        bbox = self.canvas.bbox(tk.ALL)
+        if not bbox:
+            # 没有内容，直接显示画布
+            self.canvas.pack(fill=tk.BOTH, expand=True)
+            return
+        
+        x1, y1, x2, y2 = bbox
+        content_width = x2 - x1
+        content_height = y2 - y1
+        padding = 30
+        
+        if content_width <= 0 or content_height <= 0:
+            self.canvas.pack(fill=tk.BOTH, expand=True)
+            return
+        
+        # 计算缩放比例（使用统一的标准范围50%-100%）
+        scale_x = (canvas_width - 2 * padding) / content_width
+        scale_y = (canvas_height - 2 * padding) / content_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(0.5, min(scale_factor, 1.0))
+        
+        # 应用缩放（在画布隐藏状态下完成）
+        if scale_factor < 1.0:
+            self.canvas.move(tk.ALL, -x1, -y1)
+            self.canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
+            
+            scaled_width = content_width * scale_factor
+            scaled_height = content_height * scale_factor
+            
+            if scaled_width <= canvas_width - 2 * padding:
+                target_x = (canvas_width - scaled_width) / 2
+            else:
+                target_x = padding
+            
+            if scaled_height <= canvas_height - 2 * padding:
+                target_y = (canvas_height - scaled_height) / 2
+            else:
+                target_y = padding
+            
+            self.canvas.move(tk.ALL, target_x, target_y)
+            
+            self.scale = scale_factor
+            if hasattr(self, 'scale_label') and self.scale_label:
+                self.scale_label.config(text=f"{int(self.scale * 100)}%")
+        else:
+            # 不需要缩放，居中即可
+            self.canvas.move(tk.ALL, -x1, -y1)
+            
+            if content_width <= canvas_width - 2 * padding:
+                target_x = (canvas_width - content_width) / 2
+            else:
+                target_x = padding
+            
+            if content_height <= canvas_height - 2 * padding:
+                target_y = (canvas_height - content_height) / 2
+            else:
+                target_y = padding
+            
+            self.canvas.move(tk.ALL, target_x, target_y)
+        
+        # 更新滚动区域
+        final_bbox = self.canvas.bbox(tk.ALL)
+        if final_bbox:
+            self.canvas.config(scrollregion=(
+                0, 0,
+                max(canvas_width, final_bbox[2] + padding),
+                max(canvas_height, final_bbox[3] + padding)
+            ))
+        
+        self.canvas.xview_moveto(0)
+        self.canvas.yview_moveto(0)
+        
+        # 最后才显示画布（此时已完成所有缩放操作）
         self.canvas.pack(fill=tk.BOTH, expand=True)
         
         # 重置首次绘制标志

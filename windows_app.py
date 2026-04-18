@@ -8859,7 +8859,7 @@ class SubnetPlannerApp:
             x = (img_size[0] - text_width) // 2 + 0   # 水平居中
             y = (img_size[1] - text_height) // 2 + 2    # 垂直向下移动2px
             
-            draw.text((x, y), "📌", fill="#000000", font=font)  # 使用深灰色，更清晰可见
+            draw.text((x, y), "📌", fill="#000000", font=font)  # 使用黑色，更清晰可见
             
             # 转换为PhotoImage
             self.pin_icon = ImageTk.PhotoImage(img)
