@@ -1,12 +1,12 @@
 {
   "version": "1.0",
-  "language": "zh",
+  "language": "ja",
   "window": {
     "width": 1050,
-    "height": 950,
+    "height": 952,
     "maximized": false,
     "x": 755,
-    "y": 245
+    "y": 244
   },
   "auto_backup": {
     "enabled": true,

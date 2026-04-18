@@ -104,9 +104,18 @@ class FontConfig:
     PIN_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
         "zh": 10,
         "zh_tw": 10,
-        "ja": 10,
+        "ja": 10,  # 统一为10，避免语言切换时图标大小变化
         "ko": 10,
         "default": 10
+    }
+    
+    # 钉住按钮专用字体设置（使用支持emoji的字体）
+    PIN_BUTTON_FONT_FAMILY_SETTINGS: dict[str, str] = {
+        "zh": "Segoe UI Symbol",
+        "zh_tw": "Segoe UI Symbol",
+        "ja": "Segoe UI Symbol",  # 使用Symbol字体确保日语下emoji正常显示
+        "ko": "Segoe UI Symbol",
+        "default": "Segoe UI Symbol"
     }
     
     FUNCTION_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
@@ -183,6 +192,11 @@ class FontConfig:
     def get_pin_button_font_size(cls, language: str) -> int:
         """获取钉住按钮的字体大小设置"""
         return cls.PIN_BUTTON_FONT_SIZE_SETTINGS.get(language, cls.PIN_BUTTON_FONT_SIZE_SETTINGS["default"])
+    
+    @classmethod
+    def get_pin_button_font_family(cls, language: str) -> str:
+        """获取钉住按钮的字体家族设置（使用支持emoji的字体）"""
+        return cls.PIN_BUTTON_FONT_FAMILY_SETTINGS.get(language, cls.PIN_BUTTON_FONT_FAMILY_SETTINGS["default"])
     
     @classmethod
     def get_function_button_font_size(cls, language: str) -> int:

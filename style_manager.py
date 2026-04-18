@@ -171,7 +171,7 @@ class StyleManager:
         """获取当前语言的按钮尺寸设置
 
         Args:
-            button_type: 按钮类型，支持 "default", "execute_planning", "export_planning", "export_result"
+            button_type: 按钮类型，支持 "default", "execute_planning", "export_planning", "export_result", "sync_to_ipam"
 
         Returns:
             tuple: (宽度, 高度)
@@ -179,15 +179,15 @@ class StyleManager:
         current_language = get_language()
 
         if current_language in ["zh", "zh_tw"]:
-            if button_type in ["execute_planning", "export_planning", "export_result"]:
+            if button_type in ["execute_planning", "export_planning", "export_result", "sync_to_ipam"]:
                 return (12, 10)
             return (12, 10)
         elif current_language in ["ja", "ko"]:
-            if button_type in ["execute_planning", "export_planning", "export_result"]:
+            if button_type in ["execute_planning", "export_planning", "export_result", "sync_to_ipam"]:
                 return (16, 10)
             return (12, 10)
         else:
-            if button_type in ["execute_planning", "export_planning", "export_result"]:
+            if button_type in ["execute_planning", "export_planning", "export_result", "sync_to_ipam"]:
                 return (16, 10)
             return (14, 10)
 
@@ -366,6 +366,16 @@ def get_pin_button_font_size():
     """
     current_language = get_language()
     return FontConfig.get_pin_button_font_size(current_language)
+
+
+def get_pin_button_font_family():
+    """获取当前语言的钉住按钮字体家族设置（使用支持emoji的字体）
+
+    Returns:
+        str: 钉住按钮字体家族名称
+    """
+    current_language = get_language()
+    return FontConfig.get_pin_button_font_family(current_language)
 
 
 def get_function_button_font_size():

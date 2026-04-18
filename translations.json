@@ -2912,6 +2912,34 @@
     "zh_tw": "總衝突數",
     "ko": "총 충돌 수"
   },
+  "found_ip_conflicts_count": {
+    "zh": "共发现 {count} 个IP冲突",
+    "zh_tw": "共發現 {count} 個IP衝突",
+    "en": "Found {count} IP conflicts",
+    "ja": "{count} 件のIP競合を発見",
+    "ko": "{count}개의 IP 충돌을 발견"
+  },
+  "found_available_ips_count": {
+    "zh": "共发现 {count} 个可用IP地址，分布在 {network_count} 个网络中",
+    "zh_tw": "共發現 {count} 個可用IP位址，分佈在 {network_count} 個網路中",
+    "en": "Found {count} available IP addresses across {network_count} networks",
+    "ja": "{count} 個の利用可能なIPアドレスが {network_count} 個のネットワークに分布",
+    "ko": "{network_count}개의 네트워크에 {count}개의 사용 가능한 IP 주소 발견"
+  },
+  "found_expired_ips_count": {
+    "zh": "共发现 {count} 个过期IP地址，分布在 {network_count} 个网络中",
+    "zh_tw": "共發現 {count} 個過期IP位址，分佈在 {network_count} 個網路中",
+    "en": "Found {count} expired IP addresses across {network_count} networks",
+    "ja": "{count} 個の期限切れIPアドレスが {network_count} 個のネットワークに分布",
+    "ko": "{network_count}개의 네트워크에 {count}개의 만료된 IP 주소 발견"
+  },
+  "backup_stats_info": {
+    "zh": "当前系统：{network_count} 个网络，{ip_count} 个IP地址 | 备份文件：{backup_count} 个",
+    "zh_tw": "當前系統：{network_count} 個網路，{ip_count} 個IP位址 | 備份檔案：{backup_count} 個",
+    "en": "Current system: {network_count} networks, {ip_count} IP addresses | Backup files: {backup_count}",
+    "ja": "現在のシステム：{network_count} ネットワーク、{ip_count} IPアドレス | バックアップファイル：{backup_count} 件",
+    "ko": "현재 시스템: {network_count}개 네트워크, {ip_count}개 IP 주소 | 백업 파일: {backup_count}개"
+  },
   "handle_conflict": {
     "zh": "处理冲突",
     "en": "Handle Conflict",

@@ -605,7 +605,7 @@ class IPAMSQLite:
             print(f"分配IP地址失败: {str(e)}")
             return False, f"分配IP地址失败: {str(e)}"
     
-    def get_network_ips(self, network_str: str) -> list[dict[str, str | int | None]]:
+    def get_network_ips(self, network_str: str) -> list[dict[str, str | int]]:
         """获取网络及其所有子网络的IP地址
         
         Args:
@@ -625,21 +625,21 @@ class IPAMSQLite:
                 ips: list[tuple[int, str, str, str | None, str | None, str | None, str | None, str | None, str | None, str | None, str | None]] = cursor.fetchall()
                 
                 # 过滤出属于目标网络的IP地址（通过IP地址计算归属关系）
-                relevant_ips: list[dict[str, str | int | None]] = []
+                relevant_ips: list[dict[str, str | int]] = []
                 for ip_item in ips:
                     try:
                         if len(ip_item) >= 11:
                             ip_id: int = int(ip_item[0])
                             ip_address: str = str(ip_item[1])
                             status: str = str(ip_item[2])
-                            hostname: str | None = ip_item[3] if ip_item[3] else None
-                            mac_address: str | None = ip_item[4] if ip_item[4] else None
-                            description: str | None = ip_item[5] if ip_item[5] else None
-                            allocated_at: str | None = str(ip_item[6]) if ip_item[6] else None
-                            allocated_by: str | None = str(ip_item[7]) if ip_item[7] else None
-                            expiry_date: str | None = str(ip_item[8]) if ip_item[8] else None
-                            created_at: str | None = str(ip_item[9]) if ip_item[9] else None
-                            updated_at: str | None = str(ip_item[10]) if ip_item[10] else None
+                            hostname: str = str(ip_item[3]).strip() if ip_item[3] else ''
+                            mac_address: str = str(ip_item[4]).strip() if ip_item[4] else ''
+                            description: str = str(ip_item[5]).strip() if ip_item[5] else ''
+                            allocated_at: str = str(ip_item[6]).strip() if ip_item[6] else ''
+                            allocated_by: str = str(ip_item[7]).strip() if ip_item[7] else ''
+                            expiry_date: str = str(ip_item[8]).strip() if ip_item[8] else ''
+                            created_at: str = str(ip_item[9]).strip() if ip_item[9] else ''
+                            updated_at: str = str(ip_item[10]).strip() if ip_item[10] else ''
                             ip_obj = ipaddress.ip_address(ip_address)
                             if ip_obj in ip_network:
                                 relevant_ips.append({
@@ -980,13 +980,13 @@ class IPAMSQLite:
                         'id': int(row[0]),
                         'ip_address': ip_address,
                         'status': str(row[1]),
-                        'hostname': row[2] if row[2] else None,
-                        'description': row[3] if row[3] else None,
-                        'allocated_at': str(row[4]) if row[4] else None,
-                        'allocated_by': row[5] if row[5] else None,
-                        'expiry_date': str(row[6]) if row[6] else None,
-                        'created_at': str(row[7]) if row[7] else None,
-                        'updated_at': str(row[8]) if row[8] else None
+                        'hostname': str(row[2]).strip() if row[2] else '',
+                        'description': str(row[3]).strip() if row[3] else '',
+                        'allocated_at': str(row[4]).strip() if row[4] else '',
+                        'allocated_by': str(row[5]).strip() if row[5] else '',
+                        'expiry_date': str(row[6]).strip() if row[6] else '',
+                        'created_at': str(row[7]).strip() if row[7] else '',
+                        'updated_at': str(row[8]).strip() if row[8] else ''
                     })
             
             conn.close()
@@ -994,7 +994,7 @@ class IPAMSQLite:
         except Exception:
             return []
     
-    def get_ip_record_by_id(self, record_id: int) -> dict[str, str | int | None] | None:
+    def get_ip_record_by_id(self, record_id: int) -> dict[str, str | int] | None:
         """根据记录ID获取IP地址记录
         
         Args:
@@ -1020,13 +1020,13 @@ class IPAMSQLite:
                     'id': record_id,
                     'ip_address': str(row[0]),
                     'status': str(row[1]),
-                    'hostname': row[2] if row[2] else None,
-                    'description': row[3] if row[3] else None,
-                    'allocated_at': str(row[4]) if row[4] else None,
-                    'allocated_by': row[5] if row[5] else None,
-                    'expiry_date': str(row[6]) if row[6] else None,
-                    'created_at': str(row[7]) if row[7] else None,
-                    'updated_at': str(row[8]) if row[8] else None
+                    'hostname': str(row[2]).strip() if row[2] else '',
+                    'description': str(row[3]).strip() if row[3] else '',
+                    'allocated_at': str(row[4]).strip() if row[4] else '',
+                    'allocated_by': str(row[5]).strip() if row[5] else '',
+                    'expiry_date': str(row[6]).strip() if row[6] else '',
+                    'created_at': str(row[7]).strip() if row[7] else '',
+                    'updated_at': str(row[8]).strip() if row[8] else ''
                 }
                 conn.close()
                 return record
@@ -1946,18 +1946,18 @@ class IPAMSQLite:
             WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
-            expired_ips: list[dict[str, str | int | None]] = []
+            expired_ips: list[dict[str, str | int]] = []
             for row in cursor.fetchall():
                 if isinstance(row, tuple) and len(row) >= 9:
                     ip_id: int = int(row[0])
                     ip_address: str = str(row[1])
                     status: str = str(row[2])
-                    hostname: str | None = row[3] if row[3] else None
-                    description: str | None = row[4] if row[4] else None
-                    allocated_at: str | None = str(row[5]) if row[5] else None
-                    _allocated_by: str | None = row[6] if row[6] else None
-                    expiry_date: str | None = str(row[7]) if row[7] else None
-                    mac_address: str | None = row[8] if row[8] else None
+                    hostname: str = str(row[3]).strip() if row[3] else ''
+                    description: str = str(row[4]).strip() if row[4] else ''
+                    allocated_at: str = str(row[5]).strip() if row[5] else ''
+                    _allocated_by: str = str(row[6]).strip() if row[6] else ''
+                    expiry_date: str = str(row[7]).strip() if row[7] else ''
+                    mac_address: str = str(row[8]).strip() if row[8] else ''
                     expired_ips.append({
                         'id': ip_id,
                         'ip_address': ip_address,
@@ -2281,13 +2281,13 @@ class IPAMSQLite:
                         'id': int(row[0]),
                         'ip_address': ip_address,
                         'status': str(row[1]),
-                        'hostname': str(row[2]) if row[2] else None,
-                        'mac_address': str(row[3]) if row[3] else None,
-                        'description': str(row[4]) if row[4] else None,
-                        'allocated_at': str(row[5]) if row[5] else None,
-                        'expiry_date': str(row[6]) if row[6] else None,
-                        'created_at': str(row[7]) if row[7] else None,
-                        'updated_at': str(row[8]) if row[8] else None
+                        'hostname': str(row[2]).strip() if row[2] else '',
+                        'mac_address': str(row[3]).strip() if row[3] else '',
+                        'description': str(row[4]).strip() if row[4] else '',
+                        'allocated_at': str(row[5]).strip() if row[5] else '',
+                        'expiry_date': str(row[6]).strip() if row[6] else '',
+                        'created_at': str(row[7]).strip() if row[7] else '',
+                        'updated_at': str(row[8]).strip() if row[8] else ''
                     })
             
             conn.close()
@@ -3014,7 +3014,7 @@ class IPAMSQLite:
                         _mac_address = str(ip_row[3]) if ip_row[3] else ''
                         _allocated_at = str(ip_row[4]) if ip_row[4] else ''
                         _allocated_by = str(ip_row[5]) if ip_row[5] else ''
-                        _expiry_date = str(ip_row[6]) if ip_row[6] else None
+                        _expiry_date = str(ip_row[6]).strip() if ip_row[6] else ''
                         
                         # 检查原IP是否已经在目标网络中（通过IP地址计算）
                         try:

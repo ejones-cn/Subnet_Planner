@@ -41,7 +41,7 @@ class ConfigManager:
     
     SUPPORTED_LANGUAGES: list[str] = ["zh", "zh_tw", "en", "ja", "ko"]
 
-    SUPPORTED_BACKUP_FREQUENCIES: list[str] = ["hourly", "daily", "weekly", "monthly"]
+    SUPPORTED_BACKUP_FREQUENCIES: list[str] = ["disabled", "hourly", "daily", "weekly", "monthly"]
 
     SUPPORTED_THEMES: list[str] = ["default", "dark", "light"]
     

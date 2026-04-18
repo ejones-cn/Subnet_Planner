@@ -1597,8 +1597,8 @@ class SubnetPlannerApp:
         # 创建顶级标签页控件，用于切换子网切分和子网规划两大功能模块
         self.create_top_level_notebook()
 
-        # 在右上角添加关于链接按钮、主题切换按钮和钉住按钮，确保它们显示在标题栏右侧
-        self.create_about_link()
+        # 在右上角添加关于链接按钮、主题切换按钮和钉住按钮（延迟执行，确保窗口完全渲染）
+        self.root.after(100, self.create_about_link)
 
         # 绑定窗口大小变化事件，动态调整右上角按钮位置
         self.root.bind('<Configure>', self.on_window_configure, add='+')
@@ -6742,7 +6742,13 @@ class SubnetPlannerApp:
                         # 精简错误信息，只显示"无效格式"
                         simplified_error = _("invalid_format")
                         # 在CIDR字段直接显示错误的子网，在网络地址字段显示精简后的错误描述
-                        self.ipv4_result_tree.insert("", tk.END, values=(invalid["subnet"], simplified_error, "", "", ""), tags=(tag,))
+                        self.ipv4_result_tree.insert("", tk.END, values=(
+                            invalid["subnet"],
+                            simplified_error,
+                            "",
+                            "",
+                            ""
+                        ), tags=(tag,))
                         row_index += 1
                     # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
                     self.update_table_zebra_stripes(self.ipv4_result_tree)
@@ -6805,7 +6811,13 @@ class SubnetPlannerApp:
             # 尝试获取无效子网列表
             error_msg = f"{_("merge_subnet")}{_("failed")}: {str(e)}"
             tag = "error_row"
-            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            self.ipv4_result_tree.insert("", tk.END, values=(
+                _("error"),
+                error_msg,
+                "",
+                "",
+                ""
+            ), tags=(tag,))
             
             # 清除无效子网高亮
             self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
@@ -6817,7 +6829,13 @@ class SubnetPlannerApp:
             # 尝试获取无效子网列表
             error_msg = f"{_("operation_failed")}: {str(e)}"
             tag = "error_row"
-            self.ipv4_result_tree.insert("", tk.END, values=(_("error"), error_msg, "", "", ""), tags=(tag,))
+            self.ipv4_result_tree.insert("", tk.END, values=(
+                _("error"),
+                error_msg,
+                "",
+                "",
+                ""
+            ), tags=(tag,))
             
             # 清除无效子网高亮
             self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
@@ -8741,6 +8759,9 @@ class SubnetPlannerApp:
 
     def create_about_link(self):
         """在主窗体标题栏右侧（红框位置）创建关于链接按钮和钉住按钮"""
+        # 强制更新窗口，确保完全渲染
+        self.root.update_idletasks()
+        
         # 直接在root窗口创建关于链接，不使用框架
         # 使用普通tk.Label直接控制样式，确保悬停效果可靠
 
@@ -8802,65 +8823,103 @@ class SubnetPlannerApp:
             highlightcolor=border_color,  # 边框颜色（确保一致性）
             cursor="hand2",  # 鼠标指针为手形
         )
-
-        # 放置在窗口标题栏右侧位置，y坐标调整为与信息框垂直对齐，与标签页按钮底部对齐
-        # 使用固定像素尺寸，确保高度和宽度设置起作用
-        self.about_label.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, 
-            x=-25, y=22, 
-            width=88,   # 固定宽度80px，足够显示各种语言的"关于"文本
-            height=26   # 固定高度26px，与钉住按钮高度一致
-        )  # y=22，向下移动1px，与信息栏顶部对齐
+        
         self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
 
         # 绑定鼠标事件实现悬停效果
         self.about_label.bind("<Enter>", self.on_about_link_enter)
         self.about_label.bind("<Leave>", self.on_about_link_leave)
 
-        # 创建钉住按钮，使用扁平化风格，直接添加到root窗口，高度与信息框一致
-        self.pin_label = tk.Label(
-            self.root,
-            text="📌",
-            font=(font_family, pin_font_size, 'bold'),  # 使用单独的钉住按钮字体大小配置，加粗
-            fg=self.normal_fg_color,  # 文字颜色调淡为浅灰色
-            bg=self.bg_color,  # 背景色与窗口完全一致
-            padx=4.4,  # 适当的水平内边距
-            pady=4.4,  # 适当的垂直内边距
-            bd=0,  # 无边框，扁平化风格
-            relief="flat",  # 平坦样式，扁平化风格
-            highlightthickness=1,  # 高亮边框宽度，模拟边框
-            highlightbackground=border_color,  # 边框颜色
-            highlightcolor=border_color,  # 边框颜色（确保一致性）
-            cursor="hand2",  # 鼠标指针为手形
-        )
+        # 创建钉住按钮，使用图片替代emoji，确保所有语言下大小一致
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import io
+            
+            # 创建28x26的图片（与容器尺寸一致）
+            img_size = (28, 26)
+            img = Image.new('RGBA', img_size, (0, 0, 0, 0))  # 透明背景
+            
+            # 使用Segoe UI Emoji字体绘制📌图标（使用适中的字体大小14）
+            try:
+                font = ImageFont.truetype("seguiemj.ttf", 14)  # Windows emoji字体
+            except:
+                try:
+                    font = ImageFont.truetype("arial.ttf", 14)  # 备用字体
+                except:
+                    font = ImageFont.load_default()
+            
+            draw = ImageDraw.Draw(img)
+            
+            # 绘制📌图标，使用精确的居中算法
+            bbox = draw.textbbox((0, 0), "📌", font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            
+            # 精确居中计算（根据实际显示效果微调）
+            x = (img_size[0] - text_width) // 2 + 0   # 水平居中
+            y = (img_size[1] - text_height) // 2 + 2    # 垂直向下移动2px
+            
+            draw.text((x, y), "📌", fill="#666666", font=font)
+            
+            # 转换为PhotoImage
+            self.pin_icon = ImageTk.PhotoImage(img)
+            
+            self.pin_label = tk.Label(
+                self.root,
+                image=self.pin_icon,
+                bg=self.bg_color,
+                bd=0,
+                relief="flat",
+                highlightthickness=1,
+                highlightbackground=border_color,
+                cursor="hand2",
+            )
+        except Exception as e:
+            print(f"创建钉住按钮图片失败: {e}，使用备用方案")
+            # 备用方案：使用文字符号
+            self.pin_label = tk.Label(
+                self.root,
+                text="⚙",
+                font=("Segoe UI Symbol", 14, 'bold'),
+                fg=self.normal_fg_color,
+                bg=self.bg_color,
+                padx=4.4,
+                pady=4.4,
+                bd=0,
+                relief="flat",
+                highlightthickness=1,
+                highlightbackground=border_color,
+                highlightcolor=border_color,
+                cursor="hand2",
+            )
         self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
 
         self.pin_label.bind("<Enter>", self.on_about_link_enter)
         self.pin_label.bind("<Leave>", self.on_about_link_leave)
         
-        # 动态计算并放置钉住按钮在关于按钮左侧，紧靠着关于按钮
-        self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
-        about_width = self.about_label.winfo_width()  # 获取关于按钮的实际宽度
-        pin_x = -25 - about_width - 5  # 计算钉住按钮的x坐标：关于按钮x坐标 - 关于按钮宽度 - 5px间距
-        # 使用固定像素尺寸，确保显示为1:1比例
-        self.pin_label.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, 
-            x=pin_x, y=22, 
-            width=28,  # 固定宽度28px
-            height=26   # 固定高度26px，确保1:1比例
-        )  # 动态放置在关于按钮左侧，紧靠着关于按钮
+        # 使用固定像素位置放置所有右上角控件，避免动态计算导致的偏移问题
+        # 关于按钮（右侧第一个）
+        self.about_label.place(
+            relx=1.0, rely=0.0, anchor=tk.NE,
+            x=-25, y=22,
+            width=88,
+            height=26
+        )
         
-        # 动态计算并放置语言选择框在钉住按钮左侧，紧靠着钉住按钮
-        self.root.update_idletasks()  # 更新界面以获取准确的组件尺寸
-        pin_width = self.pin_label.winfo_width()  # 获取钉住按钮的实际宽度
-        combobox_x = pin_x - pin_width - 5  # 计算语言选择框的x坐标：钉住按钮x坐标 - 钉住按钮宽度 - 5px间距
-        # 设置固定高度，与其他两个按钮保持一致，并调整y坐标使其垂直对齐
+        # 钉住按钮（右侧第二个，在关于按钮左侧）
+        self.pin_label.place(
+            relx=1.0, rely=0.0, anchor=tk.NE,
+            x=-120, y=22,  # 固定x坐标：-25(关于按钮) - 88(关于宽度) - 5(间距) - 2(边框) = -120
+            width=28,
+            height=26
+        )
+        
+        # 语言选择框（右侧第三个，在钉住按钮左侧）
         self.language_combobox.place(
-            relx=1.0, rely=0.0, anchor=tk.NE, 
-            x=combobox_x, 
-            y=22,  # 调整y坐标为22，与其他两个按钮垂直对齐
-            height=26  # 设置固定高度26px，与其他两个按钮保持一致
-        )  # 动态放置在钉住按钮左侧，紧靠着钉住按钮，垂直对齐
+            relx=1.0, rely=0.0, anchor=tk.NE,
+            x=-155, y=22,  # 固定x坐标：-120(钉住) - 28(钉住宽度) - 5(间距) - 2(边框) = -155
+            height=26
+        )
 
 
 
@@ -9834,8 +9893,8 @@ class SubnetPlannerApp:
         # 添加样例数据
         self.add_ipam_sample_data()
         
-        # 自动选择第一个网段并刷新网络拓扑
-        self._auto_select_first_network()
+        # 自动选择第一个网段并刷新网络拓扑（延迟执行，避免初始化闪现）
+        self.root.after(100, self._auto_select_first_network)
     
     def refresh_ipam_networks(self):
         """刷新IPAM网络列表，实现分层显示"""
@@ -10009,11 +10068,10 @@ class SubnetPlannerApp:
             formatted_time = self._format_datetime(created_at)
             
             # 插入网段
-            description = network_data.get('description', '') or ''
             item = self.ipam_network_tree.insert(parent_item, tk.END, text=network_data['network'], values=(
                 network_data['network'],
-                description,
-                network_data.get('vlan', '') or '',  # 添加 VLAN 字段，默认为空
+                network_data.get('description', ''),
+                network_data.get('vlan', ''),
                 formatted_time,
                 network_data['ip_count']
             ))
@@ -10068,9 +10126,9 @@ class SubnetPlannerApp:
                 self.ipam_ip_tree.insert('', tk.END, iid=str(record_id), values=(
                     ip['ip_address'],
                     status_text,
-                    ip.get('hostname') or '',
-                    ip.get('mac_address') or '',
-                    ip.get('description') or '',
+                    ip.get('hostname', ''),
+                    ip.get('mac_address', ''),
+                    ip.get('description', ''),
                     formatted_allocated_at,
                     formatted_expiry_date
                 ))
@@ -10682,6 +10740,9 @@ class SubnetPlannerApp:
                 formatted_allocated_at,
                 formatted_expiry_date
             ))
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_ip_tree)
     
     def _sort_ip_list(self, ips):
         """对IP地址列表进行排序"""
@@ -10741,15 +10802,34 @@ class SubnetPlannerApp:
         # 过滤并显示IP地址
         for ip in ips:
             if status == "全部" or ip['status'] == status:
+                # 翻译状态文本
+                status_text = ip['status']
+                if status_text == 'reserved':
+                    status_text = _('reserved')
+                elif status_text == 'released':
+                    status_text = _('released')
+                elif status_text == 'allocated':
+                    status_text = _('allocated')
+                
+                # 格式化分配时间和过期日期
+                allocated_at = ip.get('allocated_at', '')
+                formatted_allocated_at = self._format_datetime(allocated_at)
+                
+                expiry_date = ip.get('expiry_date', '')
+                formatted_expiry_date = self._format_datetime(expiry_date, "%Y-%m-%d")
+                
                 self.ipam_ip_tree.insert('', tk.END, values=(
                     ip['ip_address'],
-                    ip['status'],
-                    ip['hostname'],
+                    status_text,
+                    ip.get('hostname', ''),
                     ip.get('mac_address', ''),
-                    ip['description'],
-                    ip['allocated_at'],
-                    ip.get('expiry_date', '')
+                    ip.get('description', ''),
+                    formatted_allocated_at,
+                    formatted_expiry_date
                 ))
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_ip_tree)
     
     def check_ip_conflicts(self):
         """检查IP冲突"""
@@ -10769,7 +10849,6 @@ class SubnetPlannerApp:
                     ips = self.ipam.get_network_ips(network)
                     
                     for ip in ips:
-                        # 用ID作为唯一标识，避免重复记录
                         if ip['id'] not in all_ip_records:
                             all_ip_records[ip['id']] = {
                                 'id': ip['id'],
@@ -10779,7 +10858,8 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', '')
+                                'allocated_at': ip.get('allocated_at', ''),
+                                'expiry_date': ip.get('expiry_date', '')
                             }
                 
                 # 统计每个IP地址的分配情况
@@ -10815,7 +10895,6 @@ class SubnetPlannerApp:
                     ips = self.ipam.get_network_ips(network)
                     
                     for ip in ips:
-                        # 用ID作为唯一标识，避免重复记录
                         if ip['id'] not in all_ip_records:
                             all_ip_records[ip['id']] = {
                                 'id': ip['id'],
@@ -10825,7 +10904,8 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', '')
+                                'allocated_at': ip.get('allocated_at', ''),
+                                'expiry_date': ip.get('expiry_date', '')
                             }
                 
                 # 统计每个IP地址的分配情况
@@ -10880,11 +10960,11 @@ class SubnetPlannerApp:
         stats_frame.pack(fill=tk.X, pady=(0, 10))
         
         # 显示统计信息
-        stats_label = ttk.Label(stats_frame, text=f"共发现 {len(conflicts)} 个IP冲突", font=(font_family, font_size))
+        stats_label = ttk.Label(stats_frame, text=_('found_ip_conflicts_count', count=len(conflicts)), font=(font_family, font_size))
         stats_label.pack(anchor=tk.W)
         
         # 创建结果树 - 不显示ID和网络地址列，使用item的iid存储ID
-        columns = ('ip_address', 'status', 'hostname', 'mac_address', 'description', 'allocated_at')
+        columns = ('ip_address', 'status', 'hostname', 'mac_address', 'description', 'allocated_at', 'expiry_date')
         tree = ttk.Treeview(main_frame, columns=columns, show='headings', selectmode='extended')
         
         # 设置列宽
@@ -10894,6 +10974,7 @@ class SubnetPlannerApp:
         tree.column('mac_address', width=110, stretch=False)
         tree.column('description', width=100, stretch=True)
         tree.column('allocated_at', width=110, stretch=False)
+        tree.column('expiry_date', width=90, stretch=False)
         
         # 设置表头
         tree.heading('ip_address', text=_('ip_address'))
@@ -10902,6 +10983,7 @@ class SubnetPlannerApp:
         tree.heading('mac_address', text=_('mac_address'))
         tree.heading('description', text=_('description'))
         tree.heading('allocated_at', text=_('allocated_at'))
+        tree.heading('expiry_date', text=_('expiry_date'))
         
         # 添加冲突数据，使用ID作为item的iid
         for conflict in conflicts:
@@ -10919,11 +11001,18 @@ class SubnetPlannerApp:
             # 处理分配时间，只显示日期部分
             allocated_at = conflict.get('allocated_at', '')
             if allocated_at:
-                # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
                 if ' ' in allocated_at:
                     allocated_at = allocated_at.split(' ')[0]
                 elif 'T' in allocated_at:
                     allocated_at = allocated_at.split('T')[0]
+            
+            # 处理过期日期，只显示日期部分
+            expiry_date = conflict.get('expiry_date', '')
+            if expiry_date:
+                if ' ' in expiry_date:
+                    expiry_date = expiry_date.split(' ')[0]
+                elif 'T' in expiry_date:
+                    expiry_date = expiry_date.split('T')[0]
             
             tree.insert('', tk.END, iid=str(conflict['id']), values=(
                 conflict['ip_address'],
@@ -10931,8 +11020,13 @@ class SubnetPlannerApp:
                 conflict['hostname'],
                 conflict.get('mac_address', ''),
                 conflict['description'],
-                allocated_at
+                allocated_at,
+                expiry_date
             ))
+        
+        # 配置斑马纹样式并应用
+        self.configure_treeview_styles(tree)
+        self.update_table_zebra_stripes(tree)
         
         # 添加滚动条
         scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=tree.yview)
@@ -10940,7 +11034,7 @@ class SubnetPlannerApp:
         # 创建滚动条回调函数，实现自动隐藏功能
         def scrollbar_callback(*args):
             scrollbar.set(*args)
-            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+            if float(args[1]) - float(args[0]) >= 1.0 - 1e-9:
                 scrollbar.pack_forget()
             else:
                 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -11130,15 +11224,12 @@ class SubnetPlannerApp:
             all_ip_records = {}
             
             if not selected_networks:
-                # 没有选中网段，检查所有网段
                 networks = self.ipam.get_all_networks()
                 for network_info in networks:
                     network = network_info['network']
-                    # 获取网络中的所有IP地址
                     ips = self.ipam.get_network_ips(network)
                     
                     for ip in ips:
-                        # 用ID作为唯一标识，避免重复记录
                         if ip['id'] not in all_ip_records:
                             all_ip_records[ip['id']] = {
                                 'id': ip['id'],
@@ -11148,16 +11239,14 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', '')
+                                'allocated_at': ip.get('allocated_at', ''),
+                                'expiry_date': ip.get('expiry_date', '')
                             }
             else:
-                # 有选中网段，检查所有选中的网段
                 for network in selected_networks:
-                    # 获取网络中的所有IP地址
                     ips = self.ipam.get_network_ips(network)
                     
                     for ip in ips:
-                        # 用ID作为唯一标识，避免重复记录
                         if ip['id'] not in all_ip_records:
                             all_ip_records[ip['id']] = {
                                 'id': ip['id'],
@@ -11167,7 +11256,8 @@ class SubnetPlannerApp:
                                 'hostname': ip.get('hostname', ''),
                                 'mac_address': ip.get('mac_address', ''),
                                 'description': ip.get('description', ''),
-                                'allocated_at': ip.get('allocated_at', '')
+                                'allocated_at': ip.get('allocated_at', ''),
+                                'expiry_date': ip.get('expiry_date', '')
                             }
             
             # 统计每个IP地址的分配情况
@@ -11187,6 +11277,9 @@ class SubnetPlannerApp:
                     for ip in ip_list:
                         updated_conflicts.append(ip)
             
+            # 按IP地址排序，与初始打开时保持一致
+            updated_conflicts = self._sort_ip_list(updated_conflicts)
+            
             # 显示更新后的冲突
             for conflict in updated_conflicts:
                 # 翻译状态值
@@ -11203,11 +11296,18 @@ class SubnetPlannerApp:
                 # 处理分配时间，只显示日期部分
                 allocated_at = conflict.get('allocated_at', '')
                 if allocated_at:
-                    # 提取日期部分（处理 YYYY-MM-DD HH:MM 和 YYYY-MM-DDTHH:MM 格式）
                     if ' ' in allocated_at:
                         allocated_at = allocated_at.split(' ')[0]
                     elif 'T' in allocated_at:
                         allocated_at = allocated_at.split('T')[0]
+                
+                # 处理过期日期，只显示日期部分
+                expiry_date = conflict.get('expiry_date', '')
+                if expiry_date:
+                    if ' ' in expiry_date:
+                        expiry_date = expiry_date.split(' ')[0]
+                    elif 'T' in expiry_date:
+                        expiry_date = expiry_date.split('T')[0]
                 
                 tree.insert('', tk.END, iid=str(conflict['id']), values=(
                     conflict['ip_address'],
@@ -11215,8 +11315,12 @@ class SubnetPlannerApp:
                     conflict['hostname'],
                     conflict.get('mac_address', ''),
                     conflict['description'],
-                    allocated_at
+                    allocated_at,
+                    expiry_date
                 ))
+            
+            # 更新斑马纹样式
+            self.update_table_zebra_stripes(tree)
             
             # 如果没有冲突了，显示提示
             if not updated_conflicts:
@@ -11227,7 +11331,7 @@ class SubnetPlannerApp:
                 if isinstance(widget, ttk.Frame) and widget.winfo_children():
                     for label in widget.winfo_children():
                         if isinstance(label, ttk.Label):
-                            label.config(text=f"{_('total_conflicts')}: {len(updated_conflicts)}")
+                            label.config(text=_('found_ip_conflicts_count', count=len(updated_conflicts)))
                             break
                     break
         except Exception as e:
@@ -11636,7 +11740,7 @@ class SubnetPlannerApp:
             total_ips = stats.get('total_ips', 0)
             
             # 显示统计信息
-            stats_label = ttk.Label(stats_frame, text=f"当前系统：{total_networks} 个网络，{total_ips} 个IP地址 | 备份文件：{len(self.ipam.list_backups())} 个")
+            stats_label = ttk.Label(stats_frame, text=_('backup_stats_info', network_count=total_networks, ip_count=total_ips, backup_count=len(self.ipam.list_backups())))
             stats_label.pack(anchor=tk.W)
             
             # 创建一个框架来包含表格和滚动条
@@ -11665,6 +11769,9 @@ class SubnetPlannerApp:
             backup_tree.grid(row=0, column=0, sticky="nsew")
             scrollbar.grid(row=0, column=1, sticky="ns")
             
+            # 配置斑马纹样式
+            self.configure_treeview_styles(backup_tree)
+            
             # 加载备份列表的函数
             def refresh_backup_list():
                 # 清空现有列表
@@ -11688,6 +11795,9 @@ class SubnetPlannerApp:
                     # 触发滚动条回调，更新滚动条显示状态
                     backup_tree.yview_moveto(0)
                     backup_tree.yview_moveto(0)
+                
+                # 更新斑马纹样式
+                self.update_table_zebra_stripes(backup_tree)
             
             # 初始加载备份列表
             refresh_backup_list()
@@ -11828,9 +11938,9 @@ class SubnetPlannerApp:
             auto_backup_menu.bind("<<ComboboxSelected>>", on_auto_backup_change)
             
             # 左侧按钮
-            ttk.Button(left_buttons, text=_('backup'), command=on_backup).pack(side=tk.LEFT, padx=10)
-            ttk.Button(left_buttons, text=_('restore'), command=on_restore).pack(side=tk.LEFT, padx=10)
-            ttk.Button(left_buttons, text=_('delete'), command=on_delete).pack(side=tk.LEFT, padx=10)
+            ttk.Button(left_buttons, text=_('backup'), command=on_backup).pack(side=tk.LEFT, padx=5)
+            ttk.Button(left_buttons, text=_('restore'), command=on_restore).pack(side=tk.LEFT, padx=5)
+            ttk.Button(left_buttons, text=_('delete'), command=on_delete).pack(side=tk.LEFT, padx=5)
             
             # 绑定对话框关闭事件
             dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
@@ -12859,14 +12969,16 @@ class SubnetPlannerApp:
         
         network = None
         if len(selected_items) == 1:
-            # 只选中一个网段，显示该网段的IP地址
+            # 只选中一个网段，显示该网段的IP地址（带过滤）
             item = selected_items[0]
             network = self.ipam_network_tree.item(item, 'values')[0]
-            self.refresh_ipam_ips(network)
+            # 使用apply_filter而不是refresh_ipam_ips，以应用过滤条件
+            self.apply_filter()
             # 刷新网络拓扑图
             self.refresh_visualization(network)
         else:
-            # 选中多个网段，显示所有选中网段的IP地址
+            # 选中多个网段，显示所有选中网段的IP地址（带过滤）
+            from datetime import datetime
             # 收集所有IP地址记录，避免重复显示
             all_ip_records = {}
             
@@ -12879,10 +12991,82 @@ class SubnetPlannerApp:
                     if ip['id'] not in all_ip_records:
                         all_ip_records[ip['id']] = ip
             
-            # 显示所有IP地址
+            # 应用过滤条件
+            status = self.ipam_status_filter.get()
+            expiry_filter = self.ipam_expiry_filter.get()
+            now = datetime.now()
+            search_text = self.ipam_search_entry.get().strip()
+            search_scope = self.search_scope.get()
+            search_mode = self.search_mode.get()
+            
+            filtered_ips = []
+            for ip in all_ip_records.values():
+                # 按状态过滤
+                if status != _('all'):
+                    status_map = self._get_status_map()
+                    if status in status_map:
+                        if ip['status'] != status_map[status]:
+                            continue
+                    elif ip['status'] != status:
+                        continue
+                
+                # 按过期日期过滤
+                if expiry_filter != _('all'):
+                    expiry_date = ip.get('expiry_date')
+                    if not expiry_date:
+                        if expiry_filter != _('not_expired'):
+                            continue
+                    else:
+                        try:
+                            if 'T' in expiry_date:
+                                exp_date = datetime.fromisoformat(expiry_date)
+                            else:
+                                exp_date = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+                            
+                            if expiry_filter == _('expired'):
+                                if exp_date >= now:
+                                    continue
+                            elif expiry_filter == _('expiring_soon'):
+                                seven_days_later = now + timedelta(days=7)
+                                if exp_date < now or exp_date > seven_days_later:
+                                    continue
+                            elif expiry_filter == _('not_expired'):
+                                if exp_date < now:
+                                    continue
+                        except (ValueError, TypeError):
+                            if expiry_filter != _('not_expired'):
+                                continue
+                
+                # 按搜索关键词过滤
+                if search_text:
+                    keywords = search_text.split()
+                    match = False
+                    
+                    ip_match = self._match_search_pattern(ip['ip_address'], ' '.join(keywords), search_mode)
+                    hostname_match = self._match_search_pattern(ip.get('hostname', ''), ' '.join(keywords), search_mode)
+                    desc_match = self._match_search_pattern(ip.get('description', ''), ' '.join(keywords), search_mode)
+                    mac_match = self._match_search_pattern(ip.get('mac_address', ''), ' '.join(keywords), search_mode)
+                    
+                    if search_scope == _('all'):
+                        match = ip_match or hostname_match or desc_match or mac_match
+                    elif search_scope == _('ip_address'):
+                        match = ip_match
+                    elif search_scope == _('hostname'):
+                        match = hostname_match
+                    elif search_scope == _('description'):
+                        match = desc_match
+                    elif search_scope == _('mac_address'):
+                        match = mac_match
+                    
+                    if not match:
+                        continue
+                
+                filtered_ips.append(ip)
+            
+            # 显示过滤后的IP地址
             self.ipam_ip_tree.delete(*self.ipam_ip_tree.get_children())
             # 转换为列表并排序
-            sorted_ips = self._sort_ip_list(list(all_ip_records.values()))
+            sorted_ips = self._sort_ip_list(filtered_ips)
             
             for ip in sorted_ips:
                 status_text = ip['status']
@@ -12894,10 +13078,30 @@ class SubnetPlannerApp:
                     status_text = _('allocated')
                 
                 allocated_at = ip.get('allocated_at', '')
-                formatted_allocated_at = self._format_datetime(allocated_at)
+                try:
+                    from datetime import datetime
+                    if 'T' in allocated_at:
+                        dt = datetime.fromisoformat(allocated_at)
+                    else:
+                        dt = datetime.strptime(allocated_at, "%Y-%m-%d %H:%M:%S.%f")
+                    formatted_allocated_at = dt.strftime("%Y-%m-%d %H:%M:%S")
+                except (ValueError, TypeError):
+                    formatted_allocated_at = allocated_at
                 
                 expiry_date = ip.get('expiry_date', '')
-                formatted_expiry_date = self._format_datetime(expiry_date, "%Y-%m-%d")
+                formatted_expiry_date = expiry_date
+                try:
+                    from datetime import datetime
+                    if expiry_date:
+                        if 'T' in expiry_date:
+                            dt = datetime.fromisoformat(expiry_date)
+                        elif ' ' in expiry_date:
+                            dt = datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+                        else:
+                            dt = datetime.strptime(expiry_date, "%Y-%m-%d")
+                        formatted_expiry_date = dt.strftime("%Y-%m-%d")
+                except (ValueError, TypeError):
+                    pass
                 
                 self.ipam_ip_tree.insert('', tk.END, values=(
                     ip['ip_address'],
@@ -15021,6 +15225,9 @@ class SubnetPlannerApp:
         
         for item_id, values in items:
             self.ipam_ip_tree.insert('', tk.END, values=values)
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(self.ipam_ip_tree)
     
     def on_search_input(self, event):
         """搜索输入事件处理"""
@@ -15213,7 +15420,7 @@ class SubnetPlannerApp:
         network_count = len(set(self.ipam.get_most_specific_network(ip['ip_address'])['network_address'] for ip in available_ips if self.ipam.get_most_specific_network(ip['ip_address'])))
         
         # 显示统计信息
-        stats_label = ttk.Label(stats_frame, text=f"共发现 {total_ips} 个可用IP地址，分布在 {network_count} 个网络中", font=(font_family, font_size))
+        stats_label = ttk.Label(stats_frame, text=_('found_available_ips_count', count=total_ips, network_count=network_count), font=(font_family, font_size))
         stats_label.pack(anchor=tk.W)
         
         # 创建滚动条
@@ -15225,7 +15432,7 @@ class SubnetPlannerApp:
         # 创建滚动条回调函数，实现自动隐藏功能
         def scrollbar_callback(*args):
             scrollbar.set(*args)
-            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+            if float(args[1]) - float(args[0]) >= 1.0 - 1e-9:
                 scrollbar.pack_forget()
             else:
                 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -15286,6 +15493,10 @@ class SubnetPlannerApp:
             tree.insert('', tk.END, values=(ip['ip_address'], translated_status, 
                                            ip['hostname'] or '', ip.get('mac_address', '') or '',
                                            ip['description'] or '', expiry_date))
+        
+        # 配置斑马纹样式并应用
+        self.configure_treeview_styles(tree)
+        self.update_table_zebra_stripes(tree)
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
@@ -15414,6 +15625,9 @@ class SubnetPlannerApp:
                 tree.insert('', tk.END, values=(ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip.get('mac_address', '') or '',
                                                 ip['description'] or '', expiry_date))
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(tree)
     
     def cleanup_all_available_ips(self, dialog, available_ips):
         """清理所有可用IP地址
@@ -15474,7 +15688,7 @@ class SubnetPlannerApp:
         network_count = len(set(self.ipam.get_most_specific_network(ip['ip_address'])['network_address'] for ip in expired_ips if self.ipam.get_most_specific_network(ip['ip_address'])))
         
         # 显示统计信息
-        stats_label = ttk.Label(stats_frame, text=f"共发现 {total_ips} 个过期IP地址，分布在 {network_count} 个网络中", font=(font_family, font_size))
+        stats_label = ttk.Label(stats_frame, text=_('found_expired_ips_count', count=total_ips, network_count=network_count), font=(font_family, font_size))
         stats_label.pack(anchor=tk.W)
         
         # 创建滚动条
@@ -15486,7 +15700,7 @@ class SubnetPlannerApp:
         # 创建滚动条回调函数，实现自动隐藏功能
         def scrollbar_callback(*args):
             scrollbar.set(*args)
-            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+            if float(args[1]) - float(args[0]) >= 1.0 - 1e-9:
                 scrollbar.pack_forget()
             else:
                 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -15554,6 +15768,10 @@ class SubnetPlannerApp:
                 tree.insert('', tk.END, values=(ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip.get('mac_address', '') or '',
                                                 ip['description'] or '', expiry_date))
+        
+        # 配置斑马纹样式并应用
+        self.configure_treeview_styles(tree)
+        self.update_table_zebra_stripes(tree)
         
         # 配置滚动条
         scrollbar.config(command=tree.yview)
@@ -15671,6 +15889,9 @@ class SubnetPlannerApp:
                 tree.insert('', tk.END, values=(network, ip['ip_address'], translated_status,
                                                 ip['hostname'] or '', ip.get('mac_address', '') or '',
                                                 ip['description'] or '', ip['expiry_date'] or ''))
+        
+        # 更新斑马纹样式
+        self.update_table_zebra_stripes(tree)
     
     def release_all_expired_ips(self, dialog, expired_ips):
         """释放所有过期IP地址

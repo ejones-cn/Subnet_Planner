@@ -212,6 +212,7 @@ class NetworkTopologyVisualizer:
         # 拓扑数据相关
         self.network_data: object = None
         self._scaled: bool = False
+        self._is_first_draw: bool = True  # 首次绘制标志，用于防闪现
         
         # 全屏相关
         self.is_fullscreen: bool = False
@@ -1201,10 +1202,7 @@ class NetworkTopologyVisualizer:
         # 重新计算所有节点的位置，确保父节点垂直居中在子节点中间
         self._reposition_all_nodes()
         
-        # 强制更新画布
-        self.canvas.update()
-        
-        # 更新滚动区域
+        # 更新滚动区域（不强制update，避免闪现）
         self.canvas.update_idletasks()
         bbox = self.canvas.bbox(tk.ALL)
         if bbox:
@@ -1297,6 +1295,10 @@ class NetworkTopologyVisualizer:
         
         # 重新显示画布
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        
+        # 重置首次绘制标志
+        if self._is_first_draw:
+            self._is_first_draw = False
     
     def _auto_scale_canvas(self):
         """画布初始化后延迟执行自适应缩放"""
