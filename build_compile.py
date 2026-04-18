@@ -6,6 +6,7 @@ Subnet Planner 编译脚本
 
 import os
 import sys
+import json
 import subprocess
 import argparse
 import shutil
@@ -14,7 +15,6 @@ from typing import NamedTuple, cast
 from enum import Enum
 
 
-# 定义编译类型枚举
 class CompileType(Enum):
     NUITKA = "nuitka"
     PYINSTALLER = "pyinstaller"
@@ -29,7 +29,7 @@ class Args(NamedTuple):
     install_deps: bool
     pfx_password: str | None
     signtool_path: str | None
-    onefile: bool  # 是否使用单文件编译模式
+    onefile: bool
 
 
 
@@ -58,7 +58,6 @@ def check_and_install_dependencies(compile_type: CompileType) -> None:
     """检查并安装必要的依赖"""
     print("\n📦 检查依赖...")
     
-    # 检查 pip
     try:
         _ = subprocess.run([sys.executable, "-m", "pip", "--version"],
                       check=True, capture_output=True, text=True)
@@ -66,7 +65,6 @@ def check_and_install_dependencies(compile_type: CompileType) -> None:
         print("❌ 错误: pip 未安装")
         sys.exit(1)
     
-    # 根据编译类型安装依赖
     if compile_type == CompileType.NUITKA or compile_type == CompileType.BOTH:
         try:
             _ = subprocess.run([sys.executable, "-m", "nuitka", "--version"],
@@ -93,26 +91,23 @@ def check_and_install_dependencies(compile_type: CompileType) -> None:
 
 def get_version_info() -> str:
     """从version.py获取版本信息"""
-    # 使用动态导入方式获取版本信息，保留完整的版本模块功能
     try:
         import version
         return version.get_version()
     except ImportError as e:
         print(f"⚠️  导入version模块失败: {e}")
-        # 降级方案：文件读取方式获取版本号
         version_file = os.path.join(os.getcwd(), "version.py")
         if os.path.exists(version_file):
             try:
                 with open(version_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                # 提取版本号
                 import re
                 version_match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
                 if version_match:
                     return version_match.group(1)
             except Exception as e:
                 print(f"⚠️  读取版本信息失败: {e}")
-    return "2.6.0"  # 默认版本
+    return "2.6.0"
 
 
 def generate_version_info():
@@ -123,11 +118,9 @@ def generate_version_info():
     try:
         import version
         
-        # 获取版本信息
         version_string = version.get_version()
         version_tuple = version.get_version_tuple()
         
-        # 构建version_info.py内容
         version_info_content = f"""VSVersionInfo(
     ffi=FixedFileInfo(
         filevers={version_tuple + (0,)},
@@ -161,7 +154,6 @@ def generate_version_info():
     ]
 )"""
         
-        # 写入version_info.py文件
         with open("version_info.py", "w", encoding="utf-8") as f:
             _ = f.write(version_info_content)
         print(f"✅ 已更新 version_info.py，版本: {version_string}")
@@ -169,42 +161,200 @@ def generate_version_info():
         print(f"⚠️  无法生成 version_info.py: {e}")
 
 
-def get_version_resource_info():
+def get_version_resource_info() -> dict[str, str]:
     """从version.py获取版本资源信息
     
     Returns:
         dict: 包含公司名称、产品名称、版权信息、文件描述等版本资源信息
     """
-    try:
-        # 直接从version.py获取版本信息
-        version = get_version_info()
-        
-        # 构建资源信息字典
-        return {
-            "company_name": "Subnet Planner Team",
-            "product_name": "Subnet Planner",
-            "copyright": "Copyright © 2025-2026 Subnet Planner Team",
-            "file_description": "子网规划师 - IP子网规划工具",
-            "internal_name": "Subnet Planner",
-            "original_filename": f"SubnetPlannerV{version}.exe",
-            "file_version": version,
-            "product_version": version
-        }
-    except Exception as e:
-        # 如果获取失败，使用默认的版本资源信息
-        print(f"⚠️  无法获取版本资源信息: {e}，使用默认值")
-        version = get_version_info()
-        return {
-            "company_name": "Subnet Planner Team",
-            "product_name": "Subnet Planner",
-            "copyright": "Copyright © 2025-2026 Subnet Planner Team",
-            "file_description": "子网规划师 - IP子网规划工具",
-            "internal_name": "Subnet Planner",
-            "original_filename": f"SubnetPlannerV{version}.exe",
-            "file_version": version,
-            "product_version": version
-        }
+    version = get_version_info()
+    return {
+        "company_name": "Subnet Planner Team",
+        "product_name": "Subnet Planner",
+        "copyright": "Copyright © 2025-2026 Subnet Planner Team",
+        "file_description": "子网规划师 - IP子网规划工具",
+        "internal_name": "Subnet Planner",
+        "original_filename": f"SubnetPlannerV{version}.exe",
+        "file_version": version,
+        "product_version": version
+    }
 
+
+def prepare_version_info() -> tuple[str, dict[str, str]]:
+    """准备版本信息，生成version_info.py并获取版本号和资源信息
+    
+    Returns:
+        tuple: (版本号, 版本资源字典)
+    """
+    generate_version_info()
+    version = get_version_info()
+    version_resource = get_version_resource_info()
+    return version, version_resource
+
+
+def process_output_file(
+    output_file: str,
+    output_filename: str,
+    output_dir: str,
+    pfx_password: str | None = None,
+    signtool_path: str | None = None,
+    dest_filename: str | None = None
+) -> bool:
+    """处理输出文件：验证、签名、复制
+    
+    Args:
+        output_file: 输出文件路径
+        output_filename: 输出文件名
+        output_dir: 输出目录
+        pfx_password: PFX证书密码
+        signtool_path: signtool.exe路径
+        dest_filename: 复制时的目标文件名，None则使用output_filename
+    
+    Returns:
+        bool: 处理是否成功
+    """
+    if not os.path.exists(output_file):
+        print(f"❌ 输出文件未找到: {output_file}")
+        return False
+    
+    size = os.path.getsize(output_file) / (1024 * 1024)
+    print(f"📦 输出文件: {output_file}")
+    print(f"📏 文件大小: {size:.2f} MB")
+    print(f"📅 创建时间: {datetime.fromtimestamp(os.path.getmtime(output_file))}")
+    
+    if not sign_executable(output_file, pfx_password, signtool_path):
+        print("⚠️  文件未签名，但继续执行")
+    
+    if output_dir != "." and output_dir != os.getcwd():
+        os.makedirs(output_dir, exist_ok=True)
+        final_dest_filename = dest_filename if dest_filename else output_filename
+        dest_file = os.path.join(output_dir, final_dest_filename)
+        shutil.copy2(output_file, dest_file)
+        print(f"📋 已复制到: {dest_file}")
+    
+    return True
+
+
+def _restore_database_and_backups(
+    temp_db_dir: str,
+    original_db: str,
+    original_backup_dir: str
+) -> None:
+    """恢复数据库和备份目录
+    
+    Args:
+        temp_db_dir: 临时目录路径
+        original_db: 原始数据库文件名
+        original_backup_dir: 原始备份目录名
+    """
+    temp_db = os.path.join(temp_db_dir, original_db)
+    temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
+    
+    if os.path.exists(temp_db):
+        try:
+            moved_path = shutil.move(temp_db, original_db)
+            print(f"✅ 恢复数据库文件成功: {moved_path}")
+        except Exception as e:
+            print(f"❌ 恢复数据库文件失败: {original_db}, 错误: {e}")
+    
+    if os.path.exists(temp_backup_dir):
+        try:
+            moved_path = shutil.move(temp_backup_dir, original_backup_dir)
+            print(f"✅ 恢复备份目录成功: {moved_path}")
+        except Exception as e:
+            print(f"❌ 恢复备份目录失败: {original_backup_dir}, 错误: {e}")
+
+
+def _generate_spec_content(version: str, output_filename: str, onefile: bool) -> str:
+    """生成PyInstaller spec文件内容
+    
+    Args:
+        version: 版本号
+        output_filename: 输出文件名
+        onefile: 是否单文件模式
+    
+    Returns:
+        str: spec文件内容
+    """
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyinstaller_config.json")
+    
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        excludes = config.get("excludes", [])
+        datas = config.get("datas", [])
+    else:
+        print(f"⚠️  配置文件不存在: {config_path}，使用默认配置")
+        excludes = [
+            "tkinter.test", "unittest", "pytest", "doctest",
+            "numpy", "scipy", "matplotlib", "pandas",
+            "PIL._tkinter_finder", "PIL.ImageQt", "PIL.TiffImagePlugin",
+            "PIL.JpegImagePlugin", "PIL.PngImagePlugin", "PIL.GifImagePlugin",
+            "xmlrpc", "urllib3", "requests", "cryptography",
+            "cffi", "pycparser", "pyOpenSSL",
+            "winreg", "_winreg", "win32api", "win32con", "win32gui",
+            "win32process", "win32security", "win32service", "win32serviceutil",
+            "win32event", "win32evtlog", "win32evtlogutil", "win32clipboard",
+            "win32com", "pythoncom", "win32timezone", "winsound",
+            "msvcrt", "fcntl", "pwd", "grp", "spwd", "resource",
+            "imp", "modulefinder", "sitecustomize", "usercustomize",
+            "idlelib", "pydoc", "test", "lib2to3",
+            "debug", "code", "codeop", "readline", "rlcompleter",
+        ]
+        datas = [["translations.json", "."], ["Subnet_Planner.ico", "."], ["Picture", "Picture"]]
+    
+    excludes_str = ",\n                 ".join(f"'{module}'" for module in excludes)
+    datas_str = ",\n             ".join(f"('{data[0]}', '{data[1]}')" for data in datas)
+    
+    exe_name = output_filename.rsplit('.', 1)[0]
+    
+    return f'''# -*- mode: python ; coding: utf-8 -*-
+
+VERSION_STRING = '{version}'
+
+block_cipher = None
+
+a = Analysis(['windows_app.py'],
+             pathex=['{os.getcwd()}'],
+             binaries=[],
+             datas=[{datas_str}],
+             hiddenimports=[],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=[
+                 {excludes_str}
+             ],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(pyz,
+        a.scripts,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        [],
+        name='{exe_name}',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        upx_exclude=[],
+        runtime_tmpdir=None,
+        console=False,
+        icon='Subnet_Planner.ico',
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+        uac_admin=False,
+        uac_uiaccess=False,
+        onefile={onefile},
+        version='version_info.py')
+'''
 
 
 def sign_executable(executable_path: str, pfx_password: str | None = None, signtool_path: str | None = None) -> bool:
@@ -218,17 +368,14 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
     Returns:
         bool: 签名是否成功
     """
-    # 检查操作系统，非Windows系统跳过签名
     if os.name != 'nt':
         print(f"\n⚠️  代码签名仅支持Windows系统，跳过签名: {executable_path}")
         return True
     
     print(f"\n🔐 正在签名可执行文件: {executable_path}")
     
-    # 1. 优先使用函数参数传入的路径
     if signtool_path and os.path.exists(signtool_path):
         print(f"✅ 使用参数指定的signtool路径: {signtool_path}")
-    # 2. 其次检查环境变量SIGNTOOL_PATH
     elif os.environ.get('SIGNTOOL_PATH'):
         signtool_path = os.environ['SIGNTOOL_PATH']
         if os.path.exists(signtool_path):
@@ -236,13 +383,12 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
         else:
             print(f"⚠️  环境变量SIGNTOOL_PATH指定的路径不存在: {signtool_path}")
             signtool_path = None
-    # 3. 最后检查默认安装路径
     else:
         possible_paths = [
-            r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe",  # 新安装的路径
+            r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe",
             r"C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe",
             r"C:\Program Files\Windows Kits\10\bin\x64\signtool.exe",
-            r"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe"  # App Certification Kit 路径
+            r"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe"
         ]
         
         signtool_path = None
@@ -256,13 +402,11 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
         print("⚠️  未找到 signtool.exe，无法进行代码签名")
         return False
     
-    # 检查PFX证书文件
     pfx_file = os.path.join(os.getcwd(), "subnetplanner.pfx")
     if not os.path.exists(pfx_file):
         print("⚠️  未找到证书文件 subnetplanner.pfx")
         return False
     
-    # 获取密码
     if pfx_password is None:
         try:
             import getpass
@@ -272,31 +416,29 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
             print("⚠️  继续执行，但可执行文件未签名")
             return False
     
-    # 签名命令 - 尝试多个时间戳服务器
     timestamp_servers = [
         "http://timestamp.digicert.com",
         "http://timestamp.globalsign.com/scripts/timestamp.dll",
         "http://tsa.starfieldtech.com",
         "http://timestamp.comodoca.com/authenticode",
-        "http://timestamp.sectigo.com"  # 原服务器，作为最后的备选
+        "http://timestamp.sectigo.com"
     ]
     
     for ts_server in timestamp_servers:
         print(f"\n🔄 尝试使用时间戳服务器: {ts_server}")
         
-        # 签名命令
         sign_cmd: list[str] = [
             signtool_path,
             "sign",
             "/fd", "SHA256",
             "/f", pfx_file,
-            "/p", pfx_password,  # 添加密码参数
-            "/t", ts_server,  # 使用当前时间戳服务器
+            "/p", pfx_password,
+            "/t", ts_server,
             executable_path
         ]
         
         try:
-            print(f"📝 签名命令: {' '.join(sign_cmd[:-2])} [密码隐藏] {executable_path}")  # 隐藏密码
+            print(f"📝 签名命令: {' '.join(sign_cmd[:-2])} [密码隐藏] {executable_path}")
             _ = subprocess.run(sign_cmd, check=True, cwd=os.getcwd(), capture_output=True, text=True)
             print("✅ 代码签名成功!")
             return True
@@ -319,17 +461,9 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     """使用Nuitka编译"""
     print("\n🚀 使用 Nuitka 编译...")
     
-    # 生成version_info.py文件
-    generate_version_info()
-    
-    # 获取版本信息
-    version = get_version_info()
-    # 从version.py获取版本资源信息
-    version_resource = get_version_resource_info()
-    # 生成带版本号的输出文件名
+    version, version_resource = prepare_version_info()
     output_filename = f"SubnetPlannerV{version}.exe"
     
-    # 在编译前将数据库和备份目录移到临时位置，避免被打包
     temp_db_dir = os.path.join(os.path.expanduser("~"), ".subnet_planner_temp")
     original_db = "SubnetPlanner_data.db"
     original_backup_dir = "ipam_backups"
@@ -347,82 +481,51 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             moved_path = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
             print(f"⏳ 临时移动备份目录: {original_backup_dir} -> {moved_path}")
     
-    # 编译命令 - 使用Nuitka新版本支持的选项
-    cmd: list[str] = [
-        sys.executable, "-m", "nuitka",
-        "--onefile" if onefile else "",  # 根据onefile参数决定编译模式
-        "--windows-icon-from-ico=Subnet_Planner.ico",
-        "--include-data-file=translations.json=translations.json",
-        "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
-        "--include-data-dir=Picture=Picture",
-        "--enable-plugin=tk-inter",
-        "--windows-console-mode=disable",  # 禁用控制台
-        "--include-windows-runtime-dlls=no",  # 不包含Windows运行时DLL，减小文件大小
-        "--noinclude-default-mode=error",  # 不包含默认模块
-        "--assume-yes-for-downloads",  # 自动下载依赖
-        "--enable-plugin=anti-bloat",  # 启用反膨胀插件
-        # 移除--remove-output选项，避免杀毒软件导致的删除失败
-        f"--product-name={version_resource['product_name']}",  # 使用中文产品名称
-        f"--product-version={version}",
-        f"--file-version={version}",
-        f"--company-name={version_resource['company_name']}",
-        f"--copyright={version_resource['copyright']}",
-        f"--file-description={version_resource['file_description']}",  # 使用中文文件描述
-        f"--output-filename={output_filename}",  # 始终指定输出文件名
-        "windows_app.py"
-    ]
-    
-    # 过滤掉空字符串选项
-    cmd = [option for option in cmd if option]
-    
-    # 执行编译
     try:
+        cmd: list[str] = [
+            sys.executable, "-m", "nuitka",
+            "--onefile" if onefile else "",
+            "--windows-icon-from-ico=Subnet_Planner.ico",
+            "--include-data-file=translations.json=translations.json",
+            "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
+            "--include-data-dir=Picture=Picture",
+            "--enable-plugin=tk-inter",
+            "--windows-console-mode=disable",
+            "--include-windows-runtime-dlls=no",
+            "--noinclude-default-mode=error",
+            "--assume-yes-for-downloads",
+            "--enable-plugin=anti-bloat",
+            f"--product-name={version_resource['product_name']}",
+            f"--product-version={version}",
+            f"--file-version={version}",
+            f"--company-name={version_resource['company_name']}",
+            f"--copyright={version_resource['copyright']}",
+            f"--file-description={version_resource['file_description']}",
+            f"--output-filename={output_filename}",
+            "windows_app.py"
+        ]
+        
+        cmd = [option for option in cmd if option]
+        
         print(f"📝 编译命令: {' '.join(cmd)}")
-        _ = subprocess.run(cmd, check=True, cwd=os.getcwd())
+        subprocess.run(cmd, check=True, cwd=os.getcwd())
         print("✅ Nuitka 编译成功!")
         
-        # 检查输出文件位置
         if onefile:
-            # 单文件模式直接输出到当前目录
             output_file = os.path.join(os.getcwd(), output_filename)
-            if os.path.exists(output_file):
-                print(f"📦 输出文件: {output_file}")
         else:
-            # 多文件模式输出到当前目录
             output_file = os.path.join(os.getcwd(), output_filename)
-            if os.path.exists(output_file):
-                print(f"📦 输出文件: {output_file}")
-            else:
-                # 查找正确的输出文件
+            if not os.path.exists(output_file):
                 for root, _, files in os.walk(os.getcwd()):
                     for file in files:
                         if file.endswith('.exe') and 'SubnetPlanner' in file:
                             output_file = os.path.join(root, file)
-                            print(f"📦 输出文件: {output_file}")
                             break
-                    if output_file and os.path.exists(output_file):
+                    if os.path.exists(output_file):
                         break
         
-        # 验证输出文件存在
-        if os.path.exists(output_file):
-            size = os.path.getsize(output_file) / (1024 * 1024)  # MB
-            print(f"📏 文件大小: {size:.2f} MB")
-            print(f"📅 创建时间: {datetime.fromtimestamp(os.path.getmtime(output_file))}")
-            
-            # 对可执行文件进行签名
-            _ = sign_executable(output_file, pfx_password, signtool_path)
-            
-            # 如果指定了输出目录，复制文件
-            if output_dir != "." and output_dir != os.getcwd():
-                os.makedirs(output_dir, exist_ok=True)
-                dest_file = os.path.join(output_dir, output_filename)
-                _ = shutil.copy2(output_file, dest_file)
-                print(f"📋 已复制到: {dest_file}")
-        else:
-            print(f"❌ 输出文件未找到: {output_file}")
-            return False
+        return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path)
         
-        return True
     except subprocess.CalledProcessError as e:
         print(f"❌ Nuitka 编译失败: {e}")
         return False
@@ -430,24 +533,8 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         print(f"❌ 编译过程中发生错误: {e}")
         return False
     finally:
-        # 编译完成后恢复数据库和备份目录
         if should_restore:
-            temp_db = os.path.join(temp_db_dir, original_db)
-            temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
-            
-            if os.path.exists(temp_db):
-                try:
-                    moved_path = shutil.move(temp_db, original_db)
-                    print(f"✅ 恢复数据库文件成功: {moved_path}")
-                except Exception as e:
-                    print(f"❌ 恢复数据库文件失败: {original_db}, 错误: {e}")
-            
-            if os.path.exists(temp_backup_dir):
-                try:
-                    moved_path = shutil.move(temp_backup_dir, original_backup_dir)
-                    print(f"✅ 恢复备份目录成功: {moved_path}")
-                except Exception as e:
-                    print(f"❌ 恢复备份目录失败: {original_backup_dir}, 错误: {e}")
+            _restore_database_and_backups(temp_db_dir, original_db, original_backup_dir)
 
 
 
@@ -455,164 +542,35 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
     """使用PyInstaller编译"""
     print("\n🚀 使用 PyInstaller 编译...")
     
-    # 生成version_info.py文件
-    generate_version_info()
-    
-    # 获取版本信息
-    version = get_version_info()
-    # 生成带版本号的输出文件名
+    version, _ = prepare_version_info()
     output_filename = f"SubnetPlannerV{version}.exe"
     
-    # 生成新的spec文件，优化配置以减少杀毒软件误报
     print("📝 生成优化的spec文件...")
+    spec_content = _generate_spec_content(version, output_filename, onefile)
     
-    # 构建spec文件内容
-    spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
-
-# 直接使用传入的版本信息
-VERSION_STRING = '{version}'
-
-block_cipher = None
-
-a = Analysis(['windows_app.py'],
-             pathex=['{os.getcwd()}'],
-             binaries=[],
-             datas=[('translations.json', '.'), ('Subnet_Planner.ico', '.'), ('Picture', 'Picture')],
-             hiddenimports=[],
-             hookspath=[],
-             runtime_hooks=[],
-             excludes=[
-                 'tkinter.test',
-                 'unittest',
-                 'pytest',
-                 'doctest',
-                 'numpy',
-                 'scipy',
-                 'matplotlib',
-                 'pandas',
-                 'PIL._tkinter_finder',
-                 'PIL.ImageQt',
-                 'PIL.TiffImagePlugin',
-                 'PIL.JpegImagePlugin',
-                 'PIL.PngImagePlugin',
-                 'PIL.GifImagePlugin',
-                 'xmlrpc',
-                 'urllib3',
-                 'requests',
-                 'cryptography',
-                 'cffi',
-                 'pycparser',
-                 'pyOpenSSL',
-                 'winreg',
-                 '_winreg',
-                 'win32api',
-                 'win32con',
-                 'win32gui',
-                 'win32process',
-                 'win32security',
-                 'win32service',
-                 'win32serviceutil',
-                 'win32event',
-                 'win32evtlog',
-                 'win32evtlogutil',
-                 'win32clipboard',
-                 'win32com',
-                 'pythoncom',
-                 'win32timezone',
-                 'winsound',
-                 'msvcrt',
-                 'fcntl',
-                 'pwd',
-                 'grp',
-                 'spwd',
-                 'resource',
-                 'imp',
-                 'modulefinder',
-                 'sitecustomize',
-                 'usercustomize',
-                 'idlelib',
-                 'pydoc',
-                 'test',
-                 'lib2to3',
-                 'debug',
-                 'code',
-                 'codeop',
-                 'readline',
-                 'rlcompleter',
-             ],
-             win_no_prefer_redirects=False,
-             win_private_assemblies=False,
-             cipher=block_cipher,
-             noarchive=False)
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe = EXE(pyz,
-        a.scripts,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        [],
-        name='{output_filename.rsplit('.', 1)[0]}',
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=False,
-        upx_exclude=[],
-        runtime_tmpdir=None,
-        console=False,
-        icon='Subnet_Planner.ico',
-        disable_windowed_traceback=False,
-        argv_emulation=False,
-        target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
-        uac_admin=False,
-        uac_uiaccess=False,
-        onefile={onefile},
-        version='version_info.py')
-'''
-    
-    # 写入spec文件
     spec_file = f"{output_filename.rsplit('.', 1)[0]}.spec"
     with open(spec_file, "w", encoding="utf-8") as f:
         _ = f.write(spec_content)
     print(f"✅ 生成 spec 文件: {spec_file}")
     
-    # 编译命令 - 优化配置以减少杀毒软件误报和文件大小
-    cmd: list[str] = [
-        sys.executable, "-m", "PyInstaller",
-        "--noconfirm",
-        "--log-level=ERROR",
-        spec_file
-    ]
-    
-    # 执行编译
     try:
+        cmd: list[str] = [
+            sys.executable, "-m", "PyInstaller",
+            "--noconfirm",
+            "--log-level=ERROR",
+            spec_file
+        ]
+        
         print(f"📝 编译命令: {' '.join(cmd)}")
-        _ = subprocess.run(cmd, check=True, cwd=os.getcwd())
+        subprocess.run(cmd, check=True, cwd=os.getcwd())
         print("✅ PyInstaller 编译成功!")
         
-        # 检查输出文件
         dist_dir = os.path.join(os.getcwd(), "dist")
         output_file = os.path.join(dist_dir, output_filename)
         
-        if os.path.exists(output_file):
-            size = os.path.getsize(output_file) / (1024 * 1024)  # MB
-            print(f"📦 输出文件: {output_file}")
-            print(f"📏 文件大小: {size:.2f} MB")
-            print(f"📅 创建时间: {datetime.fromtimestamp(os.path.getmtime(output_file))}")
-            
-            # 对可执行文件进行签名
-            _ = sign_executable(output_file, pfx_password, signtool_path)
-            
-            # 如果指定了输出目录，复制文件
-            if output_dir != "." and output_dir != os.getcwd():
-                os.makedirs(output_dir, exist_ok=True)
-                dest_file = os.path.join(output_dir, f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.exe")
-                _ = shutil.copy2(output_file, dest_file)
-                print(f"📋 已复制到: {dest_file}")
+        dest_filename = f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.exe"
+        return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path, dest_filename)
         
-        return True
     except subprocess.CalledProcessError as e:
         print(f"❌ PyInstaller 编译失败: {e}")
         return False
@@ -626,7 +584,6 @@ def clean_build_files() -> None:
     """清理构建文件"""
     print("\n🧹 清理构建文件...")
     
-    # 需要清理的目录和文件（不包括生成的可执行文件和dist目录）
     clean_items = [
         "build",
         "__pycache__",
@@ -634,12 +591,11 @@ def clean_build_files() -> None:
         "windows_app.build",
         "windows_app.dist",
         "windows_app.onefile-build",
-        "SubnetPlanner.exe"  # 只清理不带版本号的可执行文件
+        "SubnetPlanner.exe"
     ]
     
     for item in clean_items:
         if "*" in item:
-            # 处理通配符
             import glob
             for file in glob.glob(item):
                 if os.path.isfile(file):
@@ -662,7 +618,6 @@ def main() -> None:
     print("\n🎯 Subnet Planner 编译脚本")
     print("=" * 50)
     
-    # 解析命令行参数
     parser = argparse.ArgumentParser(description="Subnet Planner 编译脚本")
     _ = parser.add_argument("--type", "-t", choices=["nuitka", "pyinstaller", "both"], 
                        default="nuitka", help="编译方式")
@@ -675,40 +630,29 @@ def main() -> None:
     _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
     args = parser.parse_args()
     
-    # 使用cast明确指定args.type为字符串类型
     compile_type_str = cast(str, args.type)
-    # 将字符串转换为CompileType枚举
     compile_type = CompileType(compile_type_str)
     
-    # 将转换后的枚举值赋值回args.type
     args.type = compile_type
     
-    # 使用cast为args对象添加类型注解，先转换为object再转换为Args
     args = cast(Args, cast(object, args))
     
-    # 检查Python版本
     check_python_version()
     
-    # 如果指定了清理，先清理
     if args.clean:
         clean_build_files()
         if not args.install_deps and args.type == CompileType.NUITKA:
-            # 如果只是清理，不执行后续操作
             sys.exit(0)
     
-    # 如果只是安装依赖
     if args.install_deps:
         check_and_install_dependencies(args.type)
         sys.exit(0)
     
-    # 检查并安装依赖
     check_and_install_dependencies(args.type)
     
-    # 创建输出目录
     if args.output != ".":
         os.makedirs(args.output, exist_ok=True)
     
-    # 执行编译
     success = True
     
     if args.type == CompileType.NUITKA or args.type == CompileType.BOTH:
@@ -717,9 +661,7 @@ def main() -> None:
     if args.type == CompileType.PYINSTALLER or (args.type == CompileType.BOTH and success):
         success = compile_with_pyinstaller(args.output, args.pfx_password, args.signtool_path, args.onefile)
     
-    # 清理临时文件（如果需要）
     if args.clean and success:
-        # 只清理Nuitka的临时文件，保留PyInstaller的dist目录
         for item in ["windows_app.build", "windows_app.dist", "windows_app.onefile-build"]:
             if os.path.exists(item):
                 shutil.rmtree(item)

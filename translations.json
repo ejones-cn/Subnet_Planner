@@ -1940,11 +1940,11 @@
     "ko": "자동 네트워크 스캔"
   },
   "network_address_cidr_format": {
-    "zh": "网络地址 (CIDR格式)",
-    "en": "Network Address (CIDR format)",
-    "ja": "ネットワークアドレス (CIDR形式)",
-    "zh_tw": "網路位址 (CIDR格式)",
-    "ko": "네트워크 주소 (CIDR 형식)"
+    "zh": "网络地址 (CIDR)",
+    "en": "Network Addr (CIDR)",
+    "ja": "ネットワークアドレス (CIDR)",
+    "zh_tw": "網路位址 (CIDR)",
+    "ko": "네트워크 주소 (CIDR)"
   },
   "thread_count": {
     "zh": "线程数",

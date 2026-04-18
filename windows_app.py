@@ -53,6 +53,13 @@ from ip_subnet_calculator import (
 from export_utils import ExportUtils
 from chart_utils import draw_text_with_stroke, draw_distribution_chart
 from ipam_sqlite import IPAMSQLite
+from services.table_column_manager import TableColumnManager
+from services.history_repository import HistoryRepository
+from services.ipam_repository import IPAMRepository
+from services.subnet_split_service import SubnetSplitService
+from services.subnet_planning_service import SubnetPlanningService
+from services.ip_query_service import IPQueryService
+from services.validation_service import ValidationService
 from validators import IPAMValidator
 from visualization import NetworkTopologyVisualizer
 from style_manager import (
@@ -91,6 +98,21 @@ def get_ipam():
 SCALE_FACTOR = 1.0  # DPI缩放因子，默认1.0（96 DPI）
 DPI_MODE = None  # DPI模式标记
 
+# 对话框尺寸常量定义
+# 标准对话框尺寸
+DIALOG_INFO_SMALL = (350, 180)      # 信息对话框
+DIALOG_INFO_MEDIUM = (400, 200)     # 警告对话框
+DIALOG_INFO_LARGE = (450, 220)      # 错误对话框
+DIALOG_CONFIRM = (500, 180)         # 确认对话框
+DIALOG_INPUT = (400, 250)           # 输入对话框
+DIALOG_SELECT = (500, 300)          # 选择对话框
+
+# 复杂对话框尺寸
+DIALOG_SMALL = (400, 200)           # 小型对话框（简单表单）
+DIALOG_MEDIUM = (500, 300)          # 中型对话框（中等复杂度）
+DIALOG_LARGE = (600, 400)           # 大型对话框（复杂表单）
+DIALOG_TABLE = (800, 400)           # 数据表格对话框
+
 # IPAM网络管理按钮数量
 NETWORK_MANAGEMENT_BUTTON_COUNT = 6
 
@@ -115,6 +137,596 @@ def create_bordered_entry(parent, border_color="#a9a9a9", **kwargs):
     entry.pack(fill="both", expand=True, padx=1, pady=1)
     
     return border_frame, entry
+
+
+class DialogBase:
+    """对话框基类，提供统一的布局和交互模式"""
+    
+    def __init__(self, parent, title, width, height, resizable=False, modal=True):
+        """初始化对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            width: 对话框宽度
+            height: 对话框高度
+            resizable: 是否允许调整大小
+            modal: 是否为模态对话框
+        """
+        self.parent = parent
+        self.title = title
+        self.width = width
+        self.height = height
+        self.resizable = resizable
+        self.modal = modal
+        
+        # 创建对话框
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(title)
+        self.dialog.resizable(resizable, resizable)
+        self.dialog.transient(parent)
+        
+        # 为对话框设置与主窗口相同的置顶属性
+        if hasattr(parent, 'is_pinned'):
+            self.dialog.attributes('-topmost', parent.is_pinned)
+        
+        if modal:
+            self.dialog.grab_set()
+        
+        # 先隐藏对话框，避免定位过程中的闪现
+        self.dialog.withdraw()
+        
+        # 居中对话框
+        self._center_dialog()
+        
+        # 显示对话框并设置焦点
+        self.dialog.deiconify()
+        self.dialog.focus_force()
+        
+        # 绑定键盘快捷键
+        self._bind_shortcuts()
+        
+        # 初始化布局
+        self._init_layout()
+    
+    def _center_dialog(self):
+        """居中对话框"""
+        self.dialog.update_idletasks()
+        dialog_width = self.width
+        dialog_height = self.height
+        
+        parent_width = self.parent.winfo_width()
+        parent_height = self.parent.winfo_height()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        
+        x = parent_x + (parent_width - dialog_width) // 2
+        y = parent_y + (parent_height - dialog_height) // 2
+        
+        self.dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+    
+    def _init_layout(self):
+        """初始化布局"""
+        # 主框架
+        self.main_frame = ttk.Frame(self.dialog, padding="15")
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 内容框架
+        self.content_frame = ttk.Frame(self.main_frame)
+        self.content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        # 配置内容框架的网格布局，使控件垂直居中
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_rowconfigure(100, weight=1)
+        
+        # 按钮框架
+        self.button_frame = ttk.Frame(self.main_frame)
+        self.button_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        # 配置按钮框架的内部布局，使用pack而不是grid
+        self.button_frame.pack_propagate(True)
+        
+        # 配置按钮框架的网格布局，使按钮靠右对齐
+        self.button_frame.grid_columnconfigure(0, weight=1)
+        self.button_frame.grid_columnconfigure(1, weight=0)
+        self.button_frame.grid_columnconfigure(2, weight=0)
+    
+    def _bind_shortcuts(self):
+        """绑定键盘快捷键"""
+        # 绑定Escape键关闭对话框
+        self.dialog.bind('<Escape>', lambda e: self.dialog.destroy())
+    
+    def add_button(self, text, command, column=1, padx=5):
+        """添加按钮
+        
+        Args:
+            text: 按钮文本
+            command: 按钮命令
+            column: 按钮列位置
+            padx: 按钮水平间距
+        """
+        button = ttk.Button(self.button_frame, text=text, command=command, width=10)
+        button.pack(side=tk.RIGHT, padx=padx, pady=5)
+        return button
+    
+    def show(self):
+        """显示对话框并等待关闭
+        
+        Returns:
+            对话框的返回值
+        """
+        # 自动调整对话框高度以适应内容
+        self.dialog.update_idletasks()
+        content_height = self.main_frame.winfo_reqheight()
+        if content_height > self.height:
+            self.height = content_height
+            self.dialog.geometry(f"{self.width}x{self.height}+{self.dialog.winfo_x()}+{self.dialog.winfo_y()}")
+        
+        self.parent.wait_window(self.dialog)
+        return getattr(self, 'result', None)
+    
+    def destroy(self):
+        """销毁对话框"""
+        self.dialog.destroy()
+    
+    def protocol(self, name, func):
+        """设置窗口协议处理程序
+        
+        Args:
+            name: 协议名称
+            func: 处理函数
+        """
+        self.dialog.protocol(name, func)
+
+
+class InfoDialog(DialogBase):
+    """信息对话框，用于显示信息、警告或错误"""
+    
+    def __init__(self, parent, title, message, dialog_type="info"):
+        """初始化信息对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            message: 对话框消息
+            dialog_type: 对话框类型，可选值：info, warning, error
+        """
+        # 根据对话框类型设置不同的默认尺寸
+        if dialog_type == "info":
+            width, height = 350, 180
+        elif dialog_type == "warning":
+            width, height = 400, 200
+        elif dialog_type == "error":
+            width, height = 450, 220
+        else:
+            width, height = 350, 180
+        
+        super().__init__(parent, title, width, height, resizable=False, modal=True)
+        
+        self.message = message
+        self.dialog_type = dialog_type
+        
+        # 初始化界面
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化界面"""
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 添加消息文本
+        msg_label = ttk.Label(
+            self.content_frame, 
+            text=self.message, 
+            wraplength=self.width - 40, 
+            font=(font_family, font_size)
+        )
+        msg_label.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # 添加确定按钮
+        def on_ok():
+            self.result = True
+            self.dialog.destroy()
+        
+        ok_btn = self.add_button(_('ok'), on_ok, column=1)
+        
+        # 绑定回车键
+        self.dialog.bind('<Return>', lambda e: on_ok())
+        
+        # 设置焦点到确定按钮
+        ok_btn.focus_force()
+
+
+class ConfirmDialog(DialogBase):
+    """确认对话框，用于需要用户确认操作的场景"""
+    
+    def __init__(self, parent, title, message, ok_text="是", cancel_text="否"):
+        """初始化确认对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            message: 对话框消息
+            ok_text: 确认按钮文本
+            cancel_text: 取消按钮文本
+        """
+        # 设置默认尺寸
+        width, height = 400, 180
+        
+        super().__init__(parent, title, width, height, resizable=False, modal=True)
+        
+        self.message = message
+        self.ok_text = ok_text
+        self.cancel_text = cancel_text
+        
+        # 初始化界面
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化界面"""
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 添加消息文本
+        msg_label = ttk.Label(
+            self.content_frame, 
+            text=self.message, 
+            wraplength=self.width - 80, 
+            font=(font_family, font_size)
+        )
+        msg_label.pack(fill=tk.BOTH, expand=True, pady=10, padx=20)
+        
+        # 添加取消按钮
+        def on_cancel():
+            self.result = False
+            self.dialog.destroy()
+        
+        cancel_btn = self.add_button(self.cancel_text, on_cancel, column=2)
+        
+        # 添加确认按钮
+        def on_ok():
+            self.result = True
+            self.dialog.destroy()
+        
+        ok_btn = self.add_button(self.ok_text, on_ok, column=1)
+        
+        # 绑定回车键（默认确认）和Escape键（默认取消）
+        self.dialog.bind('<Return>', lambda e: on_ok())
+        self.dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 设置焦点到确认按钮
+        ok_btn.focus_force()
+
+
+class InputDialog(DialogBase):
+    """输入对话框，用于收集用户输入的场景"""
+    
+    def __init__(self, parent, title, fields, width=400, height=250):
+        """初始化输入对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            fields: 输入字段列表，每个字段包含：
+                {
+                    'label': 字段标签,
+                    'default': 默认值,
+                    'validator': 验证函数 (可选),
+                    'validate_message': 验证失败消息 (可选),
+                    'width': 输入框宽度 (可选)
+                }
+            width: 对话框宽度
+            height: 对话框高度
+        """
+        super().__init__(parent, title, width, height, resizable=False, modal=True)
+        
+        self.fields = fields
+        self.entries = {}
+        self.validation_errors = {}
+        
+        # 初始化界面
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化界面"""
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 配置内容框架的网格布局
+        self.content_frame.grid_columnconfigure(0, weight=0)
+        self.content_frame.grid_columnconfigure(1, weight=1)
+        
+        # 添加输入字段
+        for i, field in enumerate(self.fields):
+            # 添加标签
+            label = ttk.Label(
+                self.content_frame, 
+                text=field['label'], 
+                font=(font_family, font_size)
+            )
+            label.grid(row=i, column=0, sticky="e", pady=10, padx=(0, 15))
+            
+            # 添加输入框
+            width = field.get('width', 12)
+            border_frame, entry = create_bordered_entry(self.content_frame, width=width)
+            border_frame.grid(row=i, column=1, sticky="ew", pady=10, padx=(0, 10))
+            
+            # 设置默认值
+            if 'default' in field:
+                entry.insert(0, field['default'])
+            
+            # 保存输入框引用
+            self.entries[field['label']] = entry
+            
+            # 添加验证错误标签
+            error_var = tk.StringVar()
+            error_label = ttk.Label(
+                self.content_frame, 
+                textvariable=error_var, 
+                foreground="red", 
+                font=(font_family, font_size - 2)
+            )
+            error_label.grid(row=i + 1, column=1, sticky="w", pady=(0, 5))
+            self.validation_errors[field['label']] = error_var
+        
+        # 添加取消按钮
+        def on_cancel():
+            self.result = None
+            self.dialog.destroy()
+        
+        cancel_btn = self.add_button(_('cancel'), on_cancel, column=2)
+        
+        # 添加确认按钮
+        def on_ok():
+            # 验证输入
+            if self._validate_input():
+                # 收集输入值
+                self.result = {}
+                for field in self.fields:
+                    label = field['label']
+                    self.result[label] = self.entries[label].get().strip()
+                self.dialog.destroy()
+        
+        ok_btn = self.add_button(_('ok'), on_ok, column=1)
+        
+        # 绑定回车键（默认确认）和Escape键（默认取消）
+        self.dialog.bind('<Return>', lambda e: on_ok())
+        self.dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 设置焦点到第一个输入框
+        if self.entries:
+            first_entry = list(self.entries.values())[0]
+            first_entry.focus_force()
+            first_entry.select_range(0, tk.END)
+    
+    def _validate_input(self):
+        """验证输入
+        
+        Returns:
+            bool: 验证是否通过
+        """
+        valid = True
+        
+        for field in self.fields:
+            label = field['label']
+            value = self.entries[label].get().strip()
+            
+            # 清除之前的错误信息
+            self.validation_errors[label].set("")
+            
+            # 检查是否为空
+            if not value and 'required' in field and field['required']:
+                self.validation_errors[label].set("此字段不能为空")
+                valid = False
+                continue
+            
+            # 检查是否有验证函数
+            if 'validator' in field:
+                validator = field['validator']
+                validate_message = field.get('validate_message', "输入无效")
+                if not validator(value):
+                    self.validation_errors[label].set(validate_message)
+                    valid = False
+        
+        return valid
+
+
+class SelectDialog(DialogBase):
+    """选择对话框，用于让用户从选项中选择的场景"""
+    
+    def __init__(self, parent, title, options, multi_select=False, width=500, height=300):
+        """初始化选择对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            options: 选项列表，每个选项可以是字符串或字典 {
+                'value': 选项值,
+                'label': 选项标签
+            }
+            multi_select: 是否支持多选
+            width: 对话框宽度
+            height: 对话框高度
+        """
+        super().__init__(parent, title, width, height, resizable=True, modal=True)
+        
+        self.options = options
+        self.multi_select = multi_select
+        self.selected_values = []
+        
+        # 初始化界面
+        self._init_ui()
+    
+    def _init_ui(self):
+        """初始化界面"""
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 创建滚动框架
+        scroll_frame = ttk.Frame(self.content_frame)
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(scroll_frame, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 创建列表框
+        if self.multi_select:
+            self.listbox = tk.Listbox(
+                scroll_frame, 
+                selectmode=tk.MULTIPLE, 
+                yscrollcommand=scrollbar.set, 
+                font=(font_family, font_size)
+            )
+        else:
+            self.listbox = tk.Listbox(
+                scroll_frame, 
+                selectmode=tk.SINGLE, 
+                yscrollcommand=scrollbar.set, 
+                font=(font_family, font_size)
+            )
+        
+        self.listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.listbox.yview)
+        
+        # 填充选项
+        self.option_values = []
+        for i, option in enumerate(self.options):
+            if isinstance(option, dict):
+                label = option.get('label', str(option.get('value', '')))
+                value = option.get('value', label)
+            else:
+                label = str(option)
+                value = option
+            
+            self.listbox.insert(tk.END, label)
+            self.option_values.append(value)
+        
+        # 添加取消按钮
+        def on_cancel():
+            self.result = None
+            self.dialog.destroy()
+        
+        cancel_btn = self.add_button(_('cancel'), on_cancel, column=2)
+        
+        # 添加确认按钮
+        def on_ok():
+            # 收集选中的值
+            selected_indices = self.listbox.curselection()
+            self.selected_values = [self.option_values[i] for i in selected_indices]
+            
+            if not self.multi_select and self.selected_values:
+                self.result = self.selected_values[0]
+            else:
+                self.result = self.selected_values
+            
+            self.dialog.destroy()
+        
+        ok_btn = self.add_button(_('ok'), on_ok, column=1)
+        
+        # 绑定回车键（默认确认）和Escape键（默认取消）
+        self.dialog.bind('<Return>', lambda e: on_ok())
+        self.dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 设置焦点到列表框
+        self.listbox.focus_force()
+        
+        # 默认选择第一个选项
+        if self.options:
+            self.listbox.select_set(0)
+
+
+class ComplexDialog(DialogBase):
+    """复杂对话框，用于包含多个控件的复杂界面"""
+    
+    def __init__(self, parent, title, width, height, resizable=False, modal=True):
+        """初始化复杂对话框
+        
+        Args:
+            parent: 父窗口
+            title: 对话框标题
+            width: 对话框宽度
+            height: 对话框高度
+            resizable: 是否允许调整大小
+            modal: 是否为模态对话框
+        """
+        super().__init__(parent, title, width, height, resizable, modal)
+    
+    def add_field(self, label, row, column, **kwargs):
+        """添加输入字段
+        
+        Args:
+            label: 字段标签
+            row: 行位置
+            column: 列位置
+            **kwargs: 额外参数
+            
+        Returns:
+            tuple: (label_widget, entry_widget) 标签和输入框组件
+        """
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        # 添加标签
+        label_widget = ttk.Label(
+            self.content_frame, 
+            text=label, 
+            font=(font_family, font_size)
+        )
+        label_widget.grid(row=row, column=column, sticky="e", pady=10, padx=(0, 15))
+        
+        # 添加输入框
+        width = kwargs.get('width', 12)
+        border_frame, entry_widget = create_bordered_entry(self.content_frame, width=width)
+        border_frame.grid(row=row, column=column + 1, sticky="ew", pady=10, padx=(0, 10))
+        
+        # 设置默认值
+        if 'default' in kwargs:
+            entry_widget.insert(0, kwargs['default'])
+        
+        return label_widget, entry_widget
+    
+    def add_label(self, text, row, column, **kwargs):
+        """添加标签
+        
+        Args:
+            text: 标签文本
+            row: 行位置
+            column: 列位置
+            **kwargs: 额外参数
+            
+        Returns:
+            ttk.Label: 标签组件
+        """
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
+        
+        label = ttk.Label(
+            self.content_frame, 
+            text=text, 
+            font=(font_family, font_size),
+            **kwargs
+        )
+        label.grid(row=row, column=column, **kwargs.get('grid', {}))
+        return label
+    
+    def add_button(self, text, command, column=1, padx=5):
+        """添加按钮
+        
+        Args:
+            text: 按钮文本
+            command: 按钮命令
+            column: 按钮列位置
+            padx: 按钮水平间距
+        """
+        button = ttk.Button(self.button_frame, text=text, command=command, width=10)
+        button.pack(side=tk.RIGHT, padx=padx, pady=5)
+        return button
 
 
 def center_window(window, parent=None):
@@ -796,13 +1408,13 @@ class SubnetPlannerApp:
         self.app_name = _("app_name")
         self.app_version = get_version()
 
-        # CIDR验证已简化，不再使用复杂正则表达式，直接使用ipaddress.ip_network()进行实际解析
-        # 存储删除记录历史，支持多次撤销
-        self.deleted_history = []
+        # 初始化历史记录仓库
+        self.history_repo = HistoryRepository()
+        self.deleted_history = self.history_repo.deleted_history
 
-        # 高级工具历史记录列表
-        self.ipv4_history = ["192.168.1.1", "10.0.0.1"]  # IPv4地址查询历史，两条初始记录
-        self.ipv6_history = ["2001:0db8:85a3:0000:0000:8a2e:0370:7334", "fe80::1"]  # IPv6地址查询历史，两条初始记录
+        # 高级工具历史记录列表 - 委托给HistoryRepository
+        self.ipv4_history = self.history_repo.ipv4_history
+        self.ipv6_history = self.history_repo.ipv6_history
 
         # 图表相关属性（预声明，避免Attribute-defined-outside-init警告）
         self.planning_chart_frame = None
@@ -812,8 +1424,8 @@ class SubnetPlannerApp:
 
         # 窗口背景色（预声明，动态更新）
         self.bg_color = None
-        self.range_start_history = ["192.168.0.1", "10.0.0.1", "2001:db8::1", "fe80::1"]  # IP范围起始地址历史，包含IPv4和IPv6样例
-        self.range_end_history = ["192.168.30.254", "10.0.0.254", "2001:db8::100", "fe80::100"]  # IP范围结束地址历史，包含IPv4和IPv6样例
+        self.range_start_history = self.history_repo.range_start_history
+        self.range_end_history = self.history_repo.range_end_history
 
         # 切分子网相关属性 - 使用deque优化历史记录管理
         self.split_parent_networks = deque(maxlen=100)
@@ -905,6 +1517,10 @@ class SubnetPlannerApp:
         # 初始化导出工具
         self.export_utils = ExportUtils()
 
+        # 初始化业务服务
+        self.validation_service = ValidationService(self)
+        self.ip_query_service = IPQueryService(self)
+
         # 获取系统双击间隔设置
         try:
             self.double_click_interval = self.root.tk.call('tk', 'getDoubleClickTime')
@@ -946,13 +1562,18 @@ class SubnetPlannerApp:
         self.style_manager = init_style_manager(self.root)
         update_styles()
         
-        # 初始化IPAM
-        self.ipam = init_ipam()
+        # 初始化IPAM仓库
+        self.ipam_repo = IPAMRepository()
+        self.ipam = self.ipam_repo.ipam
 
-        # 初始化历史记录相关属性 - 使用deque提升性能
-        self.history_states = deque(maxlen=20)
-        self.current_history_index = -1
-        self.planning_history_records = []
+        # 初始化子网业务服务
+        self.subnet_split_service = SubnetSplitService(self)
+        self.subnet_planning_service = SubnetPlanningService(self)
+
+        # 初始化历史记录相关属性 - 委托给HistoryRepository
+        self.history_states = self.history_repo.history_states
+        self.current_history_index = self.history_repo.current_history_index
+        self.planning_history_records = self.history_repo.planning_history_records
 
         # 添加组合键绑定，用于测试信息栏（彩蛋功能）
         self.root.bind('<Control-Shift-Key-I>', self.toggle_test_info_bar)
@@ -1106,8 +1727,8 @@ class SubnetPlannerApp:
         # 初始化图表数据
         self.chart_data = None
 
-        # 初始化历史记录
-        self.history_records = []
+        # 初始化历史记录 - 委托给HistoryRepository
+        self.history_records = self.history_repo.history_records
 
         # 创建临时标签用于测量文本宽度，避免重复创建和销毁
         if not hasattr(self, '_temp_label'):
@@ -2721,23 +3342,19 @@ class SubnetPlannerApp:
     def add_subnet_requirement(self):
         """添加子网需求"""
         # 创建临时窗口
-        temp_window = self.create_dialog(_('add_subnet_requirement'), 320, 200)
+        # 创建添加子网需求对话框
+        dialog = ComplexDialog(self.root, _('add_subnet_requirement'), 400, 200)
 
-        # 创建主内容框架，设置合适的内边距
-        main_frame = ttk.Frame(temp_window, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # 设置主框架的列权重，使用3列布局，中间列放表单内容，左右列留白用于居中
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=0)
-        main_frame.columnconfigure(2, weight=0)
-        main_frame.columnconfigure(3, weight=1)
+        # 配置内容框架的网格布局
+        dialog.content_frame.columnconfigure(0, weight=1)
+        dialog.content_frame.columnconfigure(1, weight=0)
+        dialog.content_frame.columnconfigure(2, weight=0)
+        dialog.content_frame.columnconfigure(3, weight=1)
 
         # 子网名称 - 标签在中间列左侧，输入框在中间列右侧
-        ttk.Label(main_frame, text=_("subnet_name") + ":").grid(row=0, column=1, sticky=tk.E, pady=15, padx=(10, 10))
         name_var = tk.StringVar()
-        name_entry_border, name_entry = create_bordered_entry(main_frame, textvariable=name_var, width=20)
-        name_entry_border.grid(row=0, column=2, sticky=tk.W, pady=15, padx=(0, 10))
+        label, name_entry = dialog.add_field(_("subnet_name") + ":", 1, 1, width=20)
+        name_entry.config(textvariable=name_var)
         # 自动获得焦点，方便直接输入
         name_entry.focus_set()
 
@@ -2747,13 +3364,12 @@ class SubnetPlannerApp:
             if name_entry.winfo_exists():
                 name_entry.config(foreground='black' if is_valid else 'red')
             return "1"  # 始终允许输入，只做视觉提示
-        name_entry.config(validate="all", validatecommand=(temp_window.register(validate_name), "%P"))
+        name_entry.config(validate="all", validatecommand=(dialog.dialog.register(validate_name), "%P"))
 
         # 主机数量 - 标签在中间列左侧，输入框在中间列右侧
-        ttk.Label(main_frame, text=_("host_count") + ":").grid(row=1, column=1, sticky=tk.E, pady=15, padx=(10, 10))
         hosts_var = tk.StringVar()
-        hosts_entry_border, hosts_entry = create_bordered_entry(main_frame, textvariable=hosts_var, width=20)
-        hosts_entry_border.grid(row=1, column=2, sticky=tk.W, pady=15, padx=(0, 10))
+        label, hosts_entry = dialog.add_field(_("host_count") + ":", 2, 1, width=20)
+        hosts_entry.config(textvariable=hosts_var)
 
         # 为主机数量添加验证
         def validate_hosts(text):
@@ -2766,18 +3382,14 @@ class SubnetPlannerApp:
             if hosts_entry.winfo_exists():
                 hosts_entry.config(foreground='black' if is_valid else 'red')
             return "1"  # 始终允许输入，只做视觉提示
-        hosts_entry.config(validate="all", validatecommand=(temp_window.register(validate_hosts), "%P"))
+        hosts_entry.config(validate="all", validatecommand=(dialog.dialog.register(validate_hosts), "%P"))
 
         # 定义回车键事件处理函数
         def on_return_key(event):
             save_requirement()
 
         # 只在窗口创建时绑定一次回车键事件
-        temp_window.bind("<Return>", on_return_key)
-
-        # 按钮框架 - 横跨所有列，确保按钮组居中
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=2, column=0, columnspan=4, pady=20)
+        dialog.dialog.bind("<Return>", on_return_key)
 
         def save_requirement(target_table="requirements"):
             """保存子网需求
@@ -2785,8 +3397,6 @@ class SubnetPlannerApp:
             Args:
                 target_table: 目标表，"requirements"表示子网需求表，"pool"表示需求池表
             """
-            # 解绑回车键事件，防止错误对话框显示时重复触发
-
             name = name_var.get().strip()
             hosts = hosts_var.get().strip()
 
@@ -2840,20 +3450,14 @@ class SubnetPlannerApp:
             # 保存当前状态到操作记录，包含添加的子网信息
             self.save_current_state(f"添加子网: {name}({hosts})")
 
-            temp_window.destroy()
+            dialog.destroy()
 
-        # 创建按钮并在按钮框架中居中
-        save_requirement_btn = ttk.Button(
-            button_frame, text=_('save_requirement'), command=lambda: save_requirement("requirements"), width=15
-        )
-        save_to_pool_btn = ttk.Button(button_frame, text=_('save_to_pool'), command=lambda: save_requirement("pool"), width=15)
-
-        # 使用pack布局让按钮在按钮框架中居中显示
-        save_requirement_btn.pack(side=tk.LEFT, padx=(0, 10))
-        save_to_pool_btn.pack(side=tk.LEFT)
-
-        # 绑定Esc键关闭对话框
-        temp_window.bind("<Escape>", lambda event: temp_window.destroy())
+        # 创建按钮
+        dialog.add_button(_('save_requirement'), lambda: save_requirement("requirements"), column=1)
+        dialog.add_button(_('save_to_pool'), lambda: save_requirement("pool"), column=2)
+        
+        # 显示对话框
+        dialog.show()
 
     def center_window(self, window, width, height, parent=None):
         """将窗口居中显示在指定父窗口中
@@ -2981,52 +3585,46 @@ class SubnetPlannerApp:
         font_family, font_size = get_current_font_settings()
         
         # 显示导入选项对话框
-        dialog = self.create_dialog(_("import_data"), 350, 280)
-
-        # 创建主内容框架
-        main_frame = ttk.Frame(dialog, padding="20 20 20 0")  # 减少底部padding，确保所有控件能完整显示
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        dialog.focus_force()
-
-        # 说明文本
-        info_text = _("choose_import_method")
-        ttk.Label(main_frame, text=info_text, font=(font_family, font_size)).pack(pady=(0, 15))
+        # 创建导入数据对话框
+        dialog = ComplexDialog(self.root, _("import_data"), 400, 200)
 
         # 按钮框架 - 纵向排列，居中放置
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=0)
+        button_frame = ttk.Frame(dialog.content_frame)
+        button_frame.pack(fill=tk.X, pady=10)
 
-        # 导入文件按钮
+        # 导入文件按钮 - 宽度等于下面两个按钮的总和
         import_file_btn = ttk.Button(button_frame, text=_("import_from_file"),
-                                    command=lambda: self._import_from_file(dialog),
-                                    width=18)
-        import_file_btn.pack(pady=15)
+                                    command=lambda: self._import_from_file(dialog))
+        import_file_btn.pack(pady=10, fill=tk.X, padx=20)
 
         # 将焦点聚焦到第一个按钮上
         import_file_btn.focus_force()
 
-        # 下载Excel模板按钮
+        # 下载模板按钮框架 - 横向排列
+        template_frame = ttk.Frame(button_frame)
+        template_frame.pack(pady=10, fill=tk.X, padx=20)
+
+        # 下载Excel模板按钮 - 左对齐并撑满，添加右边距10
         download_excel_btn = ttk.Button(
-            button_frame,
+            template_frame,
             text=_("download_excel_template"),
-            command=lambda: self._generate_template("excel"),
-            width=18
+            command=lambda: self._generate_template("excel")
         )
-        download_excel_btn.pack(pady=0)
+        download_excel_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        # 下载CSV模板按钮
+        # 下载CSV模板按钮 - 右对齐并撑满，添加左边距10
         download_csv_btn = ttk.Button(
-            button_frame,
+            template_frame,
             text=_("download_csv_template"),
-            command=lambda: self._generate_template("csv"),
-            width=18
+            command=lambda: self._generate_template("csv")
         )
-        download_csv_btn.pack(pady=5)
+        download_csv_btn.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(10, 0))
 
-        # 取消按钮 - 直接放在主框架中，使用pack布局
-        cancel_btn = ttk.Button(main_frame, text=_("cancel"), command=dialog.destroy, width=12)  # 增加宽度以确保"取消"文字完整显示
-        cancel_btn.pack(pady=(20, 15), side=tk.RIGHT, padx=10)
+        # 取消按钮
+        dialog.add_button(_("cancel"), dialog.destroy, column=1)
+        
+        # 显示对话框
+        dialog.show()
 
     def _import_from_file(self, parent_dialog):
         """从文件导入数据
@@ -3198,11 +3796,12 @@ class SubnetPlannerApp:
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
         
-        dialog = self.create_dialog(_("import_data"), 750, 500)
+        # 创建导入结果对话框
+        dialog = ComplexDialog(self.root, _("import_data"), 800, 400, resizable=True)
 
-        dialog.focus_force()
+        dialog.dialog.focus_force()
 
-        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame = ttk.Frame(dialog.content_frame, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # 统计信息
@@ -3277,25 +3876,20 @@ class SubnetPlannerApp:
         # 预先计算有效数据列表，避免在按钮点击时重复计算
         valid_data = [d for d in data_list if d.get("row", 0) not in error_dict]
 
-        # 按钮框架 - 使用pack布局让按钮排列更整齐
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(15, 0))
-
         # 导入到需求池表按钮
-        import_pool_btn = ttk.Button(button_frame, text=_("import_requirements_pool"),
+        import_pool_btn = ttk.Button(dialog.content_frame, text=_("import_requirements_pool"),
                                      command=lambda: self._import_valid_data(valid_data, "pool", dialog),
                                      width=18)
         import_pool_btn.pack(side=tk.LEFT, padx=5)
 
         # 导入到子网需求表按钮
-        import_req_btn = ttk.Button(button_frame, text=_("import_subnet_requirements"),
+        import_req_btn = ttk.Button(dialog.content_frame, text=_("import_subnet_requirements"),
                                     command=lambda: self._import_valid_data(valid_data, "requirements", dialog),
                                     width=18)
         import_req_btn.pack(side=tk.LEFT, padx=5)
 
-        # 取消按钮 - 靠右显示，与其他按钮并排
-        cancel_btn = ttk.Button(button_frame, text=_("cancel"), command=dialog.destroy, width=12)
-        cancel_btn.pack(side=tk.RIGHT, padx=5)
+        # 取消按钮
+        dialog.add_button(_("cancel"), dialog.destroy, column=1)
 
     def _import_valid_data(self, valid_data, target_table, dialog=None):
         """导入有效数据
@@ -3504,100 +4098,15 @@ class SubnetPlannerApp:
 
     def show_custom_dialog(self, title, message, dialog_type="info"):
         """显示自定义的居中对话框，支持info、error、warning类型"""
-        result = None
-
-        # 获取当前字体设置
-        font_family, font_size = get_current_font_settings()
-        
-        # 创建对话框
-        dialog = self.create_dialog(title, 350, 180)
-        
-        # 设置对话框最小宽度和高度
-        dialog.minsize(width=350, height=180)
-
-        # 设置对话框内容
-        frame = ttk.Frame(dialog, padding=40)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        # 设置frame的grid布局，删除第2行的weight设置，避免按钮下面出现过多空白
-        frame.grid_rowconfigure(0, weight=1)
-        frame.grid_rowconfigure(1, weight=0)
-        frame.grid_columnconfigure(0, weight=1)
-
-        # 添加消息文本，居中显示，调整wraplength适应新的宽度
-        msg_label = ttk.Label(frame, text=message, wraplength=250, font=(font_family, font_size))
-        msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
-
-        # 创建按钮框架
-        btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=1, column=0, sticky="e")
-
-        # 确定按钮（用于info、error、warning类型）
-        def on_ok():
-            nonlocal result
-            result = True
-            dialog.destroy()
-
-        # 根据对话框类型设置按钮
-        ok_btn = None  # 预声明
-        yes_btn = None  # 预声明
         if dialog_type in ["info", "error", "warning"]:
-            # 只有确定按钮，使用默认样式
-            ok_btn = ttk.Button(btn_frame, text=_("ok"), command=on_ok)
-            ok_btn.pack(side=tk.RIGHT)
-
-            # 绑定回车键和Esc键
-            dialog.bind('<Return>', lambda e: on_ok())
-            dialog.bind('<Escape>', lambda e: on_ok())
-
-            # 设置对话框为焦点，并将焦点聚焦到确定按钮上
-            dialog.focus_set()
-            ok_btn.focus_set()
+            # 使用InfoDialog类
+            dialog = InfoDialog(self.root, title, message, dialog_type)
+            return dialog.show()
         elif dialog_type == "confirm":
-            # 确认对话框，有是/否两个按钮
-            def on_yes():
-                nonlocal result
-                result = True
-                dialog.destroy()
-            
-            def on_no():
-                nonlocal result
-                result = False
-                dialog.destroy()
-            
-            no_btn = ttk.Button(btn_frame, text=_("no"), command=on_no)
-            no_btn.pack(side=tk.RIGHT, padx=(10, 0))
-            
-            yes_btn = ttk.Button(btn_frame, text=_("yes"), command=on_yes)
-            yes_btn.pack(side=tk.RIGHT)
-            
-            # 绑定回车键（默认是）和Esc键（默认否）
-            dialog.bind('<Return>', lambda e: on_yes())
-            dialog.bind('<Escape>', lambda e: on_no())
-            
-            # 设置对话框为焦点，并将焦点聚焦到是按钮上
-            dialog.focus_set()
-            yes_btn.focus_set()
-
-        # 计算并设置对话框居中位置
-        self._center_dialog(dialog)
-
-        # 显示对话框
-        dialog.deiconify()
-        
-        # 设置grab_set
-        dialog.grab_set()  # 模态对话框，阻止父窗口接收事件
-
-        # 在对话框显示后强制设置焦点
-        if ok_btn:
-            self._set_dialog_focus(dialog, ok_btn)
-        elif yes_btn:
-            self._set_dialog_focus(dialog, yes_btn)
-
-        # 等待对话框关闭
-        self.root.wait_window(dialog)
-
-        return result
+            # 使用ConfirmDialog类
+            dialog = ConfirmDialog(self.root, title, message, _("yes"), _("no"))
+            return dialog.show()
+        return None
 
     def show_info(self, title, message):
         """显示信息（使用信息栏）"""
@@ -3611,6 +4120,21 @@ class SubnetPlannerApp:
         """显示警告（使用信息栏）"""
         # 警告也使用错误样式的信息栏
         return self.show_result(message, error=True)
+
+    def show_info_dialog(self, title, message):
+        """显示信息对话框"""
+        dialog = InfoDialog(self.root, title, message, "info")
+        return dialog.show()
+
+    def show_warning_dialog(self, title, message):
+        """显示警告对话框"""
+        dialog = InfoDialog(self.root, title, message, "warning")
+        return dialog.show()
+
+    def show_error_dialog(self, title, message):
+        """显示错误对话框"""
+        dialog = InfoDialog(self.root, title, message, "error")
+        return dialog.show()
     
     def show_yes_no_dialog(self, title, message):
         """显示是/否确认对话框"""
@@ -3664,63 +4188,9 @@ class SubnetPlannerApp:
 
     def show_custom_confirm(self, title, message):
         """显示自定义的居中确认对话框"""
-        result = None
-
-        # 获取当前字体设置
-        font_family, font_size = get_current_font_settings()
-        
-        # 创建对话框
-        dialog = self.create_dialog(title, 500, 150)
-
-        frame = ttk.Frame(dialog, padding=20)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        # 设置frame的grid布局，让按钮垂直居中
-        frame.grid_rowconfigure(0, weight=1)
-        frame.grid_rowconfigure(1, weight=0)
-        frame.grid_columnconfigure(0, weight=1)
-        frame.grid_rowconfigure(2, weight=1)
-
-        # 添加消息文本，居中显示，使用合适的wraplength
-        msg_label = ttk.Label(frame, text=message, wraplength=450, font=(font_family, font_size))
-        msg_label.grid(row=0, column=0, sticky="nsew", pady=(0, 20))
-
-        btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=1, column=0, sticky="e")
-
-        # 取消按钮
-        def on_cancel():
-            nonlocal result
-            result = False
-            dialog.destroy()
-
-        cancel_btn = ttk.Button(btn_frame, text=_("cancel"), command=on_cancel)
-        cancel_btn.pack(side=tk.RIGHT, padx=(5, 0))
-
-        # 确定按钮，使用默认样式
-        def on_ok():
-            nonlocal result
-            result = True
-            dialog.destroy()
-
-        ok_btn = ttk.Button(btn_frame, text=_("ok"), command=on_ok)
-        ok_btn.pack(side=tk.RIGHT)
-
-        # 按钮创建后立即设置焦点
-        ok_btn.focus_force()
-
-        dialog.bind('<Return>', lambda e: on_ok())
-        dialog.bind('<Escape>', lambda e: on_cancel())
-
-        # 计算并设置对话框居中位置
-        self._center_dialog(dialog)
-
-        # 在对话框显示后强制设置焦点
-        self._set_dialog_focus(dialog, ok_btn)
-
-        self.root.wait_window(dialog)
-
-        return result
+        # 使用ConfirmDialog类
+        dialog = ConfirmDialog(self.root, title, message, _("ok"), _("cancel"))
+        return dialog.show()
 
     def undo(self):
         """撤销最近的操作，支持多次撤销，包括删除、移动、导入等操作"""
@@ -4221,21 +4691,10 @@ class SubnetPlannerApp:
             self.clear_tree_items(self.planning_remaining_tree)
 
             # 检测IP版本
-            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            is_ipv6 = TableColumnManager.is_ipv6_network(parent)
             
             # 根据IP版本显示或隐藏相应的列
-            if is_ipv6:
-                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
-                self.allocated_tree.column("wildcard", width=0, stretch=False)
-                self.allocated_tree.column("netmask", width=0, stretch=False)
-                self.allocated_tree.column("broadcast", width=0, stretch=False)
-                self.allocated_tree.column("end_address", width=120, stretch=True)  # 显示网段结束地址列
-            else:
-                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
-                self.allocated_tree.column("wildcard", width=100, stretch=True)
-                self.allocated_tree.column("netmask", width=100, stretch=True)
-                self.allocated_tree.column("broadcast", width=120, stretch=True)
-                self.allocated_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
+            TableColumnManager.configure_planning_allocated_tree(self.allocated_tree, is_ipv6)
             
             # 显示已分配子网
             for i, subnet in enumerate(selected_plan['allocated_subnets'], 1):
@@ -4264,34 +4723,12 @@ class SubnetPlannerApp:
             self.auto_resize_columns(self.allocated_tree)
 
             # 根据IP版本显示或隐藏相应的列
-            if is_ipv6:
-                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
-                self.planning_remaining_tree.column("wildcard", width=0, stretch=False)
-                self.planning_remaining_tree.column("netmask", width=0, stretch=False)
-                self.planning_remaining_tree.column("broadcast", width=0, stretch=False)
-                # 调整IPv6列宽，确保完整显示IPv6地址
-                self.planning_remaining_tree.column("cidr", width=180, stretch=True)
-                self.planning_remaining_tree.column("network", width=180, stretch=True)  # 加宽网络地址列
-                self.planning_remaining_tree.column("end_address", width=200, stretch=True)  # 显示网段结束地址列
-                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
-            else:
-                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
-                self.planning_remaining_tree.column("wildcard", width=100, stretch=True)
-                self.planning_remaining_tree.column("netmask", width=100, stretch=True)
-                self.planning_remaining_tree.column("broadcast", width=120, stretch=True)
-                self.planning_remaining_tree.column("end_address", width=0, stretch=False)  # 隐藏网段结束地址列
-                # 恢复IPv4列宽
-                self.planning_remaining_tree.column("cidr", width=120, stretch=True)
-                self.planning_remaining_tree.column("network", width=120, stretch=True)
-                self.planning_remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
+            TableColumnManager.configure_planning_remaining_tree(self.planning_remaining_tree, is_ipv6)
             
             # 显示剩余网段
             for i, subnet in enumerate(selected_plan['remaining_subnets_info'], 1):
                 tags = ("even",) if i % 2 == 0 else ("odd",)
-                # 为隐藏列传递空字符串，避免数据显示异常
-                netmask_val = subnet["netmask"] if not is_ipv6 else ""
-                wildcard_val = subnet["wildcard"] if not is_ipv6 else ""
-                broadcast_val = subnet["broadcast"] if not is_ipv6 else ""
+                hidden_vals = TableColumnManager.get_hidden_values_for_ipv6(subnet, is_ipv6)
                 
                 self.planning_remaining_tree.insert(
                     "",
@@ -4300,11 +4737,11 @@ class SubnetPlannerApp:
                         i,
                         selected_plan['remaining_subnets'][i - 1],
                         subnet["network"],
-                        subnet["host_range_end"],  # 网段结束地址
-                        netmask_val,
-                        wildcard_val,
-                        broadcast_val,
-                        format_large_number(subnet["usable_addresses"]),  # 修正为正确的字段名
+                        subnet["host_range_end"],
+                        hidden_vals["netmask"],
+                        hidden_vals["wildcard"],
+                        hidden_vals["broadcast"],
+                        format_large_number(subnet["usable_addresses"]),
                     ),
                     tags=tags,
                 )
@@ -4629,18 +5066,7 @@ class SubnetPlannerApp:
         return {'valid': True, 'error': None, 'error_code': None}
 
     def _update_history_entry(self, value, history_container, entry_widget):
-        """通用历史记录更新方法
-
-        Args:
-            value: 要添加的历史记录值
-            history_container: 历史记录容器（deque或list）
-            entry_widget: 关联的输入框组件
-        """
-        if value and value not in history_container:
-            history_container.append(value)
-            # 如果是deque，需要转换为list；如果是list，直接使用
-            values_list = list(history_container) if isinstance(history_container, deque) else history_container
-            entry_widget.config(values=values_list)
+        self.history_repo.update_history_entry(value, history_container, entry_widget)
 
     def _setup_scrollbar(self, scrollbar, widget, initial_hidden=True, widget_command=None, padx_adjust=0):
         """通用的滚动条配置方法
@@ -4765,7 +5191,7 @@ class SubnetPlannerApp:
             row_index += 1
             
             # 根据IP版本显示不同的字段
-            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            is_ipv6 = TableColumnManager.is_ipv6_network(parent)
             if not is_ipv6:
                 # IPv4显示子网掩码、通配符掩码和广播地址
                 self.split_tree.insert("", tk.END, values=(_("subnet_mask"), split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
@@ -4791,38 +5217,16 @@ class SubnetPlannerApp:
             self.split_tree.insert("", tk.END, values=(_("cidr"), split_info["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
 
             # 检测IP版本
-            is_ipv6 = ipaddress.ip_network(parent).version == 6
+            is_ipv6 = TableColumnManager.is_ipv6_network(parent)
             
             # 根据IP版本显示或隐藏剩余网段表的列
-            if is_ipv6:
-                # IPv6隐藏通配符掩码列、子网掩码列和广播地址列，显示网段结束地址列
-                self.remaining_tree.column("wildcard", width=0, stretch=False)
-                self.remaining_tree.column("netmask", width=0, stretch=False)
-                self.remaining_tree.column("broadcast", width=0, stretch=False)
-                # 调整IPv6列宽，确保完整显示IPv6地址
-                self.remaining_tree.column("cidr", width=180, stretch=True)
-                self.remaining_tree.column("network", width=180, stretch=True)
-                self.remaining_tree.column("end_address", width=200, stretch=True)
-                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
-            else:
-                # IPv4显示通配符掩码列、子网掩码列和广播地址列，隐藏网段结束地址列
-                self.remaining_tree.column("wildcard", width=100, stretch=True)
-                self.remaining_tree.column("netmask", width=100, stretch=True)
-                self.remaining_tree.column("broadcast", width=120, stretch=True)
-                self.remaining_tree.column("end_address", width=0, stretch=False)
-                self.remaining_tree.column("usable", width=60, stretch=True)  # 窄化可用地址数列，因为使用科学计数法
-                # 恢复IPv4列宽
-                self.remaining_tree.column("cidr", width=120, stretch=True)
-                self.remaining_tree.column("network", width=120, stretch=True)
+            TableColumnManager.configure_split_remaining_tree(self.remaining_tree, is_ipv6)
             
             # 显示剩余网段表表格
             if result["remaining_subnets_info"]:
                 for i, network in enumerate(result["remaining_subnets_info"], 1):
                     tags = ("even",) if i % 2 == 0 else ("odd",)
-                    # 为隐藏列传递空字符串，避免数据显示异常
-                    netmask_val = network["netmask"] if not is_ipv6 else ""
-                    wildcard_val = network.get("wildcard", "") if not is_ipv6 else ""
-                    broadcast_val = network["broadcast"] if not is_ipv6 else ""
+                    hidden_vals = TableColumnManager.get_hidden_values_for_ipv6(network, is_ipv6)
                     
                     self.remaining_tree.insert(
                         "",
@@ -4831,10 +5235,10 @@ class SubnetPlannerApp:
                             i,
                             network["cidr"],
                             network["network"],
-                            network["host_range_end"],  # 网段结束地址
-                            netmask_val,
-                            wildcard_val,
-                            broadcast_val,
+                            network["host_range_end"],
+                            hidden_vals["netmask"],
+                            hidden_vals["wildcard"],
+                            hidden_vals["broadcast"],
                             format_large_number(network["usable_addresses"], use_scientific=True),
                         ),
                         tags=tags,
@@ -7345,22 +7749,7 @@ class SubnetPlannerApp:
             self.show_info(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
 
     def _update_history(self, entry, history_list, value=None, max_items=10):
-        """通用的历史记录更新方法
-
-        Args:
-            entry: Combobox或Entry组件
-            history_list: 历史记录列表
-            value: 要添加的值（可选，默认从entry获取）
-            max_items: 最大历史记录数量（默认10）
-        """
-        if value is None:
-            value = entry.get().strip()
-        if value and value not in history_list:
-            history_list.insert(0, value)
-            if len(history_list) > max_items:
-                history_list.pop()
-            if hasattr(entry, 'configure'):
-                entry['values'] = history_list
+        self.history_repo.update_history(entry, history_list, value, max_items)
 
     def update_ipv4_history(self, event=None):
         """更新IPv4地址查询历史记录"""
@@ -7408,20 +7797,21 @@ class SubnetPlannerApp:
                 self.test_dialog = None
 
         # 计算对话框尺寸
-        dialog_width = 500  # 加大窗体宽度，适应不同语言
-        dialog_height = 550  # 增加对话框高度，确保所有控件能完整显示
+        dialog_width = 600  # 加大窗体宽度，适应不同语言
+        dialog_height = 600  # 增加对话框高度，确保所有控件能完整显示
         
         # 创建功能调试对话框，使用统一的create_dialog方法
-        self.test_dialog = self.create_dialog(_("function_debug"), dialog_width, dialog_height, modal=False)
+        # 创建功能调试对话框
+        self.test_dialog = ComplexDialog(self.root, _("function_debug"), dialog_width, dialog_height, resizable=True, modal=False)
         
         # 绑定关闭事件，确保对话框关闭时更新状态
-        self.test_dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
+        self.test_dialog.dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
 
         # 获取当前字体设置
         font_family, font_size = get_current_font_settings()
 
         # 创建对话框内容框架
-        content_frame = ttk.Frame(self.test_dialog, padding="15")
+        content_frame = ttk.Frame(self.test_dialog.content_frame, padding="15")
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # 使用grid布局管理器来精确控制各个组件的位置
@@ -7447,8 +7837,12 @@ class SubnetPlannerApp:
 
         # 按钮样式
         button_style = "TButton"
-        button_width = 20  # 其他按钮宽度小一些
+        button_width = 25  # 增加上方测试按钮宽度
         original_button_width = 15  # 应用主题和关闭按钮保持原来宽度
+        
+        # 创建复选框样式
+        checkbutton_style = ttk.Style()
+        checkbutton_style.configure("Custom.TCheckbutton", font=(font_family, font_size))
 
         # 第一行按钮
         success_btn = ttk.Button(
@@ -7522,7 +7916,7 @@ class SubnetPlannerApp:
 
         # 主题切换部分
         theme_frame = ttk.LabelFrame(content_frame, text=_("theme_switch"), padding="10")
-        theme_frame.grid(row=3, column=0, sticky=tk.EW, pady=(15, 10))
+        theme_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 10))
 
         # 配置主题切换框架的列
         theme_frame.grid_columnconfigure(0, weight=0)  # 标签列
@@ -7599,7 +7993,7 @@ class SubnetPlannerApp:
 
         # 窗口横向锁定控制部分
         lock_frame = ttk.LabelFrame(content_frame, text=_("window_lock"), padding="10")
-        lock_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 10))
+        lock_frame.grid(row=5, column=0, sticky=tk.EW, pady=(15, 10))
 
         # 配置锁定框架的列
         lock_frame.grid_columnconfigure(0, weight=1)
@@ -7611,13 +8005,14 @@ class SubnetPlannerApp:
             lock_frame,
             text=_('lock_window_width'),
             variable=self.width_lock_var,
-            command=self.toggle_width_lock
+            command=self.toggle_width_lock,
+            style="Custom.TCheckbutton"
         )
         width_lock_cb.grid(row=0, column=0, sticky=tk.W, pady=5)
 
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=5, column=0, sticky=tk.EW, pady=(15, 0))
+        close_frame.grid(row=6, column=0, sticky=tk.EW, pady=(15, 0))
         close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
 
         # 添加关闭按钮到右下角 - 使用原来宽度
@@ -8757,18 +9152,18 @@ class SubnetPlannerApp:
 
     def show_about_dialog(self):
         """显示关于对话框"""
-        # 设置对话框尺寸，进一步增大高度以确保所有内容（包括开源地址链接和版权信息）完整显示
+        # 设置对话框宽度，高度将根据内容自动调整
         dialog_width = 400
-        dialog_height = 330
+        dialog_height = 100  # 初始高度设置为较小值
         
-        # 创建对话框窗口，使用统一的create_dialog方法
-        about_window = self.create_dialog(f"{_("about")} {self.app_name}", dialog_width, dialog_height)
+        # 创建关于对话框
+        about_window = ComplexDialog(self.root, f"{_("about")} {self.app_name}", dialog_width, dialog_height, resizable=False, modal=True)
         
         # 设置背景色为白色
-        about_window.configure(bg="#ffffff")
+        about_window.dialog.configure(bg="#ffffff")
 
         # 创建内容框架，移除所有边框和焦点指示
-        content_frame = ttk.Frame(about_window, padding=(20, 20, 20, 15), relief="flat", borderwidth=0)
+        content_frame = ttk.Frame(about_window.content_frame, padding=(20, 20, 20, 15), relief="flat", borderwidth=0)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         # 创建内部框架放置实际内容，不使用占位符框架
@@ -8777,8 +9172,8 @@ class SubnetPlannerApp:
         inner_frame.configure(style="About.TFrame")
 
         # 移除可能影响焦点的事件绑定
-        about_window.unbind("<FocusIn>")
-        about_window.unbind("<FocusOut>")
+        about_window.dialog.unbind("<FocusIn>")
+        about_window.dialog.unbind("<FocusOut>")
 
         # 为关于对话框中的标签和按钮添加焦点样式，移除虚线
         # 创建对话框专用的样式，避免影响主窗口
@@ -8875,11 +9270,12 @@ class SubnetPlannerApp:
         # 添加扫码捐赠按钮
         def show_donate_qr():
             # 创建二维码捐赠对话框
-            qr_window = self.create_dialog(_("donate"), 450, 400, resizable=False, modal=True)
-            qr_window.configure(bg="#ffffff")
+            # 设置对话框宽度，高度将根据内容自动调整
+            qr_window = ComplexDialog(self.root, _("donate"), 450, 100, resizable=False, modal=True)
+            qr_window.dialog.configure(bg="#ffffff")
             
             # 创建内容框架
-            qr_content = ttk.Frame(qr_window, padding=(20, 20, 20, 10))
+            qr_content = ttk.Frame(qr_window.content_frame, padding=(20, 20, 20, 10))
             qr_content.pack(fill=tk.BOTH, expand=True)
             
             # 添加标题
@@ -9016,12 +9412,15 @@ class SubnetPlannerApp:
                                     width=10,
                                     style="About.TButton")
             close_button.pack()
+            
+            # 显示对话框并自动调整高度
+            qr_window.show()
         
         # 添加扫码捐赠按钮
         qr_button = ttk.Button(button_frame, 
                             text=_('scan_qr_donate'), 
                             command=show_donate_qr, 
-                            width=12,
+                            width=10,
                             style="About.TButton")
         qr_button.pack(side=tk.LEFT, padx=(0, 5))
 
@@ -9034,12 +9433,12 @@ class SubnetPlannerApp:
         ok_button.pack(side=tk.LEFT)
 
         # 将焦点聚焦到确定按钮上，使用更可靠的方式
-        about_window.after_idle(ok_button.focus_set)
-        about_window.after_idle(ok_button.focus_force)
+        about_window.dialog.after_idle(ok_button.focus_set)
+        about_window.dialog.after_idle(ok_button.focus_force)
 
         # 绑定回车键事件，确保按回车键能关闭对话框
-        about_window.bind('<Return>', lambda e: ok_button.invoke())
-        about_window.bind('<Escape>', lambda e: ok_button.invoke())
+        about_window.dialog.bind('<Return>', lambda e: ok_button.invoke())
+        about_window.dialog.bind('<Escape>', lambda e: ok_button.invoke())
 
         # 添加开源地址链接
         import webbrowser
@@ -9067,6 +9466,9 @@ class SubnetPlannerApp:
             foreground="#888888"
         )
         copyright_label.pack(anchor=tk.CENTER, pady=(5, 5))
+        
+        # 显示对话框并自动调整高度
+        about_window.show()
 
     def setup_ipam_page(self):
         """设置IP地址管理（IPAM）页面"""
@@ -9749,8 +10151,8 @@ class SubnetPlannerApp:
             self.show_error(_('error'), _('please_enter_description'))
             return
         
-        # 创建批量分配对话框，使用统一的create_dialog方法
-        dialog = self.create_dialog(_('batch_allocate'), 400, 250)
+        # 创建批量分配对话框
+        dialog = ComplexDialog(self.root, _('batch_allocate'), 500, 300)
         
         # 解析网络前缀
         import ipaddress
@@ -9786,7 +10188,7 @@ class SubnetPlannerApp:
             host_octets_count = 1
         
         # IP范围输入 - 简化版
-        ttk.Label(dialog, text=f"{_('network')}: {network}").pack(pady=5)
+        ttk.Label(dialog.content_frame, text=f"{_('network')}: {network}").pack(pady=5)
         
         # 简化的IP输入
         if host_octets_count == 1:
@@ -9800,10 +10202,10 @@ class SubnetPlannerApp:
         else:
             input_hint = _('ip_range_example')
         
-        ttk.Label(dialog, text=input_hint).pack(pady=10)
+        ttk.Label(dialog.content_frame, text=input_hint).pack(pady=10)
         
         # 创建IP范围输入框架
-        ip_frame = ttk.Frame(dialog)
+        ip_frame = ttk.Frame(dialog.content_frame)
         ip_frame.pack(pady=5, padx=20)
         
         # 创建内部容器用于水平居中
@@ -9826,8 +10228,8 @@ class SubnetPlannerApp:
         end_ip_border.pack(side=tk.LEFT, padx=0)
         
         # 描述前缀（作为主机名前缀）
-        ttk.Label(dialog, text=_('description_prefixauto_add_number')).pack(pady=5)
-        desc_prefix_border, description_prefix_entry = create_bordered_entry(dialog, width=40)
+        ttk.Label(dialog.content_frame, text=_('description_prefixauto_add_number')).pack(pady=5)
+        desc_prefix_border, description_prefix_entry = create_bordered_entry(dialog.content_frame, width=40)
         description_prefix_entry.insert(0, description)
         desc_prefix_border.pack(pady=5, padx=20)
         
@@ -9973,10 +10375,8 @@ class SubnetPlannerApp:
                 self.show_error(_('error'), f"{_('parse_ip_range_failed')}: {str(e)}")
         
         # 按钮
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text=_('batch_allocate'), command=batch_allocate).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text=_('batch_reserve'), command=batch_reserve).pack(side=tk.LEFT, padx=10)
+        dialog.add_button(_('batch_allocate'), batch_allocate, column=1)
+        dialog.add_button(_('batch_reserve'), batch_reserve, column=2)
     
     def auto_allocate_ip(self):
         """自动分配IP地址"""
@@ -10468,10 +10868,10 @@ class SubnetPlannerApp:
             selected_networks = []
         
         # 创建窗口
-        dialog = self.create_dialog(_('ip_conflicts'), 850, 450, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('ip_conflicts'), 800, 400, resizable=True, modal=True)
         
         # 创建主框架
-        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame = ttk.Frame(dialog.content_frame, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
         main_frame.grid_rowconfigure(0, weight=1)
         main_frame.grid_columnconfigure(0, weight=1)
@@ -10536,7 +10936,7 @@ class SubnetPlannerApp:
         ttk.Label(stats_frame, text=f"{_('total_conflicts')}: {len(conflicts)}").pack(side=tk.RIGHT)
         
         # 按钮框架
-        button_frame = ttk.Frame(dialog)
+        button_frame = ttk.Frame(dialog.content_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, padx=10)
         
         # 处理冲突按钮
@@ -10580,24 +10980,28 @@ class SubnetPlannerApp:
         """
         if selected_records is None:
             selected_records = [{'id': ip_id, 'ip_address': ip_address}]
-        # 创建对话框，使用parent_dialog作为父窗口
-        dialog = self.create_dialog(_('resolve_conflict'), 500, 350, resizable=False, modal=True, parent=parent_dialog)
+        # 创建对话框，使用parent_dialog.dialog作为父窗口
+        dialog = ComplexDialog(parent_dialog.dialog, _('resolve_conflict'), 500, 350, resizable=False, modal=True)
+        
+        # 获取当前字体设置
+        from style_manager import get_current_font_settings
+        font_family, font_size = get_current_font_settings()
         
         # 主框架
-        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame = ttk.Frame(dialog.content_frame, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 说明文字
         if len(selected_records) > 1:
             ttk.Label(main_frame, text=f"{_('selected_ips')}: {len(selected_records)} 条记录", 
-                      font=('Microsoft YaHei UI', 10, 'bold')).pack(anchor='w', pady=(0, 10))
+                      font=(font_family, font_size, 'bold')).pack(anchor='w', pady=(0, 10))
             ttk.Label(main_frame, text=_('multiple_conflict_resolution_hint'), 
-                      wraplength=450, justify='left').pack(anchor='w', pady=(0, 20))
+                      font=(font_family, font_size), wraplength=450, justify='left').pack(anchor='w', pady=(0, 20))
         else:
             ttk.Label(main_frame, text=f"{_('selected_ip')}: {ip_address}", 
-                      font=('Microsoft YaHei UI', 10, 'bold')).pack(anchor='w', pady=(0, 10))
+                      font=(font_family, font_size, 'bold')).pack(anchor='w', pady=(0, 10))
             ttk.Label(main_frame, text=_('conflict_resolution_hint'), 
-                      wraplength=450, justify='left').pack(anchor='w', pady=(0, 20))
+                      font=(font_family, font_size), wraplength=450, justify='left').pack(anchor='w', pady=(0, 20))
         
         # 操作选项框架
         action_frame = ttk.LabelFrame(main_frame, text=_('select_action'), padding=15)
@@ -10606,14 +11010,18 @@ class SubnetPlannerApp:
         # 操作选项
         action_var = tk.StringVar(value='keep')
         
+        # 创建单选按钮样式
+        radiobutton_style = ttk.Style()
+        radiobutton_style.configure("Custom.TRadiobutton", font=(font_family, font_size))
+        
         ttk.Radiobutton(action_frame, text=_('keep_this_record'), 
-                        variable=action_var, value='keep').pack(anchor='w', pady=5)
+                        variable=action_var, value='keep', style="Custom.TRadiobutton").pack(anchor='w', pady=5)
         
         ttk.Radiobutton(action_frame, text=_('delete_this_record'), 
-                        variable=action_var, value='delete').pack(anchor='w', pady=5)
+                        variable=action_var, value='delete', style="Custom.TRadiobutton").pack(anchor='w', pady=5)
         
         ttk.Radiobutton(action_frame, text=_('release_this_ip'), 
-                        variable=action_var, value='release').pack(anchor='w', pady=5)
+                        variable=action_var, value='release', style="Custom.TRadiobutton").pack(anchor='w', pady=5)
         
         # 按钮框架 - 使用明确的布局
         button_frame = ttk.Frame(main_frame)
@@ -10801,9 +11209,9 @@ class SubnetPlannerApp:
     def import_export_network_data(self):
         """导入/导出网段数据对话框"""
         try:
-            dialog = self.create_dialog(_('network_import_export'), 550, 340)
+            dialog = ComplexDialog(self.root, _('network_import_export'), 400, 200, resizable=False, modal=True)
 
-            main_frame = ttk.Frame(dialog, padding="30")
+            main_frame = ttk.Frame(dialog.content_frame, padding="30")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
             ttk.Label(main_frame, text=_('choose_import_export_method'), font=('', 11, 'bold')).pack(pady=(0, 10))
@@ -10932,10 +11340,10 @@ class SubnetPlannerApp:
             from style_manager import get_current_font_settings
             font_family, font_size = get_current_font_settings()
 
-            dialog = self.create_dialog(_('import_data'), 800, 550)
-            dialog.focus_force()
+            dialog = ComplexDialog(self.root, _('import_data'), 800, 400, resizable=True, modal=True)
+            dialog.dialog.focus_force()
 
-            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame = ttk.Frame(dialog.content_frame, padding="20")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
             net_data = validated_data['networks']
@@ -11140,33 +11548,7 @@ class SubnetPlannerApp:
         except Exception as e:
             self.show_error(_('error'), f"{_('download_template_failed')}: {str(e)}")
     
-    def backup_ipam_data(self):
-        """备份IPAM数据"""
-        try:
-            # 创建备份对话框，使用统一的create_dialog方法
-            dialog = self.create_dialog(_('backup_ipam_data'), 400, 150)
-            
-            # 备份名称输入
-            ttk.Label(dialog, text=_('backup_name_optional')).pack(pady=10)
-            backup_name_border, backup_name_entry = create_bordered_entry(dialog, width=30)
-            backup_name_border.pack(pady=5)
-            
-            def on_backup():
-                backup_name = backup_name_entry.get().strip()
-                backup_path = self.ipam.backup_data(backup_name, backup_type='manual', frequency='manual')
-                if backup_path:
-                    self.show_info(_('success'), f"{_('backup_success')}: {backup_path}")
-                else:
-                    self.show_error(_('error'), _('backup_failed'))
-                dialog.destroy()
-            
-            # 按钮
-            button_frame = ttk.Frame(dialog)
-            button_frame.pack(pady=10)
-            ttk.Button(button_frame, text=_('confirm'), command=on_backup).pack(side=tk.LEFT, padx=10)
-            ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
-        except Exception as e:
-            self.show_error(_('error'), f"{_('backup_failed')}: {str(e)}")
+
     
     def restore_ipam_data(self):
         """恢复IPAM数据"""
@@ -11179,12 +11561,13 @@ class SubnetPlannerApp:
     def backup_restore_data(self):
         """备份/恢复数据对话框"""
         try:
-            # 创建对话框，使用统一的create_dialog方法
-            dialog = self.create_dialog(_('backup_restore'), 600, 400)
+            # 创建对话框
+            dialog = ComplexDialog(self.root, _('backup_restore'), 600, 400, resizable=True, modal=True)
             
             # 配置对话框的行和列
-            dialog.grid_rowconfigure(0, weight=1)
-            dialog.grid_columnconfigure(0, weight=1)
+            dialog.content_frame.grid_rowconfigure(0, weight=0)
+            dialog.content_frame.grid_rowconfigure(1, weight=1)
+            dialog.content_frame.grid_columnconfigure(0, weight=1)
             
             def on_backup():
                 backup_path = self.ipam.backup_data(backup_type='manual', frequency='manual')
@@ -11195,9 +11578,22 @@ class SubnetPlannerApp:
                 else:
                     self.show_error(_('error'), _('backup_failed'))
             
+            # 添加统计信息
+            stats_frame = ttk.Frame(dialog.content_frame)
+            stats_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
+            
+            # 获取当前系统中的网络和IP数量
+            stats = self.ipam.get_overall_stats()
+            total_networks = stats.get('total_networks', 0)
+            total_ips = stats.get('total_ips', 0)
+            
+            # 显示统计信息
+            stats_label = ttk.Label(stats_frame, text=f"当前系统：{total_networks} 个网络，{total_ips} 个IP地址 | 备份文件：{len(self.ipam.list_backups())} 个")
+            stats_label.pack(anchor=tk.W)
+            
             # 创建一个框架来包含表格和滚动条
-            tree_frame = ttk.Frame(dialog, borderwidth=0, relief="flat")
-            tree_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=(20, 10))
+            tree_frame = ttk.Frame(dialog.content_frame, borderwidth=0, relief="flat")
+            tree_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(10, 10))
             
             # 创建树状视图显示备份信息
             backup_tree = ttk.Treeview(tree_frame, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
@@ -11249,8 +11645,8 @@ class SubnetPlannerApp:
             refresh_backup_list()
             
             # 按钮
-            button_frame = ttk.Frame(dialog)
-            button_frame.grid(row=1, column=0, sticky="s", pady=(10, 20))
+            button_frame = ttk.Frame(dialog.content_frame)
+            button_frame.grid(row=2, column=0, sticky="s", pady=(10, 20))
             
             # 左侧按钮区域
             left_buttons = ttk.Frame(button_frame)
@@ -11394,13 +11790,13 @@ class SubnetPlannerApp:
     def show_backup_manager(self):
         """显示备份管理界面"""
         # 创建备份管理对话框
-        dialog = self.create_dialog("备份管理", 600, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, "备份管理", 600, 400, resizable=True, modal=True)
         
         # 备份列表
-        ttk.Label(dialog, text=_('backup_file_list'), font=('微软雅黑', 10, 'bold')).pack(pady=10)
+        ttk.Label(dialog.content_frame, text=_('backup_file_list'), font=('微软雅黑', 10, 'bold')).pack(pady=10)
         
         # 创建树状视图显示备份信息
-        backup_tree = ttk.Treeview(dialog, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
+        backup_tree = ttk.Treeview(dialog.content_frame, columns=('filename', 'backup_time', 'network_count', 'ip_count'), show='headings')
         backup_tree.heading('filename', text=_('file_name'))
         backup_tree.heading('backup_time', text=_('backup_time'))
         backup_tree.heading('network_count', text=_('network_count'))
@@ -11412,7 +11808,7 @@ class SubnetPlannerApp:
         backup_tree.column('ip_count', width=80, anchor=tk.CENTER)
         
         # 添加滚动条
-        scrollbar = ttk.Scrollbar(dialog, orient=tk.VERTICAL, command=backup_tree.yview)
+        scrollbar = ttk.Scrollbar(dialog.content_frame, orient=tk.VERTICAL, command=backup_tree.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         backup_tree.configure(yscrollcommand=scrollbar.set)
         backup_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -11430,7 +11826,7 @@ class SubnetPlannerApp:
             ), tags=(backup['file_path'],))
         
         # 按钮
-        button_frame = ttk.Frame(dialog)
+        button_frame = ttk.Frame(dialog.content_frame)
         button_frame.pack(pady=10)
         
         def on_restore():
@@ -11480,12 +11876,12 @@ class SubnetPlannerApp:
     
     def auto_scan_network(self):
         """自动扫描网络"""
-        # 创建自动扫描网络对话框，使用统一的create_dialog方法
-        dialog = self.create_dialog(_('auto_scan_network'), 450, 150)
+        # 创建自动扫描网络对话框
+        dialog = ComplexDialog(self.root, _('auto_scan_network'), 400, 200, resizable=False, modal=True)
         
         # 网络输入 - 水平布局
-        network_frame = ttk.Frame(dialog)
-        network_frame.pack(pady=10, fill=tk.X, padx=20)
+        network_frame = ttk.Frame(dialog.content_frame)
+        network_frame.grid(row=1, column=0, pady=10, padx=20, sticky=tk.W)
         ttk.Label(network_frame, text=_('network_address_cidr_format') + ':').pack(side=tk.LEFT, padx=10)
         network_border, network_entry = create_bordered_entry(network_frame, width=30)
         network_border.pack(side=tk.LEFT, padx=10)
@@ -11493,8 +11889,8 @@ class SubnetPlannerApp:
 
         
         # 线程数和超时时间 - 水平布局（左右放置）
-        options_frame = ttk.Frame(dialog)
-        options_frame.pack(pady=10, fill=tk.X, padx=20)
+        options_frame = ttk.Frame(dialog.content_frame)
+        options_frame.grid(row=2, column=0, pady=10, padx=20, sticky=tk.W)
         
         # 线程数（左侧）
         ttk.Label(options_frame, text=_('thread_count') + ':').pack(side=tk.LEFT, padx=10)
@@ -11524,29 +11920,29 @@ class SubnetPlannerApp:
             # 开始扫描
             dialog.destroy()
             
-            # 创建进度条对话框，使用统一的create_dialog方法
-            progress_dialog = self.create_dialog(_('network_scan'), 400, 280)
+            # 创建进度条对话框
+            progress_dialog = ComplexDialog(self.root, _('network_scan'), 500, 300, resizable=False, modal=True)
             
             # 标签
-            progress_label = ttk.Label(progress_dialog, text=f"{_('scanning_network')} {network}...")
+            progress_label = ttk.Label(progress_dialog.content_frame, text=f"{_('scanning_network')} {network}...")
             progress_label.pack(pady=10)
             
             # 进度条
             progress_var = tk.DoubleVar()
-            progress_bar = ttk.Progressbar(progress_dialog, variable=progress_var, length=350, mode='determinate')
+            progress_bar = ttk.Progressbar(progress_dialog.content_frame, variable=progress_var, length=350, mode='determinate')
             progress_bar.pack(pady=10)
             
             # 状态标签
-            status_label = ttk.Label(progress_dialog, text=_('preparing_to_scan'))
+            status_label = ttk.Label(progress_dialog.content_frame, text=_('preparing_to_scan'))
             status_label.pack(pady=5)
             
             # 数据添加进度条
-            add_progress_label = ttk.Label(progress_dialog, text=_('data_addition_progress') + ':')
+            add_progress_label = ttk.Label(progress_dialog.content_frame, text=_('data_addition_progress') + ':')
             add_progress_label.pack(pady=5)
             add_progress_var = tk.DoubleVar()
-            add_progress_bar = ttk.Progressbar(progress_dialog, variable=add_progress_var, length=350, mode='determinate')
+            add_progress_bar = ttk.Progressbar(progress_dialog.content_frame, variable=add_progress_var, length=350, mode='determinate')
             add_progress_bar.pack(pady=5)
-            add_status_label = ttk.Label(progress_dialog, text=_('preparing_to_add_data'))
+            add_status_label = ttk.Label(progress_dialog.content_frame, text=_('preparing_to_add_data'))
             add_status_label.pack(pady=5)
             
             # 取消按钮
@@ -11563,7 +11959,7 @@ class SubnetPlannerApp:
             progress_dialog.protocol("WM_DELETE_WINDOW", on_closing)
             
             # 取消按钮放在最下面
-            cancel_button = ttk.Button(progress_dialog, text=_('cancel'), command=cancel_scan)
+            cancel_button = ttk.Button(progress_dialog.content_frame, text=_('cancel'), command=cancel_scan)
             cancel_button.pack(pady=10)
             
             # 在后台线程中执行扫描
@@ -11571,10 +11967,11 @@ class SubnetPlannerApp:
             threading.Thread(target=self._scan_network, args=(network, progress_var, progress_label, status_label, progress_dialog, scan_cancelled, add_progress_var, add_status_label), daemon=True).start()
         
         # 按钮
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text=_('start_scan'), command=on_scan).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        dialog.add_button(_('cancel'), dialog.destroy, column=1)
+        dialog.add_button(_('start_scan'), on_scan, column=2)
+        
+        # 显示对话框
+        dialog.show()
     
     def _scan_network(self, network, progress_var=None, progress_label=None, status_label=None, progress_dialog=None, scan_cancelled=None, add_progress_var=None, add_status_label=None):
         """执行网络扫描"""
@@ -11952,30 +12349,22 @@ class SubnetPlannerApp:
     def add_ipam_network(self):
         """添加网络"""
         # 创建添加网络对话框
-        dialog = self.create_dialog(_('add_network'), 400, 220)
+        dialog = ComplexDialog(self.root, _('add_network'), 400, 200)
         
-        # 对话框内容
-        form_frame = ttk.Frame(dialog, padding="15 15 15 0")
-        form_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 配置网格布局
-        form_frame.grid_columnconfigure(0, weight=0)  # 标签列
-        form_frame.grid_columnconfigure(1, weight=1)  # 输入框列，占据剩余空间
+        # 配置内容框架的网格布局
+        dialog.content_frame.grid_columnconfigure(0, weight=1)  # 左侧填充列
+        dialog.content_frame.grid_columnconfigure(1, weight=0)  # 标签列
+        dialog.content_frame.grid_columnconfigure(2, weight=0)  # 输入框列
+        dialog.content_frame.grid_columnconfigure(3, weight=1)  # 右侧填充列
         
         # 网络CIDR输入
-        ttk.Label(form_frame, text=_('network_cidr')).grid(row=0, column=0, sticky="e", pady=10, padx=(0, 15))
-        network_border, network_entry = create_bordered_entry(form_frame, width=12)
-        network_border.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
+        _label, network_entry = dialog.add_field(_('network_cidr'), 1, 1, width=25)
         
         # 描述输入
-        ttk.Label(form_frame, text=_('description')).grid(row=1, column=0, sticky="e", pady=10, padx=(0, 15))
-        desc_border, description_entry = create_bordered_entry(form_frame, width=12)
-        desc_border.grid(row=1, column=1, sticky="ew", pady=10, padx=(0, 10))
+        _label, description_entry = dialog.add_field(_('description'), 2, 1, width=25)
         
         # VLAN 输入
-        ttk.Label(form_frame, text='VLAN').grid(row=2, column=0, sticky="e", pady=10, padx=(0, 15))
-        vlan_border, vlan_entry = create_bordered_entry(form_frame, width=12)
-        vlan_border.grid(row=2, column=1, sticky="ew", pady=10, padx=(0, 10))
+        _label, vlan_entry = dialog.add_field('VLAN', 3, 1, width=25)
         
         def on_add():
             network = network_entry.get().strip()
@@ -12011,8 +12400,8 @@ class SubnetPlannerApp:
             else:
                 if is_overlap:
                     # 弹出确认对话框，让用户决定是否继续添加
-                    import tkinter.messagebox as messagebox
-                    confirm = messagebox.askyesno("确认", f"{message}\n\n是否继续添加？")
+                    confirm_dialog = ConfirmDialog(self.root, "确认", f"{message}\n\n是否继续添加？", "是", "否")
+                    confirm = confirm_dialog.show()
                     if confirm:
                         # 强制添加网络，跳过重叠检查
                         try:
@@ -12034,18 +12423,24 @@ class SubnetPlannerApp:
                 else:
                     self.show_error(_('error'), message)
         
-        # 按钮框架
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
+        # 添加取消按钮
+        def on_cancel():
+            dialog.destroy()
         
-        # 配置按钮框架的网格布局，使按钮靠右对齐
-        button_frame.grid_columnconfigure(0, weight=1)
-        button_frame.grid_columnconfigure(1, weight=0)
-        button_frame.grid_columnconfigure(2, weight=0)
+        # 添加按钮
+        dialog.add_button(_('cancel'), on_cancel, column=1)
+        dialog.add_button(_('ok'), on_add, column=2)
         
-        # 添加按钮到网格布局，靠右对齐
-        ttk.Button(button_frame, text="确定", command=on_add, width=10).grid(row=0, column=1, padx=5)
-        ttk.Button(button_frame, text="取消", command=dialog.destroy, width=10).grid(row=0, column=2, padx=5)
+        # 绑定回车键（默认确认）和Escape键（默认取消）
+        dialog.dialog.bind('<Return>', lambda e: on_add())
+        dialog.dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 设置焦点到第一个输入框
+        network_entry.focus_force()
+        network_entry.select_range(0, tk.END)
+        
+        # 显示对话框
+        dialog.show()
     
     def remove_ipam_network(self):
         """移除网络（支持多选）"""
@@ -14615,10 +15010,10 @@ class SubnetPlannerApp:
             
             if ip_info:
                 # 显示编辑对话框
-                dialog = self.create_dialog(_('edit_ip'), 400, 200, resizable=False, modal=True)
+                dialog = ComplexDialog(self.root, _('edit_ip'), 400, 200, resizable=False, modal=True)
                 
                 # 创建主框架
-                main_frame = ttk.Frame(dialog, padding="10")
+                main_frame = ttk.Frame(dialog.content_frame, padding="10")
                 main_frame.pack(fill=tk.BOTH, expand=True)
                 
                 # 主机名输入
@@ -14632,10 +15027,6 @@ class SubnetPlannerApp:
                 desc_border, description_entry = create_bordered_entry(main_frame)
                 description_entry.insert(0, ip_info.get('description', ''))
                 desc_border.grid(row=1, column=1, sticky="ew", pady=5, padx=(0, 10))
-                
-                # 按钮框架
-                button_frame = ttk.Frame(dialog)
-                button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
                 
                 def on_ok():
                     hostname = hostname_entry.get().strip()
@@ -14659,8 +15050,9 @@ class SubnetPlannerApp:
                 def on_cancel():
                     dialog.destroy()
                 
-                ttk.Button(button_frame, text=_('ok'), command=on_ok).pack(side=tk.RIGHT, padx=5)
-                ttk.Button(button_frame, text=_('cancel'), command=on_cancel).pack(side=tk.RIGHT, padx=5)
+                # 添加按钮
+                dialog.add_button(_('ok'), on_ok, column=1)
+                dialog.add_button(_('cancel'), on_cancel, column=2)
                 
                 dialog.wait_window()
             else:
@@ -14885,14 +15277,26 @@ class SubnetPlannerApp:
             available_ips: 可用IP地址列表
         """
         # 创建对话框
-        dialog = self.create_dialog(_('available_ips_detected'), 800, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('available_ips_detected'), 800, 400, resizable=True, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
         
         # 创建框架
-        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame = ttk.Frame(dialog.content_frame, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加统计信息
+        stats_frame = ttk.Frame(main_frame)
+        stats_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 计算统计信息
+        total_ips = len(available_ips)
+        network_count = len(set(self.ipam.get_most_specific_network(ip['ip_address'])['network_address'] for ip in available_ips if self.ipam.get_most_specific_network(ip['ip_address'])))
+        
+        # 显示统计信息
+        stats_label = ttk.Label(stats_frame, text=f"共发现 {total_ips} 个可用IP地址，分布在 {network_count} 个网络中", font=(font_family, font_size))
+        stats_label.pack(anchor=tk.W)
         
         # 创建滚动条
         scrollbar = ttk.Scrollbar(main_frame)
@@ -14948,7 +15352,7 @@ class SubnetPlannerApp:
         scrollbar.config(command=tree.yview)
         
         # 创建按钮框架
-        button_frame = ttk.Frame(dialog, padding=10)
+        button_frame = ttk.Frame(dialog.content_frame, padding=10)
         button_frame.pack(fill=tk.X)
         
         # 创建清理选中按钮
@@ -15107,14 +15511,26 @@ class SubnetPlannerApp:
             expired_ips: 过期IP地址列表
         """
         # 创建对话框
-        dialog = self.create_dialog(_('expired_ips_detected'), 800, 400, resizable=True, modal=True)
+        dialog = ComplexDialog(self.root, _('expired_ips_detected'), 800, 400, resizable=True, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
         
         # 创建框架
-        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame = ttk.Frame(dialog.content_frame, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 添加统计信息
+        stats_frame = ttk.Frame(main_frame)
+        stats_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # 计算统计信息
+        total_ips = len(expired_ips)
+        network_count = len(set(self.ipam.get_most_specific_network(ip['ip_address'])['network_address'] for ip in expired_ips if self.ipam.get_most_specific_network(ip['ip_address'])))
+        
+        # 显示统计信息
+        stats_label = ttk.Label(stats_frame, text=f"共发现 {total_ips} 个过期IP地址，分布在 {network_count} 个网络中", font=(font_family, font_size))
+        stats_label.pack(anchor=tk.W)
         
         # 创建滚动条
         scrollbar = ttk.Scrollbar(main_frame)
@@ -15177,7 +15593,7 @@ class SubnetPlannerApp:
         scrollbar.config(command=tree.yview)
         
         # 创建按钮框架
-        button_frame = ttk.Frame(dialog, padding=10)
+        button_frame = ttk.Frame(dialog.content_frame, padding=10)
         button_frame.pack(fill=tk.X)
         
         # 创建释放按钮
@@ -15347,13 +15763,13 @@ class SubnetPlannerApp:
             parent_dialog: 父对话框
         """
         # 创建对话框
-        dialog = self.create_dialog(_('extend_expiry'), 450, 240, resizable=False, modal=True, parent=parent_dialog)
+        dialog = ComplexDialog(parent_dialog.dialog, _('extend_expiry'), 500, 300, resizable=False, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
         
         # 创建主框架
-        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame = ttk.Frame(dialog.content_frame, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建标题
@@ -15410,10 +15826,6 @@ class SubnetPlannerApp:
             )
             radiobutton.pack(anchor=tk.W, pady=5)
         
-        # 创建按钮框架
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=15)
-        
         # 创建确定按钮
         def on_confirm():
             # 获取选中的延期天数
@@ -15458,23 +15870,11 @@ class SubnetPlannerApp:
                 # 关闭对话框
                 dialog.destroy()
         
-        # 创建确定按钮
-        confirm_button = ttk.Button(
-            button_frame, 
-            text=_('confirm'), 
-            command=on_confirm,
-            width=10
-        )
-        confirm_button.pack(side=tk.RIGHT, padx=10)
+        # 添加确定按钮
+        dialog.add_button(_('confirm'), on_confirm, column=1)
         
-        # 创建取消按钮
-        cancel_button = ttk.Button(
-            button_frame, 
-            text=_('cancel'), 
-            command=dialog.destroy,
-            width=10
-        )
-        cancel_button.pack(side=tk.RIGHT, padx=10)
+        # 添加取消按钮
+        dialog.add_button(_('cancel'), dialog.destroy, column=2)
     
     def refresh_ipam_with_selection(self):
         """刷新IPAM数据并恢复选中状态
@@ -15536,10 +15936,10 @@ class SubnetPlannerApp:
     def show_expiring_ips_details(self, expiring_ips):
         """显示即将过期IP地址的详细信息"""
         # 创建对话框
-        dialog = self.create_dialog("即将过期的IP地址", 800, 400)
+        dialog = ComplexDialog(self.root, "即将过期的IP地址", 800, 400, resizable=True, modal=True)
         
         # 创建表格容器
-        table_container = ttk.Frame(dialog)
+        table_container = ttk.Frame(dialog.content_frame)
         table_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # 创建Treeview
@@ -15571,8 +15971,7 @@ class SubnetPlannerApp:
             ))
         
         # 添加关闭按钮
-        close_btn = ttk.Button(dialog, text="关闭", command=dialog.destroy)
-        close_btn.pack(pady=10)
+        dialog.add_button("关闭", dialog.destroy, column=1)
     
     def batch_migrate_ip_addresses(self):
         """批量迁移IP地址到其他网络"""
@@ -15615,17 +16014,17 @@ class SubnetPlannerApp:
             return
         
         # 创建对话框
-        dialog = self.create_dialog(_('batch_migrate'), 450, 200)
+        dialog = ComplexDialog(self.root, _('batch_migrate'), 400, 200, resizable=False, modal=True)
         
         # 显示选中的IP数量
-        ttk.Label(dialog, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
+        ttk.Label(dialog.content_frame, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
         
         # 目标网络选择
-        ttk.Label(dialog, text=_('target_network') + ':').pack(pady=5)
+        ttk.Label(dialog.content_frame, text=_('target_network') + ':').pack(pady=5)
         
         # 创建网络下拉列表
         network_var = tk.StringVar()
-        network_combobox = ttk.Combobox(dialog, textvariable=network_var, values=network_list, width=40)
+        network_combobox = ttk.Combobox(dialog.content_frame, textvariable=network_var, values=network_list, width=40)
         network_combobox.pack(pady=5)
         network_combobox.focus_set()
         
@@ -15658,10 +16057,9 @@ class SubnetPlannerApp:
         def cancel():
             dialog.destroy()
         
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=15)
-        ttk.Button(button_frame, text=_('confirm'), command=confirm).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text=_('cancel'), command=cancel).pack(side=tk.LEFT, padx=10)
+        # 添加按钮
+        dialog.add_button(_('confirm'), confirm, column=1)
+        dialog.add_button(_('cancel'), cancel, column=2)
     
     def batch_set_expiry_date(self):
         """批量设置IP地址的过期日期"""
@@ -15687,15 +16085,15 @@ class SubnetPlannerApp:
                 ip_addresses.append(ip_address)
         
         # 创建对话框
-        dialog = self.create_dialog(_('batch_set_expiry_date'), 400, 200)
+        dialog = ComplexDialog(self.root, _('batch_set_expiry_date'), 400, 200, resizable=False, modal=True)
         
         # 创建日期选择器
-        ttk.Label(dialog, text=_('expiry_date') + ':').pack(pady=10)
+        ttk.Label(dialog.content_frame, text=_('expiry_date') + ':').pack(pady=10)
         
         if DateEntry:
             # 使用DateEntry选择日期
             date_var = tk.StringVar()
-            date_entry = DateEntry(dialog, textvariable=date_var, date_pattern='yyyy-MM-dd')
+            date_entry = DateEntry(dialog.content_frame, textvariable=date_var, date_pattern='yyyy-MM-dd')
             date_entry.pack(pady=10)
             
             # 修复日历弹窗在主窗口置顶时被遮挡的问题
@@ -15718,9 +16116,9 @@ class SubnetPlannerApp:
         else:
             # 使用普通Entry输入日期
             date_var = tk.StringVar()
-            date_entry = ttk.Entry(dialog, textvariable=date_var)
+            date_entry = ttk.Entry(dialog.content_frame, textvariable=date_var)
             date_entry.pack(pady=10)
-            ttk.Label(dialog, text=_('date_format_yyyy_mm_dd')).pack(pady=5)
+            ttk.Label(dialog.content_frame, text=_('date_format_yyyy_mm_dd')).pack(pady=5)
         
         # 确认按钮
         def confirm():
@@ -15759,12 +16157,9 @@ class SubnetPlannerApp:
             
             dialog.destroy()
         
-        # 按钮框架
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        
-        ttk.Button(button_frame, text=_('confirm'), command=confirm).grid(row=0, column=0, padx=10)
-        ttk.Button(button_frame, text=_('clear_expiry_date'), command=clear_expiry).grid(row=0, column=1, padx=10)
+        # 添加按钮
+        dialog.add_button(_('confirm'), confirm, column=1)
+        dialog.add_button(_('clear_expiry_date'), clear_expiry, column=2)
 
     def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None, record_id=None):
         """显示IP地址分配/保留对话框
@@ -15787,10 +16182,6 @@ class SubnetPlannerApp:
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 配置网格布局
-        main_frame.grid_rowconfigure(0, weight=1)
-        main_frame.grid_rowconfigure(1, weight=1)
-        main_frame.grid_rowconfigure(2, weight=1)
-        main_frame.grid_rowconfigure(3, weight=1)
         main_frame.grid_columnconfigure(0, weight=0)
         main_frame.grid_columnconfigure(1, weight=1)
         
@@ -15918,8 +16309,8 @@ class SubnetPlannerApp:
                     description_entry.insert(0, ip_info.get('description', ''))
         
         # 按钮框架
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 15), padx=15)
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(5, 10), padx=10)
         
         # 验证MAC地址格式
         def validate_mac_address(mac):
