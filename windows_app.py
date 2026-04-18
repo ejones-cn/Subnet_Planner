@@ -1673,11 +1673,6 @@ class SubnetPlannerApp:
         # except Exception as e:
         #     print(f"检查过期IP失败: {e}")
         
-        # 启动时不自动检查即将过期的IP地址
-        # try:
-        #     self.check_expiring_ips()
-        # except Exception as e:
-        #     print(f"检查即将过期IP失败: {e}")
         bg_color = self.style.lookup("TFrame", "background")
 
         # 使用Label组件替代Text，以简化实现
@@ -15859,61 +15854,6 @@ class SubnetPlannerApp:
         else:
             self.show_error(_('error'), msg)
     
-    def check_expiring_ips(self, days_ahead: int = 7):
-        """检查即将过期的IP地址并显示提醒"""
-        # 获取即将过期的IP地址
-        expiring_ips = self.ipam.get_expiring_ips(days_ahead)
-        
-        if expiring_ips:
-            # 显示即将过期IP地址信息
-            expiring_count = len(expiring_ips)
-            message = f"发现 {expiring_count} 个IP地址将在 {days_ahead} 天内过期，是否查看详情？"
-            
-            # 显示确认对话框
-            if messagebox.askyesno("即将过期的IP地址", message):
-                # 显示即将过期IP地址的详细信息
-                self.show_expiring_ips_details(expiring_ips)
-    
-    def show_expiring_ips_details(self, expiring_ips):
-        """显示即将过期IP地址的详细信息"""
-        # 创建对话框
-        dialog = ComplexDialog(self.root, "即将过期的IP地址", 800, 400, resizable=True, modal=True)
-        
-        # 创建表格容器
-        table_container = ttk.Frame(dialog.content_frame)
-        table_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # 创建Treeview
-        tree = ttk.Treeview(table_container, columns=('ip_address', 'hostname', 'description', 'expiry_date'), show='headings')
-        tree.heading('ip_address', text=_('ip_address'))
-        tree.heading('hostname', text=_('hostname'))
-        tree.heading('description', text=_('description'))
-        tree.heading('expiry_date', text=_('expiry_date'))
-        
-        # 调整列宽
-        tree.column('ip_address', width=150)
-        tree.column('hostname', width=150)
-        tree.column('description', width=200)
-        tree.column('expiry_date', width=150)
-        
-        # 添加滚动条
-        scrollbar = ttk.Scrollbar(table_container, orient=tk.VERTICAL, command=tree.yview)
-        tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(fill=tk.BOTH, expand=True)
-        
-        # 填充数据
-        for ip in expiring_ips:
-            tree.insert('', tk.END, values=(
-                ip['ip_address'],
-                ip['hostname'] or '',
-                ip['description'] or '',
-                ip['expiry_date']
-            ))
-        
-        # 添加关闭按钮
-        dialog.add_button("关闭", dialog.destroy, column=1)
-    
     def batch_migrate_ip_addresses(self):
         """批量迁移IP地址到其他网络"""
         # 检查是否选择了IP地址
@@ -15999,8 +15939,8 @@ class SubnetPlannerApp:
             dialog.destroy()
         
         # 添加按钮
-        dialog.add_button(_('confirm'), confirm, column=1)
-        dialog.add_button(_('cancel'), cancel, column=2)
+        dialog.add_button(_('cancel'), cancel, column=1)
+        dialog.add_button(_('confirm'), confirm, column=2)
     
     def batch_set_expiry_date(self):
         """批量设置IP地址的过期日期"""

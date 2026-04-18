@@ -2013,55 +2013,6 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"自动释放过期IP地址失败: {str(e)}", 0
     
-    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, str | int | None]]:
-        """获取即将过期的IP地址
-        
-        Args:
-            days_ahead: 提前多少天提醒
-        
-        Returns:
-            list[dict[str, str | int | None]]: 即将过期的IP地址列表
-        """
-        try:
-            conn = sqlite3.connect(self.db_file)
-            cursor = conn.cursor()
-            
-            # 计算日期范围
-            now = datetime.now()
-            future_date = now + timedelta(days=days_ahead)
-            
-            # 获取即将过期的IP地址
-            _ = cursor.execute('''
-            SELECT id, ip_address, status, hostname, description, allocated_at, expiry_date 
-            FROM ip_addresses 
-            WHERE expiry_date BETWEEN ? AND ? AND status IN ('allocated', 'reserved')
-            ''', (now.strftime("%Y-%m-%d %H:%M:%S"), future_date.strftime("%Y-%m-%d %H:%M:%S")))
-            
-            expiring_ips: list[dict[str, str | int | None]] = []
-            for row in cursor.fetchall():
-                if isinstance(row, tuple) and len(row) >= 7:
-                    ip_id: int = int(row[0])
-                    ip_address: str = str(row[1])
-                    status: str = str(row[2])
-                    hostname: str | None = row[3] if row[3] else None
-                    description: str | None = row[4] if row[4] else None
-                    allocated_at: str | None = str(row[5]) if row[5] else None
-                    expiry_date: str | None = str(row[6]) if row[6] else None
-                    expiring_ips.append({
-                        'id': ip_id,
-                        'ip_address': ip_address,
-                        'status': status,
-                        'hostname': hostname,
-                        'description': description,
-                        'allocated_at': allocated_at,
-                        'expiry_date': expiry_date
-                    })
-            
-            conn.close()
-            return expiring_ips
-        except Exception:
-            return []
-    
     def reserve_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None, record_id: int | None = None) -> tuple[bool, str]:
         """保留IP地址
         
