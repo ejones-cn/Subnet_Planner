@@ -38,7 +38,7 @@ class FontManager:
             print(f"🔍 [init] 使用已注册的字体缓存 (语言: {current_lang})")
             self.has_asian_font = True
         else:
-            print(f"🔍 [init] 字体将在导出PDF时注册 (语言: {current_lang})")
+            print(f"[init] 字体将在导出PDF时注册 (语言: {current_lang})")
             self.has_asian_font = False
 
     def register_pdf_fonts(self) -> bool:

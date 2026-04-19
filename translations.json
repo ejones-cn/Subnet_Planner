@@ -2016,6 +2016,111 @@
     "zh_tw": "掃描",
     "ko": "스캔"
   },
+  "scan_method": {
+    "zh": "扫描方式",
+    "en": "Scan Method",
+    "ja": "スキャン方式",
+    "zh_tw": "掃描方式",
+    "ko": "스캔 방식"
+  },
+  "scanning": {
+    "zh": "正在扫描",
+    "en": "Scanning",
+    "ja": "スキャン中",
+    "zh_tw": "正在掃描",
+    "ko": "스캔 중"
+  },
+  "found_active_ips": {
+    "zh": "发现活动IP",
+    "en": "Active IPs Found",
+    "ja": "アクティブIP発見",
+    "zh_tw": "發現活動IP",
+    "ko": "활성 IP 발견"
+  },
+  "scan_complete": {
+    "zh": "扫描完成",
+    "en": "Scan Complete",
+    "ja": "スキャン完了",
+    "zh_tw": "掃描完成",
+    "ko": "스캔 완료"
+  },
+  "scan_failed": {
+    "zh": "扫描失败",
+    "en": "Scan Failed",
+    "ja": "スキャン失敗",
+    "zh_tw": "掃描失敗",
+    "ko": "스캔 실패"
+  },
+  "no_active_ips_found": {
+    "zh": "未发现活动IP地址",
+    "en": "No active IP addresses found",
+    "ja": "アクティブなIPアドレスが見つかりません",
+    "zh_tw": "未發現活動IP位址",
+    "ko": "활성 IP 주소를 찾을 수 없습니다"
+  },
+  "auto_scan_discovered": {
+    "zh": "自动扫描发现",
+    "en": "Auto scan discovered",
+    "ja": "自動スキャン発見",
+    "zh_tw": "自動掃描發現",
+    "ko": "자동 스캔 발견"
+  },
+  "scan_result_success": {
+    "zh": "扫描完成，发现 {found} 个活动IP，成功添加 {added} 个到IPAM",
+    "en": "Scan complete, found {found} active IPs, successfully added {added} to IPAM",
+    "ja": "スキャン完了、{found}個のアクティブIPを発見、{added}個をIPAMに追加",
+    "zh_tw": "掃描完成，發現 {found} 個活動IP，成功添加 {added} 個到IPAM",
+    "ko": "스캔 완료, {found}개의 활성 IP 발견, {added}개를 IPAM에 추가"
+  },
+  "scan_result_with_failures": {
+    "zh": "扫描完成，发现 {found} 个活动IP，成功添加 {added} 个，{failed} 个添加失败（可能已分配）",
+    "en": "Scan complete, found {found} active IPs, added {added}, {failed} failed (may already be allocated)",
+    "ja": "スキャン完了、{found}個のアクティブIP発見、{added}個追加、{failed}個失敗（既に割り当て済みの可能性）",
+    "zh_tw": "掃描完成，發現 {found} 個活動IP，成功添加 {added} 個，{failed} 個添加失敗（可能已分配）",
+    "ko": "스캔 완료, {found}개의 활성 IP 발견, {added}개 추가, {failed}개 실패 (이미 할당되었을 수 있음)"
+  },
+  "large_network_warning": {
+    "zh": "大网络扫描警告",
+    "en": "Large Network Warning",
+    "ja": "大規模ネットワークスキャン警告",
+    "zh_tw": "大網路掃描警告",
+    "ko": "대규모 네트워크 스캔 경고"
+  },
+  "large_network_confirm_message": {
+    "zh": "网络 {network} 包含 {total} 个主机地址，扫描可能需要较长时间。是否继续？",
+    "en": "Network {network} contains {total} host addresses. Scanning may take a long time. Continue?",
+    "ja": "ネットワーク {network} には {total} 個のホストアドレスが含まれています。スキャンに時間がかかる場合があります。続行しますか？",
+    "zh_tw": "網路 {network} 包含 {total} 個主機位址，掃描可能需要較長時間。是否繼續？",
+    "ko": "네트워크 {network}에 {total}개의 호스트 주소가 포함되어 있습니다. 스캔에 시간이 오래 걸릴 수 있습니다. 계속하시겠습니까?"
+  },
+  "thread_count_range_error": {
+    "zh": "线程数必须在1到200之间",
+    "en": "Thread count must be between 1 and 200",
+    "ja": "スレッド数は1から200の間である必要があります",
+    "zh_tw": "執行緒數必須在1到200之間",
+    "ko": "스레드 수는 1에서 200 사이여야 합니다"
+  },
+  "thread_count_invalid": {
+    "zh": "线程数必须是有效的整数",
+    "en": "Thread count must be a valid integer",
+    "ja": "スレッド数は有効な整数である必要があります",
+    "zh_tw": "執行緒數必須是有效的整數",
+    "ko": "스레드 수는 유효한 정수여야 합니다"
+  },
+  "timeout_range_error": {
+    "zh": "超时时间必须在100到10000毫秒之间",
+    "en": "Timeout must be between 100 and 10000 milliseconds",
+    "ja": "タイムアウトは100から10000ミリ秒の間である必要があります",
+    "zh_tw": "逾時時間必須在100到10000毫秒之間",
+    "ko": "타임아웃은 100에서 10000밀리초 사이여야 합니다"
+  },
+  "timeout_invalid": {
+    "zh": "超时时间必须是有效的整数",
+    "en": "Timeout must be a valid integer",
+    "ja": "タイムアウトは有効な整数である必要があります",
+    "zh_tw": "逾時時間必須是有效的整數",
+    "ko": "타임아웃은 유효한 정수여야 합니다"
+  },
   "check_expired_ips": {
     "zh": "检查过期",
     "en": "Check Expired",
@@ -4669,6 +4774,55 @@
     "ja": "一括生成",
     "ko": "일괄 생성"
   },
+  "quantity": {
+    "zh": "数量",
+    "zh_tw": "數量",
+    "en": "Quantity",
+    "ja": "数量",
+    "ko": "수량"
+  },
+  "sequential_generate": {
+    "zh": "连续生成",
+    "zh_tw": "連續生成",
+    "en": "Sequential",
+    "ja": "連続生成",
+    "ko": "연속 생성"
+  },
+  "random_generate": {
+    "zh": "随机生成",
+    "zh_tw": "隨機生成",
+    "en": "Random",
+    "ja": "ランダム生成",
+    "ko": "랜덤 생성"
+  },
+  "invalid_quantity": {
+    "zh": "请输入有效的数量",
+    "zh_tw": "請輸入有效的數量",
+    "en": "Please enter a valid quantity",
+    "ja": "有効な数量を入力してください",
+    "ko": "유효한 수량을 입력してください"
+  },
+  "insufficient_available_ips": {
+    "zh": "可用IP数量不足，当前可用: {available}",
+    "zh_tw": "可用IP數量不足，當前可用: {available}",
+    "en": "Insufficient available IPs, current available: {available}",
+    "ja": "利用可能なIP数が不足しています。現在利用可能: {available}",
+    "ko": "사용 가능한 IP 수가 부족합니다. 현재 사용 가능: {available}"
+  },
+  "batch_generate_success": {
+    "zh": "成功批量生成 {count} 个IP地址",
+    "zh_tw": "成功批量生成 {count} 個IP地址",
+    "en": "Successfully batch generated {count} IP addresses",
+    "ja": "{count} 件のIPアドレスを一括生成しました",
+    "ko": "{count}개의 IP 주소를 일괄 생성했습니다"
+  },
+  "batch_generate_failed": {
+    "zh": "批量生成失败",
+    "zh_tw": "批量生成失敗",
+    "en": "Batch generation failed",
+    "ja": "一括生成に失敗しました",
+    "ko": "일괄 생성 실패"
+  },
   "invalid_ip_address": {
     "zh": "无效的IP地址",
     "zh_tw": "無效的IP位址",
@@ -5116,5 +5270,12 @@
     "en": "Restore failed",
     "ja": "復元失敗",
     "ko": "복원 실패"
+  },
+  "cleanup_address": {
+    "zh": "清理地址",
+    "zh_tw": "清理地址",
+    "en": "Cleanup Address",
+    "ja": "アドレスをクリーンアップ",
+    "ko": "주소 정리"
   }
 }

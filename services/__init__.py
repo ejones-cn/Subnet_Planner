@@ -6,3 +6,4 @@ from .subnet_split_service import SubnetSplitService
 from .subnet_planning_service import SubnetPlanningService
 from .ip_query_service import IPQueryService
 from .validation_service import ValidationService
+from .network_scanner import NetworkScanner
