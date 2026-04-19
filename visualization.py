@@ -34,6 +34,7 @@ visualizer.set_filter_level(2)  # 只显示2级及以下节点
 ```
 """
 
+import ipaddress
 import tkinter as tk
 from tkinter import Canvas
 from typing import Callable, Any
@@ -109,16 +110,16 @@ class NetworkTopologyVisualizer:
         """将CIDR转换为可用于排序的元组
         
         Args:
-            cidr: CIDR字符串，如 "192.168.1.0/24"
+            cidr: CIDR字符串，如 "192.168.1.0/24" 或 "2001:db8::/32"
         
         Returns:
-            tuple: 可用于排序的整数元组，如 (192, 168, 1, 0)
+            tuple: 可用于排序的元组，IPv4如 (4, 192, 168, 1, 0)，IPv6如 (6, 8193, 3512, ...)
         """
         if not cidr:
             return ()
         try:
-            ip_part = cidr.split('/')[0]
-            return tuple(map(int, ip_part.split('.')))
+            net = ipaddress.ip_network(cidr, strict=False)
+            return (net.version, int(net.network_address))
         except (ValueError, IndexError):
             return ()
     

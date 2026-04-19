@@ -10025,7 +10025,7 @@ class SubnetPlannerApp:
                 pass
         
         # 按网络大小排序，大网络在前
-        network_objects.sort(key=lambda x: (x[0].prefixlen, x[0].network_address))
+        network_objects.sort(key=lambda x: (x[0].version, x[0].prefixlen, x[0].network_address))
         
         # 构建层次结构
         hierarchy = {}
@@ -10444,12 +10444,12 @@ class SubnetPlannerApp:
     
     def _sort_ip_list(self, ips):
         """对IP地址列表进行排序"""
-        # 默认按IP地址数值顺序排序
         def ip_key(ip_item):
             try:
-                return ipaddress.ip_address(ip_item['ip_address'])
+                addr = ipaddress.ip_address(ip_item['ip_address'])
+                return (addr.version, int(addr))
             except ValueError:
-                return ip_item['ip_address']
+                return (0, ip_item['ip_address'])
         return sorted(ips, key=ip_key)
     
     def reset_search(self):
@@ -12127,26 +12127,57 @@ class SubnetPlannerApp:
                 network_address = str(network_obj.network_address)
                 prefix_len = network_obj.prefixlen
                 
-                # 根据前缀长度计算需要显示的网络前缀部分
-                # 对于小于/8网段：需要用户完整输入4个8位段
-                # 对于/8网段到/15：显示前1个8位段（例如：10.）
-                # 对于/16网段到/23：显示前2个8位段（例如：10.0.）
-                # 对于大于等于/24网段的：显示前3个8位段（例如：10.0.0.）
-                octets = network_address.split('.')
-                if prefix_len < 8:
-                    # 小于/8网段，需要用户完整输入4个8位段
-                    network_prefix = ""
-                elif 8 <= prefix_len <= 15:
-                    # /8 到 /15 网段，显示前1个8位段
-                    network_prefix = f"{octets[0]}."
-                elif 16 <= prefix_len <= 23:
-                    # /16 到 /23 网段，显示前2个8位段
-                    network_prefix = f"{octets[0]}.{octets[1]}."
-                elif prefix_len >= 24:
-                    # 大于等于/24网段，显示前3个8位段
-                    network_prefix = f"{octets[0]}.{octets[1]}.{octets[2]}."
+                network_prefix = ""
+                
+                if network_obj.version == 4:
+                    # IPv4: 根据前缀长度动态提取网段
+                    octets = network_address.split('.')
+                    if prefix_len < 8:
+                        # 小于/8网段，需要用户完整输入4个8位段
+                        network_prefix = ""
+                    elif 8 <= prefix_len <= 15:
+                        # /8 到 /15 网段，显示前1个8位段
+                        network_prefix = f"{octets[0]}."
+                    elif 16 <= prefix_len <= 23:
+                        # /16 到 /23 网段，显示前2个8位段
+                        network_prefix = f"{octets[0]}.{octets[1]}."
+                    elif prefix_len >= 24:
+                        # 大于等于/24网段，显示前3个8位段
+                        network_prefix = f"{octets[0]}.{octets[1]}.{octets[2]}."
                 else:
-                    network_prefix = ""
+                    # IPv6: 提取前缀
+                    net_addr_str = str(network_obj.network_address)
+                    if "::" in net_addr_str:
+                        # 简化的IPv6地址
+                        network_prefix = net_addr_str
+                    else:
+                        # 完整的IPv6地址，根据前缀长度提取
+                        # IPv6前缀长度以位为单位，需要转换为16位块
+                        # 例如 /64 前缀需要显示前4个16位块
+                        blocks_needed = (prefix_len + 15) // 16
+                        parts = net_addr_str.split(":")
+                        # 收集需要的块
+                        prefix_parts = []
+                        for i, part in enumerate(parts):
+                            if i < blocks_needed:
+                                if part:
+                                    prefix_parts.append(part)
+                                else:
+                                    # 遇到 :: 的情况
+                                    if i == 0:
+                                        # :: 在开头，添加 ::
+                                        prefix_parts.append("")
+                                    break
+                        
+                        # 构建前缀字符串
+                        if prefix_parts:
+                            if prefix_parts[0] == "":
+                                # :: 在开头
+                                network_prefix = ":" + ":".join(prefix_parts[1:]) + "::"
+                            else:
+                                network_prefix = ":".join(prefix_parts) + "::"
+                        else:
+                            network_prefix = net_addr_str
                 
                 if network_prefix:
                     network_entry.insert(0, network_prefix)
@@ -12315,8 +12346,50 @@ class SubnetPlannerApp:
         self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.10', 'HR-001', '人事主管')
         self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.11', 'HR-002', '人事专员')
         
+        # ========== IPv6 样例数据 ==========
+        
+        # 添加大网段
+        self.ipam.add_network('2001:db8::/32', '集团IPv6网段')
+        self.ipam.add_network('fd00::/16', '内部IPv6网段')
+        
+        # 添加中网段
+        self.ipam.add_network('2001:db8:1::/48', '总部IPv6网段')
+        self.ipam.add_network('fd00:1::/48', '办公IPv6网段')
+        
+        # 添加小网段
+        self.ipam.add_network('2001:db8:1:1::/64', '服务器IPv6网段')
+        self.ipam.add_network('2001:db8:1:2::/64', '人事部IPv6网段')
+        self.ipam.add_network('fd00:1:1::/64', '员工无线IPv6网段')
+        
+        # 为服务器IPv6网络分配IP地址
+        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::10', 'Server-IPv6-001', '文件服务器')
+        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::11', 'Server-IPv6-002', '数据库服务器')
+        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::12', 'Server-IPv6-003', 'Web服务器')
+        self.ipam.reserve_ip('2001:db8:1:1::/64', '2001:db8:1:1::1', '路由器', '')
+        self.ipam.reserve_ip('2001:db8:1:1::/64', '2001:db8:1:1::ffff', '网关', '')
+        
+        # 为人事部IPv6网络分配IP地址
+        self.ipam.allocate_ip('2001:db8:1:2::/64', '2001:db8:1:2::10', 'HR-IPv6-001', '人事主管')
+        self.ipam.allocate_ip('2001:db8:1:2::/64', '2001:db8:1:2::11', 'HR-IPv6-002', '人事专员')
+        
+        # 为员工无线IPv6网络分配IP地址
+        self.ipam.allocate_ip('fd00:1:1::/64', 'fd00:1:1::10', 'WiFi-001', '无线终端1')
+        self.ipam.allocate_ip('fd00:1:1::/64', 'fd00:1:1::11', 'WiFi-002', '无线终端2')
+        self.ipam.reserve_ip('fd00:1:1::/64', 'fd00:1:1::1', '无线路由器', '')
+        
         # 刷新IPAM数据
         self.refresh_ipam_networks()
+    
+    def _get_all_visible_network_items(self):
+        """获取网段树中所有可见的项ID列表（用于Shift范围选择）"""
+        items = []
+        def collect_visible(parent=''):
+            for child in self.ipam_network_tree.get_children(parent):
+                items.append(child)
+                if self.ipam_network_tree.item(child, 'open'):
+                    collect_visible(child)
+        collect_visible()
+        return items
     
     def on_ipam_network_click(self, event):
         """网络点击事件处理（用于取消选择）"""
@@ -12373,6 +12446,37 @@ class SubnetPlannerApp:
         # 如果是这些区域，可能是双击编辑的一部分，不执行展开/收缩功能
         region = self.ipam_network_tree.identify_region(event.x, event.y)
         if region in ("cell", "row", "tree"):
+            # 获取按键状态
+            is_ctrl = event.state & 0x4
+            is_shift = event.state & 0x1
+            
+            # Ctrl+点击：切换选择状态
+            if is_ctrl and clicked_item:
+                if clicked_item in selected_items:
+                    self.ipam_network_tree.selection_remove(clicked_item)
+                    # 如果没有选中项了，清空IP地址列表
+                    if not self.ipam_network_tree.selection():
+                        for item in self.ipam_ip_tree.get_children():
+                            self.ipam_ip_tree.delete(item)
+                else:
+                    self.ipam_network_tree.selection_add(clicked_item)
+                    self.on_ipam_network_select(None)
+                return 'break'
+            # Shift+点击：范围选择
+            elif is_shift and clicked_item and selected_items:
+                all_items = self._get_all_visible_network_items()
+                last_selected = selected_items[-1]
+                try:
+                    start_idx = all_items.index(last_selected)
+                    end_idx = all_items.index(clicked_item)
+                    self.ipam_network_tree.selection_clear()
+                    for idx in range(min(start_idx, end_idx), max(start_idx, end_idx) + 1):
+                        self.ipam_network_tree.selection_add(all_items[idx])
+                    self.on_ipam_network_select(None)
+                except ValueError:
+                    pass
+                return 'break'
+            
             # 检查是否点击了已选中的项
             if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
                 # 使用定时器延迟处理取消选择，这样在双击时，定时器会被取消
@@ -12443,6 +12547,31 @@ class SubnetPlannerApp:
         # 检查点击的区域是否是单元格或行
         region = self.ipam_ip_tree.identify_region(event.x, event.y)
         if region in ("cell", "row"):
+            # 获取按键状态
+            is_ctrl = event.state & 0x4
+            is_shift = event.state & 0x1
+            
+            # Ctrl+点击：切换选择状态
+            if is_ctrl and clicked_item:
+                if clicked_item in selected_items:
+                    self.ipam_ip_tree.selection_remove(clicked_item)
+                else:
+                    self.ipam_ip_tree.selection_add(clicked_item)
+                return 'break'
+            # Shift+点击：范围选择
+            elif is_shift and clicked_item and selected_items:
+                all_items = self.ipam_ip_tree.get_children()
+                last_selected = selected_items[-1]
+                try:
+                    start_idx = list(all_items).index(last_selected)
+                    end_idx = list(all_items).index(clicked_item)
+                    self.ipam_ip_tree.selection_clear()
+                    for idx in range(min(start_idx, end_idx), max(start_idx, end_idx) + 1):
+                        self.ipam_ip_tree.selection_add(all_items[idx])
+                except ValueError:
+                    pass
+                return 'break'
+            
             # 检查是否点击了已选中的项
             if clicked_item and clicked_item in selected_items and len(selected_items) == 1:
                 # 使用定时器延迟处理取消选择，这样在双击时，定时器会被取消
@@ -14899,12 +15028,12 @@ class SubnetPlannerApp:
         def get_sort_value(item):
             values = item[1]
             if column == 'ip_address':
-                # IP地址排序，转换为数字列表进行比较
+                # IP地址排序，按版本分组后按数值排序
                 try:
-                    ip_parts = [int(part) for part in values[0].split('.')]
-                    return ip_parts
+                    addr = ipaddress.ip_address(values[0])
+                    return (addr.version, int(addr))
                 except (ValueError, AttributeError):
-                    return values[0]
+                    return (0, values[0])
             elif column == 'allocated_at':
                 # 时间排序
                 return values[5] if values[5] else ''
@@ -15865,9 +15994,9 @@ class SubnetPlannerApp:
         all_networks = self.ipam.get_all_networks()
         network_list = [net['network'] for net in all_networks]
         
-        # 对网络列表进行排序（按IP地址数值排序）
+        # 对网络列表进行排序（按IP版本分组，再按地址数值排序）
         try:
-            network_list.sort(key=lambda x: int(ipaddress.ip_network(x, strict=False).network_address))
+            network_list.sort(key=lambda x: (ipaddress.ip_network(x, strict=False).version, int(ipaddress.ip_network(x, strict=False).network_address)))
         except Exception:
             # 如果排序失败，保持原顺序
             pass
