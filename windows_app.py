@@ -3829,11 +3829,42 @@ class SubnetPlannerApp:
         result_tree.column("status", width=400, minwidth=80)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
-        result_tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=result_tree.yview)
 
-        result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # 创建滚动条回调函数，实现自动隐藏和外边距调整
+        def scrollbar_callback(*args):
+            # 设置滚动条位置
+            scrollbar.set(*args)
+
+            yview = result_tree.yview()
+            need_scrollbar = not (float(yview[0]) <= 0.0 and float(yview[1]) >= 1.0)
+
+            # 根据是否需要滚动条调整Treeview的右边距
+            if need_scrollbar:
+                # 显示滚动条
+                scrollbar.grid(row=0, column=1, sticky=tk.NS, padx=0)
+                # 调整Treeview的grid配置，移除内边距，与主框架内边距保持一致
+                result_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+
+            else:
+                # 隐藏滚动条
+                scrollbar.grid_remove()
+                # 调整Treeview的grid配置，移除内边距，与主框架内边距保持一致
+                result_tree.grid_configure(row=0, column=0, sticky=tk.NSEW, padx=0)
+
+        # 绑定滚动条和Treeview
+        scrollbar.config(command=result_tree.yview)
+        result_tree.config(yscrollcommand=scrollbar_callback)
+
+        # 使用grid布局，确保Treeview和滚动条正确对齐
+        result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        scrollbar.grid(row=0, column=1, sticky=tk.NS, padx=0)
+
+        # 配置grid权重，使Treeview可以扩展
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        # 初始调用一次回调函数，设置初始状态
+        scrollbar_callback(0.0, 1.0)
 
         # 将错误列表转换为字典，提高查找效率
         error_dict = {e["row"]: e for e in errors}
