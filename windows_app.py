@@ -8842,10 +8842,10 @@ class SubnetPlannerApp:
             # 使用Segoe UI Emoji字体绘制📌图标（使用适中的字体大小14）
             try:
                 font = ImageFont.truetype("seguiemj.ttf", 14)  # Windows emoji字体
-            except:
+            except Exception:
                 try:
                     font = ImageFont.truetype("arial.ttf", 14)  # 备用字体
-                except:
+                except Exception:
                     font = ImageFont.load_default()
             
             draw = ImageDraw.Draw(img)
@@ -11481,7 +11481,7 @@ class SubnetPlannerApp:
             for i in range(101):  # 清除DialogBase中设置的101行
                 try:
                     dialog.content_frame.grid_rowconfigure(i, weight=0)
-                except:
+                except Exception:
                     pass
 
             main_frame = ttk.Frame(dialog.content_frame)
@@ -11714,7 +11714,7 @@ class SubnetPlannerApp:
             for i in range(rows):
                 try:
                     dialog.content_frame.grid_rowconfigure(i, weight=0)
-                except:
+                except Exception:
                     pass
             # 重新配置行
             dialog.content_frame.grid_rowconfigure(0, weight=0)
@@ -16024,15 +16024,11 @@ class SubnetPlannerApp:
                 # 执行延期操作
                 extended_count = 0
                 for ip in selected_ips:
-                    # 计算新的过期日期
-                    import datetime
                     current_expiry = ip.get('expiry_date', None)
                     if current_expiry:
                         try:
-                            # 从当前时间开始计算新的过期日期
                             expiry_date = datetime.datetime.now()
                             
-                            # 计算新的过期日期
                             new_expiry = expiry_date + datetime.timedelta(days=days)
                             new_expiry_str = new_expiry.strftime('%Y-%m-%d %H:%M:%S')
                             

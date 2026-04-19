@@ -1946,7 +1946,7 @@ class IPAMSQLite:
             WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
-            expired_ips: list[dict[str, str | int]] = []
+            expired_ips: list[dict[str, str | int | None]] = []
             for row in cursor.fetchall():
                 if isinstance(row, tuple) and len(row) >= 9:
                     ip_id: int = int(row[0])
@@ -2458,7 +2458,6 @@ class IPAMSQLite:
             expired_ips = int(expired_ips_result[0]) if expired_ips_result and isinstance(expired_ips_result, tuple) and len(expired_ips_result) >= 1 else 0
             
             # 获取即将过期IP数（未来7天内过期）
-            from datetime import timedelta
             seven_days_later = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
             _ = cursor.execute('SELECT COUNT(*) FROM ip_addresses WHERE expiry_date >= ? AND expiry_date <= ? AND status IN ("allocated", "reserved")', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), seven_days_later))
             expiring_ips_result = cursor.fetchone()
@@ -2659,6 +2658,7 @@ class IPAMSQLite:
         Returns:
             str: 备份文件路径
         """
+        _ = frequency
         try:
             # 确保备份目录存在
             if not os.path.exists(self.backup_dir):
