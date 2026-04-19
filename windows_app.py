@@ -12145,39 +12145,16 @@ class SubnetPlannerApp:
                         # 大于等于/24网段，显示前3个8位段
                         network_prefix = f"{octets[0]}.{octets[1]}.{octets[2]}."
                 else:
-                    # IPv6: 提取前缀
-                    net_addr_str = str(network_obj.network_address)
-                    if "::" in net_addr_str:
-                        # 简化的IPv6地址
-                        network_prefix = net_addr_str
+                    # IPv6: 使用 exploded 属性提取前缀
+                    if prefix_len == 0:
+                        network_prefix = ""
+                    elif prefix_len >= 128:
+                        network_prefix = str(network_obj.network_address)
                     else:
-                        # 完整的IPv6地址，根据前缀长度提取
-                        # IPv6前缀长度以位为单位，需要转换为16位块
-                        # 例如 /64 前缀需要显示前4个16位块
-                        blocks_needed = (prefix_len + 15) // 16
-                        parts = net_addr_str.split(":")
-                        # 收集需要的块
-                        prefix_parts = []
-                        for i, part in enumerate(parts):
-                            if i < blocks_needed:
-                                if part:
-                                    prefix_parts.append(part)
-                                else:
-                                    # 遇到 :: 的情况
-                                    if i == 0:
-                                        # :: 在开头，添加 ::
-                                        prefix_parts.append("")
-                                    break
-                        
-                        # 构建前缀字符串
-                        if prefix_parts:
-                            if prefix_parts[0] == "":
-                                # :: 在开头
-                                network_prefix = ":" + ":".join(prefix_parts[1:]) + "::"
-                            else:
-                                network_prefix = ":".join(prefix_parts) + "::"
-                        else:
-                            network_prefix = net_addr_str
+                        blocks_needed = min(8, (prefix_len + 15) // 16)
+                        exploded_parts = network_obj.network_address.exploded.split(':')
+                        prefix_parts = [part.lstrip('0') or '0' for part in exploded_parts[:blocks_needed]]
+                        network_prefix = ':'.join(prefix_parts) + '::'
                 
                 if network_prefix:
                     network_entry.insert(0, network_prefix)
@@ -12383,6 +12360,7 @@ class SubnetPlannerApp:
     def _get_all_visible_network_items(self):
         """获取网段树中所有可见的项ID列表（用于Shift范围选择）"""
         items = []
+
         def collect_visible(parent=''):
             for child in self.ipam_network_tree.get_children(parent):
                 items.append(child)
