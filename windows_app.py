@@ -12120,6 +12120,46 @@ class SubnetPlannerApp:
         # VLAN 输入
         _label, vlan_entry = dialog.add_field('VLAN', 3, 1, width=25)
         
+        # 填充当前选中网段的前缀
+        selected_items = self.ipam_network_tree.selection()
+        if selected_items:
+            selected_network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+            try:
+                import ipaddress
+                network_obj = ipaddress.ip_network(selected_network, strict=False)
+                network_address = str(network_obj.network_address)
+                prefix_len = network_obj.prefixlen
+                
+                # 根据前缀长度计算需要显示的网络前缀部分
+                # 对于小于/8网段：需要用户完整输入4个8位段
+                # 对于/8网段到/15：显示前1个8位段（例如：10.）
+                # 对于/16网段到/23：显示前2个8位段（例如：10.0.）
+                # 对于大于等于/24网段的：显示前3个8位段（例如：10.0.0.）
+                octets = network_address.split('.')
+                if prefix_len < 8:
+                    # 小于/8网段，需要用户完整输入4个8位段
+                    network_prefix = ""
+                elif 8 <= prefix_len <= 15:
+                    # /8 到 /15 网段，显示前1个8位段
+                    network_prefix = f"{octets[0]}."
+                elif 16 <= prefix_len <= 23:
+                    # /16 到 /23 网段，显示前2个8位段
+                    network_prefix = f"{octets[0]}.{octets[1]}."
+                elif prefix_len >= 24:
+                    # 大于等于/24网段，显示前3个8位段
+                    network_prefix = f"{octets[0]}.{octets[1]}.{octets[2]}."
+                else:
+                    network_prefix = ""
+                
+                if network_prefix:
+                    network_entry.insert(0, network_prefix)
+                    # 清除选择，设置光标位置到前缀末尾
+                    network_entry.selection_clear()
+                    network_entry.icursor(len(network_prefix))
+            except Exception:
+                # 如果解析失败，不填充前缀
+                pass
+        
         def on_add():
             network = network_entry.get().strip()
             description = description_entry.get().strip()
@@ -12191,7 +12231,6 @@ class SubnetPlannerApp:
         
         # 设置焦点到第一个输入框
         network_entry.focus_force()
-        network_entry.select_range(0, tk.END)
         
         # 显示对话框
         dialog.show()
