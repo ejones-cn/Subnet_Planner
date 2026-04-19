@@ -9,7 +9,7 @@ from font_config import FontConfig  # noqa: E402
 
 
 class FontManager:
-    _font_cache: dict[tuple[int, int], tuple[ImageFont.FreeTypeFont | None, ImageFont.FreeTypeFont | None, bool]] = {}
+    _font_cache: dict[tuple[int, int], tuple[ImageFont.FreeTypeFont | ImageFont.ImageFont | None, ImageFont.FreeTypeFont | ImageFont.ImageFont | None, bool]] = {}
     _font_path_cache: str | None = None
     _font_path_lang: str | None = None
 

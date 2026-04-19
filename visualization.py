@@ -1148,7 +1148,7 @@ class NetworkTopologyVisualizer:
         self._pending_initial_scale = False
         
         # 取消之前的延迟缩放定时器
-        if self._auto_scale_timer:
+        if self._auto_scale_timer is not None:
             self.canvas.after_cancel(self._auto_scale_timer)
             self._auto_scale_timer = None
         
@@ -1309,7 +1309,7 @@ class NetworkTopologyVisualizer:
         # 标记缩放已完成
         self._scaled = True
         self._pending_initial_scale = False
-        if self._auto_scale_timer:
+        if self._auto_scale_timer is not None:
             self.canvas.after_cancel(self._auto_scale_timer)
             self._auto_scale_timer = None
         
@@ -2147,7 +2147,9 @@ class NetworkTopologyVisualizer:
         if getattr(self, '_pending_initial_scale', False) and width > 1 and height > 1 and self.nodes:
             # 取消延迟缩放定时器
             if getattr(self, '_auto_scale_timer', None) is not None:
-                self.canvas.after_cancel(self._auto_scale_timer)
+                timer_id = self._auto_scale_timer
+                assert timer_id is not None
+                self.canvas.after_cancel(timer_id)
                 self._auto_scale_timer = None
             
             # 重新显示画布并立即执行缩放
