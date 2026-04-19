@@ -213,6 +213,8 @@ class NetworkTopologyVisualizer:
         self.network_data: object = None
         self._scaled: bool = False
         self._is_first_draw: bool = True  # 首次绘制标志，用于防闪现
+        self._pending_initial_scale: bool = False  # 是否有待执行的初始缩放
+        self._auto_scale_timer = None  # 延迟缩放定时器ID
         
         # 全屏相关
         self.is_fullscreen: bool = False
@@ -1143,6 +1145,12 @@ class NetworkTopologyVisualizer:
         
         # 重置缩放标志，允许新的自适应缩放
         self._scaled = False
+        self._pending_initial_scale = False
+        
+        # 取消之前的延迟缩放定时器
+        if self._auto_scale_timer:
+            self.canvas.after_cancel(self._auto_scale_timer)
+            self._auto_scale_timer = None
         
         # 临时移除画布，防止绘制过程中的闪现
         self.canvas.pack_forget()
@@ -1229,9 +1237,11 @@ class NetworkTopologyVisualizer:
                 self.canvas.config(scrollregion=(x1 - padding, y1 - padding, x2 + padding, y2 + padding))
                 self.canvas.xview_moveto(0)
                 self.canvas.yview_moveto(0)
-                # 先重新显示画布，再延迟执行缩放
-                self.canvas.pack(fill=tk.BOTH, expand=True)
-                self.canvas.after(200, self._auto_scale_canvas)
+                # 标记需要初始缩放，等待画布可见时由on_canvas_frame_configure触发
+                self._pending_initial_scale = True
+                # 不在此处重新显示画布，避免未缩放内容闪现
+                # 延迟执行缩放作为兜底（如果Configure事件未触发）
+                self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
                 return
             
             # 计算缩放比例
@@ -1296,6 +1306,13 @@ class NetworkTopologyVisualizer:
         # 重新显示画布
         self.canvas.pack(fill=tk.BOTH, expand=True)
         
+        # 标记缩放已完成
+        self._scaled = True
+        self._pending_initial_scale = False
+        if self._auto_scale_timer:
+            self.canvas.after_cancel(self._auto_scale_timer)
+            self._auto_scale_timer = None
+        
         # 重置首次绘制标志
         if self._is_first_draw:
             self._is_first_draw = False
@@ -1303,7 +1320,7 @@ class NetworkTopologyVisualizer:
     def _auto_scale_canvas(self):
         """画布初始化后延迟执行自适应缩放"""
         # 检查是否已经缩放过（避免重复缩放）
-        if getattr(self, 'scale', 1.0) != 1.0:
+        if getattr(self, '_scaled', False):
             return
         
         self.canvas.update_idletasks()
@@ -1318,7 +1335,7 @@ class NetworkTopologyVisualizer:
                 canvas_height = parent.winfo_height()
         
         if canvas_width <= 1 or canvas_height <= 1:
-            self.canvas.after(200, self._auto_scale_canvas)
+            self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
             return
         
         bbox = self.canvas.bbox(tk.ALL)
@@ -1376,6 +1393,15 @@ class NetworkTopologyVisualizer:
         
         self.canvas.xview_moveto(0)
         self.canvas.yview_moveto(0)
+        
+        # 标记缩放已完成
+        self._scaled = True
+        self._pending_initial_scale = False
+        self._auto_scale_timer = None
+        
+        # 确保画布已显示（如果之前因延迟缩放而隐藏）
+        if not self.canvas.winfo_ismapped():
+            self.canvas.pack(fill=tk.BOTH, expand=True)
     
     def _reposition_all_nodes(self):
         """重新计算所有节点的位置，实现树形层级布局
@@ -2115,6 +2141,19 @@ class NetworkTopologyVisualizer:
         
         # 更新全屏按钮位置
         self._update_fullscreen_button_position()
+        
+        # 如果内容尚未缩放且画布有有效尺寸，立即执行自适应缩放
+        # 这解决了初次切换到拓扑页面时图案从大到小闪现的问题
+        if getattr(self, '_pending_initial_scale', False) and width > 1 and height > 1 and self.nodes:
+            # 取消延迟缩放定时器
+            if getattr(self, '_auto_scale_timer', None):
+                self.canvas.after_cancel(self._auto_scale_timer)
+                self._auto_scale_timer = None
+            
+            # 重新显示画布并立即执行缩放
+            self.canvas.pack(fill=tk.BOTH, expand=True)
+            self._auto_scale_canvas()
+            self._pending_initial_scale = False
     
     def _create_fullscreen_button(self):
         """创建全屏显示按钮"""
