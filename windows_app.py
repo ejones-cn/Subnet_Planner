@@ -7812,12 +7812,12 @@ class SubnetPlannerApp:
                 self.test_dialog = None
 
         # 计算对话框尺寸
-        dialog_width = 600  # 加大窗体宽度，适应不同语言
+        dialog_width = 550  # 加大窗体宽度，适应不同语言
         dialog_height = 600  # 增加对话框高度，确保所有控件能完整显示
         
         # 创建功能调试对话框，使用统一的create_dialog方法
         # 创建功能调试对话框
-        self.test_dialog = ComplexDialog(self.root, _("function_debug"), dialog_width, dialog_height, resizable=True, modal=False)
+        self.test_dialog = ComplexDialog(self.root, _("function_debug"), dialog_width, dialog_height, resizable=False, modal=False)
         
         # 绑定关闭事件，确保对话框关闭时更新状态
         self.test_dialog.dialog.protocol("WM_DELETE_WINDOW", self.close_test_dialog)
@@ -8004,7 +8004,7 @@ class SubnetPlannerApp:
         theme_switch_btn = ttk.Button(
             theme_frame, text=_('apply_theme'), width=original_button_width, style=button_style, command=switch_theme
         )
-        theme_switch_btn.grid(row=0, column=2, padx=(0, 0), pady=5)
+        theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
 
         # 窗口横向锁定控制部分
         lock_frame = ttk.LabelFrame(content_frame, text=_("window_lock"), padding="10")
@@ -16866,15 +16866,9 @@ if __name__ == "__main__":
     BASE_WIDTH = 1050
     BASE_HEIGHT = 950
     
-    # 从配置管理器读取窗口配置
-    config = get_config()
-    window_width, window_height = config.get_window_size()
-    window_maximized = config.get_window_maximized()
-    window_position = config.get_window_position()
-    
-    # 使用配置的窗口大小，如果配置无效则使用默认值
-    WINDOW_WIDTH = window_width if window_width >= BASE_WIDTH else BASE_WIDTH
-    WINDOW_HEIGHT = window_height if window_height >= BASE_HEIGHT else BASE_HEIGHT
+    # 使用默认窗口大小
+    WINDOW_WIDTH = BASE_WIDTH
+    WINDOW_HEIGHT = BASE_HEIGHT
     
     # 调用窗口设置函数
     setup_window_settings(
@@ -16886,12 +16880,8 @@ if __name__ == "__main__":
         min_height=BASE_HEIGHT, 
         max_width=10000, 
         max_height=10000,
-        position=window_position
+        position=None
     )
-    
-    # 如果上次是最大化状态，恢复最大化
-    if window_maximized:
-        root.after(100, lambda: root.state('zoomed'))
     
     # 创建应用实例
     app = SubnetPlannerApp(root)
@@ -16900,30 +16890,6 @@ if __name__ == "__main__":
     def on_main_window_close():
         """主窗口关闭事件处理函数"""
         print("正在关闭应用程序...")
-        
-        # 保存窗口状态
-        try:
-            from config_manager import get_config
-            config = get_config()
-            
-            # 保存窗口大小（非最大化状态下）
-            if root.state() != 'zoomed':
-                window_width = root.winfo_width()
-                window_height = root.winfo_height()
-                config.set_window_size(window_width, window_height)
-                
-                # 保存窗口位置
-                window_x = root.winfo_x()
-                window_y = root.winfo_y()
-                config.set_window_position(window_x, window_y)
-            
-            # 保存最大化状态
-            is_maximized = root.state() == 'zoomed'
-            config.set_window_maximized(is_maximized)
-            
-            print(f"窗口状态已保存: 最大化: {is_maximized}")
-        except Exception as e:
-            print(f"保存窗口状态失败: {e}")
         
         # 销毁所有窗口和组件
         root.destroy()
