@@ -636,7 +636,7 @@ class IPAMSQLite:
             if not ip_address:
                 continue
 
-            result, msg = self.allocate_ip(network_str, ip_address, hostname, description)
+            result, _ = self.allocate_ip(network_str, ip_address, hostname, description)
             if result:
                 success_count += 1
             else:
@@ -3048,7 +3048,7 @@ class IPAMSQLite:
                 _new_ip_index = 0
                 for record in ip_records:
                     try:
-                        ip_id = record['id']
+                        ip_id = record.get('id')
                         old_ip_address = str(record['ip_address'])
                         
                         # 获取当前记录信息

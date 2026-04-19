@@ -5,11 +5,11 @@ from PIL import ImageFont
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from font_config import FontConfig
+from font_config import FontConfig  # noqa: E402
 
 
 class FontManager:
-    _font_cache: dict[str, str] = {}
+    _font_cache: dict[tuple[int, int], tuple[ImageFont.FreeTypeFont | None, ImageFont.FreeTypeFont | None, bool]] = {}
     _font_path_cache: str | None = None
     _font_path_lang: str | None = None
 
@@ -22,8 +22,8 @@ class FontManager:
         try:
             from reportlab.pdfbase import pdfmetrics
             if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore[attr-defined]
-                    del pdfmetrics._fonts["ChineseFont"]  # type: ignore[attr-defined]
+                if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+                    del pdfmetrics._fonts["ChineseFont"]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                     print("🧹 已清除 ReportLab PDF 字体注册")
         except Exception as e:
             print(f"⚠️ 清除 PDF 字体注册时出现警告: {e}")
@@ -84,8 +84,8 @@ class FontManager:
                 if font_name in pdfmetrics.getRegisteredFontNames():
                     print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
                     try:
-                        if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:  # type: ignore
-                            del pdfmetrics._fonts[font_name]  # type: ignore
+                        if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+                            del pdfmetrics._fonts[font_name]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                             print("🔍 已删除旧的字体注册")
                     except Exception as del_error:
                         print(f"⚠️ 删除旧字体时出现警告: {del_error}")

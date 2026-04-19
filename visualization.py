@@ -214,7 +214,7 @@ class NetworkTopologyVisualizer:
         self._scaled: bool = False
         self._is_first_draw: bool = True  # 首次绘制标志，用于防闪现
         self._pending_initial_scale: bool = False  # 是否有待执行的初始缩放
-        self._auto_scale_timer = None  # 延迟缩放定时器ID
+        self._auto_scale_timer: str | None = None  # 延迟缩放定时器ID
         
         # 全屏相关
         self.is_fullscreen: bool = False
@@ -2146,7 +2146,7 @@ class NetworkTopologyVisualizer:
         # 这解决了初次切换到拓扑页面时图案从大到小闪现的问题
         if getattr(self, '_pending_initial_scale', False) and width > 1 and height > 1 and self.nodes:
             # 取消延迟缩放定时器
-            if getattr(self, '_auto_scale_timer', None):
+            if getattr(self, '_auto_scale_timer', None) is not None:
                 self.canvas.after_cancel(self._auto_scale_timer)
                 self._auto_scale_timer = None
             

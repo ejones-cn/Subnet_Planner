@@ -10013,7 +10013,6 @@ class SubnetPlannerApp:
                 full_hierarchy: 完整的网段层次结构
                 top_level_networks: 只包含顶层网络的层次结构
         """
-        import ipaddress
         
         # 先将所有网段转换为ipaddress对象并排序
         network_objects = []
@@ -10448,7 +10447,6 @@ class SubnetPlannerApp:
         # 默认按IP地址数值顺序排序
         def ip_key(ip_item):
             try:
-                import ipaddress
                 return ipaddress.ip_address(ip_item['ip_address'])
             except ValueError:
                 return ip_item['ip_address']
@@ -12125,7 +12123,6 @@ class SubnetPlannerApp:
         if selected_items:
             selected_network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
             try:
-                import ipaddress
                 network_obj = ipaddress.ip_network(selected_network, strict=False)
                 network_address = str(network_obj.network_address)
                 prefix_len = network_obj.prefixlen
@@ -12199,7 +12196,6 @@ class SubnetPlannerApp:
                     if confirm:
                         # 强制添加网络，跳过重叠检查
                         try:
-                            import ipaddress
                             from datetime import datetime
                             ip_network = ipaddress.ip_network(network, strict=False)
                             network_str = str(ip_network)
@@ -12830,7 +12826,6 @@ class SubnetPlannerApp:
         # 显示网络前缀到IP输入框
         if network:
             try:
-                import ipaddress
                 network_obj = ipaddress.ip_network(network, strict=False)
                 network_address = str(network_obj.network_address)
                 
@@ -14006,7 +14001,6 @@ class SubnetPlannerApp:
         Returns:
             bool: IP地址是否在网络范围内
         """
-        import ipaddress
         try:
             ip = ipaddress.ip_address(ip_address.strip())
             net = ipaddress.ip_network(network.strip(), strict=False)
@@ -14372,7 +14366,6 @@ class SubnetPlannerApp:
             if not new_value:
                 return False, _('input_cannot_be_empty')
             try:
-                import ipaddress
                 ipaddress.ip_network(new_value, strict=False)
             except ValueError:
                 return False, "无效的网段地址格式，请使用CIDR格式（如192.168.1.0/24）"
@@ -15210,13 +15203,15 @@ class SubnetPlannerApp:
             
             record_id = ip.get('id', None)
             if record_id:
-                tree.insert('', tk.END, iid=str(record_id), values=(ip['ip_address'], translated_status, 
-                                               ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                               ip['description'] or '', expiry_date))
+                tree.insert('', tk.END, iid=str(record_id),
+                            values=(ip['ip_address'], translated_status,
+                                    ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                    ip['description'] or '', expiry_date))
             else:
-                tree.insert('', tk.END, values=(ip['ip_address'], translated_status, 
-                                               ip['hostname'] or '', ip.get('mac_address', '') or '',
-                                               ip['description'] or '', expiry_date))
+                tree.insert('', tk.END,
+                            values=(ip['ip_address'], translated_status,
+                                    ip['hostname'] or '', ip.get('mac_address', '') or '',
+                                    ip['description'] or '', expiry_date))
         
         # 配置斑马纹样式并应用
         self.configure_treeview_styles(tree)
@@ -15872,7 +15867,6 @@ class SubnetPlannerApp:
         
         # 对网络列表进行排序（按IP地址数值排序）
         try:
-            import ipaddress
             network_list.sort(key=lambda x: int(ipaddress.ip_network(x, strict=False).network_address))
         except Exception:
             # 如果排序失败，保持原顺序
@@ -16085,7 +16079,6 @@ class SubnetPlannerApp:
                         # 自动分配IP地址
                         if network:
                             try:
-                                import ipaddress
                                 
                                 # 获取当前选中网段的所有子网段
                                 all_networks = self.ipam.get_all_networks()
@@ -16178,7 +16171,6 @@ class SubnetPlannerApp:
                         # 重新填充前缀
                         if network and not ip_address:
                             try:
-                                import ipaddress
                                 ip_network = ipaddress.ip_network(network, strict=False)
                                 prefix = ""
                                 
@@ -16386,7 +16378,6 @@ class SubnetPlannerApp:
         # 批量生成相关函数
         def get_target_network_for_batch():
             """获取批量生成的目标网络"""
-            import ipaddress
             all_networks = self.ipam.get_all_networks()
             selected_network_obj = ipaddress.ip_network(network, strict=False)
             
@@ -16420,7 +16411,6 @@ class SubnetPlannerApp:
         
         def get_ip_placeholder(target_network):
             """生成IP地址占位符"""
-            import ipaddress
             try:
                 net_obj = ipaddress.ip_network(target_network)
                 ip_parts = str(net_obj.network_address).split('.')
@@ -16532,7 +16522,6 @@ class SubnetPlannerApp:
             # 验证IP地址是否在所选网络范围内
             if ip and network:
                 try:
-                    import ipaddress
                     # 解析网络和IP地址
                     ip_network = ipaddress.ip_network(network, strict=False)
                     ip_address_obj = ipaddress.ip_address(ip)
@@ -16627,7 +16616,6 @@ class SubnetPlannerApp:
                     # 重新填充前缀（和自动选项关闭时的逻辑一样）
                     if network and not ip_address:
                         try:
-                            import ipaddress
                             ip_network = ipaddress.ip_network(network, strict=False)
                             prefix = ""
                             
@@ -16718,7 +16706,6 @@ class SubnetPlannerApp:
         # 从IPAM中获取实际的子网数据
         network_tree = {}
         try:
-            import ipaddress
             parent_network = ipaddress.ip_network(selected_network)
             
             # 从IPAM获取所有网络
@@ -16795,9 +16782,6 @@ class SubnetPlannerApp:
             net_info = network_tree.get(cidr)
             if not net_info:
                 return None
-            
-            # 确保ipaddress模块可用
-            import ipaddress
             
             # 获取IP统计信息
             ip_info = {"total": 0, "allocated": 0, "reserved": 0, "available": 0, "registered": 0, "network_total": 0}
