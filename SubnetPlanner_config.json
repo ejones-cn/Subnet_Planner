@@ -4,9 +4,9 @@
   "window": {
     "width": 1050,
     "height": 952,
-    "maximized": false,
-    "x": 755,
-    "y": 244
+    "maximized": true,
+    "x": null,
+    "y": null
   },
   "auto_backup": {
     "enabled": true,
