@@ -55,7 +55,7 @@ class NetworkScanner:
 
     @staticmethod
     def ping_host(ip_address: str, timeout_ms: int = 500) -> bool:
-        """使用TCP连接快速检测主机是否存活
+        """使用ICMP Ping检测主机是否存活
 
         Args:
             ip_address: 目标IP地址
@@ -64,23 +64,23 @@ class NetworkScanner:
         Returns:
             bool: 主机是否存活
         """
-        timeout_sec = min(timeout_ms / 1000.0, 1.0)
-        
-        ports = [445, 135, 80, 443]
-        
-        for port in ports:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                sock.settimeout(timeout_sec)
-                result = sock.connect_ex((ip_address, port))
-                sock.close()
-                if result == 0:
-                    return True
-            except (socket.error, socket.timeout, OSError):
-                continue
-        
-        return False
+        system = platform.system().lower()
+        try:
+            if system == 'windows':
+                cmd = ['ping', '-n', '1', '-w', str(timeout_ms), ip_address]
+            else:
+                timeout_sec = max(1, timeout_ms // 1000)
+                cmd = ['ping', '-c', '1', '-W', str(timeout_sec), ip_address]
+
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=min(timeout_ms * 2, 3000) / 1000.0
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
 
     @staticmethod
     def fast_host_check(ip_address: str, timeout_ms: int = 300) -> bool:
@@ -123,7 +123,7 @@ class NetworkScanner:
             bool: 主机是否有任何端口开放
         """
         if ports is None:
-            ports = [80, 443, 22, 135, 445, 3389]
+            ports = [80, 443, 22, 21, 23, 25, 53, 110, 135, 139, 445, 465, 587, 993, 995, 3389, 8080, 8443, 3306, 5432]
 
         for port in ports:
             try:
@@ -231,23 +231,32 @@ class NetworkScanner:
                     on_progress(current_scanned, current_active, self._total_ips, ip_str)
 
             if is_alive and not self.is_cancelled():
-                hostname = self.resolve_hostname(ip_str, timeout_sec=0.2)
                 ip_info = {
                     'ip_address': ip_str,
-                    'hostname': hostname,
+                    'hostname': '',
                     'description': '',
                 }
                 with self._lock:
                     self._active_ips.append(ip_info)
                 if on_ip_found:
-                    import threading
-                    threading.Thread(target=on_ip_found, args=(ip_info.copy(),), daemon=True).start()
+                    on_ip_found(ip_info.copy())
+                
+                hostname = self.resolve_hostname(ip_str, timeout_sec=0.2)
+                if hostname:
+                    ip_info['hostname'] = hostname
+                    with self._lock:
+                        for idx, ip in enumerate(self._active_ips):
+                            if ip['ip_address'] == ip_str:
+                                self._active_ips[idx]['hostname'] = hostname
+                                break
+                    if on_ip_found:
+                        on_ip_found(ip_info.copy())
                 return ip_info
 
             return None
 
         try:
-            with ThreadPoolExecutor(max_workers=thread_count) as executor:
+            with ThreadPoolExecutor(max_workers=min(thread_count, 50)) as executor:
                 futures = {executor.submit(scan_single_ip, ip): ip for ip in scan_ips}
 
                 for future in as_completed(futures):
