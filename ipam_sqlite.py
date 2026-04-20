@@ -448,7 +448,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2240,7 +2240,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2288,7 +2288,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2329,7 +2329,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("old_network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             # 验证新网络格式
             try:
@@ -2338,7 +2338,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("new_network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2490,7 +2490,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -2999,7 +2999,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("target_network_format_error")}: {error_result.get('error', str(e))}"
+                return False, error_result.get('error', str(e))
             
             # 检查IP是否在目标网络内
             if ip_obj not in new_network:
@@ -3078,7 +3078,7 @@ class IPAMSQLite:
             except ValueError as e:
                 from ip_subnet_calculator import handle_ip_subnet_error
                 error_result = handle_ip_subnet_error(e)
-                return False, f"{_("target_network_format_error")}: {error_result.get('error', str(e))}", 0
+                return False, error_result.get('error', str(e)), 0
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()

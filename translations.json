@@ -5676,5 +5676,40 @@
     "en": "Invalid IP address: {ip_address}",
     "ja": "無効なIPアドレス: {ip_address}",
     "ko": "유효하지 않은 IP 주소: {ip_address}"
+  },
+  "port_preset": {
+    "zh": "端口预设",
+    "zh_tw": "連接埠預設",
+    "en": "Port Preset",
+    "ja": "ポートプリセット",
+    "ko": "포트 프리셋"
+  },
+  "fast": {
+    "zh": "快速",
+    "zh_tw": "快速",
+    "en": "Fast",
+    "ja": "高速",
+    "ko": "빠른"
+  },
+  "standard": {
+    "zh": "标准",
+    "zh_tw": "標準",
+    "en": "Standard",
+    "ja": "標準",
+    "ko": "표준"
+  },
+  "complete": {
+    "zh": "完整",
+    "zh_tw": "完整",
+    "en": "Complete",
+    "ja": "完全",
+    "ko": "완전"
+  },
+  "custom_ports": {
+    "zh": "自定义端口",
+    "zh_tw": "自訂連接埠",
+    "en": "Custom Ports",
+    "ja": "カスタムポート",
+    "ko": "사용자 정의 포트"
   }
 }

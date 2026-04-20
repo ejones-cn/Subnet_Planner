@@ -169,6 +169,7 @@ class NetworkScanner:
         on_ip_found: Optional[Callable[[dict], None]] = None,
         on_complete: Optional[Callable[[list[dict]], None]] = None,
         on_error: Optional[Callable[[str], None]] = None,
+        ports: Optional[list[int]] = None,
     ):
         """扫描网络中的活动主机（在后台线程中执行）
 
@@ -181,6 +182,7 @@ class NetworkScanner:
             on_ip_found: 发现活动IP回调 (ip_info_dict)
             on_complete: 扫描完成回调 (active_ips_list)
             on_error: 错误回调 (error_message)
+            ports: 自定义端口列表（仅TCP扫描时使用）
         """
         self.reset()
 
@@ -215,7 +217,7 @@ class NetworkScanner:
             if scan_method == 'ping':
                 is_alive = self.ping_host(ip_str, timeout_ms)
             else:
-                is_alive = self.tcp_check_host(ip_str, timeout_sec)
+                is_alive = self.tcp_check_host(ip_str, timeout_sec, ports)
 
             with self._lock:
                 self._scanned_count += 1
@@ -236,21 +238,15 @@ class NetworkScanner:
                     'hostname': '',
                     'description': '',
                 }
-                with self._lock:
-                    self._active_ips.append(ip_info)
-                if on_ip_found:
-                    on_ip_found(ip_info.copy())
                 
                 hostname = self.resolve_hostname(ip_str, timeout_sec=0.2)
                 if hostname:
                     ip_info['hostname'] = hostname
-                    with self._lock:
-                        for idx, ip in enumerate(self._active_ips):
-                            if ip['ip_address'] == ip_str:
-                                self._active_ips[idx]['hostname'] = hostname
-                                break
-                    if on_ip_found:
-                        on_ip_found(ip_info.copy())
+                
+                with self._lock:
+                    self._active_ips.append(ip_info)
+                if on_ip_found:
+                    on_ip_found(ip_info.copy())
                 return ip_info
 
             return None

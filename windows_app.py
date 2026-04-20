@@ -1511,6 +1511,10 @@ class SubnetPlannerApp:
         # 初始化业务服务
         self.validation_service = ValidationService(self)
         self.ip_query_service = IPQueryService(self)
+        
+        # 初始化网络扫描器（重用实例以避免内存泄露）
+        from services.network_scanner import NetworkScanner
+        self.network_scanner = NetworkScanner()
 
         # 获取系统双击间隔设置
         try:
@@ -4904,28 +4908,45 @@ class SubnetPlannerApp:
         Returns:
             function: 滚动条回调函数
         """
+        import weakref
+        # 使用弱引用避免内存泄露
+        scrollbar_ref = weakref.ref(scrollbar)
+        treeview_ref = weakref.ref(treeview) if treeview else None
+        
         def scrollbar_callback(*args):
-            # 获取滚动条方向
-            scrollbar_orient = scrollbar.cget('orient')
-            scrollbar.set(*args)
-            if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
-                scrollbar.grid_remove()
-                if treeview and padx_adjust:
-                    try:
-                        treeview.grid_configure(padx=padx_adjust)
-                    except (tk.TclError, AttributeError):
-                        pass
-            else:
-                # 根据滚动条方向设置正确的网格位置
-                if scrollbar_orient == 'horizontal':
-                    scrollbar.grid(row=1, column=0, sticky=tk.EW)
-                else:  # vertical
-                    scrollbar.grid(row=0, column=1, sticky=tk.NS)
-                if treeview and padx_adjust:
-                    try:
-                        treeview.grid_configure(padx=0)
-                    except (tk.TclError, AttributeError):
-                        pass
+            # 获取滚动条和树视图的弱引用
+            scrollbar = scrollbar_ref()
+            treeview = treeview_ref() if treeview_ref else None
+            
+            # 如果滚动条已被销毁，直接返回
+            if not scrollbar:
+                return
+            
+            try:
+                # 获取滚动条方向
+                scrollbar_orient = scrollbar.cget('orient')
+                scrollbar.set(*args)
+                if float(args[0]) <= 0.0 and float(args[1]) >= 1.0:
+                    scrollbar.grid_remove()
+                    if treeview and padx_adjust:
+                        try:
+                            treeview.grid_configure(padx=padx_adjust)
+                        except (tk.TclError, AttributeError):
+                            pass
+                else:
+                    # 根据滚动条方向设置正确的网格位置
+                    if scrollbar_orient == 'horizontal':
+                        scrollbar.grid(row=1, column=0, sticky=tk.EW)
+                    else:  # vertical
+                        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+                    if treeview and padx_adjust:
+                        try:
+                            treeview.grid_configure(padx=0)
+                        except (tk.TclError, AttributeError):
+                            pass
+            except (tk.TclError, AttributeError):
+                # 如果组件已被销毁，直接返回
+                return
         return scrollbar_callback
 
     def _validate_split_input(self, parent, split):
@@ -6023,10 +6044,16 @@ class SubnetPlannerApp:
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
 
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size - 1))
+        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size - 1), 
+                                        bd=0, relief="flat", highlightthickness=0)
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
+        
+        # 为文本框添加边框，与其他文本框风格一致
+        self.subnet_merge_text.config(highlightbackground="#a9a9a9", 
+                                      highlightcolor="#a9a9a9", 
+                                      highlightthickness=1)
         
         # 实时验证子网格式
         def validate_subnet_merge_text(event=None):
@@ -6621,7 +6648,9 @@ class SubnetPlannerApp:
         text_frame = ttk.Frame(input_frame)
         text_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1))
+        self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1), 
+                                    bd=0, relief="flat", highlightthickness=1, 
+                                    highlightbackground="#a9a9a9", highlightcolor="#a9a9a9")
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
         
         # 实时验证子网格式
@@ -11761,29 +11790,35 @@ class SubnetPlannerApp:
 
     def auto_scan_network(self):
         """打开网络扫描配置对话框"""
-        # 使用 ComplexDialog 创建对话框，自动获得 ESC 键支持和标准布局
-        dialog = ComplexDialog(self.root, _('auto_scan_network'), 400, 200, resizable=False, modal=True)
+        port_presets = {
+            'fast': [80, 443, 445, 135],
+            'standard': [80, 443, 22, 21, 25, 53, 110, 135, 139, 445, 3389, 8080],
+            'complete': [80, 443, 22, 21, 23, 25, 53, 110, 135, 139, 445, 465, 587, 993, 995, 3389, 8080, 8443, 3306, 5432]
+        }
         
-        # 使用 ComplexDialog 内置的 content_frame
-        content_frame = dialog.content_frame
+        dialog = self.create_dialog(_('auto_scan_network'), 440, 170, resizable=False, modal=True)
+        
+        main_frame = ttk.Frame(dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        
+        # 内容区域
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=15)
         content_frame.grid_columnconfigure(1, weight=1)
 
-        row = 0
         ttk.Label(content_frame, text=_('network_address_cidr_format') + ':').grid(
-            row=row, column=0, padx=5, pady=8, sticky=tk.W)
+            row=0, column=0, padx=5, pady=8, sticky=tk.W)
         network_border, network_entry = create_bordered_entry(content_frame)
-        network_border.grid(row=row, column=1, padx=5, pady=8, sticky=tk.EW)
+        network_border.grid(row=0, column=1, padx=5, pady=8, sticky=tk.EW)
         
-        # 网络地址输入验证（必须带前缀）
         def validate_network_input(event=None):
             self.validate_cidr(network_entry.get(), network_entry, require_prefix=True)
         
         network_entry.bind('<FocusOut>', validate_network_input)
         network_entry.bind('<KeyRelease>', validate_network_input)
 
-        row = 1
         options_frame = ttk.Frame(content_frame)
-        options_frame.grid(row=row, column=0, columnspan=2, pady=5, sticky=tk.EW)
+        options_frame.grid(row=1, column=0, columnspan=2, pady=8, sticky=tk.EW)
         options_frame.grid_columnconfigure(1, weight=1)
         options_frame.grid_columnconfigure(3, weight=1)
 
@@ -11797,28 +11832,154 @@ class SubnetPlannerApp:
         timeout_border, timeout_entry = create_bordered_entry(options_frame, textvariable=timeout_var)
         timeout_border.grid(row=0, column=3, padx=5, sticky=tk.EW)
 
-        row = 2
         method_frame = ttk.Frame(content_frame)
-        method_frame.grid(row=row, column=0, columnspan=2, pady=5, sticky=tk.W)
+        method_frame.grid(row=2, column=0, columnspan=2, pady=4, sticky=tk.W)
         ttk.Label(method_frame, text=_('scan_method') + ':').pack(side=tk.LEFT, padx=5)
         method_var = tk.StringVar(value="ping")
-        ttk.Radiobutton(method_frame, text="ICMP Ping", variable=method_var, value="ping").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(method_frame, text="TCP", variable=method_var, value="tcp").pack(side=tk.LEFT, padx=5)
+        
+        tcp_options_frame = ttk.Frame(content_frame)
+        tcp_options_frame.grid_columnconfigure(1, weight=1)
+        
+        def on_method_change():
+            if method_var.get() == 'tcp':
+                tcp_options_frame.grid(row=3, column=0, columnspan=2, pady=4, sticky=tk.EW)
+                dialog.geometry('440x270')
+            else:
+                tcp_options_frame.grid_remove()
+                dialog.geometry('440x170')
+        
+        ping_radio = ttk.Radiobutton(method_frame, text="ICMP Ping", variable=method_var, 
+                                     value="ping", command=on_method_change)
+        ping_radio.pack(side=tk.LEFT, padx=5)
+        tcp_radio = ttk.Radiobutton(method_frame, text="TCP", variable=method_var, 
+                                    value="tcp", command=on_method_change)
+        tcp_radio.pack(side=tk.LEFT, padx=5)
 
+        ttk.Label(tcp_options_frame, text=_('port_preset') + ':').grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        preset_var = tk.StringVar(value="standard")
+        preset_frame = ttk.Frame(tcp_options_frame)
+        preset_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        ttk.Radiobutton(preset_frame, text=_('fast') + ' (4)', variable=preset_var, value="fast").pack(side=tk.LEFT, padx=2)
+        ttk.Radiobutton(preset_frame, text=_('standard') + ' (12)', variable=preset_var, value="standard").pack(side=tk.LEFT, padx=2)
+        ttk.Radiobutton(preset_frame, text=_('complete') + ' (20)', variable=preset_var, value="complete").pack(side=tk.LEFT, padx=2)
+        
+        ttk.Label(tcp_options_frame, text=_('custom_ports') + ':').grid(row=1, column=0, padx=5, pady=5, sticky=tk.NW)
+        
+        # 创建带边框的容器，与其他文本框风格一致
+        border_frame = tk.Frame(tcp_options_frame, highlightbackground="#a9a9a9", 
+                                highlightcolor="#a9a9a9", highlightthickness=1, bd=0)
+        border_frame.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
+        
+        # 在容器内创建多行文本框
+        ports_text = tk.Text(border_frame, height=3, wrap=tk.WORD, bd=0, relief="flat", highlightthickness=0)
+        ports_text.pack(fill="both", expand=True, padx=1, pady=1)
+        
+        # 保留ports_var的定义，避免可能的引用错误
+        ports_var = tk.StringVar(value="")
+        
+        # 初始化文本内容
+        def update_ports_text():
+            preset = preset_var.get()
+            ports = port_presets[preset]
+            ports_text.delete(1.0, tk.END)
+            ports_text.insert(tk.END, ', '.join(map(str, ports)))
+        
+        # 替换原来的ports_var和on_preset_change
+        def on_preset_change():
+            update_ports_text()
+        
+        # 初始化时设置默认端口值
+        update_ports_text()
+        
+        preset_var.trace('w', lambda *args: on_preset_change())
+
+        if method_var.get() != 'tcp':
+            tcp_options_frame.grid_remove()
+
+        # 按钮区域 - 固定在底部右侧
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=6, side=tk.BOTTOM)
+        
+        cancel_btn = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
+        cancel_btn.pack(side=tk.RIGHT, padx=5)
+        
         def on_scan():
-            """执行扫描"""
-            is_valid = self.validate_cidr(network_entry.get())
+            network = network_entry.get().strip()
+            thread_count = thread_var.get()
+            timeout_ms = timeout_var.get()
+            scan_method = method_var.get()
+            ports = ports_text.get(1.0, tk.END).strip()
+            
+            if not network:
+                self.show_error(_('error'), _('please_enter_network_address'))
+                return
+            
+            is_valid = self.validate_cidr(network)
             if is_valid:
-                self._start_scan_from_dialog(dialog, network_entry, thread_var, timeout_var, method_var)
+                dialog.destroy()
+                self._start_scan_from_dialog_simple(network, thread_count, timeout_ms, scan_method, ports)
         
-        # 使用 ComplexDialog 的 add_button 方法添加按钮（自动右对齐）
-        dialog.add_button(_('cancel'), dialog.destroy)
-        dialog.add_button(_('start_scan'), on_scan)
+        scan_btn = ttk.Button(button_frame, text=_('start_scan'), command=on_scan)
+        scan_btn.pack(side=tk.RIGHT, padx=5)
         
-        # 绑定回车键触发扫描
-        dialog.dialog.bind('<Return>', lambda e: on_scan())
+        dialog.bind('<Return>', lambda e: on_scan())
 
-    def _start_scan_from_dialog(self, config_dialog, network_entry, thread_var, timeout_var, method_var):
+    def _start_scan_from_dialog_simple(self, network, thread_count_str, timeout_ms_str, scan_method, ports_str=None):
+        """简化的扫描启动方法"""
+        try:
+            thread_count = int(thread_count_str)
+            if thread_count < 1 or thread_count > 200:
+                self.show_error(_('error'), _('thread_count_range_error'))
+                return
+        except ValueError:
+            self.show_error(_('error'), _('thread_count_invalid'))
+            return
+
+        try:
+            timeout_ms = int(timeout_ms_str)
+            if timeout_ms < 100 or timeout_ms > 10000:
+                self.show_error(_('error'), _('timeout_range_error'))
+                return
+        except ValueError:
+            self.show_error(_('error'), _('timeout_invalid'))
+            return
+
+        custom_ports = None
+        if scan_method == 'tcp' and ports_str:
+            ports_str = ports_str.strip()
+            if ports_str:
+                try:
+                    custom_ports = [int(p.strip()) for p in ports_str.split(',') if p.strip()]
+                    if not custom_ports:
+                        self.show_error(_('error'), _('port_list_empty'))
+                        return
+                    for port in custom_ports:
+                        if port < 1 or port > 65535:
+                            self.show_error(_('error'), _('port_range_error'))
+                            return
+                except ValueError:
+                    self.show_error(_('error'), _('port_invalid'))
+                    return
+
+        try:
+            ip_network = ipaddress.ip_network(network, strict=False)
+            total_hosts = len(list(ip_network.hosts()))
+            if total_hosts > 1024:
+                confirm = self.show_custom_confirm(
+                    _('large_network_warning'),
+                    _('large_network_confirm_message').format(total=total_hosts, network=network)
+                )
+                if not confirm:
+                    return
+        except ValueError as e:
+            error_result = handle_ip_subnet_error(e)
+            self.show_error(_('error'), error_result.get('error', str(e)))
+            return
+
+        self._show_scan_progress_dialog(network, thread_count, timeout_ms, scan_method, custom_ports)
+
+    def _start_scan_from_dialog(self, config_dialog, network_entry, thread_var, timeout_var, method_var, ports_var=None):
         """从配置对话框启动扫描
 
         Args:
@@ -11827,17 +11988,18 @@ class SubnetPlannerApp:
             thread_var: 线程数变量
             timeout_var: 超时时间变量
             method_var: 扫描方式变量
+            ports_var: 端口列表变量（可选）
         """
         network = network_entry.get().strip()
         if not network:
-            self.show_info(_('hint'), _('please_enter_network_address'))
+            self.show_error(_('error'), _('please_enter_network_address'))
             return
 
         try:
             ip_network = ipaddress.ip_network(network, strict=False)
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
-            self.show_error(_('error'), f"{_('network_format_error')}: {error_result.get('error', str(e))}")
+            self.show_error(_('error'), error_result.get('error', str(e)))
             return
 
         try:
@@ -11858,6 +12020,25 @@ class SubnetPlannerApp:
             self.show_error(_('error'), _('timeout_invalid'))
             return
 
+        scan_method = method_var.get()
+        custom_ports = None
+        
+        if scan_method == 'tcp' and ports_var:
+            ports_str = ports_var.get().strip()
+            if ports_str:
+                try:
+                    custom_ports = [int(p.strip()) for p in ports_str.split(',') if p.strip()]
+                    if not custom_ports:
+                        self.show_error(_('error'), _('port_list_empty'))
+                        return
+                    for port in custom_ports:
+                        if port < 1 or port > 65535:
+                            self.show_error(_('error'), _('port_range_error'))
+                            return
+                except ValueError:
+                    self.show_error(_('error'), _('port_invalid'))
+                    return
+
         total_hosts = len(list(ip_network.hosts()))
         if total_hosts > 1024:
             confirm = self.show_custom_confirm(
@@ -11867,12 +12048,11 @@ class SubnetPlannerApp:
             if not confirm:
                 return
 
-        scan_method = method_var.get()
         config_dialog.destroy()
 
-        self._show_scan_progress_dialog(network, thread_count, timeout_ms, scan_method)
+        self._show_scan_progress_dialog(network, thread_count, timeout_ms, scan_method, custom_ports)
 
-    def _show_scan_progress_dialog(self, network, thread_count, timeout_ms, scan_method):
+    def _show_scan_progress_dialog(self, network, thread_count, timeout_ms, scan_method, custom_ports=None):
         """显示扫描进度对话框
 
         Args:
@@ -11880,9 +12060,8 @@ class SubnetPlannerApp:
             thread_count: 线程数
             timeout_ms: 超时时间（毫秒）
             scan_method: 扫描方式
+            custom_ports: 自定义端口列表（可选）
         """
-        from services.network_scanner import NetworkScanner
-
         progress_dialog = self.create_dialog(_('network_scan'), 800, 600, resizable=True, modal=True)
 
         main_frame = ttk.Frame(progress_dialog, padding="15")
@@ -11943,14 +12122,26 @@ class SubnetPlannerApp:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(5, 0))
 
-        scanner = NetworkScanner()
-        scan_state = {'completed': False, 'active_ips': [], 'dialog': progress_dialog}
+        # 使用应用程序级别的网络扫描器实例，避免每次创建新实例
+        scanner = self.network_scanner
+        scanner.reset()  # 重置扫描状态
+        scan_state = {'completed': False, 'active_ips': []}  # 移除对对话框的引用
 
         def cancel_scan():
             """取消扫描或关闭对话框"""
             if not scan_state['completed']:
                 scanner.cancel()
-            progress_dialog.destroy()
+            # 清理事件绑定
+            try:
+                progress_dialog.unbind('<Escape>')
+                progress_dialog.unbind('<Return>')
+            except Exception:
+                pass
+            # 销毁对话框
+            try:
+                progress_dialog.destroy()
+            except Exception:
+                pass
 
         def on_closing():
             """处理对话框关闭事件"""
@@ -11958,8 +12149,9 @@ class SubnetPlannerApp:
 
         def import_results():
             """导入扫描结果到数据库"""
-            progress_dialog.destroy()
-            self._process_scan_results(network, scan_state['active_ips'])
+            active_ips = scan_state['active_ips'].copy()
+            cancel_scan()
+            self._process_scan_results(network, active_ips)
 
         progress_dialog.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -12068,29 +12260,38 @@ class SubnetPlannerApp:
         import threading
         
         def progress_callback(scanned, active, total, current_ip):
-            self.root.after(0, lambda: on_progress(scanned, active, total, current_ip))
+            if progress_dialog.winfo_exists():
+                self.root.after(0, lambda: on_progress(scanned, active, total, current_ip))
         
         def ip_found_callback(ip_info):
-            self.root.after(0, lambda: on_ip_found(ip_info.copy()))
+            if progress_dialog.winfo_exists():
+                self.root.after(0, lambda: on_ip_found(ip_info.copy()))
         
         def complete_callback(active_ips):
-            self.root.after(0, lambda: on_complete(active_ips))
+            if progress_dialog.winfo_exists():
+                self.root.after(0, lambda: on_complete(active_ips))
         
         def error_callback(error_msg):
-            self.root.after(0, lambda: on_error(error_msg))
+            if progress_dialog.winfo_exists():
+                self.root.after(0, lambda: on_error(error_msg))
+        
+        scan_kwargs = {
+            'network': network,
+            'thread_count': thread_count,
+            'timeout_ms': timeout_ms,
+            'scan_method': scan_method,
+            'on_progress': progress_callback,
+            'on_ip_found': ip_found_callback,
+            'on_complete': complete_callback,
+            'on_error': error_callback,
+        }
+        
+        if custom_ports:
+            scan_kwargs['ports'] = custom_ports
         
         scan_thread = threading.Thread(
             target=scanner.scan_network,
-            kwargs={
-                'network': network,
-                'thread_count': thread_count,
-                'timeout_ms': timeout_ms,
-                'scan_method': scan_method,
-                'on_progress': progress_callback,
-                'on_ip_found': ip_found_callback,
-                'on_complete': complete_callback,
-                'on_error': error_callback,
-            },
+            kwargs=scan_kwargs,
             daemon=True
         )
         scan_thread.start()
@@ -12384,12 +12585,12 @@ class SubnetPlannerApp:
             vlan = vlan_entry.get().strip()
             
             if not network:
-                self.show_info(_('hint'), _('please_enter_network'))
+                self.show_error(_('error'), _('please_enter_network'))
                 return
             
             # 验证CIDR格式（必须带前缀）
             if not self.validate_cidr(network, require_prefix=True):
-                self.show_info(_('hint'), _('invalid_cidr_format'))
+                self.show_error(_('error'), _('invalid_cidr_format'))
                 return
             
             # 验证VLAN字段
@@ -15290,7 +15491,7 @@ class SubnetPlannerApp:
         action = dialog_result.get('action', 'allocate')
         
         if not ip_address:
-            self.show_info(_('hint'), _('please_enter_ip_address'))
+            self.show_error(_('error'), _('please_enter_ip_address'))
             return
         
         # 根据用户选择的操作类型执行相应的操作
@@ -15334,7 +15535,7 @@ class SubnetPlannerApp:
         expiry_date = dialog_result.get('expiry_date', '')
         
         if not ip_address:
-            self.show_info(_('hint'), _('please_enter_ip_address'))
+            self.show_error(_('error'), _('please_enter_ip_address'))
             return
         
         is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
@@ -16837,7 +17038,10 @@ class SubnetPlannerApp:
             expiry_date = expiry_entry.get().strip()
             
             # 验证IP地址格式（必须不带前缀）
-            if ip and not self.validate_cidr(ip, require_prefix=False):
+            if not ip:
+                self.show_error(_('error'), _('please_enter_ip_address'))
+                return False
+            if not self.validate_cidr(ip, require_prefix=False):
                 self.show_error(_('error'), _('invalid_ip_address_format'))
                 return False
             
