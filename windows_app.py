@@ -3102,8 +3102,8 @@ class SubnetPlannerApp:
             include_special_tags: 是否包含错误和信息标签配置
         """
         try:
-            tree.tag_configure("even", background="#d8d8d8")
-            tree.tag_configure("odd", background="#ffffff")
+            tree.tag_configure("even", background="#ffffff")
+            tree.tag_configure("odd", background="#d8d8d8")
 
             tree.tag_configure("section", background="#d8d8d8", foreground="#000000")
 
@@ -3893,8 +3893,8 @@ class SubnetPlannerApp:
         result_tree.tag_configure("valid", foreground="green")
         result_tree.tag_configure("invalid", foreground="red")
 
-        result_tree.tag_configure("even", background="#d8d8d8")
-        result_tree.tag_configure("odd", background="#ffffff")
+        # 使用主配置方法配置斑马纹样式
+        self.configure_treeview_styles(result_tree)
 
         for index, item in enumerate(result_tree.get_children()):
             # 获取当前标签
@@ -6929,11 +6929,11 @@ class SubnetPlannerApp:
             except ValueError as e:
                 try:
                     # 使用handle_ip_subnet_error函数获取友好的错误信息
-                    self.show_info(_("error"), handle_ip_subnet_error(e)["error"])
+                    self.show_error(_("error"), handle_ip_subnet_error(e)["error"])
                     return
                 except ValueError:
                     # 如果handle_ip_subnet_error失败，使用通用错误信息
-                    self.show_info(_("error"), f"{_("ipv6_address")}{_("invalid_ip_format")}")
+                    self.show_error(_("error"), f"{_("ipv6_address")}{_("invalid_ip_format")}")
                     return
 
             # 构建网络字符串
@@ -7164,9 +7164,9 @@ class SubnetPlannerApp:
 
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
-            self.show_info(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
+            self.show_error(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
+            self.show_error(_("error"), f"{_("operation_failed")}: {str(e)}")
 
     def execute_ipv4_info(self):
         """执行IPv4地址信息查询"""
@@ -7185,10 +7185,10 @@ class SubnetPlannerApp:
             except ValueError as e:
                 try:
                     error_info = handle_ip_subnet_error(e)
-                    self.show_info(_("error"), error_info["error"])
+                    self.show_error(_("error"), error_info["error"])
                     return
                 except ValueError:
-                    self.show_info(_("error"), f"{_("ipv4_address")}{_("invalid_ip_format")}")
+                    self.show_error(_("error"), f"{_("ipv4_address")}{_("invalid_ip_format")}")
                     return
 
             subnet_mask = self.ip_mask_var.get()
@@ -7435,9 +7435,9 @@ class SubnetPlannerApp:
 
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
-            self.show_info(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
+            self.show_error(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
+            self.show_error(_("error"), f"{_("operation_failed")}: {str(e)}")
 
     def execute_range_to_cidr(self):
         """执行IP地址范围转CIDR操作"""
@@ -7707,18 +7707,18 @@ class SubnetPlannerApp:
                     self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
                     self.configure_treeview_styles(self.ipv4_result_tree)
                 else:
-                    # 如果已经是默认状态，确保所有列宽度正常，表头可见
+                    # 如果已经是默认状态，确保所有列宽度正常，表头可见（与初始化和合并子网保持一致）
                     for i, col in enumerate(default_columns):
-                        if i == 0:  # CIDR列
-                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                        if i == 0:  # CIDR列，需要更大宽度以适应长IP地址
+                            self.ipv4_result_tree.column(col, width=130, minwidth=130, stretch=True)
                         elif i == 1:  # 网络地址列
-                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
                         elif i == 2:  # 子网掩码列
-                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
                         elif i == 3:  # 广播地址列
-                            self.ipv4_result_tree.column(col, width=90, minwidth=90, stretch=True)
-                        elif i == 4:  # 主机数列
-                            self.ipv4_result_tree.column(col, width=120, minwidth=120, stretch=False)
+                            self.ipv4_result_tree.column(col, width=100, minwidth=100, stretch=True)
+                        elif i == 4:  # 主机数列，可适当缩小宽度
+                            self.ipv4_result_tree.column(col, width=80, minwidth=80, stretch=False)
 
             # 处理IPv6结果 - 如果有结果则转置显示
             if ipv6_cidrs:
@@ -11774,9 +11774,9 @@ class SubnetPlannerApp:
         network_border, network_entry = create_bordered_entry(content_frame)
         network_border.grid(row=row, column=1, padx=5, pady=8, sticky=tk.EW)
         
-        # 网络地址输入验证
+        # 网络地址输入验证（必须带前缀）
         def validate_network_input(event=None):
-            self.validate_cidr(network_entry.get(), network_entry)
+            self.validate_cidr(network_entry.get(), network_entry, require_prefix=True)
         
         network_entry.bind('<FocusOut>', validate_network_input)
         network_entry.bind('<KeyRelease>', validate_network_input)
@@ -11889,34 +11889,35 @@ class SubnetPlannerApp:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # 上半部分：信息+进度（固定高度）
-        top_frame = ttk.Frame(main_frame)
+        top_frame = ttk.Frame(main_frame, padding="10 2 10 2")  # 左右10，上下2
         top_frame.pack(fill=tk.X)
 
         info_frame = ttk.Frame(top_frame)
-        info_frame.pack(fill=tk.X, pady=(0, 5))
+        info_frame.pack(fill=tk.X, pady=(0, 1))
 
         scan_info_label = ttk.Label(info_frame, text=f"{_('scanning_network')} {network}")
         scan_info_label.pack(anchor=tk.W)
 
-        status_label = ttk.Label(info_frame, text=_('preparing_to_scan'))
-        status_label.pack(anchor=tk.W, pady=(2, 0))
+        # 创建包含状态和百分比的子框架
+        status_pct_frame = ttk.Frame(info_frame)
+        status_pct_frame.pack(fill=tk.X, pady=(0, 0))
+
+        status_label = ttk.Label(status_pct_frame, text=_('preparing_to_scan'))
+        status_label.pack(side=tk.LEFT, anchor=tk.W)
+
+        progress_pct_label = ttk.Label(status_pct_frame, text="0%")
+        progress_pct_label.pack(side=tk.RIGHT, anchor=tk.E)
 
         progress_frame = ttk.Frame(top_frame)
-        progress_frame.pack(fill=tk.X, pady=5)
+        progress_frame.pack(fill=tk.X, pady=1)
 
         progress_var = tk.DoubleVar(value=0)
         progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, mode='determinate')
-        progress_bar.pack(fill=tk.X, pady=2)
-
-        progress_pct_label = ttk.Label(progress_frame, text="0%")
-        progress_pct_label.pack(anchor=tk.E)
-
-        result_label = ttk.Label(top_frame, text=f"{_('found_active_ips')}: 0")
-        result_label.pack(anchor=tk.W, fill=tk.X, pady=(5, 2))
+        progress_bar.pack(fill=tk.X, pady=0)
 
         # 下半部分：表格（自动填充剩余空间）
-        tree_frame = ttk.Frame(main_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True, pady=2)
+        tree_frame = ttk.Frame(main_frame, padding="10 2 10 2")  # 左右10，上下2
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=1)
 
         columns = ('ip_address', 'hostname')
         result_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=10)
@@ -11925,10 +11926,18 @@ class SubnetPlannerApp:
         result_tree.column('ip_address', width=160, anchor=tk.W)
         result_tree.column('hostname', width=300, anchor=tk.W)
 
-        tree_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=result_tree.yview)
-        result_tree.configure(yscrollcommand=tree_scroll.set)
-        result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        # 使用主配置方法配置斑马纹样式
+        self.configure_treeview_styles(result_tree)
+
+        # 创建滚动条并应用自动隐藏功能
+        tree_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        result_tree.grid(row=0, column=0, sticky=tk.NSEW)
+        tree_scroll.grid(row=0, column=1, sticky=tk.NS)
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+        
+        # 应用自动隐藏滚动条
+        self._setup_scrollbar(tree_scroll, result_tree, initial_hidden=True, widget_command=result_tree.yview)
 
         # 按钮区域（固定在底部）
         button_frame = ttk.Frame(main_frame)
@@ -11954,15 +11963,33 @@ class SubnetPlannerApp:
 
         progress_dialog.protocol("WM_DELETE_WINDOW", on_closing)
 
+        # 统计结果标签
+        result_label = ttk.Label(button_frame, text=f"{_('found_active_ips')}: 0")
+        
         # 取消按钮（始终显示）
         cancel_button = ttk.Button(button_frame, text=_('cancel'), command=cancel_scan, width=10)
-        cancel_button.pack(side=tk.RIGHT, padx=5)
         
         # 导入按钮（扫描完成后显示）
         import_button = ttk.Button(button_frame, text=_('import'), command=import_results, width=10)
         
+        # 使用grid布局实现垂直居中对齐
+        button_frame.grid_columnconfigure(0, weight=1)
+        button_frame.grid_columnconfigure(1, pad=5)
+        button_frame.grid_columnconfigure(2, pad=5)
+        
+        result_label.grid(row=0, column=0, sticky=tk.NW, pady=0, padx=(10, 0))
+        cancel_button.grid(row=0, column=2, sticky=tk.E, pady=(5, 0))
+        
         # 绑定Escape键取消扫描
         progress_dialog.bind('<Escape>', lambda e: cancel_scan())
+        
+        # 绑定回车键导入结果
+        def on_return_key(e):
+            """处理回车键事件"""
+            if scan_state['completed']:
+                import_results()
+        
+        progress_dialog.bind('<Return>', on_return_key)
 
         def on_progress(scanned, active, total, current_ip):
             """扫描进度回调"""
@@ -11984,6 +12011,8 @@ class SubnetPlannerApp:
                 result_tree.insert('', tk.END, values=(ip_info['ip_address'], ip_info['hostname']))
                 result_label.config(text=f"{_('found_active_ips')}: {len(scan_state['active_ips']) + 1}")
                 scan_state['active_ips'].append(ip_info)
+                # 实时更新斑马条纹效果
+                self.update_table_zebra_stripes(result_tree)
             except Exception:
                 pass
 
@@ -12012,10 +12041,13 @@ class SubnetPlannerApp:
                 for ip_info in sorted_ips:
                     result_tree.insert('', tk.END, values=(ip_info['ip_address'], ip_info['hostname']))
                 
+                # 应用斑马条纹效果
+                self.update_table_zebra_stripes(result_tree)
+                
                 result_label.config(text=f"{_('found_active_ips')}: {len(sorted_ips)}")
 
                 # 显示导入按钮
-                import_button.pack(side=tk.RIGHT, padx=5)
+                import_button.grid(row=0, column=1, sticky=tk.E, pady=(5, 0))
             except Exception:
                 pass
 
