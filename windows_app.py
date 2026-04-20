@@ -12003,23 +12003,43 @@ class SubnetPlannerApp:
             except Exception:
                 pass
 
+        def ip_to_int(ip_str):
+            """将IP地址转换为整数以便排序"""
+            return int(''.join(f'{int(octet):03d}' for octet in ip_str.split('.')))
+
         def on_ip_found(ip_info):
-            """发现活动IP回调"""
+            """发现活动IP回调，实时插入到正确位置保持排序"""
             if not progress_dialog.winfo_exists():
                 return
             try:
-                result_tree.insert('', tk.END, values=(ip_info['ip_address'], ip_info['hostname']))
-                result_label.config(text=f"{_('found_active_ips')}: {len(scan_state['active_ips']) + 1}")
+                new_ip_int = ip_to_int(ip_info['ip_address'])
+                insert_index = 0
+                
+                for child in result_tree.get_children():
+                    values = result_tree.item(child)['values']
+                    if values and ip_to_int(values[0]) > new_ip_int:
+                        break
+                    insert_index += 1
+                
+                result_tree.insert('', insert_index, values=(ip_info['ip_address'], ip_info['hostname']))
                 scan_state['active_ips'].append(ip_info)
-                # 实时更新斑马条纹效果
+                
                 self.update_table_zebra_stripes(result_tree)
+                result_label.config(text=f"{_('found_active_ips')}: {len(scan_state['active_ips'])}")
             except Exception:
                 pass
 
         def on_complete(active_ips):
             """扫描完成回调"""
             scan_state['completed'] = True
-            scan_state['active_ips'] = active_ips
+            
+            def ip_to_int(ip_str):
+                """将IP地址转换为整数以便排序"""
+                return int(''.join(f'{int(octet):03d}' for octet in ip_str.split('.')))
+            
+            sorted_ips = sorted(active_ips, key=lambda x: ip_to_int(x['ip_address']))
+            scan_state['active_ips'] = sorted_ips
+            
             if not progress_dialog.winfo_exists():
                 return
             try:
@@ -12027,26 +12047,8 @@ class SubnetPlannerApp:
                 progress_pct_label.config(text="100%")
                 status_label.config(text=_('scan_complete'))
                 
-                # 按IP地址排序
-                def ip_to_int(ip_str):
-                    """将IP地址转换为整数以便排序"""
-                    return int(''.join(f'{int(octet):03d}' for octet in ip_str.split('.')))
-                
-                sorted_ips = sorted(active_ips, key=lambda x: ip_to_int(x['ip_address']))
-                scan_state['active_ips'] = sorted_ips
-                
-                # 清空表格并重新插入排序后的结果
-                for item in result_tree.get_children():
-                    result_tree.delete(item)
-                for ip_info in sorted_ips:
-                    result_tree.insert('', tk.END, values=(ip_info['ip_address'], ip_info['hostname']))
-                
-                # 应用斑马条纹效果
-                self.update_table_zebra_stripes(result_tree)
-                
                 result_label.config(text=f"{_('found_active_ips')}: {len(sorted_ips)}")
 
-                # 显示导入按钮
                 import_button.grid(row=0, column=1, sticky=tk.E, pady=(5, 0))
             except Exception:
                 pass
@@ -12064,6 +12066,19 @@ class SubnetPlannerApp:
                 pass
 
         import threading
+        
+        def progress_callback(scanned, active, total, current_ip):
+            self.root.after(0, lambda: on_progress(scanned, active, total, current_ip))
+        
+        def ip_found_callback(ip_info):
+            self.root.after(0, lambda: on_ip_found(ip_info.copy()))
+        
+        def complete_callback(active_ips):
+            self.root.after(0, lambda: on_complete(active_ips))
+        
+        def error_callback(error_msg):
+            self.root.after(0, lambda: on_error(error_msg))
+        
         scan_thread = threading.Thread(
             target=scanner.scan_network,
             kwargs={
@@ -12071,10 +12086,10 @@ class SubnetPlannerApp:
                 'thread_count': thread_count,
                 'timeout_ms': timeout_ms,
                 'scan_method': scan_method,
-                'on_progress': lambda s, a, t, ip: self.root.after(0, lambda: on_progress(s, a, t, ip)),
-                'on_ip_found': lambda info: self.root.after(0, lambda: on_ip_found(info)),
-                'on_complete': lambda ips: self.root.after(0, lambda: on_complete(ips)),
-                'on_error': lambda msg: self.root.after(0, lambda: on_error(msg)),
+                'on_progress': progress_callback,
+                'on_ip_found': ip_found_callback,
+                'on_complete': complete_callback,
+                'on_error': error_callback,
             },
             daemon=True
         )

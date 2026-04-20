@@ -55,7 +55,7 @@ class NetworkScanner:
 
     @staticmethod
     def ping_host(ip_address: str, timeout_ms: int = 500) -> bool:
-        """使用ICMP Ping检测主机是否存活
+        """使用TCP连接快速检测主机是否存活
 
         Args:
             ip_address: 目标IP地址
@@ -64,23 +64,51 @@ class NetworkScanner:
         Returns:
             bool: 主机是否存活
         """
-        system = platform.system().lower()
-        try:
-            if system == 'windows':
-                cmd = ['ping', '-n', '1', '-w', str(timeout_ms), ip_address]
-            else:
-                timeout_sec = max(1, timeout_ms // 1000)
-                cmd = ['ping', '-c', '1', '-W', str(timeout_sec), ip_address]
+        timeout_sec = min(timeout_ms / 1000.0, 1.0)
+        
+        ports = [445, 135, 80, 443]
+        
+        for port in ports:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.settimeout(timeout_sec)
+                result = sock.connect_ex((ip_address, port))
+                sock.close()
+                if result == 0:
+                    return True
+            except (socket.error, socket.timeout, OSError):
+                continue
+        
+        return False
 
-            result = subprocess.run(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=min(timeout_ms * 2, 3000) / 1000.0
-            )
-            return result.returncode == 0
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            return False
+    @staticmethod
+    def fast_host_check(ip_address: str, timeout_ms: int = 300) -> bool:
+        """使用TCP快速检测主机是否存活（比ping更快）
+
+        Args:
+            ip_address: 目标IP地址
+            timeout_ms: 超时时间（毫秒）
+
+        Returns:
+            bool: 主机是否存活
+        """
+        timeout_sec = timeout_ms / 1000.0
+        ports = [80, 443, 22, 135, 445, 3389]
+        
+        for port in ports:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.settimeout(timeout_sec)
+                result = sock.connect_ex((ip_address, port))
+                sock.close()
+                if result == 0:
+                    return True
+            except (socket.error, socket.timeout, OSError):
+                continue
+        
+        return False
 
     @staticmethod
     def tcp_check_host(ip_address: str, timeout_sec: float = 0.5, ports: Optional[list[int]] = None) -> bool:
@@ -174,7 +202,7 @@ class NetworkScanner:
 
         timeout_sec = timeout_ms / 1000.0
         last_progress_time = [0.0]
-        progress_interval = 0.1
+        progress_interval = 0.05
 
         def scan_single_ip(ip):
             """扫描单个IP地址"""
@@ -192,17 +220,18 @@ class NetworkScanner:
             with self._lock:
                 self._scanned_count += 1
                 current_scanned = self._scanned_count
-                current_active = len(self._active_ips)
 
             if on_progress:
                 now = time.monotonic()
                 if (now - last_progress_time[0] >= progress_interval
                         or current_scanned == self._total_ips):
                     last_progress_time[0] = now
+                    with self._lock:
+                        current_active = len(self._active_ips)
                     on_progress(current_scanned, current_active, self._total_ips, ip_str)
 
             if is_alive and not self.is_cancelled():
-                hostname = self.resolve_hostname(ip_str, timeout_sec=0.3)
+                hostname = self.resolve_hostname(ip_str, timeout_sec=0.2)
                 ip_info = {
                     'ip_address': ip_str,
                     'hostname': hostname,
@@ -211,7 +240,8 @@ class NetworkScanner:
                 with self._lock:
                     self._active_ips.append(ip_info)
                 if on_ip_found:
-                    on_ip_found(ip_info)
+                    import threading
+                    threading.Thread(target=on_ip_found, args=(ip_info.copy(),), daemon=True).start()
                 return ip_info
 
             return None
