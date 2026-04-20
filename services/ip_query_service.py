@@ -7,6 +7,7 @@ from ip_subnet_calculator import (
     range_to_cidr,
     check_subnet_overlap,
     format_large_number,
+    handle_ip_subnet_error,
 )
 
 
@@ -26,7 +27,8 @@ class IPQueryService:
                     ip_info = get_ip_info(f"{ip_address}/{subnet_mask_or_cidr}")
             return {'success': True, 'data': ip_info}
         except ValueError as e:
-            return {'success': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'success': False, 'error': error_result.get('error', str(e))}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -38,7 +40,8 @@ class IPQueryService:
                 ip_info = get_ip_info(f"{ip_address}/{cidr_prefix}")
             return {'success': True, 'data': ip_info}
         except ValueError as e:
-            return {'success': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'success': False, 'error': error_result.get('error', str(e))}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -50,7 +53,8 @@ class IPQueryService:
             result = merge_subnets(subnets)
             return {'success': True, 'data': result}
         except ValueError as e:
-            return {'success': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'success': False, 'error': error_result.get('error', str(e))}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -61,7 +65,8 @@ class IPQueryService:
             result = range_to_cidr(start_ip, end_ip)
             return {'success': True, 'data': result}
         except ValueError as e:
-            return {'success': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'success': False, 'error': error_result.get('error', str(e))}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -73,6 +78,7 @@ class IPQueryService:
             result = check_subnet_overlap(subnets)
             return {'success': True, 'data': result}
         except ValueError as e:
-            return {'success': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'success': False, 'error': error_result.get('error', str(e))}
         except Exception as e:
             return {'success': False, 'error': str(e)}

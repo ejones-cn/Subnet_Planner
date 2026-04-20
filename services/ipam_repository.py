@@ -84,9 +84,6 @@ class IPAMRepository:
     def check_ip_conflicts(self, network_address=None):
         return self.ipam.check_ip_conflicts(network_address)
 
-    def auto_scan_network(self, network, **kwargs):
-        return self.ipam.auto_scan_network(network, **kwargs)
-
     def get_available_ips(self, network_address):
         return self.ipam.get_available_ips(network_address)
 

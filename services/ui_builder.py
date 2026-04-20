@@ -59,10 +59,10 @@ class SubnetPlannerUIBuilder:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
 
-        app.split_parent_networks_v4 = ["10.0.0.0/8", "172.16.0.0/12"]
-        app.split_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]
-        app.split_networks_v4 = ["10.21.50.0/23", "172.20.180.0/24"]
-        app.split_networks_v6 = ["2001:0db8::/64", "fe80::1/128"]
+        app.split_parent_networks_v4 = deque(["10.0.0.0/8", "172.16.0.0/12"], maxlen=100)
+        app.split_parent_networks_v6 = deque(["2001:0db8::/32", "fe80::/10"], maxlen=100)
+        app.split_networks_v4 = deque(["10.21.50.0/23", "172.20.180.0/24"], maxlen=100)
+        app.split_networks_v6 = deque(["2001:0db8::/64", "fe80::1/128"], maxlen=100)
 
         ip_version = app.split_ip_version_var.get()
         if ip_version == "IPv4":

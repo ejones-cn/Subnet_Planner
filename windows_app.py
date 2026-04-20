@@ -164,6 +164,11 @@ class DialogBase:
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
         self.dialog.resizable(resizable, resizable)
+        
+        # 设置最小尺寸限制（仅当可调整大小时）
+        if resizable:
+            self.dialog.minsize(width, height)
+        
         self.dialog.transient(parent)
         
         # 为对话框设置与主窗口相同的置顶属性
@@ -1228,41 +1233,27 @@ class SubnetPlannerApp:
             # 自动补全失败时不影响用户输入
             pass
     
-    def validate_cidr(self, text, entry=None, style_based=False, ip_version=None):
-        """通用CIDR验证函数
+    def validate_cidr(self, text, entry=None, style_based=False, ip_version=None, require_prefix=None):
+        """通用CIDR验证函数（UI层包装）
 
         Args:
             text: 要验证的CIDR字符串
             entry: 可选的输入框对象，用于显示验证结果
             style_based: 是否使用样式来显示验证结果，否则使用前景色
             ip_version: 可选的IP版本字符串，用于指定要验证的IP版本，如"IPv4"或"IPv6"
+            require_prefix: 前缀要求模式:
+                - None: 带不带前缀都可以（默认）
+                - True: 必须带前缀（如 10.0.0.0/8）
+                - False: 必须不带前缀（纯IP地址，如 10.0.0.1）
 
         Returns:
             验证结果，True表示有效，False表示无效，"1"表示用于validatecommand的有效
         """
-        text = text.strip()
-        is_valid = True
-        if text:
-            try:
-                ip_network = ipaddress.ip_network(text, strict=False)
-                # 检查IP版本是否与指定的版本匹配
-                if ip_version:
-                    # 使用传入的IP版本进行检查
-                    actual_version = f"IPv{ip_network.version}"
-                    if ip_version != actual_version:
-                        is_valid = False
-                elif hasattr(self, 'ip_version_var'):
-                    # 向后兼容：如果没有传入IP版本，尝试使用子网规划的IP版本变量
-                    selected_version = self.ip_version_var.get()
-                    actual_version = f"IPv{ip_network.version}"
-                    if selected_version != actual_version:
-                        is_valid = False
-                else:
-                    # 如果没有IP版本信息，只验证格式
-                    is_valid = True
-            except ValueError:
-                is_valid = False
-
+        # 调用服务层的验证方法
+        result = self.validation_service.validate_cidr(text, ip_version, require_prefix)
+        is_valid = result['valid']
+        
+        # 处理视觉反馈
         if entry:
             if style_based:
                 entry.config(style='Valid.TEntry' if is_valid else 'Invalid.TEntry')
@@ -2205,10 +2196,10 @@ class SubnetPlannerApp:
         )
         # 初始化IP版本相关数据
         # 为每个IP版本维护独立的历史记录列表
-        self.split_parent_networks_v4 = ["10.0.0.0/8", "172.16.0.0/12"]  # IPv4父网段历史记录
-        self.split_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6父网段历史记录
-        self.split_networks_v4 = ["10.21.50.0/23", "172.20.180.0/24"]  # IPv4切分段历史记录
-        self.split_networks_v6 = ["2001:0db8::/64", "fe80::1/128"]  # IPv6切分段历史记录
+        self.split_parent_networks_v4 = deque(["10.0.0.0/8", "172.16.0.0/12"], maxlen=100)  # IPv4父网段历史记录
+        self.split_parent_networks_v6 = deque(["2001:0db8::/32", "fe80::/10"], maxlen=100)  # IPv6父网段历史记录
+        self.split_networks_v4 = deque(["10.21.50.0/23", "172.20.180.0/24"], maxlen=100)  # IPv4切分段历史记录
+        self.split_networks_v6 = deque(["2001:0db8::/64", "fe80::1/128"], maxlen=100)  # IPv6切分段历史记录
         
         # 根据IP版本选择对应的历史记录列表
         ip_version = self.split_ip_version_var.get()
@@ -2226,7 +2217,9 @@ class SubnetPlannerApp:
             default_split = "2001:0db8::/64"
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get())), '%P')
+        def validate_split_parent(p):
+            return self.validate_cidr(p, self.parent_entry, ip_version=self.split_ip_version_var.get(), require_prefix=True)
+        vcmd = (self.root.register(validate_split_parent), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
             values=self.split_parent_networks,  # 使用过滤后的记录列表
@@ -2244,7 +2237,9 @@ class SubnetPlannerApp:
         ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
             row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
-        vcmd = (self.root.register(lambda text: self.validate_cidr(text, self.split_entry, ip_version=self.split_ip_version_var.get())), '%P')
+        def validate_split_segment(p):
+            return self.validate_cidr(p, self.split_entry, ip_version=self.split_ip_version_var.get(), require_prefix=True)
+        vcmd = (self.root.register(validate_split_segment), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
             values=self.split_networks,  # 使用过滤后的记录列表
@@ -2664,8 +2659,8 @@ class SubnetPlannerApp:
         self.ip_version_var = tk.StringVar(value="IPv4")
         
         # 初始化父网段列表 - 为每个IP版本维护独立的历史记录列表
-        self.planning_parent_networks_v4 = ["10.21.48.0/20", "192.168.0.0/16"]  # IPv4历史记录
-        self.planning_parent_networks_v6 = ["2001:0db8::/32", "fe80::/10"]  # IPv6历史记录
+        self.planning_parent_networks_v4 = deque(["10.21.48.0/20", "192.168.0.0/16"], maxlen=100)  # IPv4历史记录
+        self.planning_parent_networks_v6 = deque(["2001:0db8::/32", "fe80::/10"], maxlen=100)  # IPv6历史记录
         self.planning_parent_networks = self.planning_parent_networks_v4  # 当前使用的历史记录列表
 
         # 创建父网段输入区域框架，用于水平排列IP选项和输入框
@@ -2682,7 +2677,9 @@ class SubnetPlannerApp:
         ipv6_btn.pack(side=tk.LEFT, padx=(0, 10))
         
         # 父网段下拉文本框 - 与IP选项水平排列
-        vcmd = (self.root.register(lambda p: self.validate_cidr(p, self.planning_parent_entry, ip_version=self.ip_version_var.get())), '%P')
+        def validate_planning_parent(p):
+            return self.validate_cidr(p, self.planning_parent_entry, ip_version=self.ip_version_var.get(), require_prefix=True)
+        vcmd = (self.root.register(validate_planning_parent), '%P')
         self.planning_parent_entry = ttk.Combobox(
             parent_input_frame,
             values=self.planning_parent_networks,  # 使用包含两条记录的列表
@@ -3502,6 +3499,10 @@ class SubnetPlannerApp:
         dialog.title(title)
         dialog.resizable(resizable, resizable)
         dialog.transient(parent_window)
+        
+        # 设置最小尺寸限制（仅当可调整大小时）
+        if resizable:
+            dialog.minsize(width, height)
         
         # 为对话框设置与主窗口相同的置顶属性，确保在主窗口置顶时对话框也能保持在前面
         dialog.attributes('-topmost', self.is_pinned)
@@ -5318,16 +5319,8 @@ class SubnetPlannerApp:
                     self.update_history_listbox()
 
         except ValueError as e:
-            error_msg = str(e)
-            if "not permitted" in error_msg and "Octet" in error_msg:
-                match = re.search(r"Octet\D*(\d+)", error_msg)
-                if match:
-                    octet = match.group(1)
-                    message = f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
-                else:
-                    message = error_msg
-            else:
-                message = error_msg
+            error_result = handle_ip_subnet_error(e)
+            message = error_result.get('error', str(e))
             self.clear_result()
             self.split_tree.insert("", tk.END, values=(_("error"), message), tags=("error",))
         except (tk.TclError, AttributeError, TypeError) as e:
@@ -5952,23 +5945,13 @@ class SubnetPlannerApp:
         self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
         self.ipv6_info_entry.config(state="normal")  # 允许手动输入
 
-        # IPv6地址验证函数
+        # IPv6地址验证函数 - 使用统一的UI层验证方法
         def validate_ipv6(text):
-            """验证IPv6地址格式，使用标准库ipaddress模块"""
-            text = text.strip()
-            is_valid = True
-            
-            if text:
-                try:
-                    ipaddress.IPv6Address(text)
-                except ValueError:
-                    is_valid = False
-            
-            self.ipv6_info_entry.config(foreground='black' if is_valid else 'red')
-            return "1"
+            """验证IPv6地址格式"""
+            return self.validate_cidr(text, self.ipv6_info_entry, ip_version="IPv6", require_prefix=False)
 
         # 配置验证
-        self.ipv6_info_entry.config(validate="all", validatecommand=(self.ipv6_info_entry.register(validate_ipv6), "%P"))
+        self.ipv6_info_entry.config(validate="all", validatecommand=(self.root.register(validate_ipv6), "%P"))
 
         # 初始验证一次
         validate_ipv6(self.ipv6_info_entry.get())
@@ -6044,6 +6027,26 @@ class SubnetPlannerApp:
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
         self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
+        
+        # 实时验证子网格式
+        def validate_subnet_merge_text(event=None):
+            text = self.subnet_merge_text.get(1.0, tk.END).strip()
+            self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
+            self.subnet_merge_text.tag_configure("invalid", foreground="red")
+            
+            lines = text.splitlines()
+            for i, line in enumerate(lines, 1):
+                subnet = line.strip()
+                if subnet:
+                    result = self.validation_service.validate_cidr(subnet, require_prefix=True)
+                    if not result['valid']:
+                        start = f"{i}.0"
+                        end = f"{i}.end"
+                        self.subnet_merge_text.tag_add("invalid", start, end)
+        
+        self.validate_subnet_merge_text = validate_subnet_merge_text
+        self.subnet_merge_text.bind('<KeyRelease>', validate_subnet_merge_text)
+        self.subnet_merge_text.bind('<FocusOut>', validate_subnet_merge_text)
 
         # 配置子网合并列表面板的grid布局
         subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
@@ -6074,29 +6077,10 @@ class SubnetPlannerApp:
         self.range_start_entry.insert(0, "192.168.0.1")
         self.range_start_entry.config(state="normal")  # 允许手动输入
 
-        # IP范围地址验证函数
+        # IP范围地址验证函数 - 使用统一的UI层验证方法
         def validate_range_ip(text, entry):
             """验证IP范围地址格式，支持IPv4和IPv6"""
-            text = text.strip()
-            if not text:
-                entry.config(foreground='black')
-                return "1"
-            
-            # 使用ipaddress模块进行验证，这比正则表达式更可靠
-            try:
-                # 尝试IPv4
-                ipaddress.IPv4Address(text)
-                is_valid = True
-            except ValueError:
-                try:
-                    # 尝试IPv6
-                    ipaddress.IPv6Address(text)
-                    is_valid = True
-                except ValueError:
-                    is_valid = False
-            
-            entry.config(foreground='black' if is_valid else 'red')
-            return "1"
+            return self.validate_cidr(text, entry, require_prefix=False)
 
         # 为起始IP添加验证
         def validate_start_ip(text):
@@ -6492,15 +6476,10 @@ class SubnetPlannerApp:
         self.ip_info_entry.insert(0, "192.168.1.1")
         self.ip_info_entry.config(state="normal")  # 允许手动输入
 
-        # IPv4地址验证函数
+        # IPv4地址验证函数 - 使用统一的UI层验证方法
         def validate_ipv4(text):
             """验证IPv4地址格式"""
-            text = text.strip()
-            ipv4_pattern = r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-            is_valid = bool(re.match(ipv4_pattern, text)) if text else True
-            if hasattr(self, 'ip_info_entry') and self.ip_info_entry.winfo_exists():
-                self.ip_info_entry.config(foreground='black' if is_valid else 'red')
-            return "1"
+            return self.validate_cidr(text, self.ip_info_entry, ip_version="IPv4", require_prefix=False)
 
         self.ip_info_entry.config(validate="all", validatecommand=(self.root.register(validate_ipv4), "%P"))
 
@@ -6644,6 +6623,26 @@ class SubnetPlannerApp:
 
         self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1))
         self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
+        
+        # 实时验证子网格式
+        def validate_overlap_text(event=None):
+            text = self.overlap_text.get(1.0, tk.END).strip()
+            self.overlap_text.tag_remove("invalid", "1.0", tk.END)
+            self.overlap_text.tag_configure("invalid", foreground="red")
+            
+            lines = text.splitlines()
+            for i, line in enumerate(lines, 1):
+                subnet = line.strip()
+                if subnet:
+                    result = self.validation_service.validate_cidr(subnet, require_prefix=True)
+                    if not result['valid']:
+                        start = f"{i}.0"
+                        end = f"{i}.end"
+                        self.overlap_text.tag_add("invalid", start, end)
+        
+        self.validate_overlap_text = validate_overlap_text
+        self.overlap_text.bind('<KeyRelease>', validate_overlap_text)
+        self.overlap_text.bind('<FocusOut>', validate_overlap_text)
 
         # 添加垂直滚动条，并使用通用方法创建带自动隐藏滚动条的Text组件
         overlap_text_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
@@ -6745,51 +6744,88 @@ class SubnetPlannerApp:
             self.clear_tree_items(self.ipv4_result_tree)
             self.clear_tree_items(self.ipv6_result_tree)
 
+            # 重新运行实时验证，保持标记与当前输入一致
+            self.validate_subnet_merge_text()
+
+            # 获取无效子网列表（如果有）
+            invalid_subnets = []
             if isinstance(result, dict) and "error" in result:
-                # 获取无效子网列表
                 invalid_subnets = result.get("invalid_subnets", [])
-                
-                # 在结果表格中显示每条错误信息
-                if invalid_subnets:
-                    # 为无效子网添加红色高亮
-                    self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
-                    self.subnet_merge_text.tag_configure("invalid", foreground="red", underline=True)
+            
+            # 如果有无效子网，在结果表格中显示错误信息（但不中断执行）
+            row_index = 0
+            if invalid_subnets:
+                for invalid in invalid_subnets:
+                    tag = "error_row"
+                    simplified_error = _("invalid_format")
+                    subnet = invalid["subnet"]
                     
-                    # 遍历文本内容，为无效子网添加高亮
-                    lines = subnets_text.splitlines()
-                    # 使用集合优化查找，将时间复杂度从O(n*m)降低到O(n)
-                    invalid_set = {invalid["subnet"] for invalid in invalid_subnets}
-                    for i, line in enumerate(lines, 1):
-                        subnet = line.strip()
-                        if subnet in invalid_set:
-                            start = f"{i}.0"
-                            end = f"{i}.end"
-                            self.subnet_merge_text.tag_add("invalid", start, end)
+                    # 使用评分机制智能判断IP版本类型
+                    ipv4_score = 0
+                    ipv6_score = 0
                     
-                    # 显示每条错误信息
-                    row_index = 0
-                    for invalid in invalid_subnets:
-                        tag = "error_row"
-                        # 精简错误信息，只显示"无效格式"
-                        simplified_error = _("invalid_format")
-                        # 在CIDR字段直接显示错误的子网，在网络地址字段显示精简后的错误描述
+                    # 检查IPv4特征
+                    if '.' in subnet:
+                        ipv4_score += 1
+                    if subnet.endswith('.'):
+                        ipv4_score += 1
+                        ipv6_score -= 1
+                    
+                    # 检查IPv6特征
+                    if ':' in subnet:
+                        ipv6_score += 1
+                    if subnet.endswith(':'):
+                        ipv6_score += 1
+                        ipv4_score -= 1
+                    
+                    # 检查十六进制字符（IPv6特有）
+                    has_hex = any(c in 'abcdefABCDEF' for c in subnet)
+                    if has_hex:
+                        ipv6_score += 1
+                        ipv4_score -= 1
+                    
+                    # 纯数字且长度较短（更可能是IPv4的一部分）
+                    if subnet.isdigit() and len(subnet) <= 3:
+                        ipv4_score += 1
+                        ipv6_score -= 1
+                    
+                    # 根据评分判断插入位置
+                    if ipv4_score > ipv6_score:
+                        # 更像IPv4
                         self.ipv4_result_tree.insert("", tk.END, values=(
-                            invalid["subnet"],
+                            subnet,
                             simplified_error,
                             "",
                             "",
                             ""
                         ), tags=(tag,))
-                        row_index += 1
-                    # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
-                    self.update_table_zebra_stripes(self.ipv4_result_tree)
-                    return
-            else:
-                # 清除无效子网高亮
-                self.subnet_merge_text.tag_remove("invalid", "1.0", tk.END)
+                    elif ipv6_score > ipv4_score:
+                        # 更像IPv6
+                        self.ipv6_result_tree.insert("", tk.END, values=(
+                            subnet,
+                            simplified_error,
+                            ""
+                        ), tags=(tag,))
+                    else:
+                        # 无法判断，两张表都插
+                        self.ipv4_result_tree.insert("", tk.END, values=(
+                            subnet,
+                            simplified_error,
+                            "",
+                            "",
+                            ""
+                        ), tags=(tag,))
+                        self.ipv6_result_tree.insert("", tk.END, values=(
+                            subnet,
+                            simplified_error,
+                            ""
+                        ), tags=(tag,))
+                    row_index += 1
 
-            # 分离IPv4和IPv6结果
-            merged_subnets = result.get("merged_subnets", [])
+            # 分离IPv4和IPv6结果（无论是否有错误，都尝试获取合并结果）
+            merged_subnets = []
+            if isinstance(result, dict):
+                merged_subnets = result.get("merged_subnets", [])
             ipv4_results = []
             ipv6_results = []
             
@@ -6840,7 +6876,8 @@ class SubnetPlannerApp:
             self.clear_tree_items(self.ipv6_result_tree)
             
             # 尝试获取无效子网列表
-            error_msg = f"{_("merge_subnet")}{_("failed")}: {str(e)}"
+            error_result = handle_ip_subnet_error(e)
+            error_msg = f"{_("merge_subnet")}{_("failed")}: {error_result.get('error', str(e))}"
             tag = "error_row"
             self.ipv4_result_tree.insert("", tk.END, values=(
                 _("error"),
@@ -7126,7 +7163,8 @@ class SubnetPlannerApp:
             self.update_ipv6_history()
 
         except ValueError as e:
-            self.show_info(_("error"), f"{_("query_failed")}: {str(e)}")
+            error_result = handle_ip_subnet_error(e)
+            self.show_info(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
 
@@ -7396,7 +7434,8 @@ class SubnetPlannerApp:
             self.update_ipv4_history()
 
         except ValueError as e:
-            self.show_info(_("error"), f"{_("query_failed")}: {str(e)}")
+            error_result = handle_ip_subnet_error(e)
+            self.show_info(_("error"), f"{_("query_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
 
@@ -7407,45 +7446,8 @@ class SubnetPlannerApp:
             default_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
             ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
             
-            # 获取输入的IP范围
-            start_ip = self.range_start_entry.get().strip()
-            end_ip = self.range_end_entry.get().strip()
-
-            if not start_ip or not end_ip:
-                self.show_info(_("hint"), "请输入完整的IP范围")
-                return
-
-            # 执行转换
-            result = range_to_cidr(start_ip, end_ip)
-
-            if isinstance(result, dict) and "error" in result:
-                self.show_info(_("error"), result["error"])
-                return
-
-            cidr_list = result.get("cidr_list", [])
-
-            # 检查CIDR列表是否为空
-            if not cidr_list:
-                self.show_info(_("error"), "无法将IP范围转换为CIDR")
-                return
-
-            # 分离IPv4和IPv6结果
-            ipv4_cidrs = []
-            ipv6_cidrs = []
-            
-            for cidr in cidr_list:
-                info = get_subnet_info(cidr)
-                if info["version"] == 4:  # 使用整数比较，因为get_subnet_info返回的是整数
-                    ipv4_cidrs.append(cidr)
-                elif info["version"] == 6:  # 使用整数比较
-                    ipv6_cidrs.append(cidr)
-
-            # 1. 定义默认列配置
-            default_columns = [_("cidr"), _("network_address"), _("subnet_mask"), _("broadcast_address"), _("host_count")]
-            ipv6_columns = [_("cidr"), _("network_address"), _("host_count")]
-            
-            # 2. 重置两个Treeview组件到默认状态
-            # 2.1 处理IPv4结果树
+            # 1. 重置两个Treeview组件到默认状态
+            # 1.1 处理IPv4结果树
             # 检查当前列配置是否与默认配置一致
             current_ipv4_cols = self.ipv4_result_tree["columns"]
             if list(current_ipv4_cols) != default_columns:
@@ -7463,7 +7465,7 @@ class SubnetPlannerApp:
                 self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
                 self.configure_treeview_styles(self.ipv4_result_tree)
             
-            # 2.2 处理IPv6结果树
+            # 1.2 处理IPv6结果树
             # 检查当前列配置是否与IPv6配置一致
             current_ipv6_cols = self.ipv6_result_tree["columns"]
             if list(current_ipv6_cols) != ipv6_columns:
@@ -7481,7 +7483,7 @@ class SubnetPlannerApp:
                 self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
                 self.configure_treeview_styles(self.ipv6_result_tree)
             
-            # 3. 清空现有内容并设置表头
+            # 2. 清空现有内容并设置表头
             # 清空IPv4结果树内容
             self.clear_tree_items(self.ipv4_result_tree)
             # 设置IPv4结果树表头
@@ -7503,6 +7505,123 @@ class SubnetPlannerApp:
             self.ipv6_result_tree.column(ipv6_columns[0], width=120, minwidth=120, stretch=True)
             self.ipv6_result_tree.column(ipv6_columns[1], width=120, minwidth=120, stretch=True)
             self.ipv6_result_tree.column(ipv6_columns[2], width=100, minwidth=100, stretch=False)
+
+            # 获取输入的IP范围
+            start_ip = self.range_start_entry.get().strip()
+            end_ip = self.range_end_entry.get().strip()
+
+            # 执行转换
+            result = range_to_cidr(start_ip, end_ip)
+
+            if isinstance(result, dict) and "error" in result:
+                # 创建两列的错误表格
+                error_columns = [_("network_segment"), _("error_message")]
+                
+                # 获取详细错误信息并清理格式
+                error_msg = result["error"]
+                if f"{_('ip_subnet')} {_('error')}:" in error_msg:
+                    error_msg = error_msg.split(f"{_('ip_subnet')} {_('error')}:")[1].strip()
+                
+                # 强制重建IPv4结果树
+                for child in self.ipv4_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv4_result_tree.destroy()
+                
+                # 创建两列的IPv4错误表格
+                self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=error_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv4_result_tree)
+                
+                ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+                self.configure_treeview_styles(self.ipv4_result_tree)
+                
+                # 设置IPv4表头和列宽
+                self.ipv4_result_tree.heading(error_columns[0], text=error_columns[0])
+                self.ipv4_result_tree.heading(error_columns[1], text=error_columns[1])
+                self.ipv4_result_tree.column(error_columns[0], width=140, minwidth=140, stretch=True)
+                self.ipv4_result_tree.column(error_columns[1], width=360, minwidth=360, stretch=True)
+                
+                # 在IPv4表格中显示错误信息
+                tag = "error_row"
+                self.ipv4_result_tree.insert("", tk.END, values=(
+                    f"{start_ip} - {end_ip}",
+                    error_msg
+                ), tags=(tag,))
+                self.update_table_zebra_stripes(self.ipv4_result_tree)
+                
+                # 同样创建IPv6错误表格
+                for child in self.ipv6_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv6_result_tree.destroy()
+                
+                # 创建两列的IPv6错误表格
+                self.ipv6_result_tree = ttk.Treeview(self.ipv6_frame, columns=error_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv6_result_tree)
+                
+                ipv6_scrollbar = ttk.Scrollbar(self.ipv6_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv6_frame, self.ipv6_result_tree, ipv6_scrollbar)
+                self.configure_treeview_styles(self.ipv6_result_tree)
+                
+                # 设置IPv6表头和列宽
+                self.ipv6_result_tree.heading(error_columns[0], text=error_columns[0])
+                self.ipv6_result_tree.heading(error_columns[1], text=error_columns[1])
+                self.ipv6_result_tree.column(error_columns[0], width=140, minwidth=140, stretch=True)
+                self.ipv6_result_tree.column(error_columns[1], width=360, minwidth=360, stretch=True)
+                
+                # 在IPv6表格中显示错误信息
+                self.ipv6_result_tree.insert("", tk.END, values=(
+                    f"{start_ip} - {end_ip}",
+                    error_msg
+                ), tags=(tag,))
+                self.update_table_zebra_stripes(self.ipv6_result_tree)
+                
+                return
+
+            cidr_list = result.get("cidr_list", [])
+
+            # 检查CIDR列表是否为空
+            if not cidr_list:
+                # 创建两列的错误表格
+                error_columns = [_("network_segment"), _("error_message")]
+                
+                # 强制重建IPv4结果树
+                for child in self.ipv4_result_tree.winfo_children():
+                    child.destroy()
+                self.ipv4_result_tree.destroy()
+                
+                # 创建两列的错误表格
+                self.ipv4_result_tree = ttk.Treeview(self.ipv4_frame, columns=error_columns, show="headings")
+                self.bind_treeview_right_click(self.ipv4_result_tree)
+                
+                ipv4_scrollbar = ttk.Scrollbar(self.ipv4_frame, orient=tk.VERTICAL)
+                self.create_scrollable_treeview(self.ipv4_frame, self.ipv4_result_tree, ipv4_scrollbar)
+                self.configure_treeview_styles(self.ipv4_result_tree)
+                
+                # 设置表头和列宽
+                self.ipv4_result_tree.heading(error_columns[0], text=error_columns[0])
+                self.ipv4_result_tree.heading(error_columns[1], text=error_columns[1])
+                self.ipv4_result_tree.column(error_columns[0], width=140, minwidth=140, stretch=True)
+                self.ipv4_result_tree.column(error_columns[1], width=360, minwidth=360, stretch=True)
+                
+                # 在表格中显示错误信息
+                tag = "error_row"
+                self.ipv4_result_tree.insert("", tk.END, values=(
+                    f"{start_ip} - {end_ip}",
+                    _("cannot_convert_ip_range_to_cidr")
+                ), tags=(tag,))
+                self.update_table_zebra_stripes(self.ipv4_result_tree)
+                return
+
+            # 分离IPv4和IPv6结果
+            ipv4_cidrs = []
+            ipv6_cidrs = []
+            
+            for cidr in cidr_list:
+                info = get_subnet_info(cidr)
+                if info["version"] == 4:  # 使用整数比较，因为get_subnet_info返回的是整数
+                    ipv4_cidrs.append(cidr)
+                elif info["version"] == 6:  # 使用整数比较
+                    ipv6_cidrs.append(cidr)
 
             # 处理IPv4结果 - 如果有结果则转置显示
             if ipv4_cidrs:
@@ -7683,7 +7802,8 @@ class SubnetPlannerApp:
             self.update_range_end_history()
 
         except ValueError as e:
-            self.show_info(_("error"), f"{_("conversion_failed")}: {str(e)}")
+            error_result = handle_ip_subnet_error(e)
+            self.show_info(_("error"), f"{_("conversion_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
 
@@ -7772,20 +7892,8 @@ class SubnetPlannerApp:
                 tag = "odd" if row_index % 2 == 0 else "even"
                 self.overlap_result_tree.insert("", tk.END, values=(_("no_overlap"), _("no_subnet_overlap_detected")), tags=(tag,))
             
-            # 为无效子网添加红色高亮
-            self.overlap_text.tag_remove("invalid", "1.0", tk.END)
-            self.overlap_text.tag_configure("invalid", foreground="red", underline=True)
-            
-            # 遍历文本内容，为无效子网添加高亮
-            lines = subnets_text.splitlines()
-            # 使用集合优化查找，将时间复杂度从O(n^2)降低到O(n)
-            invalid_set = set(invalid_subnets)
-            for i, line in enumerate(lines, 1):
-                subnet = line.strip()
-                if subnet in invalid_set:
-                    start = f"{i}.0"
-                    end = f"{i}.end"
-                    self.overlap_text.tag_add("invalid", start, end)
+            # 重新运行实时验证，保持标记与当前输入一致
+            self.validate_overlap_text()
             
             self.auto_resize_columns(self.overlap_result_tree)
             # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
@@ -9125,7 +9233,7 @@ class SubnetPlannerApp:
     
     def initialize_component_properties(self):
         """重新初始化所有必要的组件属性"""
-        self.planning_parent_networks = []
+        self.planning_parent_networks = deque(maxlen=100)
         self.planning_parent_entry = None
         self.pool_tree = None
         self.pool_scrollbar = None
@@ -9183,8 +9291,8 @@ class SubnetPlannerApp:
         self.overlap_btn = None
         self.overlap_result_tree = None
         
-        self.split_parent_networks = []
-        self.split_networks = []
+        self.split_parent_networks = deque(maxlen=100)
+        self.split_networks = deque(maxlen=100)
         self.parent_entry = None
         self.split_entry = None
         self.execute_btn = None
@@ -11653,13 +11761,11 @@ class SubnetPlannerApp:
 
     def auto_scan_network(self):
         """打开网络扫描配置对话框"""
-        dialog = self.create_dialog(_('auto_scan_network'), 480, 280, resizable=False, modal=True)
-
-        main_frame = ttk.Frame(dialog, padding="15")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        content_frame = ttk.Frame(main_frame)
-        content_frame.pack(fill=tk.BOTH, expand=True)
+        # 使用 ComplexDialog 创建对话框，自动获得 ESC 键支持和标准布局
+        dialog = ComplexDialog(self.root, _('auto_scan_network'), 400, 200, resizable=False, modal=True)
+        
+        # 使用 ComplexDialog 内置的 content_frame
+        content_frame = dialog.content_frame
         content_frame.grid_columnconfigure(1, weight=1)
 
         row = 0
@@ -11667,6 +11773,13 @@ class SubnetPlannerApp:
             row=row, column=0, padx=5, pady=8, sticky=tk.W)
         network_border, network_entry = create_bordered_entry(content_frame)
         network_border.grid(row=row, column=1, padx=5, pady=8, sticky=tk.EW)
+        
+        # 网络地址输入验证
+        def validate_network_input(event=None):
+            self.validate_cidr(network_entry.get(), network_entry)
+        
+        network_entry.bind('<FocusOut>', validate_network_input)
+        network_entry.bind('<KeyRelease>', validate_network_input)
 
         row = 1
         options_frame = ttk.Frame(content_frame)
@@ -11692,11 +11805,18 @@ class SubnetPlannerApp:
         ttk.Radiobutton(method_frame, text="ICMP Ping", variable=method_var, value="ping").pack(side=tk.LEFT, padx=5)
         ttk.Radiobutton(method_frame, text="TCP", variable=method_var, value="tcp").pack(side=tk.LEFT, padx=5)
 
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
-        ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy, width=10).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text=_('start_scan'), command=lambda: self._start_scan_from_dialog(
-            dialog, network_entry, thread_var, timeout_var, method_var), width=10).pack(side=tk.RIGHT, padx=5)
+        def on_scan():
+            """执行扫描"""
+            is_valid = self.validate_cidr(network_entry.get())
+            if is_valid:
+                self._start_scan_from_dialog(dialog, network_entry, thread_var, timeout_var, method_var)
+        
+        # 使用 ComplexDialog 的 add_button 方法添加按钮（自动右对齐）
+        dialog.add_button(_('cancel'), dialog.destroy)
+        dialog.add_button(_('start_scan'), on_scan)
+        
+        # 绑定回车键触发扫描
+        dialog.dialog.bind('<Return>', lambda e: on_scan())
 
     def _start_scan_from_dialog(self, config_dialog, network_entry, thread_var, timeout_var, method_var):
         """从配置对话框启动扫描
@@ -11716,7 +11836,8 @@ class SubnetPlannerApp:
         try:
             ip_network = ipaddress.ip_network(network, strict=False)
         except ValueError as e:
-            self.show_error(_('error'), f"{_('network_format_error')}: {str(e)}")
+            error_result = handle_ip_subnet_error(e)
+            self.show_error(_('error'), f"{_('network_format_error')}: {error_result.get('error', str(e))}")
             return
 
         try:
@@ -11762,12 +11883,16 @@ class SubnetPlannerApp:
         """
         from services.network_scanner import NetworkScanner
 
-        progress_dialog = self.create_dialog(_('network_scan'), 580, 420, resizable=False, modal=True)
+        progress_dialog = self.create_dialog(_('network_scan'), 800, 600, resizable=True, modal=True)
 
-        main_frame = ttk.Frame(progress_dialog, padding="10")
+        main_frame = ttk.Frame(progress_dialog, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        info_frame = ttk.Frame(main_frame)
+        # 上半部分：信息+进度（固定高度）
+        top_frame = ttk.Frame(main_frame)
+        top_frame.pack(fill=tk.X)
+
+        info_frame = ttk.Frame(top_frame)
         info_frame.pack(fill=tk.X, pady=(0, 5))
 
         scan_info_label = ttk.Label(info_frame, text=f"{_('scanning_network')} {network}")
@@ -11776,7 +11901,7 @@ class SubnetPlannerApp:
         status_label = ttk.Label(info_frame, text=_('preparing_to_scan'))
         status_label.pack(anchor=tk.W, pady=(2, 0))
 
-        progress_frame = ttk.Frame(main_frame)
+        progress_frame = ttk.Frame(top_frame)
         progress_frame.pack(fill=tk.X, pady=5)
 
         progress_var = tk.DoubleVar(value=0)
@@ -11786,24 +11911,26 @@ class SubnetPlannerApp:
         progress_pct_label = ttk.Label(progress_frame, text="0%")
         progress_pct_label.pack(anchor=tk.E)
 
-        result_label = ttk.Label(main_frame, text=f"{_('found_active_ips')}: 0")
-        result_label.pack(anchor=tk.W, pady=(5, 2))
+        result_label = ttk.Label(top_frame, text=f"{_('found_active_ips')}: 0")
+        result_label.pack(anchor=tk.W, fill=tk.X, pady=(5, 2))
+
+        # 下半部分：表格（自动填充剩余空间）
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=2)
 
         columns = ('ip_address', 'hostname')
-        result_tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=10)
+        result_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=10)
         result_tree.heading('ip_address', text=_('ip_address'))
         result_tree.heading('hostname', text=_('hostname'))
         result_tree.column('ip_address', width=160, anchor=tk.W)
         result_tree.column('hostname', width=300, anchor=tk.W)
 
-        tree_scroll = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=result_tree.yview)
+        tree_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=result_tree.yview)
         result_tree.configure(yscrollcommand=tree_scroll.set)
+        result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        tree_frame = ttk.Frame(main_frame)
-        tree_frame.pack(fill=tk.BOTH, expand=True, pady=2)
-        result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, in_=tree_frame)
-        tree_scroll.pack(side=tk.RIGHT, fill=tk.Y, in_=tree_frame)
-
+        # 按钮区域（固定在底部）
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(5, 0))
 
@@ -11811,20 +11938,31 @@ class SubnetPlannerApp:
         scan_state = {'completed': False, 'active_ips': [], 'dialog': progress_dialog}
 
         def cancel_scan():
-            """取消扫描"""
-            scanner.cancel()
-            progress_dialog.destroy()
-
-        def on_closing():
-            """处理对话框关闭事件"""
+            """取消扫描或关闭对话框"""
             if not scan_state['completed']:
                 scanner.cancel()
             progress_dialog.destroy()
 
+        def on_closing():
+            """处理对话框关闭事件"""
+            cancel_scan()
+
+        def import_results():
+            """导入扫描结果到数据库"""
+            progress_dialog.destroy()
+            self._process_scan_results(network, scan_state['active_ips'])
+
         progress_dialog.protocol("WM_DELETE_WINDOW", on_closing)
 
+        # 取消按钮（始终显示）
         cancel_button = ttk.Button(button_frame, text=_('cancel'), command=cancel_scan, width=10)
         cancel_button.pack(side=tk.RIGHT, padx=5)
+        
+        # 导入按钮（扫描完成后显示）
+        import_button = ttk.Button(button_frame, text=_('import'), command=import_results, width=10)
+        
+        # 绑定Escape键取消扫描
+        progress_dialog.bind('<Escape>', lambda e: cancel_scan())
 
         def on_progress(scanned, active, total, current_ip):
             """扫描进度回调"""
@@ -11854,19 +11992,30 @@ class SubnetPlannerApp:
             scan_state['completed'] = True
             scan_state['active_ips'] = active_ips
             if not progress_dialog.winfo_exists():
-                self._process_scan_results(network, active_ips)
                 return
             try:
                 progress_var.set(100)
                 progress_pct_label.config(text="100%")
                 status_label.config(text=_('scan_complete'))
-                result_label.config(text=f"{_('found_active_ips')}: {len(active_ips)}")
+                
+                # 按IP地址排序
+                def ip_to_int(ip_str):
+                    """将IP地址转换为整数以便排序"""
+                    return int(''.join(f'{int(octet):03d}' for octet in ip_str.split('.')))
+                
+                sorted_ips = sorted(active_ips, key=lambda x: ip_to_int(x['ip_address']))
+                scan_state['active_ips'] = sorted_ips
+                
+                # 清空表格并重新插入排序后的结果
+                for item in result_tree.get_children():
+                    result_tree.delete(item)
+                for ip_info in sorted_ips:
+                    result_tree.insert('', tk.END, values=(ip_info['ip_address'], ip_info['hostname']))
+                
+                result_label.config(text=f"{_('found_active_ips')}: {len(sorted_ips)}")
 
-                cancel_button.config(text=_('ok'))
-                cancel_button.config(command=lambda: self._on_scan_dialog_close(
-                    progress_dialog, network, active_ips))
-                progress_dialog.protocol("WM_DELETE_WINDOW", lambda: self._on_scan_dialog_close(
-                    progress_dialog, network, active_ips))
+                # 显示导入按钮
+                import_button.pack(side=tk.RIGHT, padx=5)
             except Exception:
                 pass
 
@@ -11908,7 +12057,17 @@ class SubnetPlannerApp:
             active_ips: 活动IP列表
         """
         dialog.destroy()
-        self._process_scan_results(network, active_ips)
+        
+        # 显示确认对话框，让用户确认是否导入扫描结果
+        if active_ips:
+            message = _('confirm_import_scan_results').format(count=len(active_ips), network=network)
+            confirm = self.show_custom_confirm(_('scan_complete'), message)
+            if confirm:
+                self._process_scan_results(network, active_ips)
+            else:
+                self.show_info(_('import_canceled'), _('scan_results_not_imported'))
+        else:
+            self.show_info(_('scan_complete'), _('no_active_ips_found'))
 
     def _process_scan_results(self, network, active_ips):
         """处理扫描结果，将活动IP添加到IPAM
@@ -12112,6 +12271,13 @@ class SubnetPlannerApp:
         # 网络CIDR输入
         _label, network_entry = dialog.add_field(_('network_cidr'), 1, 1, width=25)
         
+        # CIDR实时验证（必须带前缀）
+        def validate_cidr_input(event=None):
+            self.validate_cidr(network_entry.get(), network_entry, require_prefix=True)
+        
+        network_entry.bind('<FocusOut>', validate_cidr_input)
+        network_entry.bind('<KeyRelease>', validate_cidr_input)
+        
         # 描述输入
         _label, description_entry = dialog.add_field(_('description'), 2, 1, width=25)
         
@@ -12172,6 +12338,11 @@ class SubnetPlannerApp:
             
             if not network:
                 self.show_info(_('hint'), _('please_enter_network'))
+                return
+            
+            # 验证CIDR格式（必须带前缀）
+            if not self.validate_cidr(network, require_prefix=True):
+                self.show_info(_('hint'), _('invalid_cidr_format'))
                 return
             
             # 验证VLAN字段
@@ -14962,8 +15133,8 @@ class SubnetPlannerApp:
                 
                 if db_record_id:
                     try:
-                        # 根据记录ID删除IP地址
-                        success, message = self.ipam.delete_ip_by_id(db_record_id)
+                        # 根据记录ID清理已释放的IP地址（数据库层会再次验证状态）
+                        success, message = self.ipam.cleanup_released_ip_by_id(db_record_id)
                         if success:
                             success_count += 1
                         else:
@@ -16174,6 +16345,13 @@ class SubnetPlannerApp:
             ip_border, ip_entry = create_bordered_entry(main_frame)
             ip_border.grid(row=0, column=1, sticky="ew", pady=5, padx=(0, 10))
             
+            # IP地址实时验证（必须不带前缀）
+            def validate_ip_input(event=None):
+                self.validate_cidr(ip_entry.get(), ip_entry, require_prefix=False)
+            
+            ip_entry.bind('<FocusOut>', validate_ip_input)
+            ip_entry.bind('<KeyRelease>', validate_ip_input)
+            
             # 自动分配选项（只在分配/保留对话框中显示）
             if action_type == 'allocate_reserve':
                 auto_allocate_frame = ttk.Frame(main_frame)
@@ -16611,6 +16789,11 @@ class SubnetPlannerApp:
             description = description_entry.get().strip()
             expiry_date = expiry_entry.get().strip()
             
+            # 验证IP地址格式（必须不带前缀）
+            if ip and not self.validate_cidr(ip, require_prefix=False):
+                self.show_error(_('error'), _('invalid_ip_address_format'))
+                return False
+            
             # 使用统一验证规则：主机名和描述不能同时为空
             is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
             if not is_valid:
@@ -16658,6 +16841,9 @@ class SubnetPlannerApp:
         def on_cancel():
             dialog.result = False
             dialog.destroy()
+        
+        # 绑定Escape键关闭对话框
+        dialog.bind('<Escape>', lambda e: on_cancel())
         
         # 按钮变量
         allocate_btn = None

@@ -889,6 +889,20 @@
     "ja": "無効なCIDR形式",
     "ko": "유효하지 않은 CIDR 형식"
   },
+  "prefix_required": {
+    "zh": "需要输入CIDR格式（如 10.0.0.0/8）",
+    "zh_tw": "需要輸入CIDR格式（如 10.0.0.0/8）",
+    "en": "CIDR format required (e.g., 10.0.0.0/8)",
+    "ja": "CIDR形式が必要です（例：10.0.0.0/8）",
+    "ko": "CIDR 형식이 필요합니다（예: 10.0.0.0/8）"
+  },
+  "prefix_not_allowed": {
+    "zh": "不允许包含前缀（请输入纯IP地址，如 10.0.0.1）",
+    "zh_tw": "不允許包含前綴（請輸入純IP地址，如 10.0.0.1）",
+    "en": "Prefix not allowed (enter IP address only, e.g., 10.0.0.1)",
+    "ja": "プレフィックスは許可されていません（IPアドレスのみを入力してください、例：10.0.0.1）",
+    "ko": "접두사는 허용되지 않습니다（IP 주소만 입력하세요、예: 10.0.0.1）"
+  },
   "invalid_format": {
     "zh": "无效格式",
     "zh_tw": "無效格式",
@@ -1884,11 +1898,11 @@
     "ko": "가져오기/보내기"
   },
   "network_segment": {
-    "zh": "网段",
-    "zh_tw": "網段",
-    "en": "Network Segment",
-    "ja": "ネットワークセグメント",
-    "ko": "네트워크 세그먼트"
+    "zh": "IP地址范围",
+    "zh_tw": "IP位址範圍",
+    "en": "IP Range",
+    "ja": "IPアドレス範囲",
+    "ko": "IP 주소 범위"
   },
   "data_restore_failed": {
     "zh": "数据恢复失败",
@@ -2043,6 +2057,27 @@
     "ja": "スキャン完了",
     "zh_tw": "掃描完成",
     "ko": "스캔 완료"
+  },
+  "confirm_import_scan_results": {
+    "zh": "扫描完成，发现 {count} 个活动IP地址。\n\n是否将这些IP地址导入到网络 {network} 中？",
+    "en": "Scan complete, found {count} active IP addresses.\n\nDo you want to import these IP addresses into network {network}?",
+    "ja": "スキャン完了、{count}個のアクティブIPアドレスを発見しました。\n\nこれらのIPアドレスをネットワーク {network} にインポートしますか？",
+    "zh_tw": "掃描完成，發現 {count} 個活動IP位址。\n\n是否將這些IP位址匯入到網路 {network} 中？",
+    "ko": "스캔 완료, {count}개의 활성 IP 주소를 발견했습니다.\n\n이 IP 주소들을 네트워크 {network}에 가져오시겠습니까?"
+  },
+  "import_canceled": {
+    "zh": "导入已取消",
+    "en": "Import Canceled",
+    "ja": "インポートをキャンセル",
+    "zh_tw": "匯入已取消",
+    "ko": "가져오기 취소"
+  },
+  "scan_results_not_imported": {
+    "zh": "扫描结果未导入到数据库",
+    "en": "Scan results not imported to database",
+    "ja": "スキャン結果はデータベースにインポートされていません",
+    "zh_tw": "掃描結果未匯入到資料庫",
+    "ko": "스캔 결과가 데이터베이스에 가져오지 않았습니다"
   },
   "scan_failed": {
     "zh": "扫描失败",
@@ -2981,6 +3016,27 @@
     "en": "Different IP versions cannot be converted or merged",
     "ja": "異なるIPバージョンのアドレスは変換または統合できません",
     "ko": "서로 다른 IP 버전의 주소는 변환하거나 병합할 수 없습니다"
+  },
+  "please_enter_complete_ip_range": {
+    "zh": "请输入完整的IP范围",
+    "zh_tw": "請輸入完整的IP範圍",
+    "en": "Please enter complete IP range",
+    "ja": "完全なIP範囲を入力してください",
+    "ko": "완전한 IP 범위를 입력하세요"
+  },
+  "cannot_convert_ip_range_to_cidr": {
+    "zh": "无法将IP范围转换为CIDR",
+    "zh_tw": "無法將IP範圍轉換為CIDR",
+    "en": "Cannot convert IP range to CIDR",
+    "ja": "IP範囲をCIDRに変換できません",
+    "ko": "IP 범위를 CIDR로 변환할 수 없습니다"
+  },
+  "error_message": {
+    "zh": "错误信息",
+    "zh_tw": "錯誤訊息",
+    "en": "Error Message",
+    "ja": "エラーメッセージ",
+    "ko": "오류 메시지"
   },
   "no_chinese_font_found": {
     "zh": "未找到可用的中文字体",
@@ -5277,5 +5333,348 @@
     "en": "Cleanup Address",
     "ja": "アドレスをクリーンアップ",
     "ko": "주소 정리"
+  },
+  "data_migration_success": {
+    "zh": "数据迁移成功",
+    "zh_tw": "數據遷移成功",
+    "en": "Data migration successful",
+    "ja": "データ移行に成功しました",
+    "ko": "데이터 마이그레이션 성공"
+  },
+  "data_migration_failed": {
+    "zh": "数据迁移失败",
+    "zh_tw": "數據遷移失敗",
+    "en": "Data migration failed",
+    "ja": "データ移行に失敗しました",
+    "ko": "데이터 마이그레이션 실패"
+  },
+  "network_address_cannot_be_empty": {
+    "zh": "网络地址不能为空",
+    "zh_tw": "網路位址不能為空",
+    "en": "Network address cannot be empty",
+    "ja": "ネットワークアドレスは空にすることはできません",
+    "ko": "네트워크 주소는 비워둘 수 없습니다"
+  },
+  "network_already_exists": {
+    "zh": "网络已存在",
+    "zh_tw": "網路已存在",
+    "en": "Network already exists",
+    "ja": "ネットワークは既に存在します",
+    "ko": "네트워크가 이미 존재합니다"
+  },
+  "add_network_failed": {
+    "zh": "添加网络失败",
+    "zh_tw": "添加網路失敗",
+    "en": "Failed to add network",
+    "ja": "ネットワークの追加に失敗しました",
+    "ko": "네트워크 추가 실패"
+  },
+  "network_not_exists": {
+    "zh": "网络不存在",
+    "zh_tw": "網路不存在",
+    "en": "Network does not exist",
+    "ja": "ネットワークが存在しません",
+    "ko": "네트워크가 존재하지 않습니다"
+  },
+  "network_description_updated_successfully": {
+    "zh": "网络描述更新成功",
+    "zh_tw": "網路描述更新成功",
+    "en": "Network description updated successfully",
+    "ja": "ネットワークの説明が正常に更新されました",
+    "ko": "네트워크 설명 업데이트 성공"
+  },
+  "update_network_description_failed": {
+    "zh": "更新网络描述失败",
+    "zh_tw": "更新網路描述失敗",
+    "en": "Failed to update network description",
+    "ja": "ネットワークの説明の更新に失敗しました",
+    "ko": "네트워크 설명 업데이트 실패"
+  },
+  "network_vlan_updated_successfully": {
+    "zh": "网络VLAN更新成功",
+    "zh_tw": "網路VLAN更新成功",
+    "en": "Network VLAN updated successfully",
+    "ja": "ネットワークVLANが正常に更新されました",
+    "ko": "네트워크 VLAN 업데이트 성공"
+  },
+  "update_network_vlan_failed": {
+    "zh": "更新网络VLAN失败",
+    "zh_tw": "更新網路VLAN失敗",
+    "en": "Failed to update network VLAN",
+    "ja": "ネットワークVLANの更新に失敗しました",
+    "ko": "네트워크 VLAN 업데이트 실패"
+  },
+  "network_address_updated_successfully": {
+    "zh": "网络地址更新成功",
+    "zh_tw": "網路位址更新成功",
+    "en": "Network address updated successfully",
+    "ja": "ネットワークアドレスが正常に更新されました",
+    "ko": "네트워크 주소 업데이트 성공"
+  },
+  "update_network_address_failed": {
+    "zh": "更新网络地址失败",
+    "zh_tw": "更新網路位址失敗",
+    "en": "Failed to update network address",
+    "ja": "ネットワークアドレスの更新に失敗しました",
+    "ko": "네트워크 주소 업데이트 실패"
+  },
+  "old_network_not_exists": {
+    "zh": "旧网络不存在",
+    "zh_tw": "舊網路不存在",
+    "en": "Old network does not exist",
+    "ja": "古いネットワークが存在しません",
+    "ko": "이전 네트워크가 존재하지 않습니다"
+  },
+  "new_network_already_exists": {
+    "zh": "新网络地址已存在",
+    "zh_tw": "新網路位址已存在",
+    "en": "New network address already exists",
+    "ja": "新しいネットワークアドレスは既に存在します",
+    "ko": "새 네트워크 주소가 이미 존재합니다"
+  },
+  "remove_network_failed": {
+    "zh": "移除网络失败",
+    "zh_tw": "移除網路失敗",
+    "en": "Failed to remove network",
+    "ja": "ネットワークの削除に失敗しました",
+    "ko": "네트워크 제거 실패"
+  },
+  "network_has_ips_error": {
+    "zh": "网络中存在 {count} 个IP地址，请先删除这些IP地址",
+    "zh_tw": "網路中存在 {count} 個IP位址，請先刪除這些IP位址",
+    "en": "There are {count} IP addresses in the network, please remove them first",
+    "ja": "ネットワークに {count} 個のIPアドレスが存在します。これらを削除してください",
+    "ko": "네트워크에 {count}개의 IP 주소가 있습니다. 먼저 삭제해주세요"
+  },
+  "old_network_format_error": {
+    "zh": "旧网络格式错误",
+    "zh_tw": "舊網路格式錯誤",
+    "en": "Old network format error",
+    "ja": "古いネットワーク形式エラー",
+    "ko": "이전 네트워크 형식 오류"
+  },
+  "new_network_format_error": {
+    "zh": "新网络格式错误",
+    "zh_tw": "新網路格式錯誤",
+    "en": "New network format error",
+    "ja": "新しいネットワーク形式エラー",
+    "ko": "새 네트워크 형식 오류"
+  },
+  "ip_address_cannot_be_empty": {
+    "zh": "IP地址不能为空",
+    "zh_tw": "IP位址不能為空",
+    "en": "IP address cannot be empty",
+    "ja": "IPアドレスは空にすることはできません",
+    "ko": "IP 주소는 비워둘 수 없습니다"
+  },
+  "ip_address_format_error": {
+    "zh": "IP地址格式错误",
+    "zh_tw": "IP位址格式錯誤",
+    "en": "IP address format error",
+    "ja": "IPアドレス形式エラー",
+    "ko": "IP 주소 형식 오류"
+  },
+  "ip_record_not_exists": {
+    "zh": "IP地址记录不存在",
+    "zh_tw": "IP位址記錄不存在",
+    "en": "IP address record does not exist",
+    "ja": "IPアドレスレコードが存在しません",
+    "ko": "IP 주소 기록이 존재하지 않습니다"
+  },
+  "ip_migrated_successfully": {
+    "zh": "IP地址迁移成功",
+    "zh_tw": "IP位址遷移成功",
+    "en": "IP address migrated successfully",
+    "ja": "IPアドレスの移行に成功しました",
+    "ko": "IP 주소 이동 성공"
+  },
+  "migrate_ip_failed": {
+    "zh": "迁移IP地址失败",
+    "zh_tw": "遷移IP位址失敗",
+    "en": "Failed to migrate IP address",
+    "ja": "IPアドレスの移行に失敗しました",
+    "ko": "IP 주소 이동 실패"
+  },
+  "target_network_address_cannot_be_empty": {
+    "zh": "目标网络地址不能为空",
+    "zh_tw": "目標網路位址不能為空",
+    "en": "Target network address cannot be empty",
+    "ja": "ターゲットネットワークアドレスは空にすることはできません",
+    "ko": "대상 네트워크 주소는 비워둘 수 없습니다"
+  },
+  "target_network_format_error": {
+    "zh": "目标网络格式错误",
+    "zh_tw": "目標網路格式錯誤",
+    "en": "Target network format error",
+    "ja": "ターゲットネットワーク形式エラー",
+    "ko": "대상 네트워크 형식 오류"
+  },
+  "target_network_not_exists": {
+    "zh": "目标网络不存在",
+    "zh_tw": "目標網路不存在",
+    "en": "Target network does not exist",
+    "ja": "ターゲットネットワークが存在しません",
+    "ko": "대상 네트워크가 존재하지 않습니다"
+  },
+  "ip_not_in_target_network": {
+    "zh": "IP地址不在目标网络范围内",
+    "zh_tw": "IP位址不在目標網路範圍內",
+    "en": "IP address is not within the target network range",
+    "ja": "IPアドレスがターゲットネットワークの範囲外です",
+    "ko": "IP 주소가 대상 네트워크 범위에 없습니다"
+  },
+  "validation_failed": {
+    "zh": "验证失败",
+    "zh_tw": "驗證失敗",
+    "en": "Validation failed",
+    "ja": "検証に失敗しました",
+    "ko": "검증 실패"
+  },
+  "expiry_date_format_error": {
+    "zh": "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式",
+    "zh_tw": "過期日期格式錯誤，請使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式",
+    "en": "Invalid expiry date format, please use YYYY-MM-DD or YYYY-MM-DD HH:MM:SS format",
+    "ja": "有効期限の形式が無効です。YYYY-MM-DD または YYYY-MM-DD HH:MM:SS 形式を使用してください",
+    "ko": "만료 날짜 형식이 잘못되었습니다. YYYY-MM-DD 또는 YYYY-MM-DD HH:MM:SS 형식을 사용하십시오"
+  },
+  "record_not_exists": {
+    "zh": "记录不存在",
+    "zh_tw": "記錄不存在",
+    "en": "Record does not exist",
+    "ja": "レコードが存在しません",
+    "ko": "기록이 존재하지 않습니다"
+  },
+  "record_not_exists_or_not_updated": {
+    "zh": "记录不存在或未更新",
+    "zh_tw": "記錄不存在或未更新",
+    "en": "Record does not exist or not updated",
+    "ja": "レコードが存在しないか更新されていません",
+    "ko": "기록이 존재하지 않거나 업데이트되지 않았습니다"
+  },
+  "record_updated_successfully": {
+    "zh": "记录更新成功",
+    "zh_tw": "記錄更新成功",
+    "en": "Record updated successfully",
+    "ja": "レコードの更新に成功しました",
+    "ko": "기록 업데이트 성공"
+  },
+  "update_record_failed": {
+    "zh": "更新记录失败",
+    "zh_tw": "更新記錄失敗",
+    "en": "Failed to update record",
+    "ja": "レコードの更新に失敗しました",
+    "ko": "기록 업데이트 실패"
+  },
+  "specified_record_not_exists": {
+    "zh": "指定的记录不存在",
+    "zh_tw": "指定的記錄不存在",
+    "en": "Specified record does not exist",
+    "ja": "指定されたレコードが存在しません",
+    "ko": "지정된 기록이 존재하지 않습니다"
+  },
+  "no_available_ips_to_clean": {
+    "zh": "没有可用状态的IP地址需要清理",
+    "zh_tw": "沒有可用狀態的IP位址需要清理",
+    "en": "No available IP addresses to clean",
+    "ja": "クリーンアップする利用可能なIPアドレスはありません",
+    "ko": "정리할 사용 가능한 IP 주소가 없습니다"
+  },
+  "cleanup_ips_success": {
+    "zh": "成功清理 {count} 个可用状态的IP地址",
+    "zh_tw": "成功清理 {count} 個可用狀態的IP位址",
+    "en": "Successfully cleaned {count} available IP addresses",
+    "ja": "{count} 個の利用可能なIPアドレスを正常にクリーンアップしました",
+    "ko": "{count}개의 사용 가능한 IP 주소 정리 성공"
+  },
+  "cleanup_ips_failed": {
+    "zh": "清理可用IP地址失败",
+    "zh_tw": "清理可用IP位址失敗",
+    "en": "Failed to clean up available IP addresses",
+    "ja": "利用可能なIPアドレスのクリーンアップに失敗しました",
+    "ko": "사용 가능한 IP 주소 정리 실패"
+  },
+  "release_expired_ips_success": {
+    "zh": "成功释放 {count} 个过期IP地址",
+    "zh_tw": "成功釋放 {count} 個過期IP位址",
+    "en": "Successfully released {count} expired IP addresses",
+    "ja": "{count} 個の期限切れIPアドレスを正常に解放しました",
+    "ko": "{count}개의 만료된 IP 주소 해제 성공"
+  },
+  "no_expired_ips_to_release": {
+    "zh": "没有过期IP地址需要释放",
+    "zh_tw": "沒有過期IP位址需要釋放",
+    "en": "No expired IP addresses to release",
+    "ja": "解放する期限切れIPアドレスはありません",
+    "ko": "해제할 만료된 IP 주소가 없습니다"
+  },
+  "auto_release_expired_ips_failed": {
+    "zh": "自动释放过期IP地址失败",
+    "zh_tw": "自動釋放過期IP位址失敗",
+    "en": "Failed to auto-release expired IP addresses",
+    "ja": "期限切れIPアドレスの自動解放に失敗しました",
+    "ko": "만료된 IP 주소 자동 해제 실패"
+  },
+  "reserve_ip_failed": {
+    "zh": "保留IP地址失败",
+    "zh_tw": "保留IP位址失敗",
+    "en": "Failed to reserve IP address",
+    "ja": "IPアドレスの予約に失敗しました",
+    "ko": "IP 주소 예약 실패"
+  },
+  "no_conflicts_to_resolve": {
+    "zh": "没有冲突需要解决",
+    "zh_tw": "沒有衝突需要解決",
+    "en": "No conflicts to resolve",
+    "ja": "解決する競合はありません",
+    "ko": "해결할 충돌이 없습니다"
+  },
+  "conflict_resolved_successfully": {
+    "zh": "成功解决冲突，保留了1个记录，删除了{deleted_count}个记录",
+    "zh_tw": "成功解決衝突，保留了1個記錄，刪除了{deleted_count}個記錄",
+    "en": "Successfully resolved conflict, kept 1 record, deleted {deleted_count} records",
+    "ja": "競合を正常に解決しました。1つのレコードを保持し、{deleted_count}個のレコードを削除しました",
+    "ko": "충돌 해결 성공. 1개의 기록 유지, {deleted_count}개의 기록 삭제"
+  },
+  "no_ips_to_migrate": {
+    "zh": "没有要迁移的IP地址",
+    "zh_tw": "沒有要遷移的IP位址",
+    "en": "No IP addresses to migrate",
+    "ja": "移行するIPアドレスはありません",
+    "ko": "이동할 IP 주소가 없습니다"
+  },
+  "batch_migrate_success": {
+    "zh": "成功迁移 {count} 个IP地址",
+    "zh_tw": "成功遷移 {count} 個IP位址",
+    "en": "Successfully migrated {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを正常に移行しました",
+    "ko": "{count}개의 IP 주소 이동 성공"
+  },
+  "migrate_ip_failed_log": {
+    "zh": "迁移IP",
+    "zh_tw": "遷移IP",
+    "en": "Migrate IP",
+    "ja": "IPアドレスの移行",
+    "ko": "IP 주소 이동"
+  },
+  "migrate_exception": {
+    "zh": "迁移异常",
+    "zh_tw": "遷移異常",
+    "en": "Migration exception",
+    "ja": "移行例外",
+    "ko": "이동 예외"
+  },
+  "failed_to_generate_any_plan": {
+    "zh": "无法生成任何子网规划方案",
+    "zh_tw": "無法生成任何子網規劃方案",
+    "en": "Failed to generate any plan",
+    "ja": "サブネットプランを生成できません",
+    "ko": "서브넷 계획을 생성할 수 없습니다"
+  },
+  "invalid_ip_address_with_value": {
+    "zh": "无效的IP地址: {ip_address}",
+    "zh_tw": "無效的IP位址: {ip_address}",
+    "en": "Invalid IP address: {ip_address}",
+    "ja": "無効なIPアドレス: {ip_address}",
+    "ko": "유효하지 않은 IP 주소: {ip_address}"
   }
 }

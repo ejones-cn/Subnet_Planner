@@ -1,28 +1,72 @@
 import ipaddress
 
 from i18n import _
+from ip_subnet_calculator import handle_ip_subnet_error
 
 
 class ValidationService:
     def __init__(self, app=None):
         self.app = app
 
-    def validate_cidr(self, cidr_str, ip_version=None):
-        if not cidr_str:
-            return {'valid': True, 'error': None}
+    def validate_cidr(self, cidr_str, ip_version=None, require_prefix=None):
+        """统一的CIDR验证核心方法
 
+        Args:
+            cidr_str: 要验证的CIDR字符串
+            ip_version: 可选的IP版本字符串，如"IPv4"或"IPv6"
+            require_prefix: 前缀要求模式:
+                - None: 带不带前缀都可以（默认）
+                - True: 必须带前缀（如 10.0.0.0/8）
+                - False: 必须不带前缀（纯IP地址，如 10.0.0.1）
+
+        Returns:
+            验证结果字典: {'valid': bool, 'error': str, 'version': int}
+        """
+        text = cidr_str.strip()
+        
+        if not text:
+            return {'valid': True, 'error': None, 'version': None}
+        
+        has_prefix = '/' in text
+        
+        # 检查前缀要求
+        if require_prefix is True and not has_prefix:
+            return {'valid': False, 'error': _("prefix_required"), 'version': None}
+        elif require_prefix is False and has_prefix:
+            return {'valid': False, 'error': _("prefix_not_allowed"), 'version': None}
+        
         try:
-            network = ipaddress.ip_network(cidr_str, strict=False)
-            if ip_version:
-                expected_version = 6 if ip_version == "IPv6" else 4
-                if network.version != expected_version:
-                    return {
-                        'valid': False,
-                        'error': _("ip_version_mismatch")
-                    }
-            return {'valid': True, 'error': None}
+            if has_prefix:
+                # CIDR格式验证
+                network = ipaddress.ip_network(text, strict=False)
+                version = network.version
+                
+                if ip_version:
+                    expected_version = 6 if ip_version == "IPv6" else 4
+                    if network.version != expected_version:
+                        return {
+                            'valid': False,
+                            'error': _("ip_version_mismatch"),
+                            'version': version
+                        }
+                return {'valid': True, 'error': None, 'version': version}
+            else:
+                # 纯IP地址验证
+                addr = ipaddress.ip_address(text)
+                version = addr.version
+                
+                if ip_version:
+                    expected_version = 6 if ip_version == "IPv6" else 4
+                    if addr.version != expected_version:
+                        return {
+                            'valid': False,
+                            'error': _("ip_version_mismatch"),
+                            'version': version
+                        }
+                return {'valid': True, 'error': None, 'version': version}
         except ValueError as e:
-            return {'valid': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'valid': False, 'error': error_result.get('error', str(e)), 'version': None}
 
     def validate_ip_address(self, ip_str, ip_version=None):
         if not ip_str:
@@ -39,7 +83,8 @@ class ValidationService:
                     }
             return {'valid': True, 'error': None}
         except ValueError as e:
-            return {'valid': False, 'error': str(e)}
+            error_result = handle_ip_subnet_error(e)
+            return {'valid': False, 'error': error_result.get('error', str(e))}
 
     def validate_split_input(self, parent, split):
         if not parent:

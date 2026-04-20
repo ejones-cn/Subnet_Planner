@@ -184,6 +184,21 @@ class InvalidNetworkAddressProcessor(ErrorProcessor):
         return 'invalid_network_address_format'
 
 
+class InvalidIPAddressProcessor(ErrorProcessor):
+    """无效IP地址错误处理器"""
+    
+    def _can_handle_impl(self, error_msg: str) -> bool:
+        return "Invalid IP address:" in error_msg
+    
+    def _extract_params_impl(self, error_msg: str) -> Dict[str, str]:
+        ip_match = re.search(r"Invalid IP address:\s*([^\s]+)", error_msg)
+        ip_address = ip_match.group(1) if ip_match else "invalid_ip"
+        return {"ip_address": ip_address}
+    
+    def get_translation_key(self) -> str:
+        return 'invalid_ip_address_with_value'
+
+
 class CIDRHostBitsSetProcessor(ErrorProcessor):
     """CIDR主机位设置错误处理器"""
     
@@ -291,6 +306,7 @@ def _register_all_processors() -> None:
     # 1. 注册需要参数提取的复杂处理器
     _error_processor_registry.register(InvalidSubnetMaskProcessor())
     _error_processor_registry.register(InvalidNetworkAddressProcessor())
+    _error_processor_registry.register(InvalidIPAddressProcessor())
     _error_processor_registry.register(CIDRHostBitsSetProcessor())
     _error_processor_registry.register(InvalidOctetProcessor())
     _error_processor_registry.register(InvalidIPv6GroupTooLongProcessor())
@@ -955,14 +971,7 @@ def merge_subnets(subnets):
         # 验证输入并按IP版本分组
         ipv4_nets, ipv6_nets, invalid_subnets = _collect_invalid_subnets(subnets)
         
-        # 如果有无效子网，返回详细的错误信息
-        if invalid_subnets:
-            return {
-                "error": _('invalid_subnet_format').format(subnets=', '.join([item["subnet"] for item in invalid_subnets])),
-                "invalid_subnets": invalid_subnets
-            }
-        
-        # 允许分别合并不同IP版本的子网
+        # 允许分别合并不同IP版本的子网（即使有无效子网也继续处理有效子网）
         
         # 合并函数：对单个IP版本的子网列表进行合并，支持不同前缀长度的子网合并
         def merge_single_version(networks):
@@ -1072,7 +1081,7 @@ def merge_subnets(subnets):
         # 生成结果信息
         merged_info = [get_subnet_info(str(subnet)) for subnet in all_merged]
         
-        return {
+        result = {
             "original_subnets": subnets,
             "merged_subnets": merged_str,
             "merged_subnets_info": merged_info,
@@ -1082,6 +1091,13 @@ def merge_subnets(subnets):
             "ipv4_merged_count": len(merged_ipv4),
             "ipv6_merged_count": len(merged_ipv6)
         }
+        
+        # 如果有无效子网，添加到结果中
+        if invalid_subnets:
+            result["error"] = _('invalid_subnet_format').format(subnets=', '.join([item["subnet"] for item in invalid_subnets]))
+            result["invalid_subnets"] = invalid_subnets
+        
+        return result
 
     except ValueError as e:
         return handle_ip_subnet_error(e)

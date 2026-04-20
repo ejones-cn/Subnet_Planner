@@ -1,5 +1,4 @@
 import ipaddress
-import re
 
 from i18n import _
 from ip_subnet_calculator import (
@@ -169,16 +168,8 @@ class SubnetSplitService:
                 app.update_history_listbox()
 
         except ValueError as e:
-            error_msg = str(e)
-            if "not permitted" in error_msg and "Octet" in error_msg:
-                match = re.search(r"Octet\D*(\d+)", error_msg)
-                if match:
-                    octet = match.group(1)
-                    message = f"IP地址中包含无效的八位组 '{octet}'（必须小于等于255）"
-                else:
-                    message = error_msg
-            else:
-                message = error_msg
+            error_result = handle_ip_subnet_error(e)
+            message = error_result.get('error', str(e))
             app.clear_result()
             app.split_tree.insert("", 'end', values=(_("error"), message), tags=("error",))
         except Exception as e:

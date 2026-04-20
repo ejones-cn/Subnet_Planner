@@ -354,11 +354,11 @@ class IPAMSQLite:
             # 提交事务
             conn.commit()
             conn.close()
-            return True, "数据迁移成功"
+            return True, _("data_migration_success")
         except Exception as e:
             conn.rollback()
             conn.close()
-            return False, f"数据迁移失败: {str(e)}"
+            return False, f"{_("data_migration_failed")}: {str(e)}"
     
     def get_most_specific_network(self, ip_address: str) -> dict[str, str | int] | None:
         """获取IP地址最具体的归属网络
@@ -432,7 +432,7 @@ class IPAMSQLite:
         try:
             # 验证网络格式
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             
             # 验证VLAN字段
             if vlan:
@@ -446,7 +446,9 @@ class IPAMSQLite:
                 ip_network = ipaddress.ip_network(network_str, strict=False)
                 network_str = str(ip_network)
             except ValueError as e:
-                return False, f"网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -454,7 +456,7 @@ class IPAMSQLite:
                 # 检查网络是否已存在
                 cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 if cursor.fetchone():
-                    return False, "网络已存在"
+                    return False, _("network_already_exists")
                 
                 # 添加网络
                 created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -466,10 +468,10 @@ class IPAMSQLite:
                 _network_id = cursor.lastrowid
                 
                 conn.commit()
-                return True, "网络添加成功"
+                return True, _("network_added_successfully")
         except Exception as e:
-            print(f"添加网络失败: {str(e)}")
-            return False, f"添加网络失败: {str(e)}"
+            print(f"{_("add_network_failed")}: {str(e)}")
+            return False, f"{_("add_network_failed")}: {str(e)}"
     
     def allocate_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None, record_id: int | None = None) -> tuple[bool, str]:
         """分配IP地址
@@ -488,24 +490,26 @@ class IPAMSQLite:
         try:
             # 验证参数
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             if not ip_address:
-                return False, "IP地址不能为空"
+                return False, _("ip_address_cannot_be_empty")
             is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
             if not is_valid:
-                return False, error_msg or "验证失败"
+                return False, error_msg or _("validation_failed")
             
             # 验证IP地址格式
             try:
                 _ = ipaddress.ip_address(ip_address)
             except ValueError as e:
-                return False, f"IP地址格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("ip_address_format_error")}: {error_result.get('error', str(e))}"
             
             # 验证并标准化过期日期格式
             if expiry_date:
                 validated_date = self._validate_expiry_date(expiry_date)
                 if validated_date is None:
-                    return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+                    return False, _("expiry_date_format_error")
                 expiry_date = validated_date
             
             # 找到最具体的网络
@@ -517,7 +521,7 @@ class IPAMSQLite:
                     _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                     network_row = cursor.fetchone()
                     if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
-                        return False, "网络不存在"
+                        return False, _("network_not_exists")
                     _network_id = int(network_row[0])
             else:
                 _network_id = int(most_specific_network['id'])
@@ -928,7 +932,7 @@ class IPAMSQLite:
     
     def delete_ip_by_id(self, ip_id: int) -> tuple[bool, str]:
         """根据ID删除IP地址记录
-        
+
         Args:
             ip_id: IP地址记录ID
             
@@ -961,6 +965,52 @@ class IPAMSQLite:
                 return True, "IP地址记录删除成功"
         except Exception as e:
             print(f"删除IP地址记录失败: {str(e)}")
+            return False, f"删除IP地址记录失败: {str(e)}"
+
+    def cleanup_released_ip_by_id(self, ip_id: int) -> tuple[bool, str]:
+        """根据ID清理已释放状态的IP地址记录
+
+        Args:
+            ip_id: IP地址记录ID
+            
+        Returns:
+            Tuple[bool, str]: (是否清理成功, 错误信息)
+        """
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                
+                # 获取IP地址信息和状态
+                _ = cursor.execute('SELECT ip_address, status FROM ip_addresses WHERE id = ?', (ip_id,))
+                ip_row = cursor.fetchone()
+                if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 2:
+                    return False, "IP地址记录不存在"
+                
+                ip_address: str = str(ip_row[0])
+                status: str = str(ip_row[1])
+                
+                # 检查状态是否为已释放
+                if status != 'released':
+                    return False, f"IP地址 {ip_address} 状态为 {status}，不是已释放状态，无法清理"
+                
+                # 删除已释放状态的IP地址记录
+                _ = cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip_id, 'released'))
+                
+                # 检查是否真的删除了记录（状态可能在查询和删除之间被修改）
+                if cursor.rowcount == 0:
+                    return False, f"IP地址 {ip_address} 状态已变更，清理失败"
+                
+                # 记录清理历史
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                _ = cursor.execute('''
+                INSERT INTO allocation_history (ip_address, action, performed_by, performed_at)
+                VALUES (?, ?, ?, ?)
+                ''', (ip_address, 'cleanup', 'admin', now))
+                
+                conn.commit()
+                return True, "IP地址清理成功"
+        except Exception as e:
+            print(f"清理IP地址失败: {str(e)}")
             return False, f"删除IP地址记录失败: {str(e)}"
     
     def get_ip_info(self, ip_address: str) -> dict[str, str | int] | None:
@@ -1092,7 +1142,7 @@ class IPAMSQLite:
         """
         is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
         if not is_valid:
-            return False, error_msg or "验证失败"
+            return False, error_msg or _("validation_failed")
         
         if expiry_date == "None" or expiry_date == "":
             expiry_date = None
@@ -1101,7 +1151,7 @@ class IPAMSQLite:
         if expiry_date:
             validated_date = self._validate_expiry_date(expiry_date)
             if validated_date is None:
-                return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+                return False, _("expiry_date_format_error")
             expiry_date = validated_date
         
         try:
@@ -1113,7 +1163,7 @@ class IPAMSQLite:
             record = cursor.fetchone()
             if not record or not isinstance(record, tuple) or len(record) < 2:
                 conn.close()
-                return False, "记录不存在"
+                return False, _("record_not_exists")
             
             ip_address = str(record[0])
             _ = str(record[1])
@@ -1130,7 +1180,7 @@ class IPAMSQLite:
             # 检查是否有记录被更新
             if cursor.rowcount == 0:
                 conn.close()
-                return False, "记录不存在或未更新"
+                return False, _("record_not_exists_or_not_updated")
             
             # 记录更新历史
             _ = cursor.execute('''
@@ -1141,9 +1191,9 @@ class IPAMSQLite:
             
             conn.commit()
             conn.close()
-            return True, "记录更新成功"
+            return True, _("record_updated_successfully")
         except Exception as e:
-            return False, f"更新记录失败: {str(e)}"
+            return False, f"{_("update_record_failed")}: {str(e)}"
     
     def update_ip_info(self, ip_address: str, hostname: str | None, description: str | None, mac_address: str = '') -> tuple[bool, str]:
         """更新IP地址信息
@@ -1935,7 +1985,7 @@ class IPAMSQLite:
             
             if not available_ips:
                 conn.close()
-                return True, "没有可用状态的IP地址需要清理"
+                return True, _("no_available_ips_to_clean")
             
             # 记录清理历史
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1953,9 +2003,9 @@ class IPAMSQLite:
             
             conn.commit()
             conn.close()
-            return True, f"成功清理 {len(available_ips)} 个可用状态的IP地址"
+            return True, _("cleanup_ips_success").format(count=len(available_ips))
         except Exception as e:
-            return False, f"清理可用IP地址失败: {str(e)}"
+            return False, f"{_("cleanup_ips_failed")}: {str(e)}"
     
     def get_ip_status(self, ip_address: str) -> str:
         """获取IP地址状态
@@ -2060,11 +2110,11 @@ class IPAMSQLite:
             conn.close()
             
             if released_count > 0:
-                return True, f"成功释放 {released_count} 个过期IP地址", released_count
+                return True, _("release_expired_ips_success").format(count=released_count), released_count
             else:
-                return True, "没有过期IP地址需要释放", 0
+                return True, _("no_expired_ips_to_release"), 0
         except Exception as e:
-            return False, f"自动释放过期IP地址失败: {str(e)}", 0
+            return False, f"{_("auto_release_expired_ips_failed")}: {str(e)}", 0
     
     def reserve_ip(self, network_str: str, ip_address: str, hostname: str, description: str = "", expiry_date: str | None = None, record_id: int | None = None) -> tuple[bool, str]:
         """保留IP地址
@@ -2083,24 +2133,26 @@ class IPAMSQLite:
         try:
             # 验证参数
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             if not ip_address:
-                return False, "IP地址不能为空"
+                return False, _("ip_address_cannot_be_empty")
             is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
             if not is_valid:
-                return False, error_msg or "验证失败"
+                return False, error_msg or _("validation_failed")
             
             # 验证IP地址格式
             try:
                 _ = ipaddress.ip_address(ip_address)
             except ValueError as e:
-                return False, f"IP地址格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("ip_address_format_error")}: {error_result.get('error', str(e))}"
             
             # 验证并标准化过期日期格式
             if expiry_date:
                 validated_date = self._validate_expiry_date(expiry_date)
                 if validated_date is None:
-                    return False, "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式"
+                    return False, _("expiry_date_format_error")
                 expiry_date = validated_date
             
             # 找到最具体的网络
@@ -2113,7 +2165,7 @@ class IPAMSQLite:
                 network_row = cursor.fetchone()
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
                     conn.close()
-                    return False, "网络不存在"
+                    return False, _("network_not_exists")
                 _network_id = int(network_row[0])
                 conn.close()
             else:
@@ -2166,7 +2218,7 @@ class IPAMSQLite:
             conn.close()
             return True, "IP地址保留成功"
         except Exception as e:
-            return False, f"保留IP地址失败: {str(e)}"
+            return False, f"{_("reserve_ip_failed")}: {str(e)}"
 
     def update_network_description(self, network_str: str, description: str) -> tuple[bool, str]:
         """更新网络描述
@@ -2180,13 +2232,15 @@ class IPAMSQLite:
         """
         try:
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             
             try:
                 ip_network = ipaddress.ip_network(network_str, strict=False)
                 network_str = str(ip_network)
             except ValueError as e:
-                return False, f"网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2195,16 +2249,16 @@ class IPAMSQLite:
                 _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 network_row = cursor.fetchone()
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
-                    return False, "网络不存在"
+                    return False, _("network_not_exists")
                 
                 # 更新网络描述
                 _ = cursor.execute('UPDATE networks SET description = ?, updated_at = datetime("now") WHERE id = ?', 
                              (description, int(network_row[0])))
                 
                 conn.commit()
-            return True, "网络描述更新成功"
+            return True, _("network_description_updated_successfully")
         except Exception as e:
-            return False, f"更新网络描述失败: {str(e)}"
+            return False, f"{_("update_network_description_failed")}: {str(e)}"
     
     def update_network_vlan(self, network_str: str, vlan: str) -> tuple[bool, str]:
         """更新网络VLAN
@@ -2218,7 +2272,7 @@ class IPAMSQLite:
         """
         try:
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             
             # 验证VLAN字段
             if vlan:
@@ -2232,7 +2286,9 @@ class IPAMSQLite:
                 ip_network = ipaddress.ip_network(network_str, strict=False)
                 network_str = str(ip_network)
             except ValueError as e:
-                return False, f"网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2241,16 +2297,16 @@ class IPAMSQLite:
                 cursor.execute('SELECT id FROM networks WHERE network_address = ?', (network_str,))
                 network_row = cursor.fetchone()
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
-                    return False, "网络不存在"
+                    return False, _("network_not_exists")
                 
                 # 更新网络VLAN
                 cursor.execute('UPDATE networks SET vlan = ?, updated_at = datetime("now") WHERE id = ?', 
                              (vlan, int(network_row[0])))
                 
                 conn.commit()
-            return True, "网络VLAN更新成功"
+            return True, _("network_vlan_updated_successfully")
         except Exception as e:
-            return False, f"更新网络VLAN失败: {str(e)}"
+            return False, f"{_("update_network_vlan_failed")}: {str(e)}"
     
     def update_network(self, old_network: str, new_network: str) -> tuple[bool, str]:
         """更新网络地址
@@ -2264,21 +2320,25 @@ class IPAMSQLite:
         """
         try:
             if not old_network or not new_network:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             
             # 验证旧网络格式
             try:
                 old_ip_network = ipaddress.ip_network(old_network, strict=False)
                 old_network_str = str(old_ip_network)
             except ValueError as e:
-                return False, f"旧网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("old_network_format_error")}: {error_result.get('error', str(e))}"
             
             # 验证新网络格式
             try:
                 new_ip_network = ipaddress.ip_network(new_network, strict=False)
                 new_network_str = str(new_ip_network)
             except ValueError as e:
-                return False, f"新网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("new_network_format_error")}: {error_result.get('error', str(e))}"
             
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
@@ -2287,22 +2347,22 @@ class IPAMSQLite:
                 _ = cursor.execute('SELECT id FROM networks WHERE network_address = ?', (old_network_str,))
                 network_row = cursor.fetchone()
                 if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
-                    return False, "旧网络不存在"
+                    return False, _("old_network_not_exists")
                 
                 # 检查新网络是否已存在
                 _ = cursor.execute('SELECT id FROM networks WHERE network_address = ? AND id != ?', (new_network_str, int(network_row[0])))
                 existing_row = cursor.fetchone()
                 if existing_row:
-                    return False, "新网络地址已存在"
+                    return False, _("new_network_already_exists")
                 
                 # 更新网络地址
                 _ = cursor.execute('UPDATE networks SET network_address = ?, updated_at = datetime("now") WHERE id = ?', 
                              (new_network_str, int(network_row[0])))
                 
                 conn.commit()
-            return True, "网络地址更新成功"
+            return True, _("network_address_updated_successfully")
         except Exception as e:
-            return False, f"更新网络地址失败: {str(e)}"
+            return False, f"{_("update_network_address_failed")}: {str(e)}"
 
     def check_ip_conflicts(self, ip_address: str) -> list[dict[str, str | int | None]]:
         """检测IP地址冲突
@@ -2364,7 +2424,7 @@ class IPAMSQLite:
             # 检查是否存在冲突
             conflicts = self.check_ip_conflicts(ip_address)
             if not conflicts:
-                return True, "没有冲突需要解决"
+                return True, _("no_conflicts_to_resolve")
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -2380,7 +2440,7 @@ class IPAMSQLite:
                     if not keep_record:
                         conn.rollback()
                         conn.close()
-                        return False, "指定的记录不存在"
+                        return False, _("specified_record_not_exists")
                 else:
                     # 保留最新的记录（按创建时间排序）
                     conflicts.sort(key=lambda x: x['created_at'] or '', reverse=True)
@@ -2402,14 +2462,14 @@ class IPAMSQLite:
                 
                 conn.commit()
                 conn.close()
-                return True, f"成功解决冲突，保留了1个记录，删除了{deleted_count}个记录"
+                return True, _("conflict_resolved_successfully").format(deleted_count=deleted_count)
             except Exception:
                 conn.rollback()
                 raise
             finally:
                 conn.close()
         except Exception as e:
-            return False, f"解决冲突失败: {str(e)}"
+            return False, f"{_("resolve_conflict_failed")}: {str(e)}"
     
     def remove_network(self, network_str: str) -> tuple[bool, str]:
         """移除网络
@@ -2422,13 +2482,15 @@ class IPAMSQLite:
         """
         try:
             if not network_str:
-                return False, "网络地址不能为空"
+                return False, _("network_address_cannot_be_empty")
             
             try:
                 ip_network = ipaddress.ip_network(network_str, strict=False)
                 network_str = str(ip_network)
             except ValueError as e:
-                return False, f"网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("network_format_error")}: {error_result.get('error', str(e))}"
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -2438,7 +2500,7 @@ class IPAMSQLite:
             network_row = cursor.fetchone()
             if not network_row or not isinstance(network_row, tuple) or len(network_row) < 1:
                 conn.close()
-                return False, "网络不存在"
+                return False, _("network_not_exists")
             
             network_id = int(network_row[0])
             
@@ -2456,16 +2518,16 @@ class IPAMSQLite:
                         continue
             if ip_count > 0:
                 conn.close()
-                return False, f"网络中存在 {ip_count} 个IP地址，请先删除这些IP地址"
+                return False, _("network_has_ips_error").format(count=ip_count)
             
             # 移除网络
             _ = cursor.execute('DELETE FROM networks WHERE id = ?', (network_id,))
             
             conn.commit()
             conn.close()
-            return True, "网络移除成功"
+            return True, _("network_removed_successfully")
         except Exception as e:
-            return False, f"移除网络失败: {str(e)}"
+            return False, f"{_("remove_network_failed")}: {str(e)}"
     
     def get_overall_stats(self) -> dict[str, int]:
         """获取整体统计信息
@@ -2918,26 +2980,30 @@ class IPAMSQLite:
         """
         try:
             if not ip_address:
-                return False, "IP地址不能为空"
+                return False, _("ip_address_cannot_be_empty")
             if not new_network_str:
-                return False, "目标网络地址不能为空"
+                return False, _("target_network_address_cannot_be_empty")
             
             # 验证IP地址格式
             try:
                 ip_obj = ipaddress.ip_address(ip_address)
             except ValueError as e:
-                return False, f"IP地址格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("ip_address_format_error")}: {error_result.get('error', str(e))}"
             
             # 验证目标网络格式
             try:
                 new_network = ipaddress.ip_network(new_network_str, strict=False)
                 new_network_str = str(new_network)
             except ValueError as e:
-                return False, f"目标网络格式错误: {str(e)}"
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("target_network_format_error")}: {error_result.get('error', str(e))}"
             
             # 检查IP是否在目标网络内
             if ip_obj not in new_network:
-                return False, "IP地址不在目标网络范围内"
+                return False, _("ip_not_in_target_network")
             
             # 检查目标网络是否存在
             conn = sqlite3.connect(self.db_file)
@@ -2948,7 +3014,7 @@ class IPAMSQLite:
                 new_network_row = cursor.fetchone()
                 if not new_network_row or not isinstance(new_network_row, tuple) or len(new_network_row) < 1:
                     conn.close()
-                    return False, "目标网络不存在"
+                    return False, _("target_network_not_exists")
                 
                 # 获取要迁移的记录
                 if record_id:
@@ -2962,7 +3028,7 @@ class IPAMSQLite:
                 
                 if not ip_row or not isinstance(ip_row, tuple) or len(ip_row) < 4:
                     conn.close()
-                    return False, "IP地址记录不存在"
+                    return False, _("ip_record_not_exists")
                 
                 _ip_id = int(ip_row[0])
                 _status = str(ip_row[1])
@@ -2978,14 +3044,14 @@ class IPAMSQLite:
                 
                 conn.commit()
                 conn.close()
-                return True, "IP地址迁移成功"
+                return True, _("ip_migrated_successfully")
             except Exception:
                 conn.rollback()
                 raise
             finally:
                 conn.close()
         except Exception as e:
-            return False, f"迁移IP地址失败: {str(e)}"
+            return False, f"{_("migrate_ip_failed")}: {str(e)}"
 
     def batch_migrate_ips(self, ip_records: list[dict[str, str | int]], new_network_str: str) -> tuple[bool, str, int]:
         """批量迁移IP地址到新网络
@@ -3001,16 +3067,18 @@ class IPAMSQLite:
         """
         try:
             if not ip_records:
-                return False, "没有要迁移的IP地址", 0
+                return False, _("no_ips_to_migrate"), 0
             if not new_network_str:
-                return False, "目标网络地址不能为空", 0
+                return False, _("target_network_address_cannot_be_empty"), 0
             
             # 验证目标网络格式
             try:
                 new_network = ipaddress.ip_network(new_network_str, strict=False)
                 new_network_str = str(new_network)
             except ValueError as e:
-                return False, f"目标网络格式错误: {str(e)}", 0
+                from ip_subnet_calculator import handle_ip_subnet_error
+                error_result = handle_ip_subnet_error(e)
+                return False, f"{_("target_network_format_error")}: {error_result.get('error', str(e))}", 0
             
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -3129,15 +3197,15 @@ class IPAMSQLite:
                         ip_mapping.append(f"{old_ip_address} -> {new_ip_address}")
                         migrated_count += 1
                     except Exception as e:
-                        logging.error(f"迁移IP {record.get('ip_address')} 失败: {str(e)}")
-                        skipped_ips.append(f"{record.get('ip_address', '未知')} (迁移异常: {str(e)})")
+                        logging.error(f"{_("migrate_ip_failed_log")} {record.get('ip_address')}: {str(e)}")
+                        skipped_ips.append(f"{record.get('ip_address', _("unknown"))} ({_("migrate_exception")}: {str(e)})")
                         continue
                 
                 conn.commit()
                 conn.close()
                 
                 if migrated_count > 0:
-                    message = f"成功迁移 {migrated_count} 个IP地址"
+                    message = _("batch_migrate_success").format(count=migrated_count)
                     if ip_mapping:
                         message += f": {', '.join(ip_mapping[:5])}"
                         if len(ip_mapping) > 5:
