@@ -21,11 +21,41 @@ import re
 import ipaddress
 import math
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Pattern, Union
+from typing import Dict, List, Optional, Pattern, TypedDict, Union
 
 # 导入本地模块
 from version import get_version
 from i18n import _
+
+
+class SubnetInfo(TypedDict):
+    """子网详细信息类型"""
+    network: str
+    netmask: str
+    wildcard: str
+    broadcast: str
+    cidr: str
+    prefixlen: int
+    num_addresses: int
+    usable_addresses: int
+    host_range_start: str
+    host_range_end: str
+    version: int
+
+
+class SplitResult(TypedDict):
+    """子网切分结果类型"""
+    parent: str
+    split: str
+    remaining_subnets: List[str]
+    parent_info: SubnetInfo
+    split_info: SubnetInfo
+    remaining_subnets_info: List[SubnetInfo]
+
+
+class ErrorResult(TypedDict):
+    """错误结果类型"""
+    error: str
 
 
 # 错误处理器抽象基类
@@ -442,7 +472,7 @@ def _collect_invalid_subnets(subnets):
     return ipv4_nets, ipv6_nets, invalid_subnets
 
 
-def handle_ip_subnet_error(error):
+def handle_ip_subnet_error(error) -> ErrorResult:
     """
     通用IP子网错误处理函数
 
@@ -566,7 +596,7 @@ def ipv6_to_ipv4(ipv6_str):
         return handle_ip_subnet_error(e)
 
 
-def get_subnet_info(network_str):
+def get_subnet_info(network_str) -> Union[SubnetInfo, ErrorResult]:
     """
     获取子网的详细信息，支持IPv4和IPv6
     """
@@ -637,7 +667,7 @@ def get_subnet_info(network_str):
         return handle_ip_subnet_error(e)
 
 
-def split_subnet(parent_cidr, split_cidr):
+def split_subnet(parent_cidr, split_cidr) -> Union[SplitResult, ErrorResult]:
     """
     将split_cidr从parent_cidr中切分出来，返回剩余的子网列表
     

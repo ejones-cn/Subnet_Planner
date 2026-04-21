@@ -77,13 +77,6 @@
     "ja": "ネットワークの削除に失敗しました",
     "ko": "네트워크 삭제에 실패했습니다"
   },
-  "confirm_cleanup_available_ips": {
-    "zh": "确定要清理所有可用状态的IP地址吗？",
-    "zh_tw": "確定要清理所有可用狀態的IP位址嗎？",
-    "en": "Are you sure you want to clean up all available IP addresses?",
-    "ja": "利用可能なすべてのIPアドレスをクリーンアップしてもよろしいですか？",
-    "ko": "사용 가능한 모든 IP 주소를 정리하시겠습니까?"
-  },
   "available_ips_detected": {
     "zh": "检测到可用IP地址",
     "zh_tw": "檢測到可用IP位址",
@@ -126,20 +119,6 @@
     "ja": "{count}個のIPアドレスを正常にクリーンアップしました",
     "ko": "{count}개의 IP 주소를 성공적으로 정리했습니다"
   },
-  "export": {
-    "zh": "导出",
-    "zh_tw": "匯出",
-    "en": "Export",
-    "ja": "エクスポート",
-    "ko": "내보내기"
-  },
-  "execute": {
-    "zh": "执行",
-    "zh_tw": "執行",
-    "en": "Execute",
-    "ja": "実行",
-    "ko": "실행"
-  },
   "add": {
     "zh": "添加",
     "zh_tw": "新增",
@@ -167,13 +146,6 @@
     "en": "Import",
     "ja": "取込",
     "ko": "임포트"
-  },
-  "save": {
-    "zh": "保存",
-    "zh_tw": "儲存",
-    "en": "Save",
-    "ja": "保存",
-    "ko": "저장"
   },
   "add_subnet_requirement": {
     "zh": "添加子网需求",
@@ -371,13 +343,6 @@
     "ja": "↔",
     "ko": "↔"
   },
-  "import_requirements": {
-    "zh": "导入",
-    "zh_tw": "匯入",
-    "en": "Import",
-    "ja": "取込",
-    "ko": "임포트"
-  },
   "planning_result": {
     "zh": "规划结果",
     "zh_tw": "規劃結果",
@@ -420,20 +385,6 @@
     "ja": "ヒント",
     "ko": "알림"
   },
-  "click_execute_split_to_start": {
-    "zh": "点击'执行切分'按钮开始操作...",
-    "zh_tw": "點擊'執行切分'按鈕開始操作…",
-    "en": "Click 'Execute Split' to start operation...",
-    "ja": "「分割を実行」ボタンをクリックして操作を開始してください...",
-    "ko": "'분할 수행' 버튼을 클릭하여 시작하세요..."
-  },
-  "click_execute_planning_to_start": {
-    "zh": "点击'执行规划'按钮开始操作...",
-    "zh_tw": "點擊'執行規劃'按鈕開始操作…",
-    "en": "Click 'Execute Planning' to start operation...",
-    "ja": "「計画を実行」ボタンをクリックして操作を開始してください...",
-    "ko": "'계획 실행' 버튼을 클릭하여 시작하세요..."
-  },
   "subnet_name": {
     "zh": "子网名称",
     "zh_tw": "子網名稱",
@@ -469,13 +420,6 @@
     "ja": "取込ファイルを選択",
     "ko": "가져오려는 파일 선택"
   },
-  "file_parse_failed": {
-    "zh": "文件解析失败",
-    "zh_tw": "檔案解析失敗",
-    "en": "File Parsing Failed",
-    "ja": "ファイル解析に失敗",
-    "ko": "파일 구문 분석 실패"
-  },
   "import_requirements_pool": {
     "zh": "导入需求池",
     "zh_tw": "匯入需求池",
@@ -496,13 +440,6 @@
     "en": "Save Template",
     "ja": "テンプレートを保存",
     "ko": "템플릿 저장"
-  },
-  "template_generation_failed": {
-    "zh": "模板生成失败",
-    "zh_tw": "範本生成失敗",
-    "en": "Template Generation Failed",
-    "ja": "テンプレート生成に失敗",
-    "ko": "템플릿 생성 실패"
   },
   "export_planning": {
     "zh": "导出规划",
@@ -636,13 +573,6 @@
     "en": "Convert to CIDR",
     "ja": "CIDRに変換",
     "ko": "CIDR로 변환"
-  },
-  "cidr_result": {
-    "zh": "合并结果",
-    "zh_tw": "合併結果",
-    "en": "Merge Result",
-    "ja": "合併結果",
-    "ko": "병합 결과"
   },
   "ipv4_address_info": {
     "zh": "IPv4地址信息查询",
@@ -924,13 +854,6 @@
     "ja": "IPバージョンが互換性がありません：親ネットワークと分割セグメントは同じIPバージョン（IPv4またはIPv6）でなければなりません",
     "ko": "IP 버전이 호환되지 않습니다. 상위 네트워크와 분할 세그먼트는 동일한 IP 버전 (IPv4 또는 IPv6) 이어야 합니다."
   },
-  "all_subnets_must_be_same_ip_version": {
-    "zh": "IP版本不兼容：所有子网必须是相同的IP版本（IPv4或IPv6）",
-    "zh_tw": "IP版本不兼容：所有子網必須是相同的IP版本（IPv4或IPv6）",
-    "en": "All subnets must be the same IP version",
-    "ja": "すべてのサブネットは同じIPバージョンでなければなりません",
-    "ko": "모든 서브넷은 동일한 IP 버전이어야 합니다"
-  },
   "parent_and_split_cidr_cannot_be_empty": {
     "zh": "父网段和切分网段都不能为空！",
     "zh_tw": "父網段和切分網段都不能為空！",
@@ -1078,62 +1001,6 @@
     "ja": "未知",
     "ko": "알 수 없는"
   },
-  "loopback_address": {
-    "zh": "回环地址",
-    "zh_tw": "迴環位址",
-    "en": "Loopback Address",
-    "ja": "ループバックアドレス",
-    "ko": "루프백 주소"
-  },
-  "unspecified_address": {
-    "zh": "未指定地址",
-    "zh_tw": "未指定位址",
-    "en": "Unspecified Address",
-    "ja": "未指定アドレス",
-    "ko": "주소가 지정되지 않았습니다"
-  },
-  "multicast_address": {
-    "zh": "组播地址",
-    "zh_tw": "群播位址",
-    "en": "Multicast Address",
-    "ja": "マルチキャストアドレス",
-    "ko": "멀티캐스트 주소"
-  },
-  "link_local_unicast_address": {
-    "zh": "链路本地单播地址",
-    "zh_tw": "鏈路本地單播位址",
-    "en": "Link-Local Unicast Address",
-    "ja": "リンクローカルユニキャストアドレス",
-    "ko": "로컬 유니캐스트 주소 연결"
-  },
-  "unique_local_unicast_address": {
-    "zh": "唯一本地单播地址 (ULA)",
-    "zh_tw": "唯一本地單播位址 (ULA)",
-    "en": "Unique Local Unicast Address (ULA)",
-    "ja": "ユニークローカルユニキャストアドレス （ULA）",
-    "ko": "ULA 유니캐스트"
-  },
-  "documentation_test_address": {
-    "zh": "文档/测试地址",
-    "zh_tw": "文檔/測試位址",
-    "en": "Documentation/Test Address",
-    "ja": "ドキュメント/テストアドレス",
-    "ko": "문서/테스트 URL"
-  },
-  "global_unicast_address": {
-    "zh": "全球单播地址",
-    "zh_tw": "全球單播位址",
-    "en": "Global Unicast Address",
-    "ja": "グローバルユニキャストアドレス",
-    "ko": "글로벌 유니캐스트 주소"
-  },
-  "ipv4_mapped_ipv6_address": {
-    "zh": "IPv4映射的IPv6地址",
-    "zh_tw": "IPv4映射的IPv6位址",
-    "en": "IPv4-Mapped IPv6 Address",
-    "ja": "IPv4マップIPv6アドレス",
-    "ko": "IPv4 매핑 IPv6 주소"
-  },
   "total_hosts": {
     "zh": "总主机数",
     "en": "Total Hosts",
@@ -1184,13 +1051,6 @@
     "ko": "매핑된 IPv4 주소"
   },
   "address_properties": {
-    "zh": "地址属性",
-    "en": "Address Properties",
-    "ja": "アドレスプロパティ",
-    "zh_tw": "位址屬性",
-    "ko": "주소 속성"
-  },
-  "section_address_properties": {
     "zh": "地址属性",
     "en": "Address Properties",
     "ja": "アドレスプロパティ",
@@ -1442,13 +1302,6 @@
     "zh_tw": "IPv6查詢",
     "ko": "IPv6 조회"
   },
-  "ipv6_no_broadcast_remark": {
-    "zh": "IPv6没有广播地址，使用多播地址代替",
-    "en": "IPv6 has no broadcast address, use multicast address instead",
-    "ja": "IPv6にはブロードキャストアドレスがなく、マルチキャストアドレスを使用します",
-    "zh_tw": "IPv6沒有廣播位址，使用多播位址代替",
-    "ko": "IPv6에는 브로드캐스트 주소가 없으며 멀티캐스트 주소를 대신 사용합니다"
-  },
   "multicast_address_note": {
     "zh": "多播地址说明",
     "en": "Multicast Address Note",
@@ -1505,41 +1358,6 @@
     "zh_tw": "描述",
     "ko": "설명"
   },
-  "hosts": {
-    "zh": "主机数量",
-    "en": "Hosts",
-    "ja": "ホスト数",
-    "zh_tw": "主機數量",
-    "ko": "호스트 수"
-  },
-  "netmask": {
-    "zh": "子网掩码",
-    "en": "Subnet Mask",
-    "ja": "サブネットマスク",
-    "zh_tw": "子網遮罩",
-    "ko": "서브넷 마스크"
-  },
-  "network": {
-    "zh": "网络地址",
-    "en": "Network Address",
-    "ja": "ネットアド",
-    "zh_tw": "網路位址",
-    "ko": "네트워크 주소"
-  },
-  "first_host": {
-    "zh": "第一个可用主机",
-    "en": "First Usable Host",
-    "ja": "最初の利用可能なホスト",
-    "zh_tw": "第一個可用主機",
-    "ko": "사용 가능한 첫 번째 호스트"
-  },
-  "last_host": {
-    "zh": "最后一个可用主机",
-    "en": "Last Usable Host",
-    "ja": "最後の利用可能なホスト",
-    "zh_tw": "最後一個可用主機",
-    "ko": "사용 가능한 마지막 호스트"
-  },
   "address_type": {
     "zh": "地址类型",
     "en": "Address Type",
@@ -1547,89 +1365,12 @@
     "zh_tw": "位址類型",
     "ko": "주소 유형"
   },
-  "compressed": {
-    "zh": "压缩格式",
-    "en": "Compressed Format",
-    "ja": "圧縮形式",
-    "zh_tw": "壓縮格式",
-    "ko": "압축 형식"
-  },
-  "exploded": {
-    "zh": "展开格式",
-    "en": "Expanded Format",
-    "ja": "展開形式",
-    "zh_tw": "展開格式",
-    "ko": "형식 확장"
-  },
-  "reverse_dns": {
-    "zh": "反向DNS格式",
-    "en": "Reverse DNS Format",
-    "ja": "リバースDNS形式",
-    "zh_tw": "反向DNS格式",
-    "ko": "역방향 DNS 형식"
-  },
-  "mapped_ipv4": {
-    "zh": "映射的IPv4地址",
-    "en": "Mapped IPv4 Address",
-    "ja": "マップされたIPv4アドレス",
-    "zh_tw": "映射的IPv4位址",
-    "ko": "매핑된 IPv4 주소"
-  },
-  "address_attributes": {
-    "zh": "地址属性",
-    "en": "Address Attributes",
-    "ja": "アドレス属性",
-    "zh_tw": "位址屬性",
-    "ko": "주소 속성"
-  },
-  "address_structure": {
-    "zh": "地址结构分析",
-    "en": "Address Structure Analysis",
-    "ja": "アドレス構造分析",
-    "zh_tw": "位址結構分析",
-    "ko": "주소 구조 분석"
-  },
-  "num_addresses": {
-    "zh": "总地址数",
-    "en": "Total Addresses",
-    "ja": "総アドレス数",
-    "zh_tw": "總位址數",
-    "ko": "총 주소"
-  },
-  "host_range_start": {
-    "zh": "起始地址",
-    "en": "Start Address",
-    "ja": "開始アドレス",
-    "zh_tw": "起始位址",
-    "ko": "시작 주소"
-  },
-  "host_range_end": {
-    "zh": "结束地址",
-    "en": "End Address",
-    "ja": "終了アドレス",
-    "zh_tw": "結束位址",
-    "ko": "끝 주소"
-  },
-  "split_info": {
-    "zh": "切分网段",
-    "en": "Split Segment",
-    "ja": "分割セグメント",
-    "zh_tw": "切分段",
-    "ko": "네트워크 세그먼트 분할"
-  },
   "save_requirement": {
     "zh": "保存需求",
     "en": "Save Requirement",
     "ja": "要件を保存",
     "zh_tw": "儲存需求",
     "ko": "요건 저장"
-  },
-  "choose_import_method": {
-    "zh": "请选择导入方式：",
-    "en": "Please choose import method:",
-    "ja": "取込方法を選択してください：",
-    "zh_tw": "請選擇匯入方式：",
-    "ko": "가져오기 방법을 선택하십시오:"
   },
   "download_excel_template": {
     "zh": "下载Excel模板",
@@ -1700,34 +1441,6 @@
     "en": "Select Extend Duration",
     "ja": "延長期間を選択",
     "ko": "연장 기간 선택"
-  },
-  "1_day": {
-    "zh": "1天",
-    "zh_tw": "1天",
-    "en": "1 Day",
-    "ja": "1日",
-    "ko": "1일"
-  },
-  "3_days": {
-    "zh": "3天",
-    "zh_tw": "3天",
-    "en": "3 Days",
-    "ja": "3日",
-    "ko": "3일"
-  },
-  "1_week": {
-    "zh": "1周",
-    "zh_tw": "1周",
-    "en": "1 Week",
-    "ja": "1週間",
-    "ko": "1주일"
-  },
-  "2_weeks": {
-    "zh": "2周",
-    "zh_tw": "2周",
-    "en": "2 Weeks",
-    "ja": "2週間",
-    "ko": "2주일"
   },
   "1_month": {
     "zh": "1个月",
@@ -1981,13 +1694,6 @@
     "zh_tw": "請輸入網路位址",
     "ko": "네트워크 주소를 입력하십시오"
   },
-  "network_format_error": {
-    "zh": "网络格式错误",
-    "en": "Network format error",
-    "ja": "ネットワーク形式エラー",
-    "zh_tw": "網路格式錯誤",
-    "ko": "네트워크 형식 오류"
-  },
   "network_scan": {
     "zh": "网络扫描",
     "en": "Network Scan",
@@ -2008,20 +1714,6 @@
     "ja": "スキャンの準備中...",
     "zh_tw": "準備開始掃描...",
     "ko": "스캔 준비 중..."
-  },
-  "data_addition_progress": {
-    "zh": "数据添加进度",
-    "en": "Data Addition Progress",
-    "ja": "データ追加の進行状況",
-    "zh_tw": "資料添加進度",
-    "ko": "데이터 추가 진행 상황"
-  },
-  "preparing_to_add_data": {
-    "zh": "准备添加数据...",
-    "en": "Preparing to add data...",
-    "ja": "データ追加の準備中...",
-    "zh_tw": "準備添加資料...",
-    "ko": "데이터 추가 준비 중..."
   },
   "start_scan": {
     "zh": "扫描",
@@ -2177,20 +1869,6 @@
     "zh_tw": "IP位址使用情況",
     "ko": "IP 사용 현황"
   },
-  "backup_name_optional": {
-    "zh": "备份名称 (可选):",
-    "en": "Backup Name (Optional):",
-    "ja": "バックアップ名（オプション）：",
-    "zh_tw": "備份名稱 (可選):",
-    "ko": "백업 이름 (선택 사항):"
-  },
-  "backup_file_list": {
-    "zh": "备份文件列表",
-    "en": "Backup File List",
-    "ja": "バックアップファイルリスト",
-    "zh_tw": "備份檔案列表",
-    "ko": "백업 파일 목록"
-  },
   "no_data_available": {
     "zh": "暂无数据",
     "en": "No Data Available",
@@ -2253,20 +1931,6 @@
     "ja": "有効期限を入力してください",
     "zh_tw": "請輸入過期日期",
     "ko": "만료 날짜를 입력하십시오"
-  },
-  "restore_to_allocated": {
-    "zh": "恢复为已分配",
-    "en": "Restore to Allocated",
-    "ja": "割り当て済みに戻す",
-    "zh_tw": "恢復為已分配",
-    "ko": "할당된 상태로 복원"
-  },
-  "restore_to_reserved": {
-    "zh": "恢复为保留IP",
-    "en": "Restore to Reserved",
-    "ja": "予約済みに戻す",
-    "zh_tw": "恢復為保留IP",
-    "ko": "예약된 상태로 복원"
   },
   "reallocate_address": {
     "zh": "重新分配地址",
@@ -2345,33 +2009,12 @@
     "zh_tw": "過期IP檢測",
     "ko": "만료된 IP 감지"
   },
-  "found_expired_ips": {
-    "zh": "发现 {count} 个过期IP地址，是否自动释放？",
-    "en": "Found {count} expired IP addresses, automatically release?",
-    "ja": "期限切れのIPアドレス {count} 個を検出しました。自動的に解放しますか？",
-    "zh_tw": "發現 {count} 個過期IP位址，是否自動釋放？",
-    "ko": "만료된 IP 주소 {count} 개를 발견했습니다. 자동으로 해제하시겠습니까?"
-  },
   "please_select_ips_to_set_expiry": {
     "zh": "请选择要设置过期日期的IP地址",
     "en": "Please select IP addresses to set expiry date",
     "ja": "有効期限を設定するIPアドレスを選択してください",
     "zh_tw": "請選擇要設定過期日期的IP位址",
     "ko": "만료 날짜를 설정할 IP 주소를 선택하십시오"
-  },
-  "batch_allocate_success": {
-    "zh": "批量分配成功 {count} 个IP地址",
-    "en": "Successfully allocated {count} IP addresses",
-    "ja": "{count} 個のIPアドレスを一括割り当てしました",
-    "zh_tw": "批次分配成功 {count} 個IP位址",
-    "ko": "{count} 개의 IP 주소를 일괄 할당했습니다"
-  },
-  "address_class": {
-    "zh": "网络类别",
-    "en": "Network Class",
-    "ja": "ネットワーククラス",
-    "zh_tw": "網路類別",
-    "ko": "네트워크 카테고리"
   },
   "default_netmask": {
     "zh": "默认子网掩码",
@@ -2386,13 +2029,6 @@
     "ja": "整数表現",
     "zh_tw": "整數表示",
     "ko": "정수 표현"
-  },
-  "parent_info": {
-    "zh": "父网段",
-    "en": "Parent Network",
-    "ja": "親ネットワーク",
-    "zh_tw": "父網段",
-    "ko": "상위 네트워크"
   },
   "yes": {
     "zh": "是",
@@ -2457,13 +2093,6 @@
     "zh_tw": "有效",
     "ko": "유효"
   },
-  "invalid": {
-    "zh": "无效",
-    "en": "Invalid",
-    "ja": "無効",
-    "zh_tw": "無效",
-    "ko": "무효"
-  },
   "none": {
     "zh": "无",
     "en": "None",
@@ -2513,40 +2142,12 @@
     "zh_tw": "點擊下方按鈕測試不同類型的資訊欄顯示效果：",
     "ko": "다양한 유형의 인포바 디스플레이를 테스트하려면 아래 버튼을 클릭하십시오."
   },
-  "failed_to_register_font": {
-    "zh": "注册字体失败",
-    "zh_tw": "註冊字體失敗",
-    "en": "Failed to register font",
-    "ja": "フォントの登録に失敗しました",
-    "ko": "글꼴 등록에 실패했습니다"
-  },
-  "address_manage": {
-    "zh": "IP地址管理",
-    "zh_tw": "IP位址管理",
-    "en": "IP Address Management",
-    "ja": "IPアドレス管理",
-    "ko": "IP 주소 관리"
-  },
-  "batch_operations": {
-    "zh": "批量操作",
-    "zh_tw": "批量操作",
-    "en": "Batch Operations",
-    "ja": "一括操作",
-    "ko": "일괄 작업"
-  },
   "auto_scan": {
     "zh": "自动扫描",
     "zh_tw": "自動掃描",
     "en": "Auto Scan",
     "ja": "自動スキャン",
     "ko": "자동 스캔"
-  },
-  "export_data": {
-    "zh": "导出数据",
-    "zh_tw": "匯出數據",
-    "en": "Export Data",
-    "ja": "データをエクスポート",
-    "ko": "데이터 내보내기"
   },
   "import_data": {
     "zh": "导入/导出",
@@ -2555,33 +2156,12 @@
     "ja": "インポート/エクスポート",
     "ko": "가져오기/내보내기"
   },
-  "backup_data": {
-    "zh": "备份数据",
-    "zh_tw": "備份數據",
-    "en": "Backup Data",
-    "ja": "データバックアップ",
-    "ko": "데이터 백업"
-  },
-  "restore_data": {
-    "zh": "恢复数据",
-    "zh_tw": "恢復數據",
-    "en": "Restore Data",
-    "ja": "データを復元",
-    "ko": "데이터 복원"
-  },
   "backup_restore": {
     "zh": "备份/恢复",
     "zh_tw": "備份/恢復",
     "en": "Backup/Restore",
     "ja": "バック/復",
     "ko": "백업/복원"
-  },
-  "choose_backup_restore_method": {
-    "zh": "请选择备份/恢复方式：",
-    "zh_tw": "請選擇備份/恢復方式：",
-    "en": "Please choose backup/restore method:",
-    "ja": "バックアップ/復元方法を選択してください：",
-    "ko": "백업/복원 방법을 선택하십시오："
   },
   "ip_address_management": {
     "zh": "地址管理",
@@ -2611,26 +2191,12 @@
     "ja": "割当/予約",
     "ko": "할당/예약"
   },
-  "restore_allocation": {
-    "zh": "恢复分配",
-    "zh_tw": "恢復分配",
-    "en": "Restore Allocation",
-    "ja": "割り当てを復元",
-    "ko": "할당 복원"
-  },
   "batch_allocate": {
     "zh": "批量分配",
     "zh_tw": "批量分配",
     "en": "Batch Allocate",
     "ja": "一括割当",
     "ko": "일괄 할당"
-  },
-  "auto_allocate": {
-    "zh": "自动分配",
-    "zh_tw": "自動分配",
-    "en": "Auto Allocate",
-    "ja": "自動割当",
-    "ko": "자동 할당"
   },
   "batch_migrate": {
     "zh": "批量迁移",
@@ -2687,13 +2253,6 @@
     "en": "Cleanup Unused",
     "ja": "未使用削除",
     "ko": "미사용 정리"
-  },
-  "search_and_filter": {
-    "zh": "搜索和过滤",
-    "zh_tw": "搜尋和過濾",
-    "en": "Search and Filter",
-    "ja": "検索とフィルタリング",
-    "ko": "검색 및 필터"
   },
   "keyword": {
     "zh": "关键词",
@@ -2800,27 +2359,6 @@
     "ja": "インポート/エクスポート方法を選択してください：",
     "ko": "가져오기/내보내기 방법을 선택하세요："
   },
-  "export_selected": {
-    "zh": "导出选中",
-    "zh_tw": "匯出選中",
-    "en": "Export Selected",
-    "ja": "選択したものをエクスポート",
-    "ko": "선택 내보내기"
-  },
-  "export_all": {
-    "zh": "全部导出",
-    "zh_tw": "全部匯出",
-    "en": "Export All",
-    "ja": "すべてをエクスポート",
-    "ko": "전체 내보내기"
-  },
-  "visualization": {
-    "zh": "网络拓扑",
-    "zh_tw": "網路拓撲",
-    "en": "Network Topology",
-    "ja": "ネットワークトポロジ",
-    "ko": "네트워크 토폴로지"
-  },
   "network_management": {
     "zh": "网段管理",
     "zh_tw": "網段管理",
@@ -2863,13 +2401,6 @@
     "ja": "IP数",
     "ko": "IP 수"
   },
-  "allocation_history": {
-    "zh": "分配历史",
-    "zh_tw": "分配歷史",
-    "en": "Allocation History",
-    "ja": "割り当て履歴",
-    "ko": "할당 기록"
-  },
   "hostname": {
     "zh": "主机名",
     "zh_tw": "主機名",
@@ -2877,40 +2408,12 @@
     "ja": "ホスト名",
     "ko": "호스트 이름"
   },
-  "allocate_ip": {
-    "zh": "分配IP",
-    "zh_tw": "分配IP",
-    "en": "Allocate IP",
-    "ja": "IPを割り当て",
-    "ko": "IP 할당"
-  },
-  "release_ip": {
-    "zh": "释放IP",
-    "zh_tw": "釋放IP",
-    "en": "Release IP",
-    "ja": "IPを解放",
-    "ko": "IP 해제"
-  },
-  "reserve_ip": {
-    "zh": "保留IP",
-    "zh_tw": "保留IP",
-    "en": "Reserve IP",
-    "ja": "IPを予約",
-    "ko": "IP 예약"
-  },
   "please_select_ip_address": {
     "zh": "请选择IP地址",
     "zh_tw": "請選擇IP位址",
     "en": "Please select IP address",
     "ja": "IPアドレスを選択してください",
     "ko": "IP 주소를 선택하십시오"
-  },
-  "ip_released_successfully": {
-    "zh": "IP地址释放成功",
-    "zh_tw": "IP位址釋放成功",
-    "en": "IP address released successfully",
-    "ja": "IPアドレスの解放に成功しました",
-    "ko": "IP 주소가 성공적으로 해제되었습니다"
   },
   "failed_to_release_ip": {
     "zh": "释放IP地址失败",
@@ -2940,13 +2443,6 @@
     "ja": "ネットワークの追加に成功しました",
     "ko": "네트워크 추가 성공"
   },
-  "failed_to_add_network": {
-    "zh": "添加网络失败",
-    "zh_tw": "添加網路失敗",
-    "en": "Failed to add network",
-    "ja": "ネットワークの追加に失敗しました",
-    "ko": "네트워크 추가 실패"
-  },
   "please_select_network": {
     "zh": "请先选择要导出的网段",
     "zh_tw": "請先選擇要匯出的網段",
@@ -2961,13 +2457,6 @@
     "ja": "ネットワークを入力してください",
     "ko": "네트워크를 입력하십시오"
   },
-  "failed_to_remove_network": {
-    "zh": "移除网络失败",
-    "zh_tw": "移除網路失敗",
-    "en": "Failed to remove network",
-    "ja": "ネットワークの削除に失敗しました",
-    "ko": "네트워크 제거 실패"
-  },
   "network_topology": {
     "zh": "网络拓扑",
     "zh_tw": "網路拓撲",
@@ -2975,33 +2464,12 @@
     "ja": "トポロジ",
     "ko": "네트워크 토폴로지"
   },
-  "ip_allocation_visualization": {
-    "zh": "IP分配可视化",
-    "zh_tw": "IP分配視覺化",
-    "en": "IP Allocation Visualization",
-    "ja": "IP割り当ての可視化",
-    "ko": "IP 할당 시각화"
-  },
-  "select_network": {
-    "zh": "选择网络",
-    "zh_tw": "選擇網路",
-    "en": "Select Network",
-    "ja": "ネットワークを選択",
-    "ko": "네트워크 선택"
-  },
   "refresh": {
     "zh": "刷新",
     "zh_tw": "重新整理",
     "en": "Refresh",
     "ja": "更新",
     "ko": "새로 고침"
-  },
-  "mixed_ip_version_not_supported": {
-    "zh": "不支持混合IP版本的子网合并",
-    "zh_tw": "不支持混合IP版本的子網合併",
-    "en": "Mixed IP versions are not supported for subnet merging",
-    "ja": "サブネット統合では混合IPバージョンはサポートされていません",
-    "ko": "서브넷 병합에는 혼합 IP 버전이 지원되지 않습니다"
   },
   "ipv6_address_type_mismatch": {
     "zh": "无法合并不同类型的IPv6地址（如全局地址和链路本地地址）",
@@ -3017,13 +2485,6 @@
     "ja": "異なるIPバージョンのアドレスは変換または統合できません",
     "ko": "서로 다른 IP 버전의 주소는 변환하거나 병합할 수 없습니다"
   },
-  "please_enter_complete_ip_range": {
-    "zh": "请输入完整的IP范围",
-    "zh_tw": "請輸入完整的IP範圍",
-    "en": "Please enter complete IP range",
-    "ja": "完全なIP範囲を入力してください",
-    "ko": "완전한 IP 범위를 입력하세요"
-  },
   "cannot_convert_ip_range_to_cidr": {
     "zh": "无法将IP范围转换为CIDR",
     "zh_tw": "無法將IP範圍轉換為CIDR",
@@ -3038,13 +2499,6 @@
     "ja": "エラーメッセージ",
     "ko": "오류 메시지"
   },
-  "no_chinese_font_found": {
-    "zh": "未找到可用的中文字体",
-    "zh_tw": "未找到可用的中文字體",
-    "en": "No Chinese font found",
-    "ja": "利用可能な中国語フォントが見つかりません",
-    "ko": "사용 가능한 중국어 글꼴을 찾을 수 없습니다"
-  },
   "no_ip_conflicts_found": {
     "zh": "没有发现IP冲突",
     "en": "No IP conflicts found",
@@ -3052,26 +2506,12 @@
     "zh_tw": "沒有發現IP衝突",
     "ko": "IP 충돌이 발견되지 않았습니다"
   },
-  "found_ip_conflicts": {
-    "zh": "发现以下IP冲突",
-    "en": "Found the following IP conflicts",
-    "ja": "以下のIP衝突が発見されました",
-    "zh_tw": "發現以下IP衝突",
-    "ko": "다음 IP 충돌이 발견되었습니다"
-  },
   "ip_conflicts": {
     "zh": "IP冲突",
     "en": "IP Conflicts",
     "ja": "IP衝突",
     "zh_tw": "IP衝突",
     "ko": "IP 충돌"
-  },
-  "total_conflicts": {
-    "zh": "总冲突数",
-    "en": "Total Conflicts",
-    "ja": "総衝突数",
-    "zh_tw": "總衝突數",
-    "ko": "총 충돌 수"
   },
   "found_ip_conflicts_count": {
     "zh": "共发现 {count} 个IP冲突",
@@ -3115,13 +2555,6 @@
     "zh_tw": "請選擇要處理的衝突",
     "ko": "처리할 충돌을 선택하세요"
   },
-  "handling_conflict": {
-    "zh": "正在处理冲突",
-    "en": "Handling conflict",
-    "ja": "衝突を処理中",
-    "zh_tw": "正在處理衝突",
-    "ko": "충돌 처리 중"
-  },
   "check_conflict_failed": {
     "zh": "检查冲突失败",
     "en": "Failed to check conflicts",
@@ -3135,13 +2568,6 @@
     "ja": "衝突を解決",
     "zh_tw": "解決衝突",
     "ko": "충돌 해결"
-  },
-  "conflict_resolution_hint": {
-    "zh": "该IP地址存在冲突记录。请选择要执行的操作：",
-    "en": "This IP address has conflicting records. Please select an action:",
-    "ja": "このIPアドレスには衝突する記録があります。実行する操作を選択してください：",
-    "zh_tw": "該IP位址存在衝突記錄。請選擇要執行的操作：",
-    "ko": "이 IP 주소에 충돌하는 레코드가 있습니다. 수행할 작업을 선택하세요:"
   },
   "select_action": {
     "zh": "选择操作",
@@ -3199,41 +2625,6 @@
     "zh_tw": "解決衝突失敗",
     "ko": "충돌 해결 실패"
   },
-  "updating_styles": {
-    "zh": "更新样式",
-    "zh_tw": "更新樣式",
-    "en": "Updating styles",
-    "ja": "スタイルを更新中",
-    "ko": "스타일 업데이트 중"
-  },
-  "current_language": {
-    "zh": "当前语言",
-    "zh_tw": "當前語言",
-    "en": "Current language",
-    "ja": "現在の言語",
-    "ko": "현재 언어"
-  },
-  "font": {
-    "zh": "字体",
-    "zh_tw": "字體",
-    "en": "Font",
-    "ja": "フォント",
-    "ko": "글꼴"
-  },
-  "size": {
-    "zh": "大小",
-    "zh_tw": "大小",
-    "en": "Size",
-    "ja": "サイズ",
-    "ko": "크기"
-  },
-  "style_manager_not_initialized": {
-    "zh": "样式管理器未初始化",
-    "zh_tw": "樣式管理器未初始化",
-    "en": "Style manager not initialized",
-    "ja": "スタイルマネージャーが初期化されていません",
-    "ko": "스타일 관리자가 초기화되지 않았습니다"
-  },
   "ip_subnet": {
     "zh": "IP子网",
     "zh_tw": "IP子網",
@@ -3268,20 +2659,6 @@
     "ja": "混在言語のテスト",
     "zh_tw": "測試中英文混排",
     "ko": "중영 혼합 테스트"
-  },
-  "hide_info_bar": {
-    "zh": "隐藏信息栏",
-    "en": "Hide Info Bar",
-    "ja": "情報バー隠す",
-    "zh_tw": "隱藏資訊欄",
-    "ko": "정보 표시줄 숨기기"
-  },
-  "clear_subnet_split": {
-    "zh": "清空子网切分",
-    "en": "Clear Subnet Split",
-    "ja": "サブネットクリア",
-    "zh_tw": "清空子網切分",
-    "ko": "빈 서브넷 분할"
   },
   "clear_subnet_split_and_planning": {
     "zh": "清空子网切分和规划",
@@ -3339,13 +2716,6 @@
     "ja": "QRコードをスキャンして寄付",
     "ko": "QR 코드 스캔 후 기부"
   },
-  "donate_tip": {
-    "zh": "感谢您的支持！\n您的捐赠将帮助我们继续改进软件。",
-    "zh_tw": "感謝您的支持！\n您的捐贈將幫助我們繼續改進軟體。",
-    "en": "Thank you for your support!\nYour donation will help us continue to improve the software.",
-    "ja": "ご支援ありがとうございます！\nあなたの寄付は、私たちがソフトウェアを改善し続けるのを助けます。",
-    "ko": "지원해 주셔서 감사합니다!\n귀하의 기부는 소프트웨어 개선을 계속하는 데 도움이 될 것입니다."
-  },
   "wechat": {
     "zh": "微信",
     "zh_tw": "微信",
@@ -3402,13 +2772,6 @@
     "zh_tw": "重疊",
     "ko": "겹침"
   },
-  "with": {
-    "zh": "与",
-    "en": "with",
-    "ja": "と",
-    "zh_tw": "與",
-    "ko": "그리고"
-  },
   "ip_address": {
     "zh": "IP地址",
     "en": "IP Address",
@@ -3422,13 +2785,6 @@
     "ja": "ネットワーククラス",
     "zh_tw": "網路類別",
     "ko": "네트워크 카테고리"
-  },
-  "address_range": {
-    "zh": "地址范围",
-    "en": "Address Range",
-    "ja": "アドレス範囲",
-    "zh_tw": "位址範圍",
-    "ko": "주소 범위"
   },
   "first_usable_address": {
     "zh": "第一个可用地址",
@@ -3451,20 +2807,6 @@
     "zh_tw": "CIDR前綴",
     "ko": "CIDR 접두사"
   },
-  "ip_properties": {
-    "zh": "IP属性",
-    "en": "IP Properties",
-    "ja": "IPプロパティ",
-    "zh_tw": "IP屬性",
-    "ko": "IP 속성"
-  },
-  "extended_info": {
-    "zh": "扩展信息",
-    "en": "Extended Info",
-    "ja": "拡張情報",
-    "zh_tw": "擴展資訊",
-    "ko": "확장 정보"
-  },
   "first_usable_host": {
     "zh": "第一个可用主机",
     "en": "First Usable Host",
@@ -3478,139 +2820,6 @@
     "ja": "最後の利用可能なホスト",
     "zh_tw": "最後一個可用主機",
     "ko": "사용 가능한 마지막 호스트"
-  },
-  "multicast_prefix": {
-    "zh": "多播地址前缀",
-    "en": "Multicast Address Prefix",
-    "ja": "マルチキャストアドレスプレフィックス",
-    "zh_tw": "多播位址前綴",
-    "ko": "멀티캐스트 주소 접두사"
-  },
-  "interface_local_multicast": {
-    "zh": "(接口本地多播)",
-    "en": "(Interface-Local Multicast)",
-    "ja": "（インターフェースローカルマルチキャスト）",
-    "zh_tw": "(介面本地多播)",
-    "ko": "(인터페이스 로컬 멀티캐스트)"
-  },
-  "link_local_multicast": {
-    "zh": "(链路本地多播)",
-    "en": "(Link-Local Multicast)",
-    "ja": "（リンクローカルマルチキャスト）",
-    "zh_tw": "(鏈路本地多播)",
-    "ko": "(로컬 멀티캐스트 링크)"
-  },
-  "site_local_multicast": {
-    "zh": "(站点本地多播)",
-    "en": "(Site-Local Multicast)",
-    "ja": "（サイトローカルマルチキャスト）",
-    "zh_tw": "(站點本地位播)",
-    "ko": "(사이트 로컬 멀티캐스트)"
-  },
-  "global_multicast": {
-    "zh": "(全球多播)",
-    "en": "(Global Multicast)",
-    "ja": "（グローバルマルチキャスト）",
-    "zh_tw": "(全球多播)",
-    "ko": "(글로벌 멀티캐스트)"
-  },
-  "other_multicast_type": {
-    "zh": "(其他多播类型)",
-    "en": "(Other Multicast Type)",
-    "ja": "（その他のマルチキャストタイプ）",
-    "zh_tw": "(其他多播類型)",
-    "ko": "(기타 멀티캐스트 유형)"
-  },
-  "link_local_prefix": {
-    "zh": "链路本地前缀 (fe80::/10)",
-    "en": "Link-Local Prefix (fe80::/10)",
-    "ja": "リンクローカルプレフィックス （fe80：：/10）",
-    "zh_tw": "鏈路本地位址前綴 (fe80::/10)",
-    "ko": "링크 로컬 접두사 (fe80::/10)"
-  },
-  "unique_local_prefix": {
-    "zh": "唯一本地地址前缀 (fc00::/7)",
-    "en": "Unique Local Address Prefix (fc00::/7)",
-    "ja": "ユニークローカルアドレスプレフィックス （fc00：：/7）",
-    "zh_tw": "唯一本地位址前綴 (fc00::/7)",
-    "ko": "고유 로컬 주소 접두사 (fc00::/7)"
-  },
-  "global_unicast_prefix": {
-    "zh": "全球单播地址前缀 (2000::/3)",
-    "en": "Global Unicast Prefix (2000::/3)",
-    "ja": "グローバルユニキャストプレフィックス （2000：：/3）",
-    "zh_tw": "全球單播位址前綴 (2000::/3)",
-    "ko": "글로벌 유니캐스트 주소 접두사 (2000::/3)"
-  },
-  "ipv4_mapped_prefix": {
-    "zh": "IPv4映射地址前缀 (::ffff:0:0/96)",
-    "en": "IPv4-Mapped Address Prefix (::ffff:0:0/96)",
-    "ja": "IPv4マップアドレスプレフィックス （：：ffff：0：0/96）",
-    "zh_tw": "IPv4映射位址前綴 (::ffff:0:0/96)",
-    "ko": "IPv4 매핑된 주소 접두사 (:: ffff: 0: 0/96)"
-  },
-  "ipv4_ipv6_translation_prefix": {
-    "zh": "IPv4/IPv6转换地址前缀 (64:ff9b::/96)",
-    "en": "IPv4/IPv6 Translation Prefix (64:ff9b::/96)",
-    "ja": "IPv4/IPv6変換アドレスプレフィックス （64：ff9b：：/96）",
-    "zh_tw": "IPv4/IPv6轉換位址前綴 (64:ff9b::/96)",
-    "ko": "IPv4/IPv6 번역 주소 접두사 (64: ff9b::/96)"
-  },
-  "documentation_prefix": {
-    "zh": "文档地址前缀 (2001:db8::/32)",
-    "en": "Documentation Prefix (2001:db8::/32)",
-    "ja": "ドキュメントアドレスプレフィックス （2001：db8：：/32）",
-    "zh_tw": "文檔位址前綴 (2001:db8::/32)",
-    "ko": "문서 주소 접두사 (2001: db8::/32)"
-  },
-  "blackhole_prefix": {
-    "zh": "黑洞地址前缀 (100::/64)",
-    "en": "Blackhole Prefix (100::/64)",
-    "ja": "ブラックホールアドレスプレフィックス （100：：/64）",
-    "zh_tw": "黑洞位址前綴 (100::/64)",
-    "ko": "블랙홀 주소 접두사 (100::/64)"
-  },
-  "orchid_prefix": {
-    "zh": "ORCHID地址前缀 (2001:10::/28)",
-    "en": "ORCHID Prefix (2001:10::/28)",
-    "ja": "ORCHIDアドレスプレフィックス （2001：10：：/28）",
-    "zh_tw": "ORCHID位址前綴 (2001:10::/28)",
-    "ko": "난초 주소 접두사 (2001: 10::/28)"
-  },
-  "deprecated_site_local_prefix": {
-    "zh": "站点本地地址前缀 (已弃用)",
-    "en": "Deprecated Site-Local Prefix",
-    "ja": "非推奨サイトローカルプレフィックス",
-    "zh_tw": "站點本地位址前綴 (已棄用)",
-    "ko": "사이트 로컬 주소 접두사 (더 이상 사용되지 않음)"
-  },
-  "global_unicast_prefix_generic": {
-    "zh": "全球单播地址前缀",
-    "en": "Global Unicast Prefix",
-    "ja": "グローバルユニキャストプレフィックス",
-    "zh_tw": "全球單播位址前綴",
-    "ko": "글로벌 유니캐스트 주소 접두사"
-  },
-  "private_prefix": {
-    "zh": "私有地址前缀",
-    "en": "Private Prefix",
-    "ja": "プライベートアドレスプレフィックス",
-    "zh_tw": "私有位址前綴",
-    "ko": "비공개 주소 접두사"
-  },
-  "link_local_prefix_generic": {
-    "zh": "链路本地地址前缀",
-    "en": "Link-Local Prefix",
-    "ja": "リンクローカルアドレスプレフィックス",
-    "zh_tw": "鏈路本地位址前綴",
-    "ko": "링크 로컬 주소 접두사"
-  },
-  "unknown_prefix": {
-    "zh": "未知地址前缀",
-    "en": "Unknown Address Prefix",
-    "ja": "未知のアドレスプレフィックス",
-    "zh_tw": "未知位址前綴",
-    "ko": "알 수 없는 주소 접두사"
   },
   "single_host_address": {
     "zh": "单主机地址（/128前缀）",
@@ -4004,111 +3213,6 @@
     "ja": "IT部",
     "ko": "정보부"
   },
-  "security": {
-    "zh": "安全部",
-    "zh_tw": "安全部",
-    "en": "Security",
-    "ja": "セキュリティ",
-    "ko": "안전 부서"
-  },
-  "party": {
-    "zh": "党群部",
-    "zh_tw": "黨群部",
-    "en": "Party and Mass Affairs Department",
-    "ja": "党・大衆部",
-    "ko": "당·대중부"
-  },
-  "discipline": {
-    "zh": "纪检部",
-    "zh_tw": "紀檢部",
-    "en": "Discipline",
-    "ja": "紀律委員会",
-    "ko": "규율검사부"
-  },
-  "engineering": {
-    "zh": "工程部",
-    "zh_tw": "工程部",
-    "en": "Engineering",
-    "ja": "エンジニアリング",
-    "ko": "엔지니어링"
-  },
-  "sales": {
-    "zh": "销售部",
-    "zh_tw": "銷售部",
-    "en": "Sales",
-    "ja": "営業部",
-    "ko": "판매"
-  },
-  "legal": {
-    "zh": "法务部",
-    "zh_tw": "法務部",
-    "en": "Legal",
-    "ja": "法務部",
-    "ko": "법무 부서"
-  },
-  "procurement": {
-    "zh": "采购部",
-    "zh_tw": "採購部",
-    "en": "Procurement",
-    "ja": "調達部",
-    "ko": "구매부서"
-  },
-  "rd": {
-    "zh": "研发部",
-    "zh_tw": "研發部",
-    "en": "R & D",
-    "ja": "研究開発部",
-    "ko": "R&D 부서"
-  },
-  "production": {
-    "zh": "生产部",
-    "zh_tw": "生產部",
-    "en": "Production",
-    "ja": "製造部",
-    "ko": "생산부"
-  },
-  "transportation": {
-    "zh": "运输部",
-    "zh_tw": "運輸部",
-    "en": "Transportation",
-    "ja": "輸送部",
-    "ko": "교통부"
-  },
-  "export_time": {
-    "zh": "导出时间",
-    "zh_tw": "匯出時間",
-    "en": "Export Time",
-    "ja": "エクスポート時間",
-    "ko": "내보내기 시간"
-  },
-  "parent_network_info": {
-    "zh": "父网段信息",
-    "zh_tw": "父網段資訊",
-    "en": "Parent Network Info",
-    "ja": "親ネットワーク情報",
-    "ko": "상위 네트워크 정보"
-  },
-  "parent_cidr": {
-    "zh": "父网段CIDR",
-    "zh_tw": "父網段CIDR",
-    "en": "Parent CIDR",
-    "ja": "親ネットワークCIDR",
-    "ko": "상위 네트워크 CIDR"
-  },
-  "available_addresses": {
-    "zh": "可用数",
-    "zh_tw": "可用數",
-    "en": "Available",
-    "ja": "可能数",
-    "ko": "사용 가능 수"
-  },
-  "host_address_range": {
-    "zh": "主机地址范围",
-    "zh_tw": "主機位址範圍",
-    "en": "Host Address Range",
-    "ja": "ホストアドレス範囲",
-    "ko": "호스트 주소 범위"
-  },
   "copied_to_clipboard": {
     "zh": "已复制到剪贴板",
     "en": "Copied to clipboard",
@@ -4137,103 +3241,12 @@
     "zh_tw": "條記錄",
     "ko": "기록"
   },
-  "cidr_address_has_host_bits_set": {
-    "zh": "CIDR地址包含主机位",
-    "en": "CIDR address has host bits set",
-    "ja": "CIDRアドレスにはホストビットが設定されています",
-    "zh_tw": "CIDR位址包含主機位",
-    "ko": "CIDR 주소에 호스트 비트 포함"
-  },
-  "invalid_ip_format_expected_4_octets": {
-    "zh": "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）",
-    "en": "Invalid IP format, expected 4 octets",
-    "ja": "無効なIP形式、4つのオクテットが必要です（例：192。168。1。1）",
-    "zh_tw": "IP位址格式錯誤，需要4個八位元組（例如：192.168.1.1）",
-    "ko": "잘못된 IP 주소 형식, 4 옥텟 필요 (예: 192.168.1.1)"
-  },
-  "got": {
-    "zh": "实际为",
-    "en": "got",
-    "ja": "取得しました",
-    "zh_tw": "實際為",
-    "ko": "실제 값은 입니다."
-  },
-  "invalid_octet_in_ip": {
-    "zh": "IP地址中八位组 '{octet}' 无效, 最多允许3个字符(0-255)",
-    "en": "Invalid octet '{octet}' in IP address, max 3 chars (0-255) allowed",
-    "ja": "IPアドレス内のオクテット {octet} は無効です、最大3文字（0-255）が許可されています",
-    "zh_tw": "IP位址中八位元組 '{octet}' 無效，最多允許3個字元(0-255)",
-    "ko": "IP 주소의 유효하지 않은 옥텟 '{octet}', 최대 3자 허용 (0-255)"
-  },
-  "must_be_less_than_or_equal_to_255": {
-    "zh": "无效, 必须≤255（例如：192.168.1.1）",
-    "en": "must be ≤ 255",
-    "ja": "無効、255以下でなければなりません（例：192。168。1。1）",
-    "zh_tw": "無效，必須≤255（例如：192.168.1.1）",
-    "ko": "유효하지 않음, 255 이하이어야 함 (예: 192.168.1.1)"
-  },
-  "invalid_ipv4_address_format": {
-    "zh": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
-    "en": "Invalid IPv4 address format: Only decimal digits and dots allowed (e.g., 192.168.1.1)",
-    "ja": "無効なIPv4アドレス形式：IPアドレスには10進数とドットのみが許可されています（例：192。168。1。1）",
-    "zh_tw": "無效的IPv4位址格式：IP位址中只允許使用十進制數字和點（例如：192.168.1.1）",
-    "ko": "잘못된 IPv4 주소 형식: IP 주소에는 10진수 및 점만 허용됩니다 (예: 192.168.1.1)."
-  },
   "invalid_ip_address_format": {
     "zh": "无效的IP地址格式",
     "en": "Invalid IP address format",
     "ja": "無効なIPアドレス形式",
     "zh_tw": "無效的IP位址格式",
     "ko": "유효하지 않은 IP 주소 형식"
-  },
-  "unexpected_slash_in_ip_address": {
-    "zh": "IP地址中包含不允许的字符'/'（例如：192.168.1.1）",
-    "en": "unexpected '/' in IP address",
-    "ja": "IPアドレスに許可されていない文字’/’が含まれています（例：192。168。1。1）",
-    "zh_tw": "IP位址中包含不允許的字元'/'（例如：192.168.1.1）",
-    "ko": "IP 주소에 허용되지 않는 문자가 포함되어 있습니다 '/' (예: 192.168.1.1)"
-  },
-  "invalid_ipv6_address": {
-    "zh": "无效的IPv6地址",
-    "en": "Invalid IPv6 address",
-    "ja": "無効なIPv6アドレス",
-    "zh_tw": "無效的IPv6位址",
-    "ko": "유효하지 않은 IPv6 주소"
-  },
-  "at_most_4_hex_digits_per_group": {
-    "zh": "每组最多允许4个十六进制字符（例如：2001:0db8::1）",
-    "en": "at most 4 hex digits per group",
-    "ja": "グループごとに最大4桁の16進数が許可されています（例：2001：0db8：：1）",
-    "zh_tw": "每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-    "ko": "그룹당 최대 4개의 16진수 문자 허용 (예: 2001: 0db8:: 1)"
-  },
-  "too_many_colons": {
-    "zh": "冒号数量过多（例如：2001:0db8::1）",
-    "en": "too many colons",
-    "ja": "コロンの数が多すぎます（例：2001：0db8：：1）",
-    "zh_tw": "冒號數量過多（例如：2001:0db8::1）",
-    "ko": "콜론이 너무 많음 (예: 2001: 0db8:: 1)"
-  },
-  "octet_too_long_max_3_characters_allowed": {
-    "zh": "八位组过长, 最多允许3个字符（例如：192.168.1.1）",
-    "en": "octet too long, max 3 characters allowed",
-    "ja": "オクテットが長すぎます、最大3文字が許可されています（例：192。168。1。1）",
-    "zh_tw": "八位元組過長，最多允許3個字元（例如：192.168.1.1）",
-    "ko": "옥텟이 너무 깁니다. 최대 3자까지 허용됩니다 (예: 192.168.1.1)."
-  },
-  "group_too_long_max_4_hex_characters_allowed": {
-    "zh": "组过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
-    "en": "group too long, max 4 hex characters allowed",
-    "ja": "グループが長すぎます、グループごとに最大4桁の16進数が許可されています（例：2001：0db8：：1）",
-    "zh_tw": "組過長，每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-    "ko": "그룹이 너무 깁니다. 그룹당 최대 4개의 16진수 문자가 허용됩니다 (예: 2001: 0db8:: 1)."
-  },
-  "max_3_chars_0_255_allowed": {
-    "zh": "无效, 最多允许3个字符(0-255)",
-    "en": "max 3 chars (0-255) allowed",
-    "ja": "無効、最大3文字（0-255）が許可されています",
-    "zh_tw": "無效，最多允許3個字元(0-255)",
-    "ko": "유효하지 않음, 최대 3자까지 허용됨 (0-255)"
   },
   "is_not_a_subnet_of": {
     "zh": "{split_cidr} 不是 {parent_cidr} 的子网",
@@ -4255,13 +3268,6 @@
     "ja": "{name} のプレフィックス {prefix} のサブネットを作成できません",
     "zh_tw": "無法為 {name} 建立前置碼為 {prefix} 的子網",
     "ko": "{name} 의 접두사 {prefix} 로 서브넷을 만들 수 없습니다"
-  },
-  "with_prefix_length": {
-    "zh": "with prefix",
-    "en": "with prefix",
-    "ja": "プレフィックス",
-    "zh_tw": "with prefix",
-    "ko": "접두사 포함"
   },
   "failed_to_create_subnet": {
     "zh": "创建子网失败",
@@ -4297,223 +3303,6 @@
     "ja": "重複をチェックするには少なくとも2つのサブネットが必要です",
     "zh_tw": "至少需要兩個子網來檢查重疊",
     "ko": "겹침을 확인하려면 적어도 두 개의 서브넷이 필요합니다"
-  },
-  "pieces": {
-    "zh": "个",
-    "en": "pieces",
-    "ja": "個",
-    "zh_tw": "個",
-    "ko": "통"
-  },
-  "class_a": {
-    "zh": "A类",
-    "en": "Class A",
-    "ja": "クラスA",
-    "zh_tw": "A類",
-    "ko": "클래스 A"
-  },
-  "class_b": {
-    "zh": "B类",
-    "en": "Class B",
-    "ja": "クラスB",
-    "zh_tw": "B類",
-    "ko": "클래스 B"
-  },
-  "class_c": {
-    "zh": "C类",
-    "en": "Class C",
-    "ja": "クラスC",
-    "zh_tw": "C類",
-    "ko": "클래스 C"
-  },
-  "class_d": {
-    "zh": "D类",
-    "en": "Class D",
-    "ja": "クラスD",
-    "zh_tw": "D類",
-    "ko": "클래스 D"
-  },
-  "class_e": {
-    "zh": "E类",
-    "en": "Class E",
-    "ja": "クラスE",
-    "zh_tw": "E類",
-    "ko": "클래스 E"
-  },
-  "segment": {
-    "zh": "网段",
-    "en": "Segment",
-    "ja": "セグメント",
-    "zh_tw": "網段",
-    "ko": "네트워크 세그먼트"
-  },
-  "legend": {
-    "zh": "图例",
-    "en": "Legend",
-    "ja": "凡例",
-    "zh_tw": "圖例",
-    "ko": "범례"
-  },
-  "multicolor": {
-    "zh": "多色",
-    "en": "Multi-color",
-    "ja": "マルチカラー",
-    "zh_tw": "多色",
-    "ko": "멀티컬러"
-  },
-  "no_segment_data": {
-    "zh": "暂无网段数据",
-    "en": "No segment data",
-    "ja": "セグメントデータはありません",
-    "zh_tw": "暫無網段數據",
-    "ko": "네트워크 세그먼트 데이터 없음"
-  },
-  "chart_drawing_failed": {
-    "zh": "图表绘制失败",
-    "en": "Chart drawing failed",
-    "ja": "チャートの描画に失敗しました",
-    "zh_tw": "圖表繪製失敗",
-    "ko": "차트 플로팅 실패"
-  },
-  "partial overlap": {
-    "zh": "部分重叠",
-    "en": "partial overlap",
-    "ja": "部分重複",
-    "zh_tw": "部分重疊",
-    "ko": "부분적으로 겹침"
-  },
-  "invalid_subnet_mask": {
-    "zh": "'{netmask}' 不是有效的子网掩码",
-    "zh_tw": "'{netmask}' 不是有效的子網遮罩",
-    "en": "'{netmask}' is not a valid subnet mask",
-    "ja": "{netmask} は有効なサブネットマスクではありません",
-    "ko": "'{netmask}' 은 (는) 유효한 서브넷 마스크가 아닙니다"
-  },
-  "invalid_network_address_format": {
-    "zh": "无效的网络地址格式: {network}",
-    "zh_tw": "無效的網路位址格式：{network}",
-    "en": "Invalid network address format: {network}",
-    "ja": "無効なネットワークアドレス形式：{network}",
-    "ko": "유효하지 않은 네트워크 주소 형식: {network}"
-  },
-  "cidr_has_host_bits_set": {
-    "zh": "CIDR地址包含主机位: {cidr}",
-    "zh_tw": "CIDR位址包含主機位：{cidr}",
-    "en": "CIDR address has host bits set: {cidr}",
-    "ja": "CIDRアドレスにホストビットが設定されています：{cidr}",
-    "ko": "CIDR 주소에 호스트 비트가 포함되어 있습니다: {cidr}"
-  },
-  "invalid_ip_format_4_octets": {
-    "zh": "IP地址格式错误, 需要4个八位组（例如：192.168.1.1）",
-    "zh_tw": "IP位址格式錯誤，需要4個八位元組（例如：192.168.1.1）",
-    "en": "Invalid IP format, expected 4 octets",
-    "ja": "無効なIP形式、4オクテットが必要です",
-    "ko": "잘못된 IP 주소 형식, 4 옥텟 필요 (예: 192.168.1.1)"
-  },
-  "invalid_ipv4_decimal_digits": {
-    "zh": "无效的IPv4地址格式: IP地址中只允许使用十进制数字和点（例如：192.168.1.1）",
-    "zh_tw": "無效的IPv4位址格式：IP位址中只允許使用十進制數字和點（例如：192.168.1.1）",
-    "en": "Invalid IPv4 address format: Only decimal digits and dots allowed (e.g., 192.168.1.1)",
-    "ja": "無効なIPv4アドレス形式：十進数のみが許可されています（例：192。168。1。1）",
-    "ko": "잘못된 IPv4 주소 형식: IP 주소에는 10진수 및 점만 허용됩니다 (예: 192.168.1.1)."
-  },
-  "invalid_ipv4_unexpected_slash": {
-    "zh": "无效的IPv4地址格式: IP地址中包含不允许的字符'/'（例如：192.168.1.1）",
-    "zh_tw": "無效的IPv4位址格式：IP位址中包含不允許的字元'/'（例如：192.168.1.1）",
-    "en": "Invalid IPv4 address format: unexpected '/' in IP address (e.g., 192.168.1.1)",
-    "ja": "無効なIPv4アドレス形式：IPアドレスに予期しない’/’が含まれています（例：192。168。1。1）",
-    "ko": "잘못된 IPv4 주소 형식: IP 주소에 허용되지 않는 문자가 포함되어 있습니다 '/' (예: 192.168.1.1)"
-  },
-  "invalid_ipv6_address_format": {
-    "zh": "无效的IPv6地址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-    "zh_tw": "無效的IPv6位址格式（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-    "en": "Invalid IPv6 address format (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334)",
-    "ja": "無効なIPv6アドレス形式（例：2001：0db8：85a3：0000：0000：8a2e：0370：7334）",
-    "ko": "잘못된 IPv6 주소 형식 (예: 2001: 0db 8:85 a3: 0000: 0000: 8a2e: 0370: 7334)"
-  },
-  "invalid_ipv6_hex_digits": {
-    "zh": "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: at most 4 hex digits per group (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：グループごとに最大4桁の16進数が許可されます（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 그룹당 허용되는 최대 4 16진수 문자 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_too_many_colons": {
-    "zh": "无效的IPv6地址: 冒号数量过多（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：冒號數量過多（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: too many colons (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：コロンが多すぎます（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 콜론이 너무 많음 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_hex_only": {
-    "zh": "无效的IPv6地址: 每组只允许使用十六进制字符（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：每組只允許使用十六進制字元（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: Only hex digits allowed per group (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：16進数のみが許可されています（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 그룹당 16진수 문자만 허용됩니다 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv4_octet_too_long": {
-    "zh": "无效的IPv4地址: 八位组过长, 最多允许3个字符（例如：192.168.1.1）",
-    "zh_tw": "無效的IPv4位址：八位元組過長，最多允許3個字元（例如：192.168.1.1）",
-    "en": "Invalid IPv4 address: octet too long, max 3 characters allowed (e.g., 192.168.1.1)",
-    "ja": "無効なIPv4アドレス：オクテットが長すぎます、最大3文字が許可されています（例：192。168。1。1）",
-    "ko": "유효하지 않은 IPv4 주소: 옥텟이 너무 깁니다. 최대 3자까지 허용됩니다 (예: 192.168.1.1)."
-  },
-  "invalid_ipv6_group_too_long": {
-    "zh": "无效的IPv6地址: 组 '{group}' 过长, 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：組 '{group}' 過長，每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: group '{group}' too long, max 4 hex characters allowed (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：グループ {group} が長すぎます、グループごとに最大4桁の16進数が許可されます（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 그룹 '{group}' 이 (가) 너무 깁니다. 그룹당 허용되는 최대 4자 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_address_too_long": {
-    "zh": "无效的IPv6地址: 地址过长, 最多允许45个字符（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：位址過長，最多允許45個字元（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: address too long, max 45 characters allowed (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：アドレスが長すぎます、最大45文字が許可されています（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 주소가 너무 깁니다. 최대 45자까지 허용됩니다 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_characters_limit": {
-    "zh": "无效的IPv6地址: 每组最多允许4个十六进制字符（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：每組最多允許4個十六進制字元（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: max characters limit exceeded (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：最大文字数制限を超えています（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 그룹당 허용되는 최대 4 16진수 문자 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_trailing_colon": {
-    "zh": "无效的IPv6地址: 冒号使用错误，单独的尾部冒号只允许作为'::'的一部分（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：冒號使用錯誤，單獨的尾部冒號只允許作為'::'的一部分（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: trailing ':' only permitted as part of '::' (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：末尾の ’：’ は ’：：’ の一部としてのみ許可されます（例：2001：0db8：：1）",
-    "ko": "유효하지 않은 IPv6 주소: 콜론이 잘못 사용됨, 별도의 후행 콜론은 '::' 의 일부로만 허용됨 (예: 2001: 0db8:: 1)"
-  },
-  "invalid_ipv6_exactly_8_parts": {
-    "zh": "无效的IPv6地址: IPv6地址需要8个部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-    "zh_tw": "無效的IPv6位址：IPv6位址需要8個部分（例如：2001:0db8:85a3:0000:0000:8a2e:0370:7334）",
-    "en": "Invalid IPv6 address: exactly 8 parts expected (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334)",
-    "ja": "無効なIPv6アドレス：正確に8つの部分が必要です（例：2001：0db8：85a3：0000：0000：8a2e：0370：7334）",
-    "ko": "잘못된 IPv6 주소: IPv6 주소에는 8개의 부품이 필요합니다 (예: 2001: 0db 8:85 a3: 0000: 0000: 8a2e: 0370: 7334)"
-  },
-  "invalid_ipv6_double_colon": {
-    "zh": "无效的IPv6地址: 地址{address}中最多只允许一个'::'（双冒号）",
-    "zh_tw": "無效的IPv6位址：位址{address}中最多只允許一個'::'（雙冒號）",
-    "en": "Invalid IPv6 address: at most one '::' permitted in address {address}",
-    "ja": "無効なIPv6アドレス：アドレス{address}には最大で1つの’：：’（ダブルコロン）が許可されています",
-    "ko": "유효하지 않은 IPv6 주소: 주소 {address} 에 최대 하나의 '::' (이중 콜론) 이 허용됩니다"
-  },
-  "invalid_ipv6_parts_count": {
-    "zh": "无效的IPv6地址: 最多允许{max_parts}个以冒号分隔的部分，地址{address}格式不正确",
-    "zh_tw": "無效的IPv6位址：最多允許{max_parts}個以冒號分隔的部分，位址{address}格式不正確",
-    "en": "Invalid IPv6 address: expected at most {max_parts} other parts with ':', got invalid address {address}",
-    "ja": "無効なIPv6アドレス：最大{max_parts}のコロンで区切られた部分が許可されていますが、アドレス{address}の形式が不正です",
-    "ko": "유효하지 않은 IPv6 주소: 최대 {max_parts} 개의 콜론으로 구분된 부품이 허용됨, 주소 {address} 의 형식이 잘못됨"
-  },
-  "invalid_ipv6_format": {
-    "zh": "无效的IPv6地址: 格式错误（例如：2001:0db8::1）",
-    "zh_tw": "無效的IPv6位址：格式錯誤（例如：2001:0db8::1）",
-    "en": "Invalid IPv6 address: format error (e.g., 2001:0db8::1)",
-    "ja": "無効なIPv6アドレス：形式エラー（例：2001：0db8：：1）",
-    "ko": "잘못된 IPv6 주소: 잘못된 형식 (예: 2001: 0db8:: 1)"
   },
   "copyright": {
     "zh": "© 2025-2026 {app_name} 版权所有",
@@ -4564,20 +3353,6 @@
     "zh_tw": "已释放",
     "ko": "해제됨"
   },
-  "timestamp": {
-    "zh": "时间戳",
-    "en": "Timestamp",
-    "ja": "タイムスタンプ",
-    "zh_tw": "時間戳",
-    "ko": "타임스탬프"
-  },
-  "action": {
-    "zh": "操作",
-    "en": "Action",
-    "ja": "アクション",
-    "zh_tw": "操作",
-    "ko": "작업"
-  },
   "please_enter_description": {
     "zh": "请输入描述",
     "en": "Please enter description",
@@ -4598,62 +3373,6 @@
     "ja": "IPv6インフラストラクチャ",
     "zh_tw": "IPv6基礎設施",
     "ko": "IPv6 인프라"
-  },
-  "please_enter_hostname": {
-    "zh": "请输入主机名",
-    "en": "Please enter hostname",
-    "ja": "ホスト名を入力してください",
-    "zh_tw": "請輸入主機名",
-    "ko": "호스트 이름을 입력하세요"
-  },
-  "ip_range_host_part": {
-    "zh": "主机地址范围（例如: 2-50）",
-    "en": "Host address range (e.g.: 2-50)",
-    "ja": "ホストアドレス範囲（例: 2-50）",
-    "zh_tw": "主機地址範圍（例如: 2-50）",
-    "ko": "호스트 주소 범위(예: 2-50)"
-  },
-  "ip_range_last_two": {
-    "zh": "主机地址范围（例如: 23.2-23.50）",
-    "en": "Host address range (e.g.: 23.2-23.50)",
-    "ja": "ホストアドレス範囲（例: 23.2-23.50）",
-    "zh_tw": "主機地址範圍（例如: 23.2-23.50）",
-    "ko": "호스트 주소 범위(예: 23.2-23.50)"
-  },
-  "ip_range_last_three": {
-    "zh": "主机地址范围（例如: 100.23.2-100.23.50）",
-    "en": "Host address range (e.g.: 100.23.2-100.23.50)",
-    "ja": "ホストアドレス範囲（例: 100.23.2-100.23.50）",
-    "zh_tw": "主機地址範圍（例如: 100.23.2-100.23.50）",
-    "ko": "호스트 주소 범위(예: 100.23.2-100.23.50)"
-  },
-  "ip_range_full": {
-    "zh": "完整IP地址范围（例如: 192.168.1.1-192.168.1.100）",
-    "en": "Full IP address range (e.g.: 192.168.1.1-192.168.1.100)",
-    "ja": "完全なIPアドレス範囲（例: 192.168.1.1-192.168.1.100）",
-    "zh_tw": "完整IP地址範圍（例如: 192.168.1.1-192.168.1.100）",
-    "ko": "전체 IP 주소 범위(예: 192.168.1.1-192.168.1.100)"
-  },
-  "ip_range_example": {
-    "zh": "IP地址范围示例",
-    "en": "IP address range example",
-    "ja": "IPアドレス範囲の例",
-    "zh_tw": "IP地址範圍示例",
-    "ko": "IP 주소 범위 예시"
-  },
-  "description_prefixauto_add_number": {
-    "zh": "描述前缀（自动添加编号）",
-    "en": "Description Prefix (Auto Add Number)",
-    "ja": "説明プレフィックス（自動番号付与）",
-    "zh_tw": "描述前綴（自動添加編號）",
-    "ko": "설명 접두사(자동 번호 추가)"
-  },
-  "please_enter_hostname_or_description": {
-    "zh": "请输入主机名或描述",
-    "en": "Please enter hostname or description",
-    "ja": "ホスト名または説明を入力してください",
-    "zh_tw": "請輸入主機名或描述",
-    "ko": "호스트 이름 또는 설명을 입력하세요"
   },
   "ip_address_list": {
     "zh": "IP地址列表",
@@ -4809,47 +3528,12 @@
     "ja": "一括予約",
     "ko": "일괄 예약"
   },
-  "auto_reserve": {
-    "zh": "自动保留",
-    "zh_tw": "自動保留",
-    "en": "Auto Reserve",
-    "ja": "自動予約",
-    "ko": "자동 예약"
-  },
-  "description_prefix": {
-    "zh": "描述前缀(自动添加编号)",
-    "zh_tw": "描述前綴(自動添加編號)",
-    "en": "Description Prefix (Auto Add Number)",
-    "ja": "説明プレフィックス(自動番号付加)",
-    "ko": "설명 접두사(자동 번호 추가)"
-  },
   "batch_generate": {
     "zh": "批量生成",
     "zh_tw": "批量生成",
     "en": "Batch Generate",
     "ja": "一括生成",
     "ko": "일괄 생성"
-  },
-  "quantity": {
-    "zh": "数量",
-    "zh_tw": "數量",
-    "en": "Quantity",
-    "ja": "数量",
-    "ko": "수량"
-  },
-  "sequential_generate": {
-    "zh": "连续生成",
-    "zh_tw": "連續生成",
-    "en": "Sequential",
-    "ja": "連続生成",
-    "ko": "연속 생성"
-  },
-  "random_generate": {
-    "zh": "随机生成",
-    "zh_tw": "隨機生成",
-    "en": "Random",
-    "ja": "ランダム生成",
-    "ko": "랜덤 생성"
   },
   "invalid_quantity": {
     "zh": "请输入有效的数量",
@@ -4900,48 +3584,6 @@
     "ja": "すべてのネットワークをエクスポート",
     "ko": "모든 네트워크 내보내기"
   },
-  "export_selected_ips": {
-    "zh": "导出选中网段IP",
-    "zh_tw": "匯出選中網段IP",
-    "en": "Export IPs of Selected Networks",
-    "ja": "選択したネットワークのIPをエクスポート",
-    "ko": "선택한 네트워크 IP 내보내기"
-  },
-  "export_all_ips": {
-    "zh": "导出所有IP",
-    "zh_tw": "匯出所有IP",
-    "en": "Export All IPs",
-    "ja": "すべてのIPをエクスポート",
-    "ko": "모든 IP 내보내기"
-  },
-  "import_networks": {
-    "zh": "导入网段",
-    "zh_tw": "匯入網段",
-    "en": "Import Networks",
-    "ja": "ネットワークをインポート",
-    "ko": "네트워크 가져오기"
-  },
-  "download_network_template": {
-    "zh": "下载网段模板",
-    "zh_tw": "下載網段範本",
-    "en": "Download Network Template",
-    "ja": "ネットワークテンプレートをダウンロード",
-    "ko": "네트워크 템플릿 다운로드"
-  },
-  "import_ips": {
-    "zh": "导入IP地址",
-    "zh_tw": "匯入IP位址",
-    "en": "Import IP Addresses",
-    "ja": "IPアドレスをインポート",
-    "ko": "IP 주소 가져오기"
-  },
-  "download_ip_template": {
-    "zh": "下载IP模板",
-    "zh_tw": "下載IP範本",
-    "en": "Download IP Template",
-    "ja": "IPテンプレートをダウンロード",
-    "ko": "IP 템플릿 다운로드"
-  },
   "export_options": {
     "zh": "导出选项",
     "zh_tw": "匯出選項",
@@ -4983,13 +3625,6 @@
     "en": "Download",
     "ja": "ダウンロード",
     "ko": "다운로드"
-  },
-  "import_data_compare": {
-    "zh": "导入数据",
-    "zh_tw": "匯入資料",
-    "en": "Import Data",
-    "ja": "インポートデータ比較",
-    "ko": "가져오기 데이터 비교"
   },
   "network_data_summary": {
     "zh": "网段数据统计",
@@ -5089,20 +3724,6 @@
     "ja": "MACアドレス",
     "ko": "MAC 주소"
   },
-  "col_allocated_at": {
-    "zh": "分配时间",
-    "zh_tw": "分配時間",
-    "en": "Allocated At",
-    "ja": "割当日時",
-    "ko": "할당 시간"
-  },
-  "col_allocated_by": {
-    "zh": "分配人",
-    "zh_tw": "分配人",
-    "en": "Allocated By",
-    "ja": "割当者",
-    "ko": "할당자"
-  },
   "col_expiry_date": {
     "zh": "过期日期",
     "zh_tw": "過期日期",
@@ -5158,13 +3779,6 @@
     "en": "Overwrite Existing",
     "ja": "既存データを上書き",
     "ko": "기존 데이터 덮어쓰기"
-  },
-  "confirm_import": {
-    "zh": "确认导入",
-    "zh_tw": "確認匯入",
-    "en": "Confirm Import",
-    "ja": "インポート確認",
-    "ko": "가져오기 확인"
   },
   "please_select_import_data": {
     "zh": "请至少选择一项要导入的数据",
@@ -5299,13 +3913,6 @@
     "ja": "バックアップ用予約",
     "ko": "백업용 예약"
   },
-  "backup_ipam_data": {
-    "zh": "备份IPAM数据",
-    "zh_tw": "備份IPAM數據",
-    "en": "Backup IPAM Data",
-    "ja": "IPAMデータのバックアップ",
-    "ko": "IPAM 데이터 백업"
-  },
   "backup_success": {
     "zh": "数据备份成功",
     "zh_tw": "數據備份成功",
@@ -5319,13 +3926,6 @@
     "en": "Backup failed",
     "ja": "バックアップ失敗",
     "ko": "백업 실패"
-  },
-  "restore_failed": {
-    "zh": "恢复失败",
-    "zh_tw": "恢復失敗",
-    "en": "Restore failed",
-    "ja": "復元失敗",
-    "ko": "복원 실패"
   },
   "cleanup_address": {
     "zh": "清理地址",
@@ -5446,20 +4046,6 @@
     "ja": "ネットワークに {count} 個のIPアドレスが存在します。これらを削除してください",
     "ko": "네트워크에 {count}개의 IP 주소가 있습니다. 먼저 삭제해주세요"
   },
-  "old_network_format_error": {
-    "zh": "旧网络格式错误",
-    "zh_tw": "舊網路格式錯誤",
-    "en": "Old network format error",
-    "ja": "古いネットワーク形式エラー",
-    "ko": "이전 네트워크 형식 오류"
-  },
-  "new_network_format_error": {
-    "zh": "新网络格式错误",
-    "zh_tw": "新網路格式錯誤",
-    "en": "New network format error",
-    "ja": "新しいネットワーク形式エラー",
-    "ko": "새 네트워크 형식 오류"
-  },
   "ip_address_cannot_be_empty": {
     "zh": "IP地址不能为空",
     "zh_tw": "IP位址不能為空",
@@ -5501,13 +4087,6 @@
     "en": "Target network address cannot be empty",
     "ja": "ターゲットネットワークアドレスは空にすることはできません",
     "ko": "대상 네트워크 주소는 비워둘 수 없습니다"
-  },
-  "target_network_format_error": {
-    "zh": "目标网络格式错误",
-    "zh_tw": "目標網路格式錯誤",
-    "en": "Target network format error",
-    "ja": "ターゲットネットワーク形式エラー",
-    "ko": "대상 네트워크 형식 오류"
   },
   "target_network_not_exists": {
     "zh": "目标网络不存在",
@@ -5670,13 +4249,6 @@
     "ja": "サブネットプランを生成できません",
     "ko": "서브넷 계획을 생성할 수 없습니다"
   },
-  "invalid_ip_address_with_value": {
-    "zh": "无效的IP地址: {ip_address}",
-    "zh_tw": "無效的IP位址: {ip_address}",
-    "en": "Invalid IP address: {ip_address}",
-    "ja": "無効なIPアドレス: {ip_address}",
-    "ko": "유효하지 않은 IP 주소: {ip_address}"
-  },
   "port_preset": {
     "zh": "端口预设",
     "zh_tw": "連接埠預設",
@@ -5711,5 +4283,376 @@
     "en": "Custom Ports",
     "ja": "カスタムポート",
     "ko": "사용자 정의 포트"
+  },
+  "procurement": {
+    "zh": "采购部",
+    "zh_tw": "採購部",
+    "en": "Procurement Department",
+    "ja": "調達部",
+    "ko": "구매팀"
+  },
+  "transportation": {
+    "zh": "运输部",
+    "zh_tw": "運輸部",
+    "en": "Transportation Department",
+    "ja": "輸送部",
+    "ko": "운송팀"
+  },
+  "legal": {
+    "zh": "法务部",
+    "zh_tw": "法務部",
+    "en": "Legal Department",
+    "ja": "法務部",
+    "ko": "법무팀"
+  },
+  "rd": {
+    "zh": "研发部",
+    "zh_tw": "研發部",
+    "en": "R&D Department",
+    "ja": "研究開発部",
+    "ko": "연구개발팀"
+  },
+  "discipline": {
+    "zh": "纪检部",
+    "zh_tw": "紀檢部",
+    "en": "Discipline Inspection Department",
+    "ja": "紀律検査部",
+    "ko": "기율검사부"
+  },
+  "party": {
+    "zh": "党群部",
+    "zh_tw": "黨群部",
+    "en": "Party Affairs Department",
+    "ja": "党務部",
+    "ko": "당사부"
+  },
+  "engineering": {
+    "zh": "工程部",
+    "zh_tw": "工程部",
+    "en": "Engineering Department",
+    "ja": "エンジニアリング部",
+    "ko": "엔지니어링팀"
+  },
+  "production": {
+    "zh": "生产部",
+    "zh_tw": "生產部",
+    "en": "Production Department",
+    "ja": "生産部",
+    "ko": "생산팀"
+  },
+  "sales": {
+    "zh": "销售部",
+    "zh_tw": "銷售部",
+    "en": "Sales Department",
+    "ja": "営業部",
+    "ko": "영업팀"
+  },
+  "security": {
+    "zh": "安全部",
+    "zh_tw": "安全部",
+    "en": "Security Department",
+    "ja": "セキュリティ部",
+    "ko": "보안팀"
+  },
+  "segment": {
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Segment",
+    "ja": "セグメント",
+    "ko": "세그먼트"
+  },
+  "IPv4结果": {
+    "zh": "IPv4结果",
+    "zh_tw": "IPv4結果",
+    "en": "IPv4 Result",
+    "ja": "IPv4結果",
+    "ko": "IPv4 결과"
+  },
+  "IPv6结果": {
+    "zh": "IPv6结果",
+    "zh_tw": "IPv6結果",
+    "en": "IPv6 Result",
+    "ja": "IPv6結果",
+    "ko": "IPv6 결과"
+  },
+  "available_addresses": {
+    "zh": "可用地址",
+    "zh_tw": "可用位址",
+    "en": "Available Addresses",
+    "ja": "利用可能なアドレス",
+    "ko": "사용 가능한 주소"
+  },
+  "chart_drawing_failed": {
+    "zh": "图表绘制失败",
+    "zh_tw": "圖表繪製失敗",
+    "en": "Chart drawing failed",
+    "ja": "チャートの描画に失敗しました",
+    "ko": "차트 그리기 실패"
+  },
+  "description_too_long": {
+    "zh": "描述过长",
+    "zh_tw": "描述過長",
+    "en": "Description too long",
+    "ja": "説明が長すぎます",
+    "ko": "설명이 너무 깁니다"
+  },
+  "export_time": {
+    "zh": "导出时间",
+    "zh_tw": "匯出時間",
+    "en": "Export Time",
+    "ja": "エクスポート時間",
+    "ko": "내보내기 시간"
+  },
+  "host_address_range": {
+    "zh": "主机地址范围",
+    "zh_tw": "主機位址範圍",
+    "en": "Host Address Range",
+    "ja": "ホストアドレス範囲",
+    "ko": "호스트 주소 범위"
+  },
+  "host_count_must_be_positive": {
+    "zh": "主机数量必须为正数",
+    "zh_tw": "主機數量必須為正數",
+    "en": "Host count must be positive",
+    "ja": "ホスト数は正の数でなければなりません",
+    "ko": "호스트 수는 양수여야 합니다"
+  },
+  "hostname_too_long": {
+    "zh": "主机名过长",
+    "zh_tw": "主機名過長",
+    "en": "Hostname too long",
+    "ja": "ホスト名が長すぎます",
+    "ko": "호스트 이름이 너무 깁니다"
+  },
+  "info": {
+    "zh": "信息",
+    "zh_tw": "資訊",
+    "en": "Info",
+    "ja": "情報",
+    "ko": "정보"
+  },
+  "invalid_date_format": {
+    "zh": "日期格式无效",
+    "zh_tw": "日期格式無效",
+    "en": "Invalid date format",
+    "ja": "無効な日付形式",
+    "ko": "잘못된 날짜 형식"
+  },
+  "invalid_host_count": {
+    "zh": "无效的主机数量",
+    "zh_tw": "無效的主機數量",
+    "en": "Invalid host count",
+    "ja": "無効なホスト数",
+    "ko": "잘못된 호스트 수"
+  },
+  "invalid_number": {
+    "zh": "无效的数字",
+    "zh_tw": "無效的數字",
+    "en": "Invalid number",
+    "ja": "無効な数値",
+    "ko": "잘못된 번호"
+  },
+  "invalid_status": {
+    "zh": "无效的状态",
+    "zh_tw": "無效的狀態",
+    "en": "Invalid status",
+    "ja": "無効なステータス",
+    "ko": "잘못된 상태"
+  },
+  "ip_not_in_network": {
+    "zh": "IP地址不在网络中",
+    "zh_tw": "IP位址不在網路中",
+    "en": "IP not in network",
+    "ja": "IPがネットワーク内にありません",
+    "ko": "IP가 네트워크에 없습니다"
+  },
+  "ip_version_change_failed": {
+    "zh": "IP版本更改失败",
+    "zh_tw": "IP版本更改失敗",
+    "en": "IP version change failed",
+    "ja": "IPバージョンの変更に失敗しました",
+    "ko": "IP 버전 변경 실패"
+  },
+  "ip_version_mismatch": {
+    "zh": "IP版本不匹配",
+    "zh_tw": "IP版本不匹配",
+    "en": "IP version mismatch",
+    "ja": "IPバージョンが一致しません",
+    "ko": "IP 버전이 일치하지 않습니다"
+  },
+  "ipv4": {
+    "zh": "IPv4",
+    "zh_tw": "IPv4",
+    "en": "IPv4",
+    "ja": "IPv4",
+    "ko": "IPv4"
+  },
+  "ipv6": {
+    "zh": "IPv6",
+    "zh_tw": "IPv6",
+    "en": "IPv6",
+    "ja": "IPv6",
+    "ko": "IPv6"
+  },
+  "key": {
+    "zh": "键",
+    "zh_tw": "鍵",
+    "en": "Key",
+    "ja": "キー",
+    "ko": "키"
+  },
+  "legend": {
+    "zh": "图例",
+    "zh_tw": "圖例",
+    "en": "Legend",
+    "ja": "凡例",
+    "ko": "범례"
+  },
+  "no_planning_data_found": {
+    "zh": "未找到规划数据",
+    "zh_tw": "未找到規劃數據",
+    "en": "No planning data found",
+    "ja": "計画データが見つかりません",
+    "ko": "계획 데이터를 찾을 수 없습니다"
+  },
+  "no_segment_data": {
+    "zh": "无网段数据",
+    "zh_tw": "無網段數據",
+    "en": "No segment data",
+    "ja": "セグメントデータなし",
+    "ko": "세그먼트 데이터 없음"
+  },
+  "no_split_data_found": {
+    "zh": "未找到切分数据",
+    "zh_tw": "未找到切分數據",
+    "en": "No split data found",
+    "ja": "分割データが見つかりません",
+    "ko": "분할 데이터를 찾을 수 없습니다"
+  },
+  "parent_cidr": {
+    "zh": "父CIDR",
+    "zh_tw": "父CIDR",
+    "en": "Parent CIDR",
+    "ja": "親CIDR",
+    "ko": "상위 CIDR"
+  },
+  "parent_network_info": {
+    "zh": "父网络信息",
+    "zh_tw": "父網路資訊",
+    "en": "Parent Network Info",
+    "ja": "親ネットワーク情報",
+    "ko": "상위 네트워크 정보"
+  },
+  "pieces": {
+    "zh": "块",
+    "zh_tw": "塊",
+    "en": "Pieces",
+    "ja": "ピース",
+    "ko": "조각"
+  },
+  "please_enter_ip_range": {
+    "zh": "请输入IP范围",
+    "zh_tw": "請輸入IP範圍",
+    "en": "Please enter IP range",
+    "ja": "IP範囲を入力してください",
+    "ko": "IP 범위를 입력하세요"
+  },
+  "please_enter_split_segment": {
+    "zh": "请输入切分段",
+    "zh_tw": "請輸入切分段",
+    "en": "Please enter split segment",
+    "ja": "分割セグメントを入力してください",
+    "ko": "분할 세그먼트를 입력하세요"
+  },
+  "please_enter_subnets_to_check": {
+    "zh": "请输入要检查的子网",
+    "zh_tw": "請輸入要檢查的子網",
+    "en": "Please enter subnets to check",
+    "ja": "チェックするサブネットを入力してください",
+    "ko": "확인할 서브넷을 입력하세요"
+  },
+  "please_enter_subnets_to_merge": {
+    "zh": "请输入要合并的子网",
+    "zh_tw": "請輸入要合併的子網",
+    "en": "Please enter subnets to merge",
+    "ja": "統合するサブネットを入力してください",
+    "ko": "병합할 서브넷을 입력하세요"
+  },
+  "port_invalid": {
+    "zh": "端口无效",
+    "zh_tw": "端口無效",
+    "en": "Invalid port",
+    "ja": "無効なポート",
+    "ko": "잘못된 포트"
+  },
+  "port_list_empty": {
+    "zh": "端口列表为空",
+    "zh_tw": "端口列表為空",
+    "en": "Port list empty",
+    "ja": "ポートリストが空です",
+    "ko": "포트 목록이 비어 있습니다"
+  },
+  "port_range_error": {
+    "zh": "端口范围错误",
+    "zh_tw": "端口範圍錯誤",
+    "en": "Port range error",
+    "ja": "ポート範囲エラー",
+    "ko": "포트 범위 오류"
+  },
+  "selected_ips": {
+    "zh": "选中的IP",
+    "zh_tw": "選中的IP",
+    "en": "Selected IPs",
+    "ja": "選択されたIP",
+    "ko": "선택한 IP"
+  },
+  "separator": {
+    "zh": "分隔符",
+    "zh_tw": "分隔符",
+    "en": "Separator",
+    "ja": "セパレータ",
+    "ko": "구분 기호"
+  },
+  "split_line": {
+    "zh": "分割线",
+    "zh_tw": "分割線",
+    "en": "Split Line",
+    "ja": "分割線",
+    "ko": "분할 선"
+  },
+  "global_unicast_prefix": {
+    "zh": "全球单播前缀",
+    "zh_tw": "全球單播前綴",
+    "en": "Global Unicast Prefix",
+    "ja": "グローバルユニキャストプレフィックス",
+    "ko": "전역 유니캐스트 접두사"
+  },
+  "global_unicast_prefix_generic": {
+    "zh": "全球单播前缀",
+    "zh_tw": "全球單播前綴",
+    "en": "Global Unicast Prefix",
+    "ja": "グローバルユニキャストプレフィックス",
+    "ko": "전역 유니캐스트 접두사"
+  },
+  "first_host": {
+    "zh": "第一个主机",
+    "zh_tw": "第一個主機",
+    "en": "First Host",
+    "ja": "最初のホスト",
+    "ko": "첫 번째 호스트"
+  },
+  "last_host": {
+    "zh": "最后一个主机",
+    "zh_tw": "最後一個主機",
+    "en": "Last Host",
+    "ja": "最後のホスト",
+    "ko": "마지막 호스트"
+  },
+  "donate_tip": {
+    "zh": "如果您觉得这个工具对您有帮助，欢迎扫码捐赠支持开发",
+    "zh_tw": "如果您覺得這個工具對您有幫助，歡迎掃碼捐贈支持開發",
+    "en": "If you find this tool helpful, please consider donating to support development",
+    "ja": "このツールが役に立ったと感じたら、開発をサポートするために寄付を検討してください",
+    "ko": "이 도구가 도움이 되었다면 개발을 지원하기 위해 기부를 고려해 주세요"
   }
 }

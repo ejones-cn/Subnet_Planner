@@ -1,12 +1,13 @@
 import ipaddress
+from typing import Any
 
 from i18n import _
 from ip_subnet_calculator import handle_ip_subnet_error
 
 
 class ValidationService:
-    def __init__(self, app=None):
-        self.app = app
+    def __init__(self, app: Any = None):
+        self.app: Any = app
 
     def validate_cidr(self, cidr_str, ip_version=None, require_prefix=None):
         """统一的CIDR验证核心方法
@@ -148,7 +149,7 @@ class ValidationService:
                 'error_code': 'empty_requirements'
             }
 
-        for name, hosts in requirements:
+        for _name, hosts in requirements:
             try:
                 hosts_int = int(hosts)
                 if hosts_int <= 0:

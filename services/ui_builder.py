@@ -1,16 +1,15 @@
-import ipaddress
 import tkinter as tk
 from tkinter import ttk
 from collections import deque
+from typing import Any
 
 from i18n import _
-from style_manager import get_current_font_settings, get_style_manager
-from services.table_column_manager import TableColumnManager
+from style_manager import get_current_font_settings
 
 
 class SubnetPlannerUIBuilder:
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, app: Any):
+        self.app: Any = app
 
     def build_all(self):
         self.app.create_top_level_notebook()
@@ -79,7 +78,7 @@ class SubnetPlannerUIBuilder:
         vcmd = (app.root.register(lambda p: app.validate_cidr(p, app.parent_entry, ip_version=app.split_ip_version_var.get())), '%P')
         app.parent_entry = ttk.Combobox(
             input_frame,
-            values=app.split_parent_networks,
+            values=list(app.split_parent_networks),
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
@@ -95,7 +94,7 @@ class SubnetPlannerUIBuilder:
         vcmd = (app.root.register(lambda text: app.validate_cidr(text, app.split_entry, ip_version=app.split_ip_version_var.get())), '%P')
         app.split_entry = ttk.Combobox(
             input_frame,
-            values=app.split_networks,
+            values=list(app.split_networks),
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,

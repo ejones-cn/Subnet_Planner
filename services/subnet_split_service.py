@@ -1,4 +1,5 @@
 import ipaddress
+from typing import Any
 
 from i18n import _
 from ip_subnet_calculator import (
@@ -10,8 +11,8 @@ from services.table_column_manager import TableColumnManager
 
 
 class SubnetSplitService:
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, app: Any):
+        self.app: Any = app
 
     def validate_split_input(self, parent, split):
         if not parent:
@@ -74,8 +75,8 @@ class SubnetSplitService:
         split = app.split_entry.get().strip()
 
         try:
-            parent_network = ipaddress.ip_network(parent, strict=False)
-            split_network = ipaddress.ip_network(split, strict=False)
+            ipaddress.ip_network(parent, strict=False)
+            ipaddress.ip_network(split, strict=False)
 
             result = split_subnet(parent, split)
 

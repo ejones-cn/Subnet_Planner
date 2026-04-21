@@ -2241,6 +2241,7 @@ class SubnetPlannerApp:
         ttk.Label(input_frame, text=_("split_segments"), anchor="w", font=(font_family, font_size)).grid(
             row=2, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
+
         def validate_split_segment(p):
             return self.validate_cidr(p, self.split_entry, ip_version=self.split_ip_version_var.get(), require_prefix=True)
         vcmd = (self.root.register(validate_split_segment), '%P')
@@ -2456,9 +2457,9 @@ class SubnetPlannerApp:
 
         # 添加顶级标签页
         self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec")
+        self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
         self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0")
         self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9")
-        self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
@@ -13890,9 +13891,9 @@ class SubnetPlannerApp:
                         background='white', 
                         foreground='black', 
                         borderwidth=1,
-                        date_pattern='yyyy-MM-dd',  # 设置日期格式
-                        showweeknumbers=False,  # 不显示周数
-                        showothermonthdays=False  # 不显示其他月份的日期
+                        date_pattern='yyyy-MM-dd',
+                        showweeknumbers=False,
+                        showothermonthdays=False
                     )
                     
                     # 设置初始日期
@@ -13919,30 +13920,25 @@ class SubnetPlannerApp:
                                 # 设置DateEntry的日期
                                 self.inline_edit_widget.set_date(date_obj)
                         except Exception:
-                            pass
+                            # 如果解析失败，使用默认日期
+                            default_date = (datetime.datetime.now() + datetime.timedelta(days=365)).date()
+                            self.inline_edit_widget.set_date(default_date)
                     else:
-                        # 如果没有当前值，使用今天的日期
-                        today = datetime.datetime.now().date()
-                        self.inline_edit_widget.set_date(today)
+                        # 如果没有当前值，使用当前日期 + 365天（与过期设置对话框保持一致）
+                        default_date = (datetime.datetime.now() + datetime.timedelta(days=365)).date()
+                        self.inline_edit_widget.set_date(default_date)
                     
                     # 放置控件
                     self.inline_edit_widget.place(x=x, y=y, width=width, height=height)
                     
                     # 绑定必要的事件
-                    def on_date_save(event):
+                    def on_date_save(event=None):
                         # 用户选择了新日期，清除验证失败标记
                         self._inline_edit_validation_failed = False
                         # 延迟执行保存，让tkcalendar内部的_select方法先完成
                         self.root.after(10, lambda: self.on_generic_inline_edit_save(None))
                     
                     def on_date_focus_out(event):
-                        # 主动验证当前输入
-                        is_valid, error_msg = self._validate_current_inline_edit()
-                        if not is_valid:
-                            self._inline_edit_validation_failed = True
-                            self.show_error("", error_msg)
-                            self.root.after(1, self._refocus_inline_edit)
-                            return
                         # 检查日历是否打开
                         calendar_open = False
                         try:
@@ -13955,6 +13951,13 @@ class SubnetPlannerApp:
                         
                         # 日历关闭且焦点离开时，保存编辑
                         if not calendar_open:
+                            # 主动验证当前输入
+                            is_valid, error_msg = self._validate_current_inline_edit()
+                            if not is_valid:
+                                self._inline_edit_validation_failed = True
+                                self.show_error("", error_msg)
+                                self.root.after(1, self._refocus_inline_edit)
+                                return
                             self.on_generic_inline_edit_save(None)
                     
                     # 绑定事件
@@ -13967,99 +13970,6 @@ class SubnetPlannerApp:
                     self.inline_edit_widget.focus_force()
                     # 初始化验证失败标记
                     self._inline_edit_validation_failed = False
-                    
-                    # 添加全局点击事件监听，确保任何点击都能正确处理
-                    def on_any_click(event):
-                        # 主动验证当前输入，如果无效则阻止点击其他位置
-                        is_valid, error_msg = self._validate_current_inline_edit()
-                        if not is_valid:
-                            self._inline_edit_validation_failed = True
-                            self.show_error("", error_msg)
-                            self.root.after(1, self._refocus_inline_edit)
-                            return
-                        
-                        # 检查是否点击在DateEntry控件上
-                        if event.widget == self.inline_edit_widget:
-                            return
-                        
-                        # 检查是否点击在日历控件上
-                        calendar_clicked = False
-                        try:
-                            if hasattr(self.inline_edit_widget, '_top_cal'):
-                                top_cal = self.inline_edit_widget._top_cal
-                                if top_cal and top_cal.winfo_exists() and top_cal.winfo_ismapped():
-                                    x = event.x_root
-                                    y = event.y_root
-                                    try:
-                                        tx = top_cal.winfo_rootx()
-                                        ty = top_cal.winfo_rooty()
-                                        tw = top_cal.winfo_width()
-                                        th = top_cal.winfo_height()
-                                        if tw > 0 and th > 0 and tx <= x <= tx + tw and ty <= y <= ty + th:
-                                            calendar_clicked = True
-                                    except Exception:
-                                        pass
-                        except Exception:
-                            pass
-                        
-                        # 检查是否点击在另一个DateEntry控件上
-                        another_date_entry = False
-                        try:
-                            if DateEntry is not None and isinstance(event.widget, DateEntry):
-                                another_date_entry = True
-                        except Exception:
-                            pass
-                        
-                        # 检查是否是Treeview控件
-                        is_treeview_click = False
-                        clicked_item = None
-                        target_tree = None
-                        try:
-                            if str(event.widget).endswith('.treeview'):
-                                is_treeview_click = True
-                                # 获取点击的行
-                                try:
-                                    clicked_item = event.widget.identify_row(event.y)
-                                    target_tree = event.widget
-                                except Exception:
-                                    pass
-                        except Exception:
-                            pass
-                        
-                        # 如果没有点击在日历上，也没有点击在另一个DateEntry上，保存编辑
-                        if not calendar_clicked and not another_date_entry:
-                            self.on_generic_inline_edit_save(None)
-                            
-                            # 如果点击的是Treeview控件且点击了有效的行
-                            if is_treeview_click and clicked_item and target_tree:
-                                # 选中点击的行
-                                target_tree.selection_set(clicked_item)
-                    
-                    # 绑定到根窗口的所有点击事件，使用唯一标签
-                    self._inline_edit_click_handler_id = self.root.bind('<Button-1>', on_any_click, add='+')
-                    
-                    # 为日历控件添加关闭事件监听
-                    def check_calendar_close():
-                        try:
-                            if hasattr(self.inline_edit_widget, '_top_cal'):
-                                top_cal = self.inline_edit_widget._top_cal
-                                # 检查日历是否已关闭（不存在或未映射）
-                                calendar_closed = not (top_cal and top_cal.winfo_exists() and top_cal.winfo_ismapped())
-                                if calendar_closed:
-                                    # 日历已关闭，检查焦点
-                                    if not self.inline_edit_widget.focus_get() == self.inline_edit_widget:
-                                        self.on_generic_inline_edit_save(None)
-                        except Exception:
-                            pass
-                    
-                    # 开始检查日历关闭状态
-                    def start_check_calendar_close():
-                        check_calendar_close()
-                        # 只有当编辑控件仍然存在时，才继续检查
-                        if hasattr(self, 'inline_edit_widget'):
-                            self._calendar_close_check_timer = self.root.after(100, start_check_calendar_close)
-                    
-                    self._calendar_close_check_timer = self.root.after(100, start_check_calendar_close)
                     
                 except Exception as e:
                     # 如果日期选择器创建失败，使用普通的Entry控件替代
