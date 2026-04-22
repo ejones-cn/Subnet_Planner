@@ -1996,11 +1996,11 @@
     "ko": "주소 할당"
   },
   "clear_expiry_date": {
-    "zh": "清除过期日期",
-    "en": "Clear Expiry Date",
-    "ja": "有効期限をクリア",
-    "zh_tw": "清除過期日期",
-    "ko": "만료 날짜 지우기"
+    "zh": "清除",
+    "en": "Clear",
+    "ja": "クリア",
+    "zh_tw": "清除",
+    "ko": "지우기"
   },
   "successfully_released_ips": {
     "zh": "成功释放 {count} 个IP地址",

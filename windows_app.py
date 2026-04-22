@@ -221,7 +221,8 @@ def create_bordered_entry(parent, border_color="#a9a9a9", **kwargs):
     
     # 创建Entry组件，使用普通的tk.Entry而不是ttk.Entry，避免双重边框
     entry = tk.Entry(border_frame, bd=0, relief="flat", highlightthickness=0, **kwargs)
-    entry.pack(fill="both", expand=True, padx=1, pady=1)
+    # 修改：移除右侧padding，避免边框叠加形成竖线
+    entry.pack(fill="both", expand=True, padx=(1, 0), pady=1)
     
     return border_frame, entry
 
@@ -16924,8 +16925,8 @@ class SubnetPlannerApp:
         main_container = ttk.Frame(dialog.content_frame, padding=(15, 15, 15, 10))
         main_container.pack(fill='both', expand=True)
         
-        # 显示选中的IP数量
-        ttk.Label(main_container, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
+        # 显示选中的IP数量（靠左上放置）
+        ttk.Label(main_container, text=_('selected_ips_count').format(count=len(ip_records))).pack(side='top', anchor='w', pady=(0, 10))
         
         # 目标网络选择 - 将标签和下拉框放在同一行
         network_frame = ttk.Frame(main_container)
@@ -17001,7 +17002,10 @@ class SubnetPlannerApp:
         dialog.content_frame.grid_columnconfigure(0, weight=0)
         dialog.content_frame.grid_columnconfigure(1, weight=1)
         
-        ttk.Label(dialog.content_frame, text=_('expiry_date') + ':').grid(row=0, column=0, sticky="e", pady=5, padx=(30, 5))
+        # 显示选中的IP数量（靠左上放置）
+        ttk.Label(dialog.content_frame, text=_('selected_ips_count').format(count=len(ip_addresses))).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10), padx=(30, 0))
+        
+        ttk.Label(dialog.content_frame, text=_('expiry_date') + ':').grid(row=1, column=0, sticky="e", pady=5, padx=(30, 5))
         
         # 创建日期输入框
         from datetime import datetime
@@ -17014,7 +17018,7 @@ class SubnetPlannerApp:
             temp_var = tk.StringVar()
             temp_var.set(default_expiry)
             temp_entry = ttk.Entry(dialog.content_frame, textvariable=temp_var)
-            temp_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(5, 30))
+            temp_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
             
             # 延迟创建DateEntry，避免阻塞对话框显示
             def create_date_entry():
@@ -17024,7 +17028,7 @@ class SubnetPlannerApp:
                 
                 # 创建DateEntry日期选择器
                 date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
-                date_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(5, 30))
+                date_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
                 date_entry.set_date(default_expiry)
                 
                 # 修复模态对话框中DateEntry日历弹窗问题
@@ -17037,8 +17041,8 @@ class SubnetPlannerApp:
             date_var = tk.StringVar()
             date_var.set(default_expiry)
             date_entry = ttk.Entry(dialog.content_frame, textvariable=date_var)
-            date_entry.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
-            ttk.Label(dialog.content_frame, text=_('date_format_yyyy_mm_dd')).grid(row=1, column=1, sticky="w", pady=5)
+            date_entry.grid(row=1, column=1, sticky="ew", pady=10, padx=(0, 10))
+            ttk.Label(dialog.content_frame, text=_('date_format_yyyy_mm_dd')).grid(row=2, column=1, sticky="w", pady=5)
         
         # 获取日期值的辅助函数
         def get_expiry_date():
@@ -17108,20 +17112,20 @@ class SubnetPlannerApp:
         if action_type == 'auto_allocate':
             height = 260
         elif action_type == 'allocate_reserve':
-            height = 300  # 缩小分配/保留对话框高度
+            height = 290  # 减小分配/保留对话框高度，消除空白间隙
         else:
-            height = 300
+            height = 260
         
         # 设置默认过期日期为1年后
         from datetime import datetime
         default_expiry = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
         
         # 使用统一的create_dialog方法创建居中对话框
-        dialog = self.create_dialog(title, 410, height)
+        dialog = self.create_dialog(title, 420, height)
         
-        # 创建主框架
-        main_frame = ttk.Frame(dialog, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True, side=tk.TOP)
+        # 创建主框架（增加内边距）
+        main_frame = ttk.Frame(dialog, padding="30 20 20 0")
+        main_frame.pack(fill=tk.X, expand=False, side=tk.TOP)
         
         # 配置网格布局
         main_frame.grid_columnconfigure(0, weight=0)
@@ -17297,42 +17301,40 @@ class SubnetPlannerApp:
                 ip_entry.insert(0, ip_address)
                 ip_entry.config(state='readonly')  # 设置为只读
                 auto_allocate_var.set(True)  # 有IP地址时默认启用自动分配
+    
+            # 延迟执行耗时操作，提升对话框打开速度
+            def delayed_initialization():
+                """延迟初始化：自动分配IP和加载历史信息"""
+                # 初始化自动分配状态
+                if action_type == 'allocate_reserve' and show_ip_input:
+                    toggle_auto_allocate()
                 
-                # 使用传入的原始值或从数据库获取信息
-                if original_hostname or original_description:
-                    # 使用传入的原始值
-                    hostname_entry.insert(0, original_hostname)
-                    description_entry.insert(0, original_description)
-                else:
-                    # 获取IP的历史信息
-                    ip_info = None
-                    if record_id:
-                        # record_id现在已经是数据库记录ID（从_get_db_record_id获取）
-                        ip_info = self.ipam.get_ip_record_by_id(record_id)
-                    
-                    # 如果没有通过记录ID获取到信息，使用默认方法
-                    if not ip_info:
-                        ip_info = self.ipam.get_ip_info(ip_address)
-                    
-                    if ip_info:
-                        hostname_entry.insert(0, ip_info.get('hostname', ''))
-                        mac_entry.insert(0, ip_info.get('mac_address', ''))
-                        description_entry.insert(0, ip_info.get('description', ''))
-                        # 填充过期日期，如果存在的话
-                        expiry_date = ip_info.get('expiry_date', '')
-                        if expiry_date:
-                            # 如果有历史过期日期，使用该日期的1年后作为默认值
-                            try:
-                                from datetime import datetime
-                                expiry_date_obj = datetime.strptime(expiry_date, "%Y-%m-%d")
-                                default_expiry = (expiry_date_obj + timedelta(days=365)).strftime("%Y-%m-%d")
-                            except Exception:
-                                # 如果日期格式错误，使用当前日期的1年后
-                                from datetime import datetime
-                                default_expiry = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
-            
-            # 初始化自动分配状态
-            toggle_auto_allocate()
+                # 延迟加载IP历史信息（仅当没有传入原始值时）
+                if ip_address and not (original_hostname or original_description):
+                    try:
+                        ip_info = None
+                        if record_id:
+                            ip_info = self.ipam.get_ip_record_by_id(record_id)
+                        
+                        if not ip_info:
+                            ip_info = self.ipam.get_ip_info(ip_address)
+                        
+                        if ip_info:
+                            hostname_entry.insert(0, ip_info.get('hostname', ''))
+                            mac_entry.insert(0, ip_info.get('mac_address', ''))
+                            description_entry.insert(0, ip_info.get('description', ''))
+                            expiry_date = ip_info.get('expiry_date', '')
+                            if expiry_date:
+                                try:
+                                    from datetime import datetime
+                                    expiry_date_obj = datetime.strptime(expiry_date, "%Y-%m-%d")
+                                    new_expiry = (expiry_date_obj + timedelta(days=365)).strftime("%Y-%m-%d")
+                                    if DateEntry:
+                                        expiry_entry.set_date(new_expiry)
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
         
         # 验证MAC地址格式函数
         def validate_mac_address(mac):
@@ -17385,39 +17387,43 @@ class SubnetPlannerApp:
         if DateEntry:
             # 使用DateEntry选择日期
             expiry_entry = DateEntry(main_frame, date_pattern='yyyy-MM-dd')
-            expiry_entry.grid(row=expiry_row, column=1, sticky="ew", pady=5, padx=(0, 10))
+            expiry_entry.grid(row=expiry_row, column=1, sticky="ew", pady=0, padx=(0, 10))
             # DateEntry初始化时会覆盖textvariable的值，所以需要在创建后设置日期
             expiry_entry.set_date(default_expiry)
             
-            # 修复模态对话框中DateEntry日历弹窗问题
-            fix_date_entry_for_modal(expiry_entry, dialog)
+            # 延迟执行DateEntry修复函数，提升对话框打开速度
+            dialog.after(30, lambda: fix_date_entry_for_modal(expiry_entry, dialog))
         else:
             # 使用普通Entry输入日期
             expiry_var = tk.StringVar()
             expiry_var.set(default_expiry)
             expiry_entry = ttk.Entry(main_frame, textvariable=expiry_var)
-            expiry_entry.grid(row=expiry_row, column=1, sticky="ew", pady=5, padx=(0, 10))
-            ttk.Label(main_frame, text="格式: YYYY-MM-DD").grid(row=expiry_row + 1, column=1, sticky="w", pady=2, padx=(0, 10))
+            expiry_entry.grid(row=expiry_row, column=1, sticky="ew", pady=0, padx=(0, 10))
+            ttk.Label(main_frame, text="格式: YYYY-MM-DD").grid(row=expiry_row + 1, column=1, sticky="w", pady=0, padx=(0, 10))
         
-        # 批量复选框变量
-        batch_var = tk.BooleanVar(value=False)  # 默认不选中批量
-        
-        # 批量模式控件
-        batch_mode_frame = ttk.Frame(auto_allocate_frame)
-        
-        # 数量输入（调整字号）
-        ttk.Label(batch_mode_frame, text="数量:", font=('微软雅黑', 9)).pack(side=tk.LEFT, padx=(0, 5))
-        quantity_border, quantity_entry = create_bordered_entry(batch_mode_frame, width=5)
-        quantity_border.pack(side=tk.LEFT, padx=(0, 10))
-        quantity_entry.insert(0, "10")  # 默认值
-        
-        # 生成模式选择
-        generate_mode_var = tk.StringVar(value='sequential')  # 默认连续生成
-        ttk.Radiobutton(batch_mode_frame, text="连续", variable=generate_mode_var, value='sequential').pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Radiobutton(batch_mode_frame, text="随机", variable=generate_mode_var, value='random').pack(side=tk.LEFT)
+        # 如果提供了IP地址，填充原始值（必须在控件创建之后执行）
+        if ip_address and (original_hostname or original_description):
+            hostname_entry.insert(0, original_hostname)
+            description_entry.insert(0, original_description)
         
         # 添加批量和自动复选框（只在分配/保留对话框中显示）
         if action_type == 'allocate_reserve' and show_ip_input:
+            # 批量复选框变量
+            batch_var = tk.BooleanVar(value=False)  # 默认不选中批量
+            
+            # 批量模式控件
+            batch_mode_frame = ttk.Frame(auto_allocate_frame)
+            
+            # 数量输入（调整字号）
+            ttk.Label(batch_mode_frame, text="数量:", font=('微软雅黑', 9)).pack(side=tk.LEFT, padx=(0, 5))
+            quantity_border, quantity_entry = create_bordered_entry(batch_mode_frame, width=5)
+            quantity_border.pack(side=tk.LEFT, padx=(0, 10))
+            quantity_entry.insert(0, "10")  # 默认值
+            
+            # 生成模式选择
+            generate_mode_var = tk.StringVar(value='sequential')  # 默认连续生成
+            ttk.Radiobutton(batch_mode_frame, text="连续", variable=generate_mode_var, value='sequential').pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Radiobutton(batch_mode_frame, text="随机", variable=generate_mode_var, value='random').pack(side=tk.LEFT)
             # 添加批量复选框（调整位置，减少缩进）
             batch_check = ttk.Checkbutton(
                 auto_allocate_frame, 
@@ -17441,11 +17447,16 @@ class SubnetPlannerApp:
             auto_allocate_check.pack(side=tk.LEFT, padx=10)
             # 复选框会根据 auto_allocate_var 的值自动设置为选中状态，无需调用 invoke()
         
-        # 按钮框架（固定在对话框底部）
+        # 按钮框架（放在dialog底部，固定位置）
         button_frame = ttk.Frame(dialog)
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=(0, 15))
+        
         button_container = ttk.Frame(button_frame)
         button_container.pack(side=tk.RIGHT)
+        
+        # 启动延迟初始化，提升对话框打开速度
+        if show_ip_input and action_type == 'allocate_reserve':
+            dialog.after(50, delayed_initialization)
         
         # 批量生成相关函数
         def get_target_network_for_batch():
