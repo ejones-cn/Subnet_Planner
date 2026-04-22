@@ -17978,10 +17978,6 @@ class SubnetPlannerApp:
         if root_node:
             network_data.insert(0, root_node)
         
-        print(f"网络数据长度: {len(network_data)}")
-        if network_data:
-            print(f"根节点子节点数量: {len(network_data[0]['children'])}")
-        
         self.topology_visualizer.draw_topology(network_data)
     
     def reserve_ip(self):
@@ -18037,7 +18033,6 @@ if __name__ == "__main__":
     # 设置全局双击间隔
     try:
         root.tk.call('tk', 'setDoubleClickTime', double_click_time)
-        print(f"[INFO] 双击间隔已设置为: {double_click_time}ms")
     except Exception:
         # 在某些系统上不支持此命令，使用系统默认值即可
         pass
@@ -18076,11 +18071,8 @@ if __name__ == "__main__":
     # 设置主窗口关闭事件处理程序
     def on_main_window_close():
         """主窗口关闭事件处理函数"""
-        print("正在关闭应用程序...")
-        
         # 销毁所有窗口和组件
         root.destroy()
-        print("应用程序已关闭")
     
     root.protocol("WM_DELETE_WINDOW", on_main_window_close)
     
