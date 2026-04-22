@@ -2471,6 +2471,13 @@
     "ja": "エクスポートするネットワークを選択してください",
     "ko": "내보낼 네트워크를 선택하세요"
   },
+  "please_select_network_for_allocation": {
+    "zh": "请先选择要分配/保留地址的网段",
+    "zh_tw": "請先選擇要分配/保留地址的網段",
+    "en": "Please select a network for allocation/reservation",
+    "ja": "割り当て/予約するネットワークを選択してください",
+    "ko": "할당/예약할 네트워크를 선택하세요"
+  },
   "please_enter_network": {
     "zh": "请输入网络",
     "zh_tw": "請輸入網路",

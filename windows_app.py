@@ -13013,7 +13013,7 @@ class SubnetPlannerApp:
             total = allocated + reserved + available
             
             if total == 0:
-                self.stats_canvas.create_text(center_x, center_y, text=_('no_data_available'), font=("微软雅黑", 12))
+                self._draw_text_with_stroke(center_x, center_y, _('no_data_available'), font=("微软雅黑", 12))
                 return
             
             colors = ["#4CAF50", "#2196F3", "#E0E0E0"]
@@ -13028,7 +13028,7 @@ class SubnetPlannerApp:
                 self.stats_canvas.create_rectangle(legend_x, legend_y + i * 20, legend_x + 12, legend_y + 12 + i * 20, fill=color, outline="#ffffff")
                 percentage = (value / total) * 100 if total > 0 else 0
                 legend_text = f"{label}: {value} ({percentage:.1f}%)"
-                self.stats_canvas.create_text(legend_x + 20, legend_y + 6 + i * 20, text=legend_text, font=("微软雅黑", 8), anchor=tk.W, fill="#ffffff")
+                self._draw_text_with_stroke(legend_x + 20, legend_y + 6 + i * 20, legend_text, font=("微软雅黑", 8), anchor=tk.W)
             
             start_angle = 0
             for i, value in enumerate(values):
@@ -13060,25 +13060,44 @@ class SubnetPlannerApp:
                 
                 percentage = (value / total) * 100
                 label_text = f"{labels[i]}: {value}"
-                self.stats_canvas.create_text(label_x, label_y, text=label_text, font=("微软雅黑", 8), fill="#ffffff", anchor=anchor)
+                self._draw_text_with_stroke(label_x, label_y, label_text, font=("微软雅黑", 8), anchor=anchor)
                 
                 start_angle = end_angle
             
-            self.stats_canvas.create_text(
+            self._draw_text_with_stroke(
                 center_x, center_y, 
-                text=f"{_('stats_total_ip')}: {total}",
-                font=("微软雅黑", 12, "bold"),
-                fill="#ffffff"
+                f"{_('stats_total_ip')}: {total}",
+                font=("微软雅黑", 12, "bold")
             )
             
-            self.stats_canvas.create_text(
+            self._draw_text_with_stroke(
                 center_x, height - 25, 
-                text=f"{_('stats_utilization_rate')} {utilization_rate:.1f}%",
-                font=("微软雅黑", 10, "bold"),
-                fill="#ffffff"
+                f"{_('stats_utilization_rate')} {utilization_rate:.1f}%",
+                font=("微软雅黑", 10, "bold")
             )
         except Exception as e:
             print(f"绘制饼图失败: {e}")
+    
+    def _draw_text_with_stroke(self, x, y, text, font=("微软雅黑", 10), anchor=tk.CENTER, fill="#ffffff"):
+        """绘制带描边效果的文本，提高文字在各种背景色上的可读性"""
+        # 先绘制4个黑色偏移文字作为描边
+        for dx in (-1, 1):
+            for dy in (-1, 1):
+                self.stats_canvas.create_text(
+                    x + dx, y + dy,
+                    text=text,
+                    font=font,
+                    anchor=anchor,
+                    fill="#000000"
+                )
+        # 再绘制主文字
+        self.stats_canvas.create_text(
+            x, y,
+            text=text,
+            font=font,
+            anchor=anchor,
+            fill=fill
+        )
     
 
     
@@ -15094,7 +15113,7 @@ class SubnetPlannerApp:
         # 获取选中的网络
         network_items = self.ipam_network_tree.selection()
         if not network_items:
-            return False, _('please_select_network'), None
+            return False, _('please_select_network_for_allocation'), None
         network = self.ipam_network_tree.item(network_items[0], 'values')[0]
         
         if column_name == 'ip_address':
@@ -15963,7 +15982,7 @@ class SubnetPlannerApp:
         """分配/保留IP地址"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_error(_('error'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network_for_allocation'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]

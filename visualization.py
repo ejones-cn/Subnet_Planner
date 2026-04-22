@@ -1245,6 +1245,10 @@ class NetworkTopologyVisualizer:
                 self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
                 return
             
+            if self._auto_scale_timer is not None:
+                self.canvas.after_cancel(self._auto_scale_timer)
+                self._auto_scale_timer = None
+            
             # 计算缩放比例
             scale_x = (canvas_width - 2 * padding) / content_width if content_width > 0 else 1.0
             scale_y = (canvas_height - 2 * padding) / content_height if content_height > 0 else 1.0
