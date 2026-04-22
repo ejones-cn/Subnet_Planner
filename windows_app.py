@@ -17834,7 +17834,6 @@ class SubnetPlannerApp:
                 if parent_cidr:
                     network_tree[parent_cidr]['children'].append(current_cidr)
             
-            print(f"从IPAM获取的网络数量: {len(relevant_networks)}")
         except Exception as e:
             print(f"获取子网时出错: {e}")
         
@@ -17896,54 +17895,40 @@ class SubnetPlannerApp:
             name_lower = net_info['name'].lower()
             cidr_lower = cidr.lower()
             
-            # 调试信息
-            print(f"处理网络: {net_info['name']}, CIDR: {cidr}, Level: {level}")
-            
             # 根据网络名称关键词判断类型
             if '服务器' in name_lower or 'server' in name_lower:
                 device_type = "server"
                 subnet_type = "server"  # 暖橙色
-                print(f"匹配关键词 '服务器'，设置 subnet_type: {subnet_type}")
             elif '管理' in name_lower or 'management' in name_lower or 'mgmt' in name_lower:
                 device_type = "client"
                 subnet_type = "management"  # 柔和紫色
-                print(f"匹配关键词 '管理'，设置 subnet_type: {subnet_type}")
             elif '无线' in name_lower or 'wifi' in name_lower or 'wireless' in name_lower:
                 device_type = "wireless"
                 subnet_type = "wireless"  # 深蓝色
-                print(f"匹配关键词 '无线'，设置 subnet_type: {subnet_type}")
             elif '客户' in name_lower or 'client' in name_lower:
                 device_type = "switch"
                 subnet_type = "client"  # 青绿色
-                print(f"匹配关键词 '客户'，设置 subnet_type: {subnet_type}")
             elif '办公' in name_lower or 'office' in name_lower:
                 device_type = "office"
                 subnet_type = "office"  # 绿色
-                print(f"匹配关键词 '办公'，设置 subnet_type: {subnet_type}")
             elif '生产' in name_lower or 'prod' in name_lower or 'production' in name_lower:
                 device_type = "production"
                 subnet_type = "production"  # 橙色
-                print(f"匹配关键词 '生产'，设置 subnet_type: {subnet_type}")
             elif '测试' in name_lower or 'test' in name_lower or 'dev' in name_lower:
                 device_type = "test"
                 subnet_type = "test"  # 紫色
-                print(f"匹配关键词 '测试'，设置 subnet_type: {subnet_type}")
             elif '监控' in name_lower or 'monitor' in name_lower:
                 device_type = "switch"
                 subnet_type = "management"  # 柔和紫色
-                print(f"匹配关键词 '监控'，设置 subnet_type: {subnet_type}")
             elif '安全' in name_lower or 'security' in name_lower or 'dmz' in name_lower:
                 device_type = "dmz"
                 subnet_type = "dmz"  # 玫红色
-                print(f"匹配关键词 '安全'，设置 subnet_type: {subnet_type}")
             elif '存储' in name_lower or 'storage' in name_lower or 'nas' in name_lower:
                 device_type = "storage"
                 subnet_type = "storage"  # 橙红色
-                print(f"匹配关键词 '存储'，设置 subnet_type: {subnet_type}")
             elif '备份' in name_lower or 'backup' in name_lower:
                 device_type = "backup"
                 subnet_type = "backup"  # 浅绿色
-                print(f"匹配关键词 '备份'，设置 subnet_type: {subnet_type}")
             # 根据网络层级设置设备类型和子网类型（如果没有关键词匹配）
             elif level > 0:
                 if level == 1:
@@ -17958,32 +17943,22 @@ class SubnetPlannerApp:
                 else:
                     device_type = "switch3"  # 四级及以上子节点使用矩形
                     subnet_type = "production"  # 橙色
-                print(f"根据层级 {level}，设置 device_type: {device_type}, subnet_type: {subnet_type}")
             # 根据 CIDR 前缀长度进一步区分（更细的层级）
             else:
                 try:
                     prefix_len = ipaddress.ip_network(cidr).prefixlen
-                    print(f"前缀长度: {prefix_len}")
                     if prefix_len <= 8:  # 超大网段（如 10.0.0.0/8）
                         subnet_type = "extra_large"  # 红色
-                        print(f"前缀长度 <= 8，设置 subnet_type: {subnet_type}")
                     elif prefix_len <= 16:  # 大网段（如 172.16.0.0/12, 192.168.0.0/16）
                         subnet_type = "large"  # 亮青色
-                        print(f"前缀长度 <= 16，设置 subnet_type: {subnet_type}")
                     elif prefix_len <= 20:  # 中等网段（/17-20）
                         subnet_type = "medium"  # 深蓝色
-                        print(f"前缀长度 <= 20，设置 subnet_type: {subnet_type}")
                     elif prefix_len <= 24:  # 中等网段（/21-24）
                         subnet_type = "default"  # 主蓝色
-                        print(f"前缀长度 <= 24，设置 subnet_type: {subnet_type}")
                     else:  # 小网段（/25+）
                         subnet_type = "small"  # 紫色
-                        print(f"前缀长度 > 24，设置 subnet_type: {subnet_type}")
-                except Exception as e:
-                    print(f"前缀长度判断失败: {e}, CIDR: {cidr}")
-            
-            # 调试信息
-            print(f"最终 subnet_type: {subnet_type}, device_type: {device_type}")
+                except Exception:
+                    pass
             
             return {
                 "id": node_id,
