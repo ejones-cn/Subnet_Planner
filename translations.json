@@ -28,6 +28,27 @@
     "ja": "取消",
     "ko": "취소"
   },
+  "yes": {
+    "zh": "是",
+    "en": "Yes",
+    "ja": "はい",
+    "zh_tw": "是",
+    "ko": "네"
+  },
+  "no": {
+    "zh": "否",
+    "en": "No",
+    "ja": "いいえ",
+    "zh_tw": "否",
+    "ko": "아니오"
+  },
+  "continue_adding": {
+    "zh": "是否继续添加",
+    "zh_tw": "是否繼續添加",
+    "en": "Continue adding",
+    "ja": "追加を続けますか",
+    "ko": "계속 추가하시겠습니까"
+  },
   "confirm": {
     "zh": "确认",
     "zh_tw": "確認",
@@ -902,6 +923,20 @@
     "en": "Operation failed",
     "ja": "操作に失敗しました",
     "ko": "작동 실패"
+  },
+  "show_compare_dialog_failed": {
+    "zh": "显示比对对话框失败",
+    "zh_tw": "顯示比對對話框失敗",
+    "en": "Failed to show comparison dialog",
+    "ja": "比較ダイアログの表示に失敗しました",
+    "ko": "비교 대화 상자 표시 실패"
+  },
+  "build_compare_table_failed": {
+    "zh": "构建比对表格失败",
+    "zh_tw": "構建比對表格失敗",
+    "en": "Failed to build comparison table",
+    "ja": "比較テーブルの構築に失敗しました",
+    "ko": "비교 테이블 구축 실패"
   },
   "query_failed": {
     "zh": "查询失败",
@@ -2030,20 +2065,6 @@
     "zh_tw": "整數表示",
     "ko": "정수 표현"
   },
-  "yes": {
-    "zh": "是",
-    "en": "Yes",
-    "ja": "はい",
-    "zh_tw": "是",
-    "ko": "네"
-  },
-  "no": {
-    "zh": "否",
-    "en": "No",
-    "ja": "いいえ",
-    "zh_tw": "否",
-    "ko": "아니오"
-  },
   "please_select_a_history_record": {
     "zh": "请选择一条历史记录",
     "en": "Please select a history record",
@@ -2673,6 +2694,13 @@
     "ja": "機能デバッグ",
     "zh_tw": "功能調試",
     "ko": "기능 디버깅"
+  },
+  "top_level_tab_order": {
+    "zh": "顶级标签次序",
+    "en": "Top Level Tab Order",
+    "ja": "トップレベルタブ順序",
+    "zh_tw": "頂級標籤次序",
+    "ko": "최상위 탭 순서"
   },
   "test_success_content": {
     "zh": "测试正确信息：操作成功！",
@@ -3571,18 +3599,18 @@
     "ko": "유효하지 않은 IP 주소"
   },
   "export_selected_networks": {
-    "zh": "导出选中网段",
-    "zh_tw": "匯出選中網段",
-    "en": "Export Selected Networks",
-    "ja": "選択したネットワークをエクスポート",
-    "ko": "선택한 네트워크 내보내기"
+    "zh": "导出选中",
+    "zh_tw": "匯出選中",
+    "en": "Export Selected",
+    "ja": "選択をエクスポート",
+    "ko": "선택 내보내기"
   },
   "export_all_networks": {
-    "zh": "导出所有网段",
-    "zh_tw": "匯出所有網段",
-    "en": "Export All Networks",
-    "ja": "すべてのネットワークをエクスポート",
-    "ko": "모든 네트워크 내보내기"
+    "zh": "导出全部",
+    "zh_tw": "匯出全部",
+    "en": "Export All",
+    "ja": "すべてをエクスポート",
+    "ko": "전체 내보내기"
   },
   "export_options": {
     "zh": "导出选项",
@@ -3606,18 +3634,18 @@
     "ko": "IP 주소 동시 내보내기"
   },
   "include_network_template": {
-    "zh": "包含网段模板",
-    "zh_tw": "包含網段範本",
-    "en": "Include Network Template",
-    "ja": "ネットワークテンプレートを含む",
-    "ko": "네트워크 템플릿 포함"
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Networks",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
   },
   "include_ip_template": {
-    "zh": "包含IP地址模板",
-    "zh_tw": "包含IP位址範本",
-    "en": "Include IP Address Template",
-    "ja": "IPアドレステンプレートを含む",
-    "ko": "IP 주소 템플릿 포함"
+    "zh": "IP地址",
+    "zh_tw": "IP位址",
+    "en": "IP Addresses",
+    "ja": "IPアドレス",
+    "ko": "IP 주소"
   },
   "download": {
     "zh": "下载",
@@ -4654,5 +4682,26 @@
     "en": "If you find this tool helpful, please consider donating to support development",
     "ja": "このツールが役に立ったと感じたら、開発をサポートするために寄付を検討してください",
     "ko": "이 도구가 도움이 되었다면 개발을 지원하기 위해 기부를 고려해 주세요"
+  },
+  "hide_info_bar": {
+    "zh": "隐藏信息栏",
+    "zh_tw": "隱藏資訊欄",
+    "en": "Hide Info Bar",
+    "ja": "情報バーを非表示",
+    "ko": "정보 바 숨기기"
+  },
+  "invalid_ipv4,unexpected_slash": {
+    "zh": "无效的IPv4地址，意外的斜杠",
+    "zh_tw": "無效的IPv4地址，意外的斜杠",
+    "en": "Invalid IPv4 address, unexpected slash",
+    "ja": "無効なIPv4アドレス、予期しないスラッシュ",
+    "ko": "유효하지 않은 IPv4 주소, 예기치 않은 슬래시"
+  },
+  "cannot_convert_cross_class_network": {
+    "zh": "无法转换跨主类网络的IP范围，请确保IP属于同一主类（A类、B类或C类）",
+    "zh_tw": "無法轉換跨主類網路的IP範圍，請確保IP屬於同一主類（A類、B類或C類）",
+    "en": "Cannot convert IP range across major network classes. Please ensure IPs belong to the same class (Class A, B, or C)",
+    "ja": "メインネットワーククラスを跨るIP範囲は変換できません。IPが同じクラス（Aクラス、Bクラス、またはCクラス）に属することを確認してください",
+    "ko": "주요 네트워크 클래스를 가로지르는 IP 범위는 변환할 수 없습니다. IP가 동일한 클래스(A클래스, B클래스 또는 C클래스)에 속하는지 확인하십시오"
   }
 }

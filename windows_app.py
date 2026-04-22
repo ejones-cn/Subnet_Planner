@@ -83,6 +83,90 @@ except ImportError:
 __version__ = get_version()
 
 
+def fix_date_entry_for_modal(date_entry, dialog_toplevel):
+    """修复DateEntry在模态对话框中的grab冲突和焦点管理问题
+    
+    根本原因：
+    1. 对话框的grab_set()阻止日历弹窗接收鼠标事件
+    2. DateEntry自带的_on_focus_out_cal在焦点移到日历内部按钮时会错误关闭日历
+    
+    解决方案：
+    1. 替换drop_down方法，在日历显示前释放grab
+    2. 替换_on_focus_out_cal方法，正确判断焦点是否仍在日历弹窗内
+    3. 日历关闭后恢复grab
+    
+    Args:
+        date_entry: DateEntry控件实例
+        dialog_toplevel: 模态对话框的Toplevel窗口（None表示非模态上下文）
+    """
+    def _is_focus_in_calendar():
+        """检查焦点是否在日历弹窗内部（包括年/月导航按钮）"""
+        try:
+            focus_widget = date_entry.focus_get()
+            if focus_widget is None:
+                return False
+            # 检查焦点控件是否在日历弹窗的_top_cal内部
+            top_cal = date_entry._top_cal
+            widget = focus_widget
+            while widget is not None:
+                if widget == top_cal:
+                    return True
+                try:
+                    widget = widget.master
+                except Exception:
+                    break
+            # 焦点在DateEntry自身的下拉按钮上
+            if focus_widget == date_entry:
+                return True
+            return False
+        except Exception:
+            return False
+    
+    def _custom_on_focus_out_cal(event):
+        """替换DateEntry自带的_on_focus_out_cal，正确处理日历内部焦点转移"""
+        if _is_focus_in_calendar():
+            # 焦点仍在日历弹窗内部，不关闭
+            return
+        # 焦点已离开日历弹窗，关闭日历
+        try:
+            date_entry._top_cal.withdraw()
+            date_entry.state(['!pressed'])
+        except Exception:
+            pass
+    
+    # 替换焦点丢失处理器
+    date_entry._calendar.unbind('<FocusOut>')
+    date_entry._calendar.bind('<FocusOut>', _custom_on_focus_out_cal)
+    
+    if dialog_toplevel is not None:
+        # 模态对话框：替换drop_down方法管理grab
+        _original_drop_down = date_entry.drop_down
+        
+        def _custom_drop_down():
+            try:
+                dialog_toplevel.grab_release()
+            except Exception:
+                pass
+            _original_drop_down()
+        
+        date_entry.drop_down = _custom_drop_down
+        
+        # 日历关闭后恢复对话框的grab
+        def _restore_grab(event=None):
+            def _do_restore():
+                try:
+                    if not date_entry._top_cal.winfo_ismapped():
+                        dialog_toplevel.grab_set()
+                except Exception:
+                    try:
+                        dialog_toplevel.grab_set()
+                    except Exception:
+                        pass
+            dialog_toplevel.after(50, _do_restore)
+        
+        date_entry._top_cal.bind('<Unmap>', _restore_grab)
+
+
 # 初始化IPAM
 def init_ipam():
     """初始化IPAM模块"""
@@ -178,37 +262,38 @@ class DialogBase:
         if modal:
             self.dialog.grab_set()
         
-        # 先隐藏对话框，避免定位过程中的闪现
+        # 先隐藏对话框
         self.dialog.withdraw()
-        
-        # 居中对话框
-        self._center_dialog()
-        
-        # 显示对话框并设置焦点
-        self.dialog.deiconify()
-        self.dialog.focus_force()
         
         # 绑定键盘快捷键
         self._bind_shortcuts()
         
         # 初始化布局
         self._init_layout()
+        
+        # 设置尺寸并居中
+        self.dialog.geometry(f"{self.width}x{self.height}")
+        self._center_dialog()
+        
+        # 对话框在show()方法中显示
     
     def _center_dialog(self):
         """居中对话框"""
         self.dialog.update_idletasks()
-        dialog_width = self.width
-        dialog_height = self.height
+        dialog_width = self.dialog.winfo_width()
+        dialog_height = self.dialog.winfo_height()
         
         parent_width = self.parent.winfo_width()
         parent_height = self.parent.winfo_height()
-        parent_x = self.parent.winfo_rootx()
-        parent_y = self.parent.winfo_rooty()
+        parent_x = self.parent.winfo_x()
+        parent_y = self.parent.winfo_y()
         
+        # 计算对话框的居中位置（不包含父窗口标题栏）
+        title_bar_height = 30
         x = parent_x + (parent_width - dialog_width) // 2
-        y = parent_y + (parent_height - dialog_height) // 2
+        y = parent_y + title_bar_height + (parent_height - title_bar_height - dialog_height) // 2
         
-        self.dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+        self.dialog.geometry(f"+{x}+{y}")
     
     def _init_layout(self):
         """初始化布局"""
@@ -255,17 +340,13 @@ class DialogBase:
     
     def show(self):
         """显示对话框并等待关闭
-        
+
         Returns:
             对话框的返回值
         """
-        # 自动调整对话框高度以适应内容
-        self.dialog.update_idletasks()
-        content_height = self.main_frame.winfo_reqheight()
-        if content_height > self.height:
-            self.height = content_height
-            self.dialog.geometry(f"{self.width}x{self.height}+{self.dialog.winfo_x()}+{self.dialog.winfo_y()}")
-        
+        # 显示对话框（此时所有控件已添加完毕）
+        self.dialog.deiconify()
+        self.dialog.focus_force()
         self.parent.wait_window(self.dialog)
         return getattr(self, 'result', None)
     
@@ -682,12 +763,12 @@ class ComplexDialog(DialogBase):
             text=label + ':', 
             font=(font_family, font_size)
         )
-        label_widget.grid(row=row, column=column, sticky="e", pady=10, padx=(0, 15))
+        label_widget.grid(row=row, column=column, sticky="e", pady=5, padx=(0, 15))
         
         # 添加输入框
         width = kwargs.get('width', 12)
         border_frame, entry_widget = create_bordered_entry(self.content_frame, width=width)
-        border_frame.grid(row=row, column=column + 1, sticky="ew", pady=10, padx=(0, 10))
+        border_frame.grid(row=row, column=column + 1, sticky="ew", pady=5, padx=(0, 10))
         
         # 设置默认值
         if 'default' in kwargs:
@@ -1015,8 +1096,8 @@ class ColoredNotebook(ttk.Frame):
         # 保存按钮对应的标签索引，以便在事件处理中使用
         button.tab_index = len(self.tabs)  # type: ignore
 
-        # 绑定标签页切换事件
-        button.bind("<Button-1>", lambda e, t=len(self.tabs): self.select_tab(t))
+        # 绑定标签页切换事件 - 使用按钮的tab_index属性获取当前索引
+        button.bind("<Button-1>", lambda e: self.select_tab(e.widget.tab_index))
 
         # 只有内部标签页需要为鼠标按下/释放添加内容区域背景色变化效果
         if not self.is_top_level:
@@ -1103,6 +1184,214 @@ class ColoredNotebook(ttk.Frame):
         # 调用标签页切换回调函数
         if self.tab_change_callback:
             self.tab_change_callback(tab_index)
+
+    def move_tab_up(self, tab_index):
+        """将指定标签上移一位
+        
+        Args:
+            tab_index: 要移动的标签索引
+        """
+        if tab_index <= 0 or tab_index >= len(self.tabs):
+            return False
+        
+        # 交换标签位置
+        self.tabs[tab_index], self.tabs[tab_index - 1] = self.tabs[tab_index - 1], self.tabs[tab_index]
+        
+        # 更新按钮的tab_index属性
+        for i, tab in enumerate(self.tabs):
+            tab["button"].tab_index = i
+        
+        # 重新排列按钮显示顺序
+        for tab in self.tabs:
+            tab["button"].pack_forget()
+        
+        for tab in self.tabs:
+            tab["button"].pack(side="left", padx=0, pady=0)
+        
+        # 如果移动的是当前激活标签，更新active_tab
+        if self.active_tab == tab_index:
+            self.active_tab = tab_index - 1
+        elif self.active_tab == tab_index - 1:
+            self.active_tab = tab_index
+        
+        # 刷新显示
+        self.select_tab(self.active_tab)
+        return True
+
+    def move_tab_down(self, tab_index):
+        """将指定标签下移一位
+        
+        Args:
+            tab_index: 要移动的标签索引
+        """
+        if tab_index < 0 or tab_index >= len(self.tabs) - 1:
+            return False
+        
+        # 交换标签位置
+        self.tabs[tab_index], self.tabs[tab_index + 1] = self.tabs[tab_index + 1], self.tabs[tab_index]
+        
+        # 更新按钮的tab_index属性
+        for i, tab in enumerate(self.tabs):
+            tab["button"].tab_index = i
+        
+        # 重新排列按钮显示顺序
+        for tab in self.tabs:
+            tab["button"].pack_forget()
+        
+        for tab in self.tabs:
+            tab["button"].pack(side="left", padx=0, pady=0)
+        
+        # 如果移动的是当前激活标签，更新active_tab
+        if self.active_tab == tab_index:
+            self.active_tab = tab_index + 1
+        elif self.active_tab == tab_index + 1:
+            self.active_tab = tab_index
+        
+        # 刷新显示
+        self.select_tab(self.active_tab)
+        return True
+
+    def move_tab_to_top(self, tab_index):
+        """将指定标签移动到最顶部
+        
+        Args:
+            tab_index: 要移动的标签索引
+        """
+        if tab_index <= 0 or tab_index >= len(self.tabs):
+            return False
+        
+        # 将标签移到顶部
+        tab = self.tabs.pop(tab_index)
+        self.tabs.insert(0, tab)
+        
+        # 更新按钮的tab_index属性
+        for i, tab_item in enumerate(self.tabs):
+            tab_item["button"].tab_index = i
+        
+        # 重新排列按钮显示顺序
+        for tab_item in self.tabs:
+            tab_item["button"].pack_forget()
+        
+        for tab_item in self.tabs:
+            tab_item["button"].pack(side="left", padx=0, pady=0)
+        
+        # 如果移动的是当前激活标签，更新active_tab
+        if self.active_tab == tab_index:
+            self.active_tab = 0
+        elif self.active_tab < tab_index:
+            self.active_tab += 1
+        
+        # 刷新显示
+        self.select_tab(self.active_tab)
+        return True
+
+    def move_tab_to_bottom(self, tab_index):
+        """将指定标签移动到最底部
+        
+        Args:
+            tab_index: 要移动的标签索引
+        """
+        if tab_index < 0 or tab_index >= len(self.tabs) - 1:
+            return False
+        
+        # 将标签移到底部
+        tab = self.tabs.pop(tab_index)
+        self.tabs.append(tab)
+        
+        # 更新按钮的tab_index属性
+        for i, tab_item in enumerate(self.tabs):
+            tab_item["button"].tab_index = i
+        
+        # 重新排列按钮显示顺序
+        for tab_item in self.tabs:
+            tab_item["button"].pack_forget()
+        
+        for tab_item in self.tabs:
+            tab_item["button"].pack(side="left", padx=0, pady=0)
+        
+        # 如果移动的是当前激活标签，更新active_tab
+        if self.active_tab == tab_index:
+            self.active_tab = len(self.tabs) - 1
+        elif self.active_tab > tab_index:
+            self.active_tab -= 1
+        
+        # 刷新显示
+        self.select_tab(self.active_tab)
+        return True
+
+    def get_tab_labels(self):
+        """获取所有标签的标签名列表
+        
+        Returns:
+            list: 标签名称列表
+        """
+        return [tab['label'] for tab in self.tabs]
+
+    def save_tab_order(self):
+        """保存当前标签次序到配置文件"""
+        from config_manager import get_config
+        
+        try:
+            config = get_config()
+            tab_labels = self.get_tab_labels()
+            config.set_ui_tab_order(tab_labels)
+            return True
+        except Exception as e:
+            print(f"保存标签次序失败: {e}")
+            return False
+
+    def apply_tab_order(self, ordered_labels):
+        """根据给定的标签次序重新排列标签
+        
+        Args:
+            ordered_labels: 标签名称列表，按期望顺序排列
+            
+        Returns:
+            bool: 是否成功
+        """
+        if not ordered_labels or not isinstance(ordered_labels, list):
+            return False
+            
+        # 创建原始标签字典
+        original_tabs = {tab['label']: tab for tab in self.tabs}
+        
+        # 验证所有指定的标签是否存在
+        for label in ordered_labels:
+            if label not in original_tabs:
+                return False
+        
+        # 按指定顺序重新排列标签
+        new_tabs = []
+        for label in ordered_labels:
+            if label in original_tabs:
+                new_tabs.append(original_tabs[label])
+        
+        # 添加未在配置中指定的标签（保持原有顺序）
+        for tab in self.tabs:
+            if tab['label'] not in ordered_labels:
+                new_tabs.append(tab)
+        
+        # 更新标签列表
+        self.tabs = new_tabs
+        
+        # 更新按钮的tab_index属性
+        for i, tab in enumerate(self.tabs):
+            tab["button"].tab_index = i
+        
+        # 重新排列按钮显示顺序
+        for tab in self.tabs:
+            tab["button"].pack_forget()
+        
+        for tab in self.tabs:
+            tab["button"].pack(side="left", padx=0, pady=0)
+        
+        # 刷新显示（保持当前选中的标签）
+        if self.active_tab is not None and 0 <= self.active_tab < len(self.tabs):
+            self.select_tab(self.active_tab)
+        elif self.tabs:
+            self.select_tab(0)
+        
+        return True
 
 
 class SubnetPlannerApp:
@@ -2460,6 +2749,21 @@ class SubnetPlannerApp:
         self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
         self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0")
         self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9")
+
+        # 加载保存的标签次序
+        self.load_saved_tab_order()
+    
+    def load_saved_tab_order(self):
+        """从配置文件加载保存的标签次序"""
+        from config_manager import get_config
+        
+        try:
+            config = get_config()
+            saved_order = config.get_ui_tab_order()
+            if saved_order and isinstance(saved_order, list) and len(saved_order) > 0:
+                self.top_level_notebook.apply_tab_order(saved_order)
+        except Exception as e:
+            print(f"加载标签次序失败: {e}")
 
     def create_split_result_section(self):
         """创建子网切分功能的结果显示区域"""
@@ -3924,6 +4228,9 @@ class SubnetPlannerApp:
         ttk.Button(dialog.button_frame, text=_('cancel'),
                   command=dialog.destroy,
                   width=10).pack(side=tk.RIGHT, padx=5)
+        
+        # 显示对话框
+        dialog.show()
 
     def _import_valid_data(self, valid_data, target_table, dialog=None):
         """导入有效数据
@@ -5867,7 +6174,8 @@ class SubnetPlannerApp:
             # 更新spacer高度，确保有足够空间显示
             self.info_spacer.configure(height=new_height)
             
-            # 展开时停止自动消失计时
+            # 展开时停止自动消失计时，并显式设置暂停状态
+            self.info_auto_hide_paused = True
             if hasattr(self, 'info_auto_hide_id') and self.info_auto_hide_id:
                 self.root.after_cancel(self.info_auto_hide_id)
                 self.info_auto_hide_id = None
@@ -5904,8 +6212,11 @@ class SubnetPlannerApp:
             # 使用after延迟确保焦点转移在禁用状态之后生效
             self.root.after(1, lambda: self.root.focus_set())
             
-            # 收起时重新开始自动消失计时（仅当未暂停时）
-            if hasattr(self, 'root') and not self.info_auto_hide_paused:
+            # 收起时显式重置暂停状态，并重新开始自动消失计时
+            self.info_auto_hide_paused = False
+            if hasattr(self, 'root'):
+                if self.info_auto_hide_id:
+                    self.root.after_cancel(self.info_auto_hide_id)
                 self.info_auto_hide_id = self.root.after(5000, lambda: self.hide_info_bar(from_timer=True))
             
             # 强制将焦点从Text组件移开，避免渲染问题
@@ -7833,9 +8144,9 @@ class SubnetPlannerApp:
 
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
-            self.show_info(_("error"), f"{_("conversion_failed")}: {error_result.get('error', str(e))}")
+            self.show_error(_("error"), f"{_("conversion_failed")}: {error_result.get('error', str(e))}")
         except (tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_("error"), f"{_("operation_failed")}: {str(e)}")
+            self.show_error(_("error"), f"{_("operation_failed")}: {str(e)}")
 
     def _process_overlap_detection(self, subnets, ip_version_label, row_index):
         """
@@ -7930,7 +8241,7 @@ class SubnetPlannerApp:
             self.update_table_zebra_stripes(self.overlap_result_tree)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
-            self.show_info(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
+            self.show_error(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
 
     def _update_history(self, entry, history_list, value=None, max_items=10):
         self.history_repo.update_history(entry, history_list, value, max_items)
@@ -7973,8 +8284,8 @@ class SubnetPlannerApp:
         if hasattr(self, 'test_dialog') and self.test_dialog is not None:
             try:
                 # 尝试将对话框显示在最上层并设置焦点
-                self.test_dialog.lift()
-                self.test_dialog.focus_force()
+                self.test_dialog.dialog.lift()
+                self.test_dialog.dialog.focus_force()
                 return
             except tk.TclError:
                 # 如果对话框已被销毁，忽略错误并创建新对话框
@@ -8001,27 +8312,28 @@ class SubnetPlannerApp:
         # 使用grid布局管理器来精确控制各个组件的位置
         content_frame.grid_rowconfigure(0, weight=0)  # 标题行不扩展
         content_frame.grid_rowconfigure(1, weight=0)  # 说明行不扩展
-        content_frame.grid_rowconfigure(2, weight=1)  # 按钮矩阵行扩展，用于垂直居中
-        content_frame.grid_rowconfigure(3, weight=0)  # 主题切换行不扩展
-        content_frame.grid_rowconfigure(4, weight=0)  # 窗口锁定行不扩展
+        content_frame.grid_rowconfigure(2, weight=0)  # 按钮区行不扩展
+        content_frame.grid_rowconfigure(3, weight=0)  # 底部区域不扩展
+        content_frame.grid_rowconfigure(4, weight=0)  # 底部区域不扩展
         content_frame.grid_rowconfigure(5, weight=0)  # 关闭按钮行不扩展
-        content_frame.grid_columnconfigure(0, weight=1)  # 唯一列扩展
+        content_frame.grid_columnconfigure(0, weight=1)  # 左列（主题切换/窗口锁定）
+        content_frame.grid_columnconfigure(1, weight=1)  # 右列（标签次序）
 
         # 添加标题标签
         title_label = ttk.Label(content_frame, text=_("function_debug_panel"), font=(font_family, 12, "bold"))
-        title_label.grid(row=0, column=0, pady=(0, 15))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))
 
         # 添加说明标签
         desc_label = ttk.Label(content_frame, text=_("test_info_display_effect"))
-        desc_label.grid(row=1, column=0, pady=(0, 15))
+        desc_label.grid(row=1, column=0, columnspan=2, pady=(0, 15))
 
         # 创建按钮框架（使用grid布局实现3x2矩阵）
         button_frame = ttk.Frame(content_frame)
-        button_frame.grid(row=2, column=0, sticky=tk.NS)  # 垂直居中对齐
+        button_frame.grid(row=2, column=0, columnspan=2, sticky=tk.N)  # 跨两列，顶部对齐
 
         # 按钮样式
         button_style = "TButton"
-        button_width = 25  # 增加上方测试按钮宽度
+        button_width = 25  # 恢复原来的按钮宽度
         original_button_width = 15  # 应用主题和关闭按钮保持原来宽度
         
         # 创建复选框样式
@@ -8098,9 +8410,9 @@ class SubnetPlannerApp:
         )
         one_click_pdf_btn.grid(row=3, column=1, padx=5, pady=5)
 
-        # 主题切换部分
+        # 主题切换部分（放在左下方）
         theme_frame = ttk.LabelFrame(content_frame, text=_("theme_switch"), padding="10")
-        theme_frame.grid(row=4, column=0, sticky=tk.EW, pady=(15, 10))
+        theme_frame.grid(row=3, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
 
         # 配置主题切换框架的列
         theme_frame.grid_columnconfigure(0, weight=0)  # 标签列
@@ -8175,9 +8487,9 @@ class SubnetPlannerApp:
         )
         theme_switch_btn.grid(row=0, column=2, padx=(10, 0), pady=5)
 
-        # 窗口横向锁定控制部分
+        # 窗口横向锁定控制部分（放在主题切换下方，左列）
         lock_frame = ttk.LabelFrame(content_frame, text=_("window_lock"), padding="10")
-        lock_frame.grid(row=5, column=0, sticky=tk.EW, pady=(15, 10))
+        lock_frame.grid(row=4, column=0, sticky=tk.EW, pady=(10, 10), padx=(0, 10))
 
         # 配置锁定框架的列
         lock_frame.grid_columnconfigure(0, weight=1)
@@ -8194,9 +8506,91 @@ class SubnetPlannerApp:
         )
         width_lock_cb.grid(row=0, column=0, sticky=tk.W, pady=5)
 
+        # 顶级标签次序调整部分（放在右侧，跨两行对齐左侧两个面板）
+        tab_order_frame = ttk.LabelFrame(content_frame, text=_("top_level_tab_order"), padding="10")
+        tab_order_frame.grid(row=3, column=1, rowspan=2, sticky=tk.NSEW, pady=(15, 10))
+
+        # 配置标签次序调整框架的行列
+        tab_order_frame.grid_columnconfigure(0, weight=1)  # 标签列表列
+        tab_order_frame.grid_columnconfigure(1, weight=0)  # 操作按钮列
+        tab_order_frame.grid_rowconfigure(0, weight=1)    # 第一行扩展填充空间
+
+        # 创建标签列表（使用Treeview替代Listbox以更好地控制选中样式）
+        self.tab_order_tree = ttk.Treeview(
+            tab_order_frame,
+            columns=('name'),
+            show='',
+            height=0
+        )
+        
+        # 配置列
+        self.tab_order_tree.column('name', anchor='w', width=150)
+        
+        # 创建自定义样式来移除选中时的下划线
+        tree_style = ttk.Style()
+        tree_style.configure('TabOrder.Treeview', 
+                            rowheight=22,
+                            foreground='black',
+                            fieldbackground='white')
+        tree_style.map('TabOrder.Treeview',
+                       background=[('selected', '#0078D7')],
+                       foreground=[('selected', '#ffffff')],
+                       fieldbackground=[('selected', '#0078D7'), ('!selected', 'white')])
+        # 移除选中时的焦点边框
+        tree_style.configure('TabOrder.Treeview', highlightthickness=0)
+        tree_style.map('TabOrder.Treeview',
+                       highlightcolor=[('focus', '#0078D7')],
+                       highlightbackground=[('focus', '#0078D7')])
+        
+        self.tab_order_tree.config(style='TabOrder.Treeview')
+        self.tab_order_tree.grid(row=0, column=0, sticky="nsew")
+
+        # 填充标签列表
+        self.update_tab_order_listbox()
+
+        # 创建按钮框架，垂直排列操作按钮
+        button_frame = ttk.Frame(tab_order_frame)
+        button_frame.grid(row=0, column=1, sticky=tk.N, padx=(5, 0), pady=(0, 2))
+
+        # 上移按钮
+        move_up_btn = ttk.Button(
+            button_frame,
+            text="▲",
+            width=3,
+            command=self.move_selected_tab_up
+        )
+        move_up_btn.grid(row=0, column=0, pady=(0, 2))
+
+        # 下移按钮
+        move_down_btn = ttk.Button(
+            button_frame,
+            text="▼",
+            width=3,
+            command=self.move_selected_tab_down
+        )
+        move_down_btn.grid(row=1, column=0, pady=2)
+
+        # 置顶按钮
+        move_top_btn = ttk.Button(
+            button_frame,
+            text="↑",
+            width=3,
+            command=self.move_selected_tab_to_top
+        )
+        move_top_btn.grid(row=2, column=0, pady=2)
+
+        # 置底按钮
+        move_bottom_btn = ttk.Button(
+            button_frame,
+            text="↓",
+            width=3,
+            command=self.move_selected_tab_to_bottom
+        )
+        move_bottom_btn.grid(row=3, column=0, pady=2)
+
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=6, column=0, sticky=tk.EW, pady=(15, 0))
+        close_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(15, 0))
         close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
 
         # 添加关闭按钮到右下角 - 使用原来宽度
@@ -8213,6 +8607,109 @@ class SubnetPlannerApp:
             finally:
                 # 确保无论如何都将test_dialog设置为None
                 self.test_dialog = None
+
+    def update_tab_order_listbox(self):
+        """更新调试面板中的标签列表"""
+        if not hasattr(self, 'tab_order_tree'):
+            return
+        
+        # 清空列表
+        for item in self.tab_order_tree.get_children():
+            self.tab_order_tree.delete(item)
+        
+        # 填充标签列表
+        if hasattr(self, 'top_level_notebook') and self.top_level_notebook:
+            for i, tab in enumerate(self.top_level_notebook.tabs):
+                # 添加序号前缀
+                self.tab_order_tree.insert('', 'end', values=(f"{i + 1}. {tab['label']}",))
+
+    def move_selected_tab_up(self):
+        """将选中的标签上移一位"""
+        if not hasattr(self, 'tab_order_tree'):
+            return
+        
+        selected_items = self.tab_order_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中项的索引
+        all_items = self.tab_order_tree.get_children()
+        tab_index = all_items.index(selected_items[0])
+        
+        if self.top_level_notebook.move_tab_up(tab_index):
+            self.update_tab_order_listbox()
+            # 重新选中移动后的位置
+            new_items = self.tab_order_tree.get_children()
+            if tab_index - 1 >= 0 and tab_index - 1 < len(new_items):
+                self.tab_order_tree.selection_set(new_items[tab_index - 1])
+            # 保存到配置文件
+            self.top_level_notebook.save_tab_order()
+
+    def move_selected_tab_down(self):
+        """将选中的标签下移一位"""
+        if not hasattr(self, 'tab_order_tree'):
+            return
+        
+        selected_items = self.tab_order_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中项的索引
+        all_items = self.tab_order_tree.get_children()
+        tab_index = all_items.index(selected_items[0])
+        
+        if self.top_level_notebook.move_tab_down(tab_index):
+            self.update_tab_order_listbox()
+            # 重新选中移动后的位置
+            new_items = self.tab_order_tree.get_children()
+            if tab_index + 1 < len(new_items):
+                self.tab_order_tree.selection_set(new_items[tab_index + 1])
+            # 保存到配置文件
+            self.top_level_notebook.save_tab_order()
+
+    def move_selected_tab_to_top(self):
+        """将选中的标签移动到最顶部"""
+        if not hasattr(self, 'tab_order_tree'):
+            return
+        
+        selected_items = self.tab_order_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中项的索引
+        all_items = self.tab_order_tree.get_children()
+        tab_index = all_items.index(selected_items[0])
+        
+        if self.top_level_notebook.move_tab_to_top(tab_index):
+            self.update_tab_order_listbox()
+            # 重新选中移动后的位置（顶部）
+            new_items = self.tab_order_tree.get_children()
+            if new_items:
+                self.tab_order_tree.selection_set(new_items[0])
+            # 保存到配置文件
+            self.top_level_notebook.save_tab_order()
+
+    def move_selected_tab_to_bottom(self):
+        """将选中的标签移动到最底部"""
+        if not hasattr(self, 'tab_order_tree'):
+            return
+        
+        selected_items = self.tab_order_tree.selection()
+        if not selected_items:
+            return
+        
+        # 获取选中项的索引
+        all_items = self.tab_order_tree.get_children()
+        tab_index = all_items.index(selected_items[0])
+        
+        if self.top_level_notebook.move_tab_to_bottom(tab_index):
+            self.update_tab_order_listbox()
+            # 重新选中移动后的位置（底部）
+            new_items = self.tab_order_tree.get_children()
+            if new_items:
+                self.tab_order_tree.selection_set(new_items[-1])
+            # 保存到配置文件
+            self.top_level_notebook.save_tab_order()
 
     def toggle_width_lock(self):
         """切换窗口横向锁定状态"""
@@ -8317,16 +8814,19 @@ class SubnetPlannerApp:
             self.info_label.configure(fg="#424242")  # 正确信息显示灰色
         self.info_bar_frame.configure(style=frame_style)
         
-        # 确保点击事件能够正常触发展开/折叠功能
+        # 确保双击事件能够正常触发展开/折叠功能
         # 先解绑可能存在的冲突绑定
         self.info_label.unbind("<Button-1>")
-        # 重新绑定点击事件（先暂停自动消失，再触发展开）
+        self.info_label.unbind("<Double-Button-1>")
+        # 单击暂停自动消失，双击触发展开/折叠
         self.info_label.bind("<Button-1>", self._on_info_bar_click)
-        self.info_label.bind("<Button-1>", self.toggle_info_bar_expand, add=True)
+        self.info_label.bind("<Double-Button-1>", self.toggle_info_bar_expand)
         
         # 绑定信息栏框架的点击事件，点击时暂停自动消失
         self.info_bar_frame.unbind("<Button-1>")
+        self.info_bar_frame.unbind("<Double-Button-1>")
         self.info_bar_frame.bind("<Button-1>", self._on_info_bar_click)
+        self.info_bar_frame.bind("<Double-Button-1>", self.toggle_info_bar_expand)
 
         # 显示信息栏 - 使用高度动画实现滑入效果
 
@@ -9379,7 +9879,7 @@ class SubnetPlannerApp:
         """显示关于对话框"""
         # 设置对话框宽度，高度将根据内容自动调整
         dialog_width = 400
-        dialog_height = 100  # 初始高度设置为较小值
+        dialog_height = 380  # 初始高度设置为较大值以容纳所有内容
         
         # 创建关于对话框
         about_window = ComplexDialog(self.root, f"{_("about")} {self.app_name}", dialog_width, dialog_height, resizable=False, modal=True)
@@ -9496,7 +9996,7 @@ class SubnetPlannerApp:
         def show_donate_qr():
             # 创建二维码捐赠对话框
             # 设置对话框宽度，高度将根据内容自动调整
-            qr_window = ComplexDialog(self.root, _("donate"), 450, 100, resizable=False, modal=True)
+            qr_window = ComplexDialog(self.root, _("donate"), 420, 420, resizable=False, modal=True)
             qr_window.dialog.configure(bg="#ffffff")
             
             # 创建内容框架
@@ -10312,7 +10812,7 @@ class SubnetPlannerApp:
         # 检查是否选择了IP地址
         selected_ip_items = self.ipam_ip_tree.selection()
         if not selected_ip_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 批量释放IP地址
@@ -10407,7 +10907,7 @@ class SubnetPlannerApp:
         from datetime import datetime
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
@@ -10621,7 +11121,7 @@ class SubnetPlannerApp:
         """按状态过滤IP地址"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
@@ -10922,6 +11422,9 @@ class SubnetPlannerApp:
         ttk.Button(dialog.button_frame, text=_('refresh'), command=lambda: self.refresh_conflicts(tree, conflicts, selected_networks)).pack(side=tk.LEFT, padx=5)
         # 右侧关闭按钮
         ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        
+        # 显示对话框
+        dialog.show()
     
     def show_conflict_resolution_dialog(self, parent_dialog, tree, ip_id, ip_address, conflicts, selected_records=None, selected_networks=None):
         """显示冲突处理对话框
@@ -11024,6 +11527,9 @@ class SubnetPlannerApp:
 
         cancel_btn = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
         cancel_btn.pack(side=tk.RIGHT, padx=5)
+        
+        # 显示对话框
+        dialog.show()
     
     def keep_selected_record_and_delete_others(self, keep_id, ip_address):
         """保留选中的记录，删除该IP的其他冲突记录
@@ -11180,9 +11686,9 @@ class SubnetPlannerApp:
     def import_export_network_data(self):
         """导入/导出网段数据对话框"""
         try:
-            dialog = ComplexDialog(self.root, _('network_import_export'), 500, 350, resizable=False, modal=True)
+            dialog = ComplexDialog(self.root, _('network_import_export'), 500, 360, resizable=False, modal=True)
 
-            main_frame = ttk.Frame(dialog.content_frame, padding="30")
+            main_frame = ttk.Frame(dialog.content_frame, padding="20")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
             ttk.Label(main_frame, text=_('choose_import_export_method'), font=('', 11, 'bold')).pack(pady=(0, 10))
@@ -11222,17 +11728,17 @@ class SubnetPlannerApp:
             tmpl_ip_var = tk.BooleanVar(value=True)
 
             ttk.Checkbutton(template_inner, text=_('include_network_template'), variable=tmpl_net_var,
-                           command=lambda: self._validate_template_checks(True, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=10)
+                           command=lambda: self._validate_template_checks(True, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=5)
             ttk.Checkbutton(template_inner, text=_('include_ip_template'), variable=tmpl_ip_var,
-                           command=lambda: self._validate_template_checks(False, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=10)
+                           command=lambda: self._validate_template_checks(False, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=5)
             ttk.Button(template_inner, text=_('download'),
-                      command=lambda: self._do_download_template(dialog, tmpl_net_var, tmpl_ip_var)).pack(side=tk.RIGHT, padx=10)
+                      command=lambda: self._do_download_template(dialog, tmpl_net_var, tmpl_ip_var)).pack(side=tk.RIGHT, padx=5)
 
             # 显示对话框并自动调整高度
             dialog.show()
 
         except Exception as e:
-            self.show_error(_('error'), f"操作失败: {str(e)}")
+            self.show_error(_('error'), f"{_('operation_failed')}: {str(e)}")
 
     def _validate_template_checks(self, is_network, net_var, ip_var):
         """确保模板复选框至少选中一个，回勾另一个未被点击的复选框"""
@@ -11266,7 +11772,7 @@ class SubnetPlannerApp:
             if selected:
                 selected_items = self.ipam_network_tree.selection()
                 if not selected_items:
-                    self.show_info(_('hint'), _('please_select_network'))
+                    self.show_error(_('error'), _('please_select_network'))
                     return
                 selected_networks = [self.ipam_network_tree.item(item, 'values')[0] for item in selected_items]
                 ip_networks = selected_networks if include_ips else None
@@ -11390,7 +11896,7 @@ class SubnetPlannerApp:
                                                            import_net_var, import_ip_var, overwrite_var)).pack(side=tk.BOTTOM)
 
         except Exception as e:
-            self.show_error(_('error'), f"显示比对对话框失败: {str(e)}")
+            self.show_error(_('error'), f"{_('show_compare_dialog_failed')}: {str(e)}")
 
     def _build_compare_table(self, parent, data: dict, data_type: str):
         """构建比对表格"""
@@ -11462,7 +11968,7 @@ class SubnetPlannerApp:
 
             self.update_table_zebra_stripes(tree)
         except Exception as e:
-            print(f"构建比对表格失败: {str(e)}")
+            print(f"{_('build_compare_table_failed')}: {str(e)}")
 
     def _execute_import(self, dialog, validated_data, import_net_var, import_ip_var, overwrite_var):
         """执行导入操作"""
@@ -11785,8 +12291,11 @@ class SubnetPlannerApp:
             # 绑定对话框关闭事件
             dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
             
+            # 显示对话框
+            dialog.show()
+            
         except Exception as e:
-            self.show_error(_('error'), f"操作失败: {str(e)}")
+            self.show_error(_('error'), f"{_('operation_failed')}: {str(e)}")
     
 
     def auto_scan_network(self):
@@ -11925,6 +12434,7 @@ class SubnetPlannerApp:
         scan_btn.pack(side=tk.RIGHT, padx=5)
         
         dialog.bind('<Return>', lambda e: on_scan())
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
 
     def _start_scan_from_dialog_simple(self, network, thread_count_str, timeout_ms_str, scan_method, ports_str=None):
         """简化的扫描启动方法"""
@@ -12619,7 +13129,7 @@ class SubnetPlannerApp:
             else:
                 if is_overlap:
                     # 弹出确认对话框，让用户决定是否继续添加
-                    confirm_dialog = ConfirmDialog(self.root, "确认", f"{message}\n\n是否继续添加？", "是", "否")
+                    confirm_dialog = ConfirmDialog(self.root, _('confirm'), f"{message}\n\n{_('continue_adding')}？", _('yes'), _('no'))
                     confirm = confirm_dialog.show()
                     if confirm:
                         # 强制添加网络，跳过重叠检查
@@ -12633,11 +13143,11 @@ class SubnetPlannerApp:
                                 'created_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             }
                             self.ipam.save_data()
-                            self.show_info(_('success'), "网络添加成功")
+                            self.show_info(_('success'), _('network_added_successfully'))
                             self.refresh_ipam_networks()
                             dialog.destroy()
                         except Exception as e:
-                            self.show_error(_('error'), f"添加网络失败: {str(e)}")
+                            self.show_error(_('error'), f"{_('add_network_failed')}: {str(e)}")
                 else:
                     self.show_error(_('error'), message)
         
@@ -12663,7 +13173,7 @@ class SubnetPlannerApp:
         """移除网络（支持多选）"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         # 获取所有选中的网络
@@ -13966,6 +14476,10 @@ class SubnetPlannerApp:
                     self.inline_edit_widget.bind('<<DateEntrySelected>>', on_date_save)
                     self.inline_edit_widget.bind('<FocusOut>', on_date_focus_out)
                     
+                    # 修复DateEntry日历弹窗的焦点管理问题
+                    # 内联编辑不在模态对话框中，传None只修复_on_focus_out_cal
+                    fix_date_entry_for_modal(self.inline_edit_widget, None)
+                    
                     # 确保日期选择器始终保持焦点
                     self.inline_edit_widget.focus_force()
                     # 初始化验证失败标记
@@ -14891,7 +15405,7 @@ class SubnetPlannerApp:
             # 获取选中的网络
             network_items = self.ipam_network_tree.selection()
             if not network_items:
-                self.show_info(_('hint'), _('please_select_network'))
+                self.show_error(_('error'), _('please_select_network'))
                 self.on_inline_edit_cancel(None)
                 return
             network = self.ipam_network_tree.item(network_items[0], 'values')[0]
@@ -15004,13 +15518,13 @@ class SubnetPlannerApp:
         """处理IP地址表格右键菜单的不同操作，支持多选"""
         selected_items = self.ipam_ip_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 获取选中的网络
         network_items = self.ipam_network_tree.selection()
         if not network_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         network = self.ipam_network_tree.item(network_items[0], 'values')[0]
         
@@ -15383,7 +15897,7 @@ class SubnetPlannerApp:
         """分配/保留IP地址"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
@@ -15429,7 +15943,7 @@ class SubnetPlannerApp:
         """分配IP地址"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
@@ -15466,7 +15980,7 @@ class SubnetPlannerApp:
         # 检查是否选择了IP地址
         selected_ip_items = self.ipam_ip_tree.selection()
         if not selected_ip_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 保存当前选中的网络
@@ -15670,6 +16184,9 @@ class SubnetPlannerApp:
         # 右侧关闭按钮
         cancel_button = ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
+        
+        # 显示对话框
+        dialog.show()
     
     def cleanup_selected_available_ips(self, tree, dialog, available_ips):
         """清理选中的可用IP地址
@@ -15681,7 +16198,7 @@ class SubnetPlannerApp:
         """
         selected_items = tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 构建以id为键的字典，用于精确匹配
@@ -15697,7 +16214,7 @@ class SubnetPlannerApp:
                 selected_ips.append(ip_by_id[item_id])
         
         if not selected_ips:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 清理选中的IP地址
@@ -15951,6 +16468,9 @@ class SubnetPlannerApp:
         # 右侧关闭按钮
         cancel_button = ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy)
         cancel_button.pack(side=tk.RIGHT, padx=5)
+        
+        # 显示对话框
+        dialog.show()
     
     def release_selected_expired_ips(self, tree, dialog, expired_ips):
         """释放选中的过期IP地址
@@ -15962,7 +16482,7 @@ class SubnetPlannerApp:
         """
         selected_items = tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 构建以id为键的字典，用于精确匹配
@@ -15978,7 +16498,7 @@ class SubnetPlannerApp:
                 selected_ips.append(ip_by_id[item_id])
         
         if not selected_ips:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 释放选中的IP地址
@@ -16081,7 +16601,7 @@ class SubnetPlannerApp:
         """
         selected_items = tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 构建以id为键的字典，用于精确匹配
@@ -16097,7 +16617,7 @@ class SubnetPlannerApp:
                 selected_ips.append(ip_by_id[item_id])
         
         if not selected_ips:
-            self.show_info(_('hint'), _('please_select_ip_address'))
+            self.show_error(_('error'), _('please_select_ip_address'))
             return
         
         # 显示延期对话框
@@ -16220,6 +16740,9 @@ class SubnetPlannerApp:
         
         # 添加取消按钮
         dialog.add_button(_('cancel'), dialog.destroy, column=2)
+        
+        # 显示对话框
+        dialog.show()
     
     def refresh_ipam_with_selection(self):
         """刷新IPAM数据并恢复选中状态
@@ -16268,7 +16791,7 @@ class SubnetPlannerApp:
         # 检查是否选择了IP地址
         selected_items = self.ipam_ip_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ips_to_migrate'))
+            self.show_error(_('error'), _('please_select_ips_to_migrate'))
             return
         
         # 获取选中的记录ID和IP地址
@@ -16294,7 +16817,7 @@ class SubnetPlannerApp:
                     pass
         
         if not ip_records:
-            self.show_info(_('hint'), _('please_select_ips_to_migrate'))
+            self.show_error(_('error'), _('please_select_ips_to_migrate'))
             return
         
         # 获取所有可用的网络列表
@@ -16315,16 +16838,23 @@ class SubnetPlannerApp:
         # 创建对话框
         dialog = ComplexDialog(self.root, _('batch_migrate'), 400, 200, resizable=False, modal=True)
         
-        # 显示选中的IP数量
-        ttk.Label(dialog.content_frame, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
+        # 创建主容器框架，增加外边距
+        main_container = ttk.Frame(dialog.content_frame, padding=(15, 15, 15, 10))
+        main_container.pack(fill='both', expand=True)
         
-        # 目标网络选择
-        ttk.Label(dialog.content_frame, text=_('target_network') + ':').pack(pady=5)
+        # 显示选中的IP数量
+        ttk.Label(main_container, text=_('selected_ips_count').format(count=len(ip_records))).pack(pady=10)
+        
+        # 目标网络选择 - 将标签和下拉框放在同一行
+        network_frame = ttk.Frame(main_container)
+        network_frame.pack(pady=5, fill='x')
+        
+        ttk.Label(network_frame, text=_('target_network') + ':').pack(side='left', padx=(0, 10))
         
         # 创建网络下拉列表
         network_var = tk.StringVar()
-        network_combobox = ttk.Combobox(dialog.content_frame, textvariable=network_var, values=network_list, width=40)
-        network_combobox.pack(pady=5)
+        network_combobox = ttk.Combobox(network_frame, textvariable=network_var, values=network_list, width=30)
+        network_combobox.pack(side='left', fill='x', expand=True)
         network_combobox.focus_set()
         
         # 确认按钮
@@ -16359,13 +16889,16 @@ class SubnetPlannerApp:
         # 添加按钮
         dialog.add_button(_('cancel'), cancel, column=1)
         dialog.add_button(_('confirm'), confirm, column=2)
+        
+        # 显示对话框
+        dialog.show()
     
     def batch_set_expiry_date(self):
         """批量设置IP地址的过期日期"""
         # 检查是否选择了IP地址
         selected_items = self.ipam_ip_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_ips_to_set_expiry'))
+            self.show_error(_('error'), _('please_select_ips_to_set_expiry'))
             return
         
         # 获取选中的记录ID和IP地址
@@ -16382,42 +16915,60 @@ class SubnetPlannerApp:
         # 创建对话框
         dialog = ComplexDialog(self.root, _('batch_set_expiry_date'), 400, 200, resizable=False, modal=True)
         
-        # 创建日期选择器
-        ttk.Label(dialog.content_frame, text=_('expiry_date') + ':').pack(pady=10)
+        # 创建日期选择器 - 使用grid布局将标签和下拉控件放在同一行
+        dialog.content_frame.grid_columnconfigure(0, weight=0)
+        dialog.content_frame.grid_columnconfigure(1, weight=1)
+        
+        ttk.Label(dialog.content_frame, text=_('expiry_date') + ':').grid(row=0, column=0, sticky="e", pady=5, padx=(30, 5))
         
         # 创建日期输入框
         from datetime import datetime
         default_expiry = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
         
+        date_entry = None
+        
         if DateEntry:
-            # 使用DateEntry选择日期
-            date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
-            date_entry.pack(pady=10)
-            # DateEntry初始化时会覆盖textvariable的值，所以需要在创建后设置日期
-            date_entry.set_date(default_expiry)
+            # 先创建一个临时占位的普通Entry，让对话框快速显示
+            temp_var = tk.StringVar()
+            temp_var.set(default_expiry)
+            temp_entry = ttk.Entry(dialog.content_frame, textvariable=temp_var)
+            temp_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(5, 30))
             
-            # 修复DateEntry在模态对话框中第一次无法关闭日历的问题
-            # 原因：模态对话框的grab阻止了日历弹窗正确获取焦点
-            # 解决：监听日历弹窗的Map/Unmap事件来管理grab
-            def on_cal_map(event):
-                dialog.dialog.grab_release()
+            # 延迟创建DateEntry，避免阻塞对话框显示
+            def create_date_entry():
+                nonlocal date_entry
+                # 移除临时输入框
+                temp_entry.destroy()
+                
+                # 创建DateEntry日期选择器
+                date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
+                date_entry.grid(row=0, column=1, sticky="ew", pady=5, padx=(5, 30))
+                date_entry.set_date(default_expiry)
+                
+                # 修复模态对话框中DateEntry日历弹窗问题
+                fix_date_entry_for_modal(date_entry, dialog.dialog)
             
-            def on_cal_unmap(event):
-                dialog.dialog.grab_set()
-            
-            date_entry._top_cal.bind('<Map>', on_cal_map)
-            date_entry._top_cal.bind('<Unmap>', on_cal_unmap)
+            # 对话框显示后异步创建DateEntry
+            dialog.dialog.after(50, create_date_entry)
         else:
             # 使用普通Entry输入日期
             date_var = tk.StringVar()
             date_var.set(default_expiry)
             date_entry = ttk.Entry(dialog.content_frame, textvariable=date_var)
-            date_entry.pack(pady=10)
-            ttk.Label(dialog.content_frame, text=_('date_format_yyyy_mm_dd')).pack(pady=5)
+            date_entry.grid(row=0, column=1, sticky="ew", pady=10, padx=(0, 10))
+            ttk.Label(dialog.content_frame, text=_('date_format_yyyy_mm_dd')).grid(row=1, column=1, sticky="w", pady=5)
+        
+        # 获取日期值的辅助函数
+        def get_expiry_date():
+            if date_entry:
+                return date_entry.get()
+            elif 'temp_entry' in locals():
+                return temp_entry.get()
+            return None
         
         # 确认按钮
         def confirm():
-            expiry_date = date_entry.get()
+            expiry_date = get_expiry_date()
             if not expiry_date:
                 self.show_info(_('hint'), _('please_enter_expiry_date'))
                 return
@@ -16455,6 +17006,9 @@ class SubnetPlannerApp:
         # 添加按钮
         dialog.add_button(_('confirm'), confirm, column=1)
         dialog.add_button(_('clear_expiry_date'), clear_expiry, column=2)
+        
+        # 显示对话框
+        dialog.show()
 
     def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None, record_id=None, original_hostname='', original_description=''):
         """显示IP地址分配/保留对话框
@@ -16753,15 +17307,8 @@ class SubnetPlannerApp:
             # DateEntry初始化时会覆盖textvariable的值，所以需要在创建后设置日期
             expiry_entry.set_date(default_expiry)
             
-            # 修复DateEntry在模态对话框中第一次无法关闭日历的问题
-            def on_cal_map(event):
-                dialog.grab_release()
-            
-            def on_cal_unmap(event):
-                dialog.grab_set()
-            
-            expiry_entry._top_cal.bind('<Map>', on_cal_map)
-            expiry_entry._top_cal.bind('<Unmap>', on_cal_unmap)
+            # 修复模态对话框中DateEntry日历弹窗问题
+            fix_date_entry_for_modal(expiry_entry, dialog)
         else:
             # 使用普通Entry输入日期
             expiry_var = tk.StringVar()
@@ -17400,7 +17947,7 @@ class SubnetPlannerApp:
         """保留IP地址"""
         selected_items = self.ipam_network_tree.selection()
         if not selected_items:
-            self.show_info(_('hint'), _('please_select_network'))
+            self.show_error(_('error'), _('please_select_network'))
             return
         
         network = self.ipam_network_tree.item(selected_items[0], 'values')[0]

@@ -33,7 +33,8 @@ class ConfigManager:
         },
         "ui": {
             "theme": "default",
-            "font_size": 12
+            "font_size": 12,
+            "tab_order": []
         },
         "recent_files": [],
         "last_used_network": None
@@ -147,6 +148,10 @@ class ConfigManager:
                             fs = ui['font_size']
                             if isinstance(fs, int):
                                 result_ui['font_size'] = fs
+                        if 'tab_order' in ui:
+                            to = ui['tab_order']
+                            if isinstance(to, list):
+                                result_ui['tab_order'] = to
             
             if 'recent_files' in config:
                 rf = config['recent_files']
@@ -205,6 +210,8 @@ class ConfigManager:
             if 'theme' not in ui or ui['theme'] not in self.SUPPORTED_THEMES:
                 return False
             if 'font_size' not in ui or not isinstance(ui['font_size'], int):
+                return False
+            if 'tab_order' not in ui or not isinstance(ui['tab_order'], list):
                 return False
             
             # 检查最近文件列表
@@ -483,6 +490,36 @@ class ConfigManager:
             print("字体大小必须在 8-32 之间")
             return False
         return self.set('ui.font_size', font_size)
+    
+    def get_ui_tab_order(self) -> list[str]:
+        """获取标签页次序
+        
+        Returns:
+            标签名称列表
+        """
+        result = self.get('ui.tab_order', [])
+        if isinstance(result, list):
+            return [item for item in result if isinstance(item, str)]
+        return []
+    
+    def set_ui_tab_order(self, tab_order: list[str]) -> bool:
+        """设置标签页次序
+        
+        Args:
+            tab_order: 标签名称列表
+            
+        Returns:
+            是否设置成功
+        """
+        if not isinstance(tab_order, list):
+            print("标签次序必须是列表")
+            return False
+        # 验证列表中所有元素都是字符串
+        for item in tab_order:
+            if not isinstance(item, str):
+                print("标签名称必须是字符串")
+                return False
+        return self.set('ui.tab_order', tab_order)
     
     def get_recent_files(self) -> list[str]:
         """获取最近打开的文件列表

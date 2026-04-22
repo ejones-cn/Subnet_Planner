@@ -14,7 +14,13 @@
   },
   "ui": {
     "theme": "default",
-    "font_size": 12
+    "font_size": 12,
+    "tab_order": [
+      "地址管理",
+      "子网规划",
+      "子网切分",
+      "高级工具"
+    ]
   },
   "recent_files": [],
   "last_used_network": null

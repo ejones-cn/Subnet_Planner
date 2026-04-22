@@ -1521,51 +1521,29 @@ def range_to_cidr(start_ip, end_ip):
                     or start_is_global != end_is_global):
                 return {"error": _('ipv6_address_type_mismatch')}
 
-        # 智能扩展范围，尝试找到包含当前范围的最小子网
-        expanded_start = start
-        expanded_end = end
-        
-        # 初始化最大的包含范围的前缀长度和对应的网络
-        best_prefix_len = None
-        best_network = None
-        
         if not is_ipv6:
-            # IPv4处理：从32位到1位尝试，找到最大的包含整个范围的前缀长度
-            for prefix_len in range(32, 0, -1):
-                try:
-                    # 为起始IP创建当前前缀长度的子网
-                    network = ipaddress.IPv4Network(f"{start}/{prefix_len}", strict=False)
-                    
-                    # 检查子网是否包含整个范围
-                    if network.network_address <= start and network.broadcast_address >= end:
-                        # 找到了更大的有效前缀长度，更新最佳值
-                        best_prefix_len = prefix_len
-                        best_network = network
-                        break
-                except ValueError:
-                    continue
+            max_prefix = 32
+            NetworkClass = ipaddress.IPv4Network
         else:
-            # IPv6处理：从128位到1位尝试，找到最大的包含整个范围的前缀长度
-            for prefix_len in range(128, 0, -1):
-                try:
-                    # 为起始IP创建当前前缀长度的子网
-                    network = ipaddress.IPv6Network(f"{start}/{prefix_len}", strict=False)
-                    
-                    # 检查子网是否包含整个范围
-                    if network.network_address <= start and network.broadcast_address >= end:
-                        # 找到了更大的有效前缀长度，更新最佳值
-                        best_prefix_len = prefix_len
-                        best_network = network
-                        break
-                except ValueError:
-                    continue
+            max_prefix = 128
+            NetworkClass = ipaddress.IPv6Network
         
-        # 如果找到了最佳子网，更新扩展范围
-        if best_network:
-            expanded_start = best_network.network_address
-            expanded_end = best_network.broadcast_address
+        best_network = None
+        for prefix_len in range(max_prefix, 0, -1):
+            try:
+                network = NetworkClass(f"{start}/{prefix_len}", strict=False)
+                if network.network_address <= start and network.broadcast_address >= end:
+                    best_network = network
+                    break
+            except ValueError:
+                continue
+        
+        if not best_network:
+            return {"error": _('cannot_convert_cross_class_network')}
 
-        # 使用ipaddress模块的summary_addresses函数获取CIDR列表
+        expanded_start = best_network.network_address
+        expanded_end = best_network.broadcast_address
+
         try:
             cidr_list = list(ipaddress.summarize_address_range(expanded_start, expanded_end))
         except ValueError as e:
@@ -1577,8 +1555,6 @@ def range_to_cidr(start_ip, end_ip):
         return {
             "start_ip": start_ip,
             "end_ip": end_ip,
-            "expanded_start": str(expanded_start),
-            "expanded_end": str(expanded_end),
             "cidr_list": [str(cidr) for cidr in cidr_list],
             "cidr_count": len(cidr_list),
             "total_addresses": int(end) - int(start) + 1,
