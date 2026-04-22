@@ -211,7 +211,7 @@ class ConfigManager:
                 return False
             if 'font_size' not in ui or not isinstance(ui['font_size'], int):
                 return False
-            if 'tab_order' not in ui or not isinstance(ui['tab_order'], list):
+            if 'tab_order' in ui and not isinstance(ui['tab_order'], list):
                 return False
             
             # 检查最近文件列表

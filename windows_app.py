@@ -91,7 +91,7 @@ def fix_date_entry_for_modal(date_entry, dialog_toplevel):
     2. DateEntry自带的_on_focus_out_cal在焦点移到日历内部按钮时会错误关闭日历
     
     解决方案：
-    1. 替换drop_down方法，在日历显示前释放grab
+    1. 替换drop_down方法，在日历显示前释放grab，关闭时也正确处理
     2. 替换_on_focus_out_cal方法，正确判断焦点是否仍在日历弹窗内
     3. 日历关闭后恢复grab
     
@@ -105,7 +105,6 @@ def fix_date_entry_for_modal(date_entry, dialog_toplevel):
             focus_widget = date_entry.focus_get()
             if focus_widget is None:
                 return False
-            # 检查焦点控件是否在日历弹窗的_top_cal内部
             top_cal = date_entry._top_cal
             widget = focus_widget
             while widget is not None:
@@ -115,7 +114,6 @@ def fix_date_entry_for_modal(date_entry, dialog_toplevel):
                     widget = widget.master
                 except Exception:
                     break
-            # 焦点在DateEntry自身的下拉按钮上
             if focus_widget == date_entry:
                 return True
             return False
@@ -125,33 +123,38 @@ def fix_date_entry_for_modal(date_entry, dialog_toplevel):
     def _custom_on_focus_out_cal(event):
         """替换DateEntry自带的_on_focus_out_cal，正确处理日历内部焦点转移"""
         if _is_focus_in_calendar():
-            # 焦点仍在日历弹窗内部，不关闭
             return
-        # 焦点已离开日历弹窗，关闭日历
         try:
             date_entry._top_cal.withdraw()
             date_entry.state(['!pressed'])
         except Exception:
             pass
     
-    # 替换焦点丢失处理器
     date_entry._calendar.unbind('<FocusOut>')
     date_entry._calendar.bind('<FocusOut>', _custom_on_focus_out_cal)
     
     if dialog_toplevel is not None:
-        # 模态对话框：替换drop_down方法管理grab
         _original_drop_down = date_entry.drop_down
         
         def _custom_drop_down():
-            try:
-                dialog_toplevel.grab_release()
-            except Exception:
-                pass
-            _original_drop_down()
+            if date_entry._calendar.winfo_ismapped():
+                # 日历已打开，直接关闭
+                try:
+                    dialog_toplevel.grab_release()
+                except Exception:
+                    pass
+                date_entry._top_cal.withdraw()
+                date_entry.state(['!pressed'])
+            else:
+                # 日历已关闭，先释放grab再打开
+                try:
+                    dialog_toplevel.grab_release()
+                except Exception:
+                    pass
+                _original_drop_down()
         
         date_entry.drop_down = _custom_drop_down
         
-        # 日历关闭后恢复对话框的grab
         def _restore_grab(event=None):
             def _do_restore():
                 try:
@@ -1860,7 +1863,11 @@ class SubnetPlannerApp:
         self.planning_history_records = self.history_repo.planning_history_records
 
         # 添加组合键绑定，用于测试信息栏（彩蛋功能）
-        self.root.bind('<Control-Shift-Key-I>', self.toggle_test_info_bar)
+        # 同时绑定大小写版本，确保在 Caps Lock 状态下也能正常工作
+        self.root.bind_all('<Control-Shift-I>', self.toggle_test_info_bar)
+        self.root.bind_all('<Control-Shift-i>', self.toggle_test_info_bar)
+        self.root.bind_all('<Control-Shift-D>', self.toggle_test_info_bar)
+        self.root.bind_all('<Control-Shift-d>', self.toggle_test_info_bar)
         self.test_info_bar_enabled = False
 
         # 创建主框架 - 调整内边距使其更加紧凑
@@ -8598,6 +8605,9 @@ class SubnetPlannerApp:
             close_frame, text=_('close'), width=original_button_width, style=button_style, command=self.close_test_dialog
         )
         close_btn.grid(row=0, column=1, padx=5)
+
+        # 显示对话框
+        self.test_dialog.show()
 
     def close_test_dialog(self):
         """关闭功能调试对话框并更新状态"""
