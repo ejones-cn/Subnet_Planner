@@ -13,7 +13,7 @@
     "frequency": "daily"
   },
   "ui": {
-    "theme": "default",
+    "theme": "vista",
     "font_size": 12,
     "tab_order": [
       "子网规划",

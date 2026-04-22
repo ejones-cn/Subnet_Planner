@@ -1843,7 +1843,20 @@ class SubnetPlannerApp:
 
         # 设置样式
         self.style = ttk.Style()
-        self.style.theme_use("vista")
+        
+        # 从配置文件加载主题设置，如果没有配置则使用默认主题
+        from config_manager import get_config
+        config = get_config()
+        saved_theme = config.get('ui.theme', 'vista')
+        
+        # 获取系统可用的主题列表
+        available_themes = self.style.theme_names()
+        
+        # 如果保存的主题不在可用列表中，使用默认主题
+        if saved_theme not in available_themes:
+            saved_theme = 'vista'
+        
+        self.style.theme_use(saved_theme)
 
         # 初始化样式管理器
         self.style_manager = init_style_manager(self.root)
@@ -8495,6 +8508,11 @@ class SubnetPlannerApp:
                 # 刷新主窗口界面，确保所有控件颜色正确更新
                 self.root.update_idletasks()
                 self.root.update()
+                
+                # 保存主题配置到文件
+                from config_manager import get_config
+                config = get_config()
+                config.set_ui_theme(new_theme)
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题

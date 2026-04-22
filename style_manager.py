@@ -90,7 +90,6 @@ class StyleManager:
         """设置默认样式"""
         if not self.style:
             return
-        self.style.theme_use("vista")
 
     def _get_setting(self, settings_dict, language):
         """根据语言获取设置值

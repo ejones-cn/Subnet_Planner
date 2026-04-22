@@ -142,7 +142,7 @@ class ConfigManager:
                     if isinstance(result_ui, dict):
                         if 'theme' in ui:
                             theme = ui['theme']
-                            if theme in self.SUPPORTED_THEMES:
+                            if isinstance(theme, str):
                                 result_ui['theme'] = theme
                         if 'font_size' in ui:
                             fs = ui['font_size']
@@ -207,7 +207,7 @@ class ConfigManager:
             if 'ui' not in config or not isinstance(config['ui'], dict):
                 return False
             ui = config['ui']
-            if 'theme' not in ui or ui['theme'] not in self.SUPPORTED_THEMES:
+            if 'theme' not in ui or not isinstance(ui['theme'], str):
                 return False
             if 'font_size' not in ui or not isinstance(ui['font_size'], int):
                 return False
@@ -458,13 +458,14 @@ class ConfigManager:
         """设置UI主题
         
         Args:
-            theme: 主题名称
+            theme: 主题名称（接受任何有效的Tkinter主题名称）
             
         Returns:
             是否设置成功
         """
-        if theme not in self.SUPPORTED_THEMES:
-            print(f"不支持的主题: {theme}")
+        # 接受任何非空字符串作为主题名
+        if not theme or not isinstance(theme, str):
+            print(f"无效的主题名称: {theme}")
             return False
         return self.set('ui.theme', theme)
     
