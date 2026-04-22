@@ -1245,6 +1245,12 @@ class NetworkTopologyVisualizer:
                 self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
                 return
             
+            # 画布尺寸有效，立即取消延迟定时器并标记缩放开始
+            self._pending_initial_scale = False
+            if self._auto_scale_timer is not None:
+                self.canvas.after_cancel(self._auto_scale_timer)
+                self._auto_scale_timer = None
+            
             # 计算缩放比例
             scale_x = (canvas_width - 2 * padding) / content_width if content_width > 0 else 1.0
             scale_y = (canvas_height - 2 * padding) / content_height if content_height > 0 else 1.0
@@ -2265,67 +2271,35 @@ class NetworkTopologyVisualizer:
         self.nodes.clear()
         self.links.clear()
         
-        # 绘制拓扑图
+        # 临时保存原始画布引用
+        original_canvas = self.canvas
+        
+        # 设置全屏画布为当前画布
+        self.canvas = self.fullscreen_canvas
+        
+        # 重置缩放标志，允许draw_topology执行缩放
+        self._scaled = False
+        
+        # 绘制拓扑图（会自动执行自适应缩放）
         self.draw_topology(self.network_data)
         
-        # 获取内容边界框
-        bbox = self.fullscreen_canvas.bbox(tk.ALL)
-        if not bbox:
-            return
+        # 恢复原始画布引用
+        self.canvas = original_canvas
         
-        x1, y1, x2, y2 = bbox
-        content_width = x2 - x1
-        content_height = y2 - y1
-        
-        if content_width <= 0 or content_height <= 0:
-            return
-        
-        # 计算缩放比例，使用30像素边距
-        margin = 30
-        scale_x = (canvas_width - 2 * margin) / content_width
-        scale_y = (canvas_height - 2 * margin) / content_height
-        scale_factor = min(scale_x, scale_y)
-        scale_factor = max(0.5, min(scale_factor, 1.0))
-        
-        # 更新缩放因子
-        self.scale = scale_factor
-        
-        # 先将内容移动到原点
-        self.fullscreen_canvas.move(tk.ALL, -x1, -y1)
-        
-        # 以原点为基准进行缩放
-        self.fullscreen_canvas.scale(tk.ALL, 0, 0, scale_factor, scale_factor)
-        
-        # 计算缩放后的尺寸
-        scaled_content_width = content_width * scale_factor
-        scaled_content_height = content_height * scale_factor
-        
-        # 水平和垂直方向独立判断位置
-        if scaled_content_width <= canvas_width - 2 * margin:
-            target_x = (canvas_width - scaled_content_width) / 2
-        else:
-            target_x = margin
-        
-        if scaled_content_height <= canvas_height - 2 * margin:
-            target_y = (canvas_height - scaled_content_height) / 2
-        else:
-            target_y = margin
-        
-        # 将内容移动到目标位置
-        self.fullscreen_canvas.move(tk.ALL, target_x, target_y)
-        
-        # 获取缩放移动后的边界框
+        # 由于draw_topology已经执行了自适应缩放，这里不需要再执行缩放
+        # 获取缩放后的边界框来设置滚动区域
         final_bbox = self.fullscreen_canvas.bbox(tk.ALL)
         if final_bbox:
             # 设置滚动区域正好包含内容
             self.fullscreen_canvas.config(
                 scrollregion=(
-                    0, 
-                    0, 
-                    max(canvas_width, final_bbox[2] + margin), 
-                    max(canvas_height, final_bbox[3] + margin)
+                    0, 0,
+                    max(canvas_width, final_bbox[2] + 30),
+                    max(canvas_height, final_bbox[3] + 30)
                 )
             )
+        else:
+            self.fullscreen_canvas.config(scrollregion=(0, 0, canvas_width, canvas_height))
         
         # 强制刷新画布
         self.fullscreen_canvas.update_idletasks()
