@@ -1862,10 +1862,10 @@ class SubnetPlannerApp:
         self.current_history_index = self.history_repo.current_history_index
         self.planning_history_records = self.history_repo.planning_history_records
 
-        # 添加组合键绑定，用于测试信息栏（彩蛋功能）
-        # 同时绑定大小写版本，确保在 Caps Lock 状态下也能正常工作
-        # Ctrl+Shift+I: 主快捷键，打开功能调试面板 (Info/Inspect)
-        # Ctrl+Shift+D: 备用快捷键，打开功能调试面板 (Debug)，以防主快捷键被系统占用
+        # 功能调试面板快捷键绑定（彩蛋功能）
+        # Ctrl+Shift+I/D: 打开功能调试面板，同时绑定大小写版本确保 Caps Lock 状态下正常工作
+        # - I: 主快捷键 (Info/Inspect)
+        # - D: 备用快捷键 (Debug)，以防主快捷键被系统占用
         self.root.bind_all('<Control-Shift-I>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-i>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-D>', self.toggle_test_info_bar)
@@ -8461,30 +8461,40 @@ class SubnetPlannerApp:
                 for tree_name in tree_names:
                     if hasattr(self, tree_name):
                         tree = getattr(self, tree_name)
+                        # 确保tree不是None
+                        if tree is None:
+                            continue
                         # 检查split_tree是否需要包含特殊标签
                         include_special = tree_name == 'split_tree'
                         self.configure_treeview_styles(tree, include_special)
 
-                    # 重新配置信息栏标签样式，确保错误信息颜色正确
-                    info_bar_font_size = get_info_bar_font_size()
-                    base_info_label_style = {"borderwidth": 0, "font": (font_family, info_bar_font_size), "relief": "flat"}
-                    self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
-                    self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
-                    self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
+                # 重新配置信息栏标签样式，确保错误信息颜色正确
+                info_bar_font_size = get_info_bar_font_size()
+                base_info_label_style = {"borderwidth": 0, "font": (font_family, info_bar_font_size), "relief": "flat"}
+                self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
+                self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
+                self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
 
-                    # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
-                    info_bar_frame_style = {"borderwidth": 0, "relief": "flat"}
-                    for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
-                        self.style.configure(frame_style, **info_bar_frame_style)
-                    
-                    # 更新Text组件的背景色，确保跟随主题
-                    if hasattr(self, 'info_label'):
-                        bg_color = self.style.lookup("TFrame", "background")
-                        self.info_label.configure(background=bg_color)
-                    # 更新信息栏关闭按钮的背景色，确保跟随主题
-                    if hasattr(self, 'info_close_btn'):
-                        bg_color = self.style.lookup("TFrame", "background")
-                        self.info_close_btn.configure(bg=bg_color)
+                # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
+                info_bar_frame_style = {"borderwidth": 0, "relief": "flat"}
+                for frame_style in ["InfoBar.TFrame", "SuccessInfoBar.TFrame", "ErrorInfoBar.TFrame", "InfoInfoBar.TFrame"]:
+                    self.style.configure(frame_style, **info_bar_frame_style)
+                
+                # 更新Text组件的背景色，确保跟随主题
+                if hasattr(self, 'info_label'):
+                    bg_color = self.style.lookup("TFrame", "background")
+                    self.info_label.configure(background=bg_color)
+                # 更新信息栏关闭按钮的背景色，确保跟随主题
+                if hasattr(self, 'info_close_btn'):
+                    bg_color = self.style.lookup("TFrame", "background")
+                    self.info_close_btn.configure(bg=bg_color)
+                
+                # 刷新二级notebook的内容区域背景色
+                self._refresh_secondary_notebooks()
+                
+                # 刷新主窗口界面，确保所有控件颜色正确更新
+                self.root.update_idletasks()
+                self.root.update()
             except (tk.TclError, AttributeError) as e:
                 print(f"主题切换出错: {e}")
                 # 出错时恢复到默认主题
@@ -8599,7 +8609,7 @@ class SubnetPlannerApp:
 
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=5, column=0, columnspan=2, sticky=tk.SE, pady=(15, 5), padx=(0, 5))
+        close_frame.grid(row=5, column=0, columnspan=2, sticky=tk.SE, pady=(15, 0), padx=(0, 0))
 
         # 添加关闭按钮到右下角 - 使用原来宽度
         close_btn = ttk.Button(
@@ -8609,6 +8619,33 @@ class SubnetPlannerApp:
 
         # 显示对话框
         self.test_dialog.show()
+
+    def _refresh_secondary_notebooks(self):
+        """刷新所有二级notebook的内容区域背景色，确保主题切换后颜色正确显示"""
+        # 刷新子网分割页面的二级notebook
+        if hasattr(self, 'notebook') and self.notebook is not None:
+            self._refresh_single_notebook(self.notebook)
+        
+        # 刷新规划页面的二级notebook
+        if hasattr(self, 'planning_notebook') and self.planning_notebook is not None:
+            self._refresh_single_notebook(self.planning_notebook)
+        
+        # 刷新地址管理页面的二级notebook
+        if hasattr(self, 'ipam_notebook') and self.ipam_notebook is not None:
+            self._refresh_single_notebook(self.ipam_notebook)
+        
+        # 刷新高级工具页面的二级notebook
+        if hasattr(self, 'advanced_notebook') and self.advanced_notebook is not None:
+            self._refresh_single_notebook(self.advanced_notebook)
+
+    def _refresh_single_notebook(self, notebook):
+        """刷新单个notebook的样式"""
+        if not hasattr(notebook, 'tabs') or not hasattr(notebook, 'active_tab'):
+            return
+        
+        # 如果有活动标签，重新选中以刷新样式
+        if notebook.active_tab is not None and 0 <= notebook.active_tab < len(notebook.tabs):
+            notebook.select_tab(notebook.active_tab)
 
     def close_test_dialog(self):
         """关闭功能调试对话框并更新状态"""
