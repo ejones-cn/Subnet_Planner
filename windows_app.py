@@ -11765,12 +11765,14 @@ class SubnetPlannerApp:
 
             btn_row1 = ttk.Frame(export_btn_frame)
             btn_row1.pack(fill=tk.X, pady=2)
-            ttk.Button(btn_row1, text=_('export_selected_networks'),
-                      command=lambda: self._do_export_network(dialog, selected=True, sync_ip_var=None)).pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
-            ttk.Button(btn_row1, text=_('export_all_networks'),
-                      command=lambda: self._do_export_network(dialog, selected=False, sync_ip_var=None)).pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
 
             sync_ip_var = tk.BooleanVar(value=False)
+
+            ttk.Button(btn_row1, text=_('export_selected_networks'),
+                      command=lambda: self._do_export_network(dialog, selected=True, sync_ip_var=sync_ip_var)).pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+            ttk.Button(btn_row1, text=_('export_all_networks'),
+                      command=lambda: self._do_export_network(dialog, selected=False, sync_ip_var=sync_ip_var)).pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+
             ttk.Checkbutton(export_btn_frame, text=_('sync_export_ips'), variable=sync_ip_var).pack(anchor=tk.W, padx=5, pady=(5, 2))
 
             import_frame = ttk.LabelFrame(main_frame, text=_('import_options'))
