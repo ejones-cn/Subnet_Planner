@@ -1864,6 +1864,8 @@ class SubnetPlannerApp:
 
         # 添加组合键绑定，用于测试信息栏（彩蛋功能）
         # 同时绑定大小写版本，确保在 Caps Lock 状态下也能正常工作
+        # Ctrl+Shift+I: 主快捷键，打开功能调试面板 (Info/Inspect)
+        # Ctrl+Shift+D: 备用快捷键，打开功能调试面板 (Debug)，以防主快捷键被系统占用
         self.root.bind_all('<Control-Shift-I>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-i>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-D>', self.toggle_test_info_bar)
@@ -8322,7 +8324,7 @@ class SubnetPlannerApp:
         content_frame.grid_rowconfigure(2, weight=0)  # 按钮区行不扩展
         content_frame.grid_rowconfigure(3, weight=0)  # 底部区域不扩展
         content_frame.grid_rowconfigure(4, weight=0)  # 底部区域不扩展
-        content_frame.grid_rowconfigure(5, weight=0)  # 关闭按钮行不扩展
+        content_frame.grid_rowconfigure(5, weight=1)  # 关闭按钮行扩展，使其靠底部
         content_frame.grid_columnconfigure(0, weight=1)  # 左列（主题切换/窗口锁定）
         content_frame.grid_columnconfigure(1, weight=1)  # 右列（标签次序）
 
@@ -8597,14 +8599,13 @@ class SubnetPlannerApp:
 
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
-        close_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(15, 0))
-        close_frame.grid_columnconfigure(0, weight=1)  # 左侧空白区域扩展
+        close_frame.grid(row=5, column=0, columnspan=2, sticky=tk.SE, pady=(15, 5), padx=(0, 5))
 
         # 添加关闭按钮到右下角 - 使用原来宽度
         close_btn = ttk.Button(
             close_frame, text=_('close'), width=original_button_width, style=button_style, command=self.close_test_dialog
         )
-        close_btn.grid(row=0, column=1, padx=5)
+        close_btn.pack(side=tk.RIGHT)
 
         # 显示对话框
         self.test_dialog.show()
