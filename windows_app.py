@@ -1876,13 +1876,10 @@ class SubnetPlannerApp:
         self.planning_history_records = self.history_repo.planning_history_records
 
         # 功能调试面板快捷键绑定（彩蛋功能）
-        # Ctrl+Shift+I/D: 打开功能调试面板，同时绑定大小写版本确保 Caps Lock 状态下正常工作
+        # Ctrl+Shift+I: 打开功能调试面板，同时绑定大小写版本确保 Caps Lock 状态下正常工作
         # - I: 主快捷键 (Info/Inspect)
-        # - D: 备用快捷键 (Debug)，以防主快捷键被系统占用
         self.root.bind_all('<Control-Shift-I>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-i>', self.toggle_test_info_bar)
-        self.root.bind_all('<Control-Shift-D>', self.toggle_test_info_bar)
-        self.root.bind_all('<Control-Shift-d>', self.toggle_test_info_bar)
         self.test_info_bar_enabled = False
 
         # 创建主框架 - 调整内边距使其更加紧凑
