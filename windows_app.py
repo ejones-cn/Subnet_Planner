@@ -60,6 +60,7 @@ from services.subnet_split_service import SubnetSplitService
 from services.subnet_planning_service import SubnetPlanningService
 from services.ip_query_service import IPQueryService
 from services.validation_service import ValidationService
+from services.crypto_service import get_crypto_service, CryptoService
 from validators import IPAMValidator
 from visualization import NetworkTopologyVisualizer
 from style_manager import (
@@ -302,7 +303,7 @@ class DialogBase:
     def _init_layout(self):
         """初始化布局"""
         # 主框架
-        self.main_frame = ttk.Frame(self.dialog, padding="15")
+        self.main_frame = ttk.Frame(self.dialog, padding="10")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 内容框架
@@ -1068,9 +1069,16 @@ class ColoredNotebook(ttk.Frame):
             # 发生错误时，不设置自定义背景色，使用默认样式
             pass
 
-    def add_tab(self, label, content_frame, color="#e0e0e0"):
-        """添加一个新标签"""
-        tab = {"label": label, "content": content_frame, "color": color, "button": None}
+    def add_tab(self, label, content_frame, color="#e0e0e0", tab_id=None):
+        """添加一个新标签
+        
+        Args:
+            label: 标签显示文本
+            content_frame: 标签内容框架
+            color: 标签颜色
+            tab_id: 标签唯一标识符（用于跨语言保存次序），如果为None则使用label
+        """
+        tab = {"label": label, "content": content_frame, "color": color, "button": None, "tab_id": tab_id if tab_id else label}
 
         font_family, font_size = self._get_font_settings()
         style_manager = get_style_manager()
@@ -1324,55 +1332,63 @@ class ColoredNotebook(ttk.Frame):
         return True
 
     def get_tab_labels(self):
-        """获取所有标签的标签名列表
+        """获取所有标签的显示文本列表
         
         Returns:
-            list: 标签名称列表
+            list: 标签显示文本列表
         """
         return [tab['label'] for tab in self.tabs]
+    
+    def get_tab_ids(self):
+        """获取所有标签的唯一标识符列表
+        
+        Returns:
+            list: 标签唯一标识符列表
+        """
+        return [tab['tab_id'] for tab in self.tabs]
 
     def save_tab_order(self):
-        """保存当前标签次序到配置文件"""
+        """保存当前标签次序到配置文件（使用唯一标识符，支持跨语言）"""
         from config_manager import get_config
         
         try:
             config = get_config()
-            tab_labels = self.get_tab_labels()
-            config.set_ui_tab_order(tab_labels)
+            tab_ids = self.get_tab_ids()
+            config.set_ui_tab_order(tab_ids)
             return True
         except Exception as e:
             print(f"保存标签次序失败: {e}")
             return False
 
-    def apply_tab_order(self, ordered_labels):
-        """根据给定的标签次序重新排列标签
+    def apply_tab_order(self, ordered_ids):
+        """根据给定的标签次序重新排列标签（使用唯一标识符，支持跨语言）
         
         Args:
-            ordered_labels: 标签名称列表，按期望顺序排列
+            ordered_ids: 标签唯一标识符列表，按期望顺序排列
             
         Returns:
             bool: 是否成功
         """
-        if not ordered_labels or not isinstance(ordered_labels, list):
+        if not ordered_ids or not isinstance(ordered_ids, list):
             return False
             
-        # 创建原始标签字典
-        original_tabs = {tab['label']: tab for tab in self.tabs}
+        # 创建原始标签字典（使用tab_id作为键）
+        original_tabs = {tab['tab_id']: tab for tab in self.tabs}
         
         # 验证所有指定的标签是否存在
-        for label in ordered_labels:
-            if label not in original_tabs:
+        for tab_id in ordered_ids:
+            if tab_id not in original_tabs:
                 return False
         
         # 按指定顺序重新排列标签
         new_tabs = []
-        for label in ordered_labels:
-            if label in original_tabs:
-                new_tabs.append(original_tabs[label])
+        for tab_id in ordered_ids:
+            if tab_id in original_tabs:
+                new_tabs.append(original_tabs[tab_id])
         
         # 添加未在配置中指定的标签（保持原有顺序）
         for tab in self.tabs:
-            if tab['label'] not in ordered_labels:
+            if tab['tab_id'] not in ordered_ids:
                 new_tabs.append(tab)
         
         # 更新标签列表
@@ -1882,6 +1898,12 @@ class SubnetPlannerApp:
         self.root.bind_all('<Control-Shift-I>', self.toggle_test_info_bar)
         self.root.bind_all('<Control-Shift-i>', self.toggle_test_info_bar)
         self.test_info_bar_enabled = False
+
+        # 隐藏信息管理快捷键绑定
+        # Ctrl+Shift+H: 打开选中IP地址的隐藏信息管理对话框
+        # - H: 主快捷键 (Hidden)
+        self.root.bind_all('<Control-Shift-H>', self.open_hidden_info_dialog)
+        self.root.bind_all('<Control-Shift-h>', self.open_hidden_info_dialog)
 
         # 创建主框架 - 调整内边距使其更加紧凑
         self.main_frame = ttk.Frame(self.root, padding="15")
@@ -2764,11 +2786,11 @@ class SubnetPlannerApp:
         self.ipam_frame = ttk.Frame(self.top_level_notebook.content_area, padding="10")
         self.setup_ipam_page()
 
-        # 添加顶级标签页
-        self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec")
-        self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd")
-        self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0")
-        self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9")
+        # 添加顶级标签页（传入tab_id以支持跨语言保存标签次序）
+        self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec", tab_id="subnet_planning")
+        self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd", tab_id="ip_address_management")
+        self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0", tab_id="subnet_split")
+        self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9", tab_id="advanced_tools")
 
         # 加载保存的标签次序
         self.load_saved_tab_order()
@@ -4398,6 +4420,14 @@ class SubnetPlannerApp:
 
         # 获取单元格数据
         cell_data = str(values[column_index])
+
+        # 特殊处理：如果是隐藏信息表且复制的是密码列（索引2），获取真实密码
+        if tree == self._hidden_info_tree and column_index == 2:
+            record_id = int(item)
+            for record in getattr(self, '_hidden_info_raw_data', []):
+                if record.get('id') == record_id:
+                    cell_data = record.get('password', '')
+                    break
 
         # 将数据复制到剪贴板
         self.root.clipboard_clear()
@@ -8672,6 +8702,341 @@ class SubnetPlannerApp:
                 # 确保无论如何都将test_dialog设置为None
                 self.test_dialog = None
 
+    def open_hidden_info_dialog(self, event=None):
+        """打开隐藏信息管理对话框（快捷键：Ctrl+Shift+H）
+
+        需要先在IP地址列表中选中一个IP地址
+        """
+        if not hasattr(self, 'ipam_ip_tree'):
+            return
+
+        selected_items = self.ipam_ip_tree.selection()
+        if not selected_items:
+            self.show_info(_("hint"), _("please_select_ip_first"))
+            return
+
+        item = selected_items[0]
+        values = self.ipam_ip_tree.item(item, 'values')
+        if not values:
+            return
+
+        ip_address = values[0]
+        ip_record_id = self._get_db_record_id(item)
+        if not ip_record_id:
+            self.show_info(_("hint"), _("cannot_access_hidden_info"))
+            return
+        self._show_hidden_info_dialog(ip_address, ip_record_id)
+
+    def _show_hidden_info_dialog(self, ip_address, ip_record_id):
+        """显示指定IP地址的隐藏信息管理对话框
+
+        Args:
+            ip_address: IP地址（仅用于显示）
+            ip_record_id: IP记录ID（关联到ip_addresses表的主键）
+        """
+        dialog = self.create_dialog(
+            _('hidden_info_for_ip').format(ip=ip_address),
+            720, 480,
+            resizable=True,
+            modal=True
+        )
+
+        self._hidden_info_dialog = dialog
+        self._hidden_info_ip = ip_address
+        self._hidden_info_ip_record_id = ip_record_id
+        self._hidden_info_passwords_visible = False
+        self._hidden_info_raw_data = []
+
+        font_family, font_size = get_current_font_settings()
+
+        main_frame = ttk.Frame(dialog, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.grid_rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(0, weight=1)
+
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        columns = ('url', 'username', 'password', 'notes')
+        self._hidden_info_tree = ttk.Treeview(
+            tree_frame,
+            columns=columns,
+            show='headings',
+            height=10,
+            selectmode='extended'
+        )
+
+        self._hidden_info_tree.heading('url', text=_('access_url'))
+        self._hidden_info_tree.heading('username', text=_('username'))
+        self._hidden_info_tree.heading('password', text=_('password'))
+        self._hidden_info_tree.heading('notes', text=_('notes'))
+
+        self._hidden_info_tree.column('url', width=220, minwidth=150, stretch=True)
+        self._hidden_info_tree.column('username', width=120, minwidth=80, stretch=True)
+        self._hidden_info_tree.column('password', width=120, minwidth=80, stretch=True)
+        self._hidden_info_tree.column('notes', width=200, minwidth=100, stretch=True)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        self.create_scrollable_treeview_with_grid(tree_frame, self._hidden_info_tree, scrollbar)
+
+        self.configure_treeview_styles(self._hidden_info_tree)
+        
+        # 绑定右键复制功能
+        self.bind_treeview_right_click(self._hidden_info_tree)
+
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=1, column=0, sticky="ew")
+
+        left_btn_frame = ttk.Frame(button_frame)
+        left_btn_frame.pack(side=tk.LEFT)
+
+        btn_font = (font_family, font_size)
+        add_btn = ttk.Button(left_btn_frame, text=_('add_record'), command=lambda: self._add_hidden_record(ip_record_id, dialog), width=12)
+        add_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        edit_btn = ttk.Button(left_btn_frame, text=_('edit_record'), command=lambda: self._edit_hidden_record(ip_record_id, dialog), width=12)
+        edit_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        delete_btn = ttk.Button(left_btn_frame, text=_('delete_record'), command=lambda: self._delete_hidden_record(ip_record_id, dialog), width=12)
+        delete_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        right_btn_frame = ttk.Frame(button_frame)
+        right_btn_frame.pack(side=tk.RIGHT)
+
+        self._toggle_pwd_btn = ttk.Button(
+            right_btn_frame,
+            text=_('show_password'),
+            command=lambda: self._toggle_password_visibility(ip_address),
+            width=12
+        )
+        self._toggle_pwd_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        close_btn = ttk.Button(right_btn_frame, text=_('close'), command=dialog.destroy, width=12)
+        close_btn.pack(side=tk.LEFT)
+
+        self._refresh_hidden_info_tree(ip_record_id)
+
+        self._hidden_info_tree.bind('<Double-1>', lambda e: self._edit_hidden_record(ip_record_id, dialog))
+
+        # 绑定ESC键关闭对话框
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
+
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+
+    def _refresh_hidden_info_tree(self, ip_record_id):
+        """刷新隐藏信息表格数据
+
+        Args:
+            ip_record_id: IP记录ID
+        """
+        for item in self._hidden_info_tree.get_children():
+            self._hidden_info_tree.delete(item)
+
+        records = self.ipam_repo.get_hidden_info(ip_record_id)
+        self._hidden_info_raw_data = records
+
+        crypto = get_crypto_service()
+        for record in records:
+            password = record.get('password', '')
+            if self._hidden_info_passwords_visible:
+                display_pwd = password
+            else:
+                display_pwd = crypto.mask_password(password)
+
+            self._hidden_info_tree.insert('', tk.END, iid=str(record['id']), values=(
+                record.get('url', ''),
+                record.get('username', ''),
+                display_pwd,
+                record.get('notes', '')
+            ))
+
+        self.update_table_zebra_stripes(self._hidden_info_tree)
+
+    def _toggle_password_visibility(self, ip_address):
+        """切换密码字段的显示/隐藏状态
+
+        Args:
+            ip_address: IP地址
+        """
+        self._hidden_info_passwords_visible = not self._hidden_info_passwords_visible
+        if self._hidden_info_passwords_visible:
+            self._toggle_pwd_btn.configure(text=_('hide_password'))
+        else:
+            self._toggle_pwd_btn.configure(text=_('show_password'))
+        self._refresh_hidden_info_tree(self._hidden_info_ip_record_id)
+
+    def _add_hidden_record(self, ip_record_id, parent_dialog):
+        """添加隐藏信息记录
+
+        Args:
+            ip_record_id: IP记录ID
+            parent_dialog: 父对话框
+        """
+        self._show_hidden_record_edit_dialog(ip_record_id, parent_dialog, None)
+
+    def _edit_hidden_record(self, ip_record_id, parent_dialog):
+        """编辑隐藏信息记录
+
+        Args:
+            ip_record_id: IP记录ID
+            parent_dialog: 父对话框
+        """
+        selected = self._hidden_info_tree.selection()
+        if not selected:
+            self.show_info(_("hint"), _("please_select_record"))
+            return
+
+        record_id = int(selected[0])
+        record = None
+        for r in self._hidden_info_raw_data:
+            if r['id'] == record_id:
+                record = r
+                break
+
+        if not record:
+            return
+
+        self._show_hidden_record_edit_dialog(ip_record_id, parent_dialog, record)
+
+    def _delete_hidden_record(self, ip_record_id, parent_dialog):
+        """删除隐藏信息记录（支持批量删除）
+
+        Args:
+            ip_record_id: IP记录ID
+            parent_dialog: 父对话框
+        """
+        selected = self._hidden_info_tree.selection()
+        if not selected:
+            self.show_info(_("hint"), _("please_select_record"))
+            return
+
+        if len(selected) > 1:
+            confirm_msg = _("confirm_delete_hidden_records").format(count=len(selected))
+        else:
+            confirm_msg = _("confirm_delete_hidden_record")
+
+        if not self.show_custom_confirm(_("hint"), confirm_msg):
+            return
+
+        success_count = 0
+        for item in selected:
+            record_id = int(item)
+            success, msg = self.ipam_repo.delete_hidden_info(record_id)
+            if success:
+                success_count += 1
+
+        if success_count > 0:
+            self._refresh_hidden_info_tree(ip_record_id)
+            if success_count == len(selected):
+                self.show_info(_("success"), _("delete_success"))
+            else:
+                self.show_info(_("success"), _("partial_delete_success").format(success=success_count, total=len(selected)))
+        else:
+            self.show_error(_("operation_failed"), msg)
+
+    def _show_hidden_record_edit_dialog(self, ip_record_id, parent_dialog, record=None):
+        """显示隐藏信息记录的编辑对话框
+
+        Args:
+            ip_record_id: IP记录ID
+            parent_dialog: 父对话框
+            record: 要编辑的记录，为None时表示添加新记录
+        """
+        is_edit = record is not None
+        title = _('edit_record') if is_edit else _('add_record')
+
+        edit_dialog = self.create_dialog(title, 420, 360, resizable=False, modal=True, parent=parent_dialog)
+
+        font_family, font_size = get_current_font_settings()
+
+        frame = ttk.Frame(edit_dialog, padding="15")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # 创建两个子框架：一个用于表单字段，一个用于按钮
+        content_frame = ttk.Frame(frame)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(side=tk.BOTTOM, anchor=tk.SE, pady=(10, 5))
+
+        # 配置内容框架的列布局
+        content_frame.grid_columnconfigure(0, weight=0)
+        content_frame.grid_columnconfigure(1, weight=1)
+
+        label_font = (font_family, font_size)
+
+        fields = [
+            (_('access_url'), 'url'),
+            (_('username'), 'username'),
+            (_('password'), 'password'),
+            (_('notes'), 'notes'),
+        ]
+
+        entries = {}
+        for i, (label_text, field_key) in enumerate(fields):
+            # 添加标签（带冒号，与应用风格一致）
+            label = ttk.Label(content_frame, text=label_text + ':', font=label_font, anchor='e')
+            label.grid(row=i, column=0, padx=(0, 15), pady=5, sticky='e')
+
+            if field_key == 'notes':
+                # 备注字段使用8行的Text组件，标签顶部对齐
+                label.grid(row=i, column=0, padx=(0, 15), pady=5, sticky='ne')
+                notes_border_frame = tk.Frame(content_frame, highlightbackground="#a9a9a9",
+                                              highlightcolor="#a9a9a9", highlightthickness=1, bd=0)
+                notes_entry = tk.Text(notes_border_frame, height=8, font=(font_family, font_size),
+                                      bd=0, relief="flat", highlightthickness=0, wrap=tk.WORD)
+                notes_entry.pack(fill="both", expand=True, padx=(1, 0), pady=1)
+                notes_border_frame.grid(row=i, column=1, padx=5, pady=5, sticky='ew')
+                entries[field_key] = notes_entry
+            else:
+                # 使用应用风格的带边框Entry
+                border_frame, entry = create_bordered_entry(content_frame, width=30)
+                border_frame.grid(row=i, column=1, padx=5, pady=5, sticky='ew')
+                entries[field_key] = entry
+
+            if is_edit:
+                if field_key == 'password':
+                    entries[field_key].insert(0, record.get('password', ''))
+                elif field_key == 'notes':
+                    entries[field_key].insert(tk.END, record.get('notes', ''))
+                else:
+                    entries[field_key].insert(0, record.get(field_key, ''))
+
+        def save_record():
+            url = entries['url'].get().strip()
+            username = entries['username'].get().strip()
+            password = entries['password'].get().strip()
+            notes = entries['notes'].get('1.0', tk.END).strip()
+
+            if is_edit:
+                success, msg = self.ipam_repo.update_hidden_info(
+                    record['id'], url, username, password, notes
+                )
+            else:
+                success, msg, _ = self.ipam_repo.add_hidden_info(
+                    ip_record_id, url, username, password, notes
+                )
+
+            if success:
+                self._refresh_hidden_info_tree(ip_record_id)
+                edit_dialog.destroy()
+            else:
+                import tkinter.messagebox as messagebox
+                messagebox.showerror("操作失败", msg)
+
+        cancel_btn = ttk.Button(btn_frame, text=_('cancel'), command=edit_dialog.destroy, width=10)
+        cancel_btn.pack(side=tk.RIGHT, padx=5)
+
+        save_btn = ttk.Button(btn_frame, text=_('save'), command=save_record, width=10)
+        save_btn.pack(side=tk.RIGHT, padx=5)
+
+        # 绑定ESC键关闭对话框
+        edit_dialog.bind('<Escape>', lambda e: edit_dialog.destroy())
+
+        entries['url'].focus_set()
+
     def update_tab_order_listbox(self):
         """更新调试面板中的标签列表"""
         if not hasattr(self, 'tab_order_tree'):
@@ -11750,18 +12115,18 @@ class SubnetPlannerApp:
     def import_export_network_data(self):
         """导入/导出网段数据对话框"""
         try:
-            dialog = ComplexDialog(self.root, _('network_import_export'), 500, 360, resizable=False, modal=True)
+            dialog = ComplexDialog(self.root, _('network_import_export'), 500, 370, resizable=False, modal=True)
 
-            main_frame = ttk.Frame(dialog.content_frame, padding="20")
+            main_frame = ttk.Frame(dialog.content_frame, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
             ttk.Label(main_frame, text=_('choose_import_export_method'), font=('', 11, 'bold')).pack(pady=(0, 10))
 
             export_frame = ttk.LabelFrame(main_frame, text=_('export_options'))
-            export_frame.pack(fill=tk.X, pady=(0, 5))
+            export_frame.pack(fill=tk.X, pady=(0, 5), padx=15)
 
             export_btn_frame = ttk.Frame(export_frame)
-            export_btn_frame.pack(pady=5, fill=tk.X, padx=20)
+            export_btn_frame.pack(pady=5, fill=tk.X, padx=10)
 
             btn_row1 = ttk.Frame(export_btn_frame)
             btn_row1.pack(fill=tk.X, pady=2)
@@ -11776,19 +12141,20 @@ class SubnetPlannerApp:
             ttk.Checkbutton(export_btn_frame, text=_('sync_export_ips'), variable=sync_ip_var).pack(anchor=tk.W, padx=5, pady=(5, 2))
 
             import_frame = ttk.LabelFrame(main_frame, text=_('import_options'))
-            import_frame.pack(fill=tk.X, pady=(0, 5))
+            import_frame.pack(fill=tk.X, pady=(0, 5), padx=15)
 
             import_btn_frame = ttk.Frame(import_frame)
-            import_btn_frame.pack(pady=5, fill=tk.X, padx=20)
+            import_btn_frame.pack(pady=5, fill=tk.X, padx=10)
 
-            ttk.Button(import_btn_frame, text=_('import_from_file'),
-                      command=lambda: self._do_import_from_file(dialog)).pack(fill=tk.X, padx=5, pady=2)
+            import_btn = ttk.Button(import_btn_frame, text=_('import_from_file'),
+                                   command=lambda: self._do_import_from_file(dialog))
+            import_btn.pack(fill=tk.X, padx=5, pady=(0, 5))
 
             template_frame = ttk.LabelFrame(main_frame, text=_('download_template'))
-            template_frame.pack(fill=tk.X, pady=(0, 5))
+            template_frame.pack(fill=tk.X, pady=(0, 5), padx=15)
 
             template_inner = ttk.Frame(template_frame)
-            template_inner.pack(pady=5, fill=tk.X, padx=20)
+            template_inner.pack(pady=5, fill=tk.X, padx=10)
 
             tmpl_net_var = tk.BooleanVar(value=True)
             tmpl_ip_var = tk.BooleanVar(value=True)
@@ -11798,7 +12164,10 @@ class SubnetPlannerApp:
             ttk.Checkbutton(template_inner, text=_('include_ip_template'), variable=tmpl_ip_var,
                            command=lambda: self._validate_template_checks(False, tmpl_net_var, tmpl_ip_var)).pack(side=tk.LEFT, padx=5)
             ttk.Button(template_inner, text=_('download'),
-                      command=lambda: self._do_download_template(dialog, tmpl_net_var, tmpl_ip_var)).pack(side=tk.RIGHT, padx=5)
+                      command=lambda: self._do_download_template(dialog, tmpl_net_var, tmpl_ip_var)).pack(side=tk.RIGHT, padx=5, pady=(0, 5))
+
+            # 添加关闭按钮（使用对话框标准按钮布局）
+            dialog.add_button(_('close'), dialog.destroy)
 
             # 显示对话框并自动调整高度
             dialog.show()
@@ -12372,10 +12741,10 @@ class SubnetPlannerApp:
             'complete': [80, 443, 22, 21, 23, 25, 53, 110, 135, 139, 445, 465, 587, 993, 995, 3389, 8080, 8443, 3306, 5432]
         }
         
-        dialog = self.create_dialog(_('auto_scan_network'), 440, 170, resizable=False, modal=True)
+        dialog = self.create_dialog(_('auto_scan_network'), 440, 200, resizable=False, modal=True)
         
         main_frame = ttk.Frame(dialog)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=(20, 8))
         
         # 内容区域
         content_frame = ttk.Frame(main_frame)
@@ -12410,68 +12779,66 @@ class SubnetPlannerApp:
 
         method_frame = ttk.Frame(content_frame)
         method_frame.grid(row=2, column=0, columnspan=2, pady=4, sticky=tk.W)
+        
         ttk.Label(method_frame, text=_('scan_method') + ':').pack(side=tk.LEFT, padx=5)
         method_var = tk.StringVar(value="ping")
         
-        tcp_options_frame = ttk.Frame(content_frame)
-        tcp_options_frame.grid_columnconfigure(1, weight=1)
-        
-        def on_method_change():
-            if method_var.get() == 'tcp':
-                tcp_options_frame.grid(row=3, column=0, columnspan=2, pady=4, sticky=tk.EW)
-                dialog.geometry('440x270')
-            else:
-                tcp_options_frame.grid_remove()
-                dialog.geometry('440x170')
-        
         ping_radio = ttk.Radiobutton(method_frame, text="ICMP Ping", variable=method_var, 
-                                     value="ping", command=on_method_change)
-        ping_radio.pack(side=tk.LEFT, padx=5)
+                                     value="ping", command=lambda: on_method_change(True))
+        ping_radio.pack(side=tk.LEFT, padx=2)
         tcp_radio = ttk.Radiobutton(method_frame, text="TCP", variable=method_var, 
-                                    value="tcp", command=on_method_change)
-        tcp_radio.pack(side=tk.LEFT, padx=5)
+                                    value="tcp", command=lambda: on_method_change(True))
+        tcp_radio.pack(side=tk.LEFT, padx=2)
 
-        ttk.Label(tcp_options_frame, text=_('port_preset') + ':').grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        tcp_frame = ttk.Frame(content_frame)
+        tcp_frame.grid(row=3, column=0, columnspan=2, pady=5, sticky=tk.W)
+        
+        port_preset_frame = ttk.Frame(tcp_frame)
+        port_preset_frame.pack(side=tk.TOP, fill=tk.X)
+        
+        ttk.Label(port_preset_frame, text=_('port_preset') + ':').pack(side=tk.LEFT, padx=5)
         preset_var = tk.StringVar(value="standard")
-        preset_frame = ttk.Frame(tcp_options_frame)
-        preset_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         
-        ttk.Radiobutton(preset_frame, text=_('fast') + ' (4)', variable=preset_var, value="fast").pack(side=tk.LEFT, padx=2)
-        ttk.Radiobutton(preset_frame, text=_('standard') + ' (12)', variable=preset_var, value="standard").pack(side=tk.LEFT, padx=2)
-        ttk.Radiobutton(preset_frame, text=_('complete') + ' (20)', variable=preset_var, value="complete").pack(side=tk.LEFT, padx=2)
+        ttk.Radiobutton(port_preset_frame, text=_('fast') + ' (4)', variable=preset_var, value="fast").pack(side=tk.LEFT, padx=2)
+        ttk.Radiobutton(port_preset_frame, text=_('standard') + ' (12)', variable=preset_var, value="standard").pack(side=tk.LEFT, padx=2)
+        ttk.Radiobutton(port_preset_frame, text=_('complete') + ' (20)', variable=preset_var, value="complete").pack(side=tk.LEFT, padx=2)
         
-        ttk.Label(tcp_options_frame, text=_('custom_ports') + ':').grid(row=1, column=0, padx=5, pady=5, sticky=tk.NW)
+        custom_ports_frame = ttk.Frame(tcp_frame)
+        custom_ports_frame.pack(side=tk.TOP, fill=tk.X, pady=(10, 0))
         
-        # 创建带边框的容器，与其他文本框风格一致
-        border_frame = tk.Frame(tcp_options_frame, highlightbackground="#a9a9a9", 
+        ttk.Label(custom_ports_frame, text=_('custom_ports') + ':').pack(side=tk.LEFT, padx=5, anchor=tk.N)
+        
+        border_frame = tk.Frame(custom_ports_frame, highlightbackground="#a9a9a9", 
                                 highlightcolor="#a9a9a9", highlightthickness=1, bd=0)
-        border_frame.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
+        border_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True, anchor=tk.N)
         
-        # 在容器内创建多行文本框
         ports_text = tk.Text(border_frame, height=3, wrap=tk.WORD, bd=0, relief="flat", highlightthickness=0)
         ports_text.pack(fill="both", expand=True, padx=1, pady=1)
         
-        # 保留ports_var的定义，避免可能的引用错误
         ports_var = tk.StringVar(value="")
         
-        # 初始化文本内容
         def update_ports_text():
             preset = preset_var.get()
             ports = port_presets[preset]
             ports_text.delete(1.0, tk.END)
             ports_text.insert(tk.END, ', '.join(map(str, ports)))
         
-        # 替换原来的ports_var和on_preset_change
         def on_preset_change():
             update_ports_text()
         
-        # 初始化时设置默认端口值
         update_ports_text()
-        
         preset_var.trace('w', lambda *args: on_preset_change())
+        
+        def on_method_change(show):
+            if method_var.get() == 'tcp':
+                tcp_frame.grid(row=3, column=0, columnspan=2, pady=4, sticky=tk.W)
+                dialog.geometry('440x280')
+            else:
+                tcp_frame.grid_remove()
+                dialog.geometry('440x200')
 
         if method_var.get() != 'tcp':
-            tcp_options_frame.grid_remove()
+            tcp_frame.grid_remove()
 
         # 按钮区域 - 固定在底部右侧
         button_frame = ttk.Frame(main_frame)
@@ -16319,6 +16686,10 @@ class SubnetPlannerApp:
                 
                 # 删除可用状态的IP地址
                 cursor.execute('DELETE FROM ip_addresses WHERE id = ? AND status = ?', (ip['id'], 'released'))
+                
+                # 删除对应的隐藏信息记录
+                cursor.execute('DELETE FROM ip_hidden_info WHERE ip_record_id = ?', (ip['id'],))
+                
                 cleaned_count += 1
             
             conn.commit()
@@ -17016,28 +17387,13 @@ class SubnetPlannerApp:
         date_entry = None
         
         if DateEntry:
-            # 先创建一个临时占位的普通Entry，让对话框快速显示
-            temp_var = tk.StringVar()
-            temp_var.set(default_expiry)
-            temp_entry = ttk.Entry(dialog.content_frame, textvariable=temp_var)
-            temp_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
+            # 直接创建DateEntry日期选择器
+            date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
+            date_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
+            date_entry.set_date(default_expiry)
             
-            # 延迟创建DateEntry，避免阻塞对话框显示
-            def create_date_entry():
-                nonlocal date_entry
-                # 移除临时输入框
-                temp_entry.destroy()
-                
-                # 创建DateEntry日期选择器
-                date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
-                date_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
-                date_entry.set_date(default_expiry)
-                
-                # 修复模态对话框中DateEntry日历弹窗问题
-                fix_date_entry_for_modal(date_entry, dialog.dialog)
-            
-            # 对话框显示后异步创建DateEntry
-            dialog.dialog.after(50, create_date_entry)
+            # 修复模态对话框中DateEntry日历弹窗问题
+            fix_date_entry_for_modal(date_entry, dialog.dialog)
         else:
             # 使用普通Entry输入日期
             date_var = tk.StringVar()
@@ -17050,8 +17406,6 @@ class SubnetPlannerApp:
         def get_expiry_date():
             if date_entry:
                 return date_entry.get()
-            elif 'temp_entry' in locals():
-                return temp_entry.get()
             return None
         
         # 确认按钮

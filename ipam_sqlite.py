@@ -180,6 +180,14 @@ class IPAMSQLite:
             conn.rollback()
             raise e
         
+        # 清理遗留的旧表（迁移过程中可能遗留）
+        try:
+            cursor.execute('DROP TABLE IF EXISTS ip_addresses_old')
+            cursor.execute('DROP TABLE IF EXISTS allocation_history_old')
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
         # 检查是否需要迁移旧的allocation_history表（移除network_id字段）
         cursor.execute("PRAGMA table_info(allocation_history)")
         history_columns = cursor.fetchall()
@@ -266,6 +274,43 @@ class IPAMSQLite:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_allocation_history_performed_at ON allocation_history(performed_at)')
         except sqlite3.OperationalError:
             pass
+        
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ip_hidden_info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip_record_id INTEGER NOT NULL,
+            url TEXT,
+            username TEXT,
+            encrypted_password TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT
+        )
+        ''')
+        
+        try:
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_ip_hidden_info_ip_record_id ON ip_hidden_info(ip_record_id)')
+        except sqlite3.OperationalError:
+            pass
+        
+        cursor.execute("PRAGMA table_info(ip_hidden_info)")
+        columns = cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        if 'ip_address' in column_names:
+            try:
+                cursor.execute('DROP INDEX IF EXISTS idx_ip_hidden_info_ip_address')
+                cursor.execute('ALTER TABLE ip_hidden_info DROP COLUMN ip_address')
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
+        
+        if 'ip_record_id' not in column_names:
+            try:
+                cursor.execute('ALTER TABLE ip_hidden_info ADD COLUMN ip_record_id INTEGER NOT NULL DEFAULT 0')
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
         
         conn.commit()
         conn.close()
@@ -954,6 +999,9 @@ class IPAMSQLite:
                 # 删除IP地址记录
                 cursor.execute('DELETE FROM ip_addresses WHERE id = ?', (ip_id,))
                 
+                # 删除对应的隐藏信息记录
+                cursor.execute('DELETE FROM ip_hidden_info WHERE ip_record_id = ?', (ip_id,))
+                
                 # 记录删除历史
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 cursor.execute('''
@@ -999,6 +1047,9 @@ class IPAMSQLite:
                 # 检查是否真的删除了记录（状态可能在查询和删除之间被修改）
                 if cursor.rowcount == 0:
                     return False, f"IP地址 {ip_address} 状态已变更，清理失败"
+                
+                # 删除对应的隐藏信息记录
+                cursor.execute('DELETE FROM ip_hidden_info WHERE ip_record_id = ?', (ip_id,))
                 
                 # 记录清理历史
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2001,6 +2052,13 @@ class IPAMSQLite:
             # 删除可用状态的IP地址
             cursor.execute('DELETE FROM ip_addresses WHERE status = ?', ('released',))
             
+            # 删除对应的隐藏信息记录
+            if available_ips:
+                ip_ids = [str(ip[0]) for ip in available_ips if isinstance(ip, tuple) and len(ip) >= 1]
+                if ip_ids:
+                    placeholders = ','.join('?' * len(ip_ids))
+                    cursor.execute(f'DELETE FROM ip_hidden_info WHERE ip_record_id IN ({placeholders})', tuple(ip_ids))
+            
             conn.commit()
             conn.close()
             return True, _("cleanup_ips_success").format(count=len(available_ips))
@@ -2458,6 +2516,10 @@ class IPAMSQLite:
                         
                         # 删除记录
                         cursor.execute('DELETE FROM ip_addresses WHERE id = ?', (record['id'],))
+                        
+                        # 删除对应的隐藏信息记录
+                        cursor.execute('DELETE FROM ip_hidden_info WHERE ip_record_id = ?', (record['id'],))
+                        
                         deleted_count += 1
                 
                 conn.commit()
@@ -3186,6 +3248,16 @@ class IPAMSQLite:
                         WHERE id = ?
                         ''', (new_ip_address, now, ip_id))
                         
+                        # 获取其他具有相同原IP地址的已释放记录ID
+                        cursor.execute('SELECT id FROM ip_addresses WHERE ip_address = ? AND status = ? AND id != ?', (old_ip_address, 'released', ip_id))
+                        records_to_delete = cursor.fetchall()
+                        
+                        # 先删除对应的隐藏信息记录
+                        for record in records_to_delete:
+                            if isinstance(record, tuple) and len(record) >= 1:
+                                record_id = int(record[0])
+                                cursor.execute('DELETE FROM ip_hidden_info WHERE ip_record_id = ?', (record_id,))
+                        
                         # 删除其他具有相同原IP地址的记录，确保原地址完全消失
                         cursor.execute('DELETE FROM ip_addresses WHERE ip_address = ? AND status = ? AND id != ?', (old_ip_address, 'released', ip_id))
                         
@@ -3444,3 +3516,152 @@ class IPAMSQLite:
         except Exception as e:
             logging.error(f"搜索IP地址失败: {str(e)}")
             return []
+    
+    def get_hidden_info(self, ip_record_id: int) -> list[dict[str, str | int]]:
+        """获取指定IP记录ID的隐藏信息列表
+
+        Args:
+            ip_record_id: IP记录ID
+
+        Returns:
+            list[dict[str, str | int]]: 隐藏信息记录列表
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT id, ip_record_id, url, username, encrypted_password, notes, created_at, updated_at
+            FROM ip_hidden_info
+            WHERE ip_record_id = ?
+            ORDER BY created_at ASC
+            ''', (ip_record_id,))
+            results = []
+            for row in cursor.fetchall():
+                if isinstance(row, tuple) and len(row) >= 8:
+                    results.append({
+                        'id': int(row[0]),
+                        'ip_record_id': int(row[1]),
+                        'url': str(row[2]).strip() if row[2] else '',
+                        'username': str(row[3]).strip() if row[3] else '',
+                        'encrypted_password': str(row[4]).strip() if row[4] else '',
+                        'notes': str(row[5]).strip() if row[5] else '',
+                        'created_at': str(row[6]).strip() if row[6] else '',
+                        'updated_at': str(row[7]).strip() if row[7] else ''
+                    })
+            conn.close()
+            return results
+        except Exception as e:
+            logging.error(f"获取隐藏信息失败: {str(e)}")
+            return []
+
+    def add_hidden_info(self, ip_record_id: int, url: str, username: str, encrypted_password: str, notes: str) -> tuple[bool, str, int | None]:
+        """添加IP记录的隐藏信息记录
+
+        Args:
+            ip_record_id: IP记录ID（关联到ip_addresses表的主键）
+            url: 访问链接
+            username: 用户名
+            encrypted_password: 加密后的密码
+            notes: 备注
+
+        Returns:
+            tuple[bool, str, int | None]: (是否成功, 错误信息, 新记录ID)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute('''
+            INSERT INTO ip_hidden_info (ip_record_id, url, username, encrypted_password, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (ip_record_id, url, username, encrypted_password, notes, now, now))
+            record_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            return True, "", record_id
+        except Exception as e:
+            return False, str(e), None
+
+    def update_hidden_info(self, record_id: int, url: str, username: str, encrypted_password: str, notes: str) -> tuple[bool, str]:
+        """更新隐藏信息记录
+
+        Args:
+            record_id: 记录ID
+            url: 访问链接
+            username: 用户名
+            encrypted_password: 加密后的密码
+            notes: 备注
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute('''
+            UPDATE ip_hidden_info SET url = ?, username = ?, encrypted_password = ?, notes = ?, updated_at = ?
+            WHERE id = ?
+            ''', (url, username, encrypted_password, notes, now, record_id))
+            conn.commit()
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def delete_hidden_info(self, record_id: int) -> tuple[bool, str]:
+        """删除隐藏信息记录
+
+        Args:
+            record_id: 记录ID
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM ip_hidden_info WHERE id = ?', (record_id,))
+            conn.commit()
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def delete_hidden_info_by_ip(self, ip_address: str) -> tuple[bool, str]:
+        """删除指定IP地址的所有隐藏信息记录
+
+        Args:
+            ip_address: IP地址
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM ip_hidden_info WHERE ip_address = ?', (ip_address,))
+            conn.commit()
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def has_hidden_info(self, ip_address: str) -> bool:
+        """检查指定IP地址是否有隐藏信息
+
+        Args:
+            ip_address: IP地址
+
+        Returns:
+            bool: 是否存在隐藏信息
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM ip_hidden_info WHERE ip_address = ?', (ip_address,))
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count > 0
+        except Exception:
+            return False

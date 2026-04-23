@@ -2269,11 +2269,11 @@
     "ko": "주소 해제"
   },
   "cleanup_unused": {
-    "zh": "清理未用",
-    "zh_tw": "清理未用",
-    "en": "Cleanup Unused",
-    "ja": "未使用削除",
-    "ko": "미사용 정리"
+    "zh": "清理地址",
+    "zh_tw": "清理地址",
+    "en": "Cleanup Addresses",
+    "ja": "アドレスをクリーンアップ",
+    "ko": "주소 정리"
   },
   "keyword": {
     "zh": "关键词",
@@ -4710,5 +4710,159 @@
     "en": "Cannot convert IP range across major network classes. Please ensure IPs belong to the same class (Class A, B, or C)",
     "ja": "メインネットワーククラスを跨るIP範囲は変換できません。IPが同じクラス（Aクラス、Bクラス、またはCクラス）に属することを確認してください",
     "ko": "주요 네트워크 클래스를 가로지르는 IP 범위는 변환할 수 없습니다. IP가 동일한 클래스(A클래스, B클래스 또는 C클래스)에 속하는지 확인하십시오"
+  },
+  "hidden_info_management": {
+    "zh": "隐藏信息管理",
+    "zh_tw": "隱藏資訊管理",
+    "en": "Hidden Info Management",
+    "ja": "隠し情報管理",
+    "ko": "숨겨진 정보 관리"
+  },
+  "hidden_info_for_ip": {
+    "zh": "IP地址隐藏信息 - {ip}",
+    "zh_tw": "IP地址隱藏資訊 - {ip}",
+    "en": "Hidden Info for IP - {ip}",
+    "ja": "IPアドレス隠し情報 - {ip}",
+    "ko": "IP 주소 숨겨진 정보 - {ip}"
+  },
+  "access_url": {
+    "zh": "访问链接",
+    "zh_tw": "訪問連結",
+    "en": "Access URL",
+    "ja": "アクセスURL",
+    "ko": "액세스 URL"
+  },
+  "username": {
+    "zh": "用户名",
+    "zh_tw": "使用者名稱",
+    "en": "Username",
+    "ja": "ユーザー名",
+    "ko": "사용자 이름"
+  },
+  "password": {
+    "zh": "密码",
+    "zh_tw": "密碼",
+    "en": "Password",
+    "ja": "パスワード",
+    "ko": "비밀번호"
+  },
+  "notes": {
+    "zh": "备注",
+    "zh_tw": "備註",
+    "en": "Notes",
+    "ja": "メモ",
+    "ko": "메모"
+  },
+  "add_record": {
+    "zh": "添加记录",
+    "zh_tw": "新增記錄",
+    "en": "Add Record",
+    "ja": "レコード追加",
+    "ko": "레코드 추가"
+  },
+  "edit_record": {
+    "zh": "编辑记录",
+    "zh_tw": "編輯記錄",
+    "en": "Edit Record",
+    "ja": "レコード編集",
+    "ko": "레코드 편집"
+  },
+  "delete_record": {
+    "zh": "删除记录",
+    "zh_tw": "刪除記錄",
+    "en": "Delete Record",
+    "ja": "レコード削除",
+    "ko": "레코드 삭제"
+  },
+  "show_password": {
+    "zh": "显示密码",
+    "zh_tw": "顯示密碼",
+    "en": "Show Password",
+    "ja": "パスワード表示",
+    "ko": "비밀번호 표시"
+  },
+  "hide_password": {
+    "zh": "隐藏密码",
+    "zh_tw": "隱藏密碼",
+    "en": "Hide Password",
+    "ja": "パスワード非表示",
+    "ko": "비밀번호 숨기기"
+  },
+  "please_select_ip_first": {
+    "zh": "请先在IP地址列表中选择一个IP地址",
+    "zh_tw": "請先在IP地址列表中選擇一個IP地址",
+    "en": "Please select an IP address from the list first",
+    "ja": "先にIPアドレスリストからIPアドレスを選択してください",
+    "ko": "먼저 IP 주소 목록에서 IP 주소를 선택하십시오"
+  },
+  "confirm_delete_hidden_record": {
+    "zh": "确定要删除这条隐藏信息记录吗？",
+    "zh_tw": "確定要刪除這條隱藏資訊記錄嗎？",
+    "en": "Are you sure you want to delete this hidden info record?",
+    "ja": "この隠し情報レコードを削除してもよろしいですか？",
+    "ko": "이 숨겨진 정보 레코드를 삭제하시겠습니까?"
+  },
+  "confirm_delete_hidden_records": {
+    "zh": "确定要删除这 {count} 条隐藏信息记录吗？",
+    "zh_tw": "確定要刪除這 {count} 條隱藏資訊記錄嗎？",
+    "en": "Are you sure you want to delete these {count} hidden info records?",
+    "ja": "これら {count} 件の隠し情報レコードを削除してもよろしいですか？",
+    "ko": "이 {count} 개의 숨겨진 정보 레코드를 삭제하시겠습니까?"
+  },
+  "partial_delete_success": {
+    "zh": "已成功删除 {success}/{total} 条记录",
+    "zh_tw": "已成功刪除 {success}/{total} 條記錄",
+    "en": "Successfully deleted {success}/{total} records",
+    "ja": "{success}/{total} 件のレコードを正常に削除しました",
+    "ko": "{success}/{total} 개의 레코드를 성공적으로 삭제했습니다"
+  },
+  "cannot_access_hidden_info": {
+    "zh": "无法访问隐藏信息，请选择一条有效的IP记录",
+    "zh_tw": "無法存取隱藏資訊，請選擇一條有效的IP記錄",
+    "en": "Cannot access hidden info, please select a valid IP record",
+    "ja": "隠し情報にアクセスできません。有効なIPレコードを選択してください",
+    "ko": "숨겨진 정보에 액세스할 수 없습니다. 유효한 IP 레코드를 선택하십시오"
+  },
+  "hidden_record_added": {
+    "zh": "隐藏信息记录已添加",
+    "zh_tw": "隱藏資訊記錄已新增",
+    "en": "Hidden info record added",
+    "ja": "隠し情報レコードが追加されました",
+    "ko": "숨겨진 정보 레코드가 추가되었습니다"
+  },
+  "hidden_record_updated": {
+    "zh": "隐藏信息记录已更新",
+    "zh_tw": "隱藏資訊記錄已更新",
+    "en": "Hidden info record updated",
+    "ja": "隠し情報レコードが更新されました",
+    "ko": "숨겨진 정보 레코드가 업데이트되었습니다"
+  },
+  "hidden_record_deleted": {
+    "zh": "隐藏信息记录已删除",
+    "zh_tw": "隱藏資訊記錄已刪除",
+    "en": "Hidden info record deleted",
+    "ja": "隠し情報レコードが削除されました",
+    "ko": "숨겨진 정보 레코드가 삭제되었습니다"
+  },
+  "no_hidden_info": {
+    "zh": "暂无隐藏信息",
+    "zh_tw": "暫無隱藏資訊",
+    "en": "No hidden info",
+    "ja": "隠し情報なし",
+    "ko": "숨겨진 정보 없음"
+  },
+  "please_select_record": {
+    "zh": "请先选择一条记录",
+    "zh_tw": "請先選擇一條記錄",
+    "en": "Please select a record first",
+    "ja": "先にレコードを選択してください",
+    "ko": "먼저 레코드를 선택하십시오"
+  },
+  "save": {
+    "zh": "保存",
+    "zh_tw": "儲存",
+    "en": "Save",
+    "ja": "保存",
+    "ko": "저장"
   }
 }

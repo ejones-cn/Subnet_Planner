@@ -1,4 +1,5 @@
 from ipam_sqlite import IPAMSQLite
+from services.crypto_service import get_crypto_service
 
 
 def init_ipam():
@@ -8,6 +9,7 @@ def init_ipam():
 class IPAMRepository:
     def __init__(self):
         self.ipam = init_ipam()
+        self.crypto = get_crypto_service()
 
     def get_all_networks(self):
         return self.ipam.get_all_networks()
@@ -107,3 +109,75 @@ class IPAMRepository:
 
     def batch_update_ip_expiry(self, ip_addresses, expiry_date, record_ids=None):
         return self.ipam.batch_update_ip_expiry(ip_addresses, expiry_date, record_ids)
+
+    def get_hidden_info(self, ip_record_id):
+        """获取指定IP记录ID的隐藏信息列表（密码自动解密）
+
+        Args:
+            ip_record_id: IP记录ID
+
+        Returns:
+            list[dict]: 隐藏信息记录列表，密码字段已解密
+        """
+        records = self.ipam.get_hidden_info(ip_record_id)
+        for record in records:
+            encrypted_pwd = record.get('encrypted_password', '')
+            if encrypted_pwd:
+                record['password'] = self.crypto.decrypt(encrypted_pwd)
+            else:
+                record['password'] = ''
+        return records
+
+    def add_hidden_info(self, ip_record_id, url, username, password, notes):
+        """添加IP记录的隐藏信息记录（密码自动加密）
+
+        Args:
+            ip_record_id: IP记录ID（关联到ip_addresses表的主键）
+            url: 访问链接
+            username: 用户名
+            password: 明文密码
+            notes: 备注
+
+        Returns:
+            tuple[bool, str, int | None]: (是否成功, 错误信息, 新记录ID)
+        """
+        encrypted_password = self.crypto.encrypt(password) if password else ''
+        return self.ipam.add_hidden_info(ip_record_id, url, username, encrypted_password, notes)
+
+    def update_hidden_info(self, record_id, url, username, password, notes):
+        """更新隐藏信息记录（密码自动加密）
+
+        Args:
+            record_id: 记录ID
+            url: 访问链接
+            username: 用户名
+            password: 明文密码
+            notes: 备注
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        encrypted_password = self.crypto.encrypt(password) if password else ''
+        return self.ipam.update_hidden_info(record_id, url, username, encrypted_password, notes)
+
+    def delete_hidden_info(self, record_id):
+        """删除隐藏信息记录
+
+        Args:
+            record_id: 记录ID
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        return self.ipam.delete_hidden_info(record_id)
+
+    def has_hidden_info(self, ip_address):
+        """检查指定IP地址是否有隐藏信息
+
+        Args:
+            ip_address: IP地址
+
+        Returns:
+            bool: 是否存在隐藏信息
+        """
+        return self.ipam.has_hidden_info(ip_address)

@@ -16,10 +16,10 @@
     "theme": "vista",
     "font_size": 12,
     "tab_order": [
-      "子网规划",
-      "地址管理",
-      "子网切分",
-      "高级工具"
+      "ip_address_management",
+      "subnet_planning",
+      "subnet_split",
+      "advanced_tools"
     ]
   },
   "recent_files": [],
