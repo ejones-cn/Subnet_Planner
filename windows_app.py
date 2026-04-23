@@ -820,6 +820,105 @@ class ComplexDialog(DialogBase):
         return button
 
 
+class SplashScreen:
+    """启动画面类，显示应用程序名称、版本信息和加载动画"""
+    
+    def __init__(self, parent=None):
+        """初始化启动画面
+        
+        Args:
+            parent: 父窗口对象，如果为None则创建独立窗口
+        """
+        # 创建一个无标题、无边框的窗口
+        self.splash = tk.Toplevel(parent)
+        self.splash.overrideredirect(True)  # 移除窗口装饰
+        self.splash.attributes('-topmost', True)  # 始终在最上层
+        
+        # 窗口尺寸
+        width = 400
+        height = 300
+        
+        # 居中显示
+        self.splash.update_idletasks()
+        screen_width = self.splash.winfo_screenwidth()
+        screen_height = self.splash.winfo_screenheight()
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+        self.splash.geometry(f"{width}x{height}+{x}+{y}")
+        
+        # 创建背景框架
+        self.frame = ttk.Frame(self.splash, padding="20")
+        self.frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 应用程序名称
+        from version import get_version
+        app_name = _("app_name")
+        version = get_version()
+        
+        # 创建标题标签
+        title_label = ttk.Label(
+            self.frame, 
+            text=app_name, 
+            font=('Arial', 24, 'bold')
+        )
+        title_label.pack(pady=(50, 10))
+        
+        # 创建版本标签
+        version_label = ttk.Label(
+            self.frame, 
+            text=f"v{version}", 
+            font=('Arial', 12)
+        )
+        version_label.pack(pady=(0, 30))
+        
+        # 创建加载动画区域
+        self.loading_frame = ttk.Frame(self.frame)
+        self.loading_frame.pack(pady=20)
+        
+        # 创建加载文本
+        self.loading_text = ttk.Label(
+            self.loading_frame, 
+            text=_('loading'), 
+            font=('Arial', 10)
+        )
+        self.loading_text.pack()
+        
+        # 创建进度条
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(
+            self.frame, 
+            variable=self.progress_var, 
+            length=300, 
+            mode='indeterminate'
+        )
+        self.progress_bar.pack(pady=20)
+        
+        # 开始动画
+        self.progress_bar.start()
+        self._animate_loading_text()
+        
+        # 确保窗口显示
+        self.splash.update()
+    
+    def _animate_loading_text(self):
+        """动画加载文本"""
+        current_text = self.loading_text.cget('text')
+        if current_text.endswith('...'):
+            new_text = _('loading')
+        else:
+            new_text = current_text + '.'
+        self.loading_text.config(text=new_text)
+        self.splash.after(500, self._animate_loading_text)
+    
+    def close(self):
+        """关闭启动画面"""
+        try:
+            self.progress_bar.stop()
+            self.splash.destroy()
+        except Exception:
+            pass
+
+
 def center_window(window, parent=None):
     """居中显示窗口
     
@@ -18503,6 +18602,11 @@ if __name__ == "__main__":
     
     # 创建主窗口
     root = tk.Tk()
+    root.withdraw()  # 先隐藏主窗口
+    
+    # 显示启动画面
+    splash = SplashScreen()
+    root.update()  # 确保启动画面显示
     
     # 设置双击间隔
     try:
@@ -18549,6 +18653,12 @@ if __name__ == "__main__":
     
     # 创建应用实例
     app = SubnetPlannerApp(root)
+    
+    # 关闭启动画面
+    splash.close()
+    
+    # 显示主窗口
+    root.deiconify()
     
     # 设置主窗口关闭事件处理程序
     def on_main_window_close():

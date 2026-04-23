@@ -15,6 +15,8 @@ import logging
 import os
 import sys
 
+from i18n import _
+
 try:
     from cryptography.fernet import Fernet
     from cryptography.hazmat.primitives import hashes
@@ -23,7 +25,7 @@ try:
     _CRYPTOGRAPHY_AVAILABLE = True
 except ImportError:
     _CRYPTOGRAPHY_AVAILABLE = False
-    logging.warning("cryptography库不可用，将使用备用加密方案")
+    logging.warning(_("cryptography_not_available"))
 
 
 class CryptoService:
@@ -47,10 +49,10 @@ class CryptoService:
                 self._dpapi_available = True
             except ImportError:
                 self._dpapi_available = False
-                logging.warning("ctypes不可用，将使用备用加密方案")
+                logging.warning(_("ctypes_not_available"))
         else:
             self._dpapi_available = False
-            logging.info("非Windows平台，将使用备用加密方案")
+            logging.info(_("non_windows_platform"))
 
     def encrypt(self, plaintext: str) -> str:
         """加密明文字符串
@@ -70,7 +72,7 @@ class CryptoService:
             else:
                 return self._fallback_encrypt(plaintext)
         except Exception as e:
-            logging.error(f"加密失败: {str(e)}")
+            logging.error(f"{_("encryption_failed")}: {str(e)}")
             return ""
 
     def decrypt(self, ciphertext: str) -> str:
@@ -91,7 +93,7 @@ class CryptoService:
             else:
                 return self._fallback_decrypt(ciphertext)
         except Exception as e:
-            logging.error(f"解密失败: {str(e)}")
+            logging.error(f"{_("decryption_failed")}: {str(e)}")
             return ""
 
     def _dpapi_encrypt(self, plaintext: str) -> str:
@@ -101,7 +103,7 @@ class CryptoService:
             plaintext: 要加密的明文
 
         Returns:
-            str: Base64编码的密文
+            str: Base64编码的密文，加密失败时返回空字符串
         """
         import ctypes
         import ctypes.wintypes
@@ -152,7 +154,7 @@ class CryptoService:
             ciphertext: Base64编码的密文
 
         Returns:
-            str: 解密后的明文
+            str: 解密后的明文，解密失败时返回空字符串
         """
         import ctypes
         import ctypes.wintypes
@@ -215,7 +217,7 @@ class CryptoService:
             plaintext: 要加密的明文
 
         Returns:
-            str: Base64编码的密文
+            str: Base64编码的密文，加密失败时返回空字符串
         """
         if _CRYPTOGRAPHY_AVAILABLE:
             return self._fernet_encrypt(plaintext)
@@ -251,7 +253,7 @@ class CryptoService:
             encrypted_bytes = f.encrypt(plaintext.encode('utf-8'))
             return encrypted_bytes.decode('ascii')
         except Exception as e:
-            logging.error(f"Fernet加密失败: {str(e)}")
+            logging.error(f"{_("fernet_encryption_failed")}: {str(e)}")
             return ""
 
     def _fernet_decrypt(self, ciphertext: str) -> str:
@@ -269,7 +271,7 @@ class CryptoService:
             decrypted_bytes = f.decrypt(ciphertext.encode('utf-8'))
             return decrypted_bytes.decode('utf-8')
         except Exception as e:
-            logging.error(f"Fernet解密失败: {str(e)}")
+            logging.error(f"{_("fernet_decryption_failed")}: {str(e)}")
             return ""
 
     def _simple_xor_encrypt(self, plaintext: str) -> str:
@@ -279,7 +281,7 @@ class CryptoService:
             plaintext: 要加密的明文
 
         Returns:
-            str: Base64编码的密文
+            str: Base64编码的密文，加密失败时返回空字符串
         """
         key = self._derive_simple_key()
         plaintext_bytes = plaintext.encode('utf-8')
@@ -296,7 +298,7 @@ class CryptoService:
             ciphertext: Base64编码的密文
 
         Returns:
-            str: 解密后的明文
+            str: 解密后的明文，解密失败时返回空字符串
         """
         key = self._derive_simple_key()
         encrypted_bytes = base64.b64decode(ciphertext)
