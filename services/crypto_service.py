@@ -243,12 +243,16 @@ class CryptoService:
             plaintext: 要加密的明文
 
         Returns:
-            str: Base64编码的密文
+            str: Base64编码的密文，加密失败时返回空字符串
         """
-        fernet_key = self._derive_fernet_key()
-        f = Fernet(fernet_key)
-        encrypted_bytes = f.encrypt(plaintext.encode('utf-8'))
-        return encrypted_bytes.decode('ascii')
+        try:
+            fernet_key = self._derive_fernet_key()
+            f = Fernet(fernet_key)
+            encrypted_bytes = f.encrypt(plaintext.encode('utf-8'))
+            return encrypted_bytes.decode('ascii')
+        except Exception as e:
+            logging.error(f"Fernet加密失败: {str(e)}")
+            return ""
 
     def _fernet_decrypt(self, ciphertext: str) -> str:
         """使用Fernet加密方案解密数据
@@ -257,12 +261,16 @@ class CryptoService:
             ciphertext: Base64编码的密文
 
         Returns:
-            str: 解密后的明文
+            str: 解密后的明文，解密失败时返回空字符串
         """
-        fernet_key = self._derive_fernet_key()
-        f = Fernet(fernet_key)
-        decrypted_bytes = f.decrypt(ciphertext.encode('utf-8'))
-        return decrypted_bytes.decode('utf-8')
+        try:
+            fernet_key = self._derive_fernet_key()
+            f = Fernet(fernet_key)
+            decrypted_bytes = f.decrypt(ciphertext.encode('utf-8'))
+            return decrypted_bytes.decode('utf-8')
+        except Exception as e:
+            logging.error(f"Fernet解密失败: {str(e)}")
+            return ""
 
     def _simple_xor_encrypt(self, plaintext: str) -> str:
         """简单XOR加密（备用方案，当cryptography库不可用时使用）
