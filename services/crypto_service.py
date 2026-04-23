@@ -5,6 +5,8 @@
 加密服务模块
 使用Windows DPAPI（数据保护API）实现敏感信息的加密和解密
 DPAPI将加密绑定到当前Windows用户账户，无需管理密钥
+
+非Windows平台使用cryptography库的Fernet加密方案
 """
 
 import base64
@@ -12,6 +14,16 @@ import hashlib
 import logging
 import os
 import sys
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.backends import default_backend
+    _CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    _CRYPTOGRAPHY_AVAILABLE = False
+    logging.warning("cryptography库不可用，将使用备用加密方案")
 
 
 class CryptoService:
@@ -196,8 +208,8 @@ class CryptoService:
     def _fallback_encrypt(self, plaintext: str) -> str:
         """备用加密方案（非Windows平台使用）
 
-        使用基于机器特征的密钥进行简单加密
-        安全性低于DPAPI，但无需外部依赖
+        使用cryptography库的Fernet加密方案，安全性较高
+        如果cryptography库不可用，回退到XOR加密
 
         Args:
             plaintext: 要加密的明文
@@ -205,13 +217,10 @@ class CryptoService:
         Returns:
             str: Base64编码的密文
         """
-        key = self._derive_key()
-        plaintext_bytes = plaintext.encode('utf-8')
-        encrypted_bytes = bytearray()
-        for i, byte in enumerate(plaintext_bytes):
-            key_byte = key[i % len(key)]
-            encrypted_bytes.append(byte ^ key_byte)
-        return base64.b64encode(bytes(encrypted_bytes)).decode('ascii')
+        if _CRYPTOGRAPHY_AVAILABLE:
+            return self._fernet_encrypt(plaintext)
+        else:
+            return self._simple_xor_encrypt(plaintext)
 
     def _fallback_decrypt(self, ciphertext: str) -> str:
         """备用解密方案（非Windows平台使用）
@@ -222,7 +231,66 @@ class CryptoService:
         Returns:
             str: 解密后的明文
         """
-        key = self._derive_key()
+        if _CRYPTOGRAPHY_AVAILABLE:
+            return self._fernet_decrypt(ciphertext)
+        else:
+            return self._simple_xor_decrypt(ciphertext)
+
+    def _fernet_encrypt(self, plaintext: str) -> str:
+        """使用Fernet加密方案加密数据
+
+        Args:
+            plaintext: 要加密的明文
+
+        Returns:
+            str: Base64编码的密文
+        """
+        fernet_key = self._derive_fernet_key()
+        f = Fernet(fernet_key)
+        encrypted_bytes = f.encrypt(plaintext.encode('utf-8'))
+        return encrypted_bytes.decode('ascii')
+
+    def _fernet_decrypt(self, ciphertext: str) -> str:
+        """使用Fernet加密方案解密数据
+
+        Args:
+            ciphertext: Base64编码的密文
+
+        Returns:
+            str: 解密后的明文
+        """
+        fernet_key = self._derive_fernet_key()
+        f = Fernet(fernet_key)
+        decrypted_bytes = f.decrypt(ciphertext.encode('utf-8'))
+        return decrypted_bytes.decode('utf-8')
+
+    def _simple_xor_encrypt(self, plaintext: str) -> str:
+        """简单XOR加密（备用方案，当cryptography库不可用时使用）
+
+        Args:
+            plaintext: 要加密的明文
+
+        Returns:
+            str: Base64编码的密文
+        """
+        key = self._derive_simple_key()
+        plaintext_bytes = plaintext.encode('utf-8')
+        encrypted_bytes = bytearray()
+        for i, byte in enumerate(plaintext_bytes):
+            key_byte = key[i % len(key)]
+            encrypted_bytes.append(byte ^ key_byte)
+        return base64.b64encode(bytes(encrypted_bytes)).decode('ascii')
+
+    def _simple_xor_decrypt(self, ciphertext: str) -> str:
+        """简单XOR解密（备用方案，当cryptography库不可用时使用）
+
+        Args:
+            ciphertext: Base64编码的密文
+
+        Returns:
+            str: 解密后的明文
+        """
+        key = self._derive_simple_key()
         encrypted_bytes = base64.b64decode(ciphertext)
         decrypted_bytes = bytearray()
         for i, byte in enumerate(encrypted_bytes):
@@ -230,11 +298,41 @@ class CryptoService:
             decrypted_bytes.append(byte ^ key_byte)
         return bytes(decrypted_bytes).decode('utf-8')
 
-    def _derive_key(self) -> bytes:
-        """从机器特征派生加密密钥
+    def _derive_fernet_key(self) -> bytes:
+        """派生Fernet加密密钥
+
+        使用PBKDF2HMAC从机器特征和应用标识符派生密钥
+
+        Returns:
+            bytes: Fernet格式的密钥（URL安全base64编码的32字节密钥）
+        """
+        salt = b'SubnetPlanner_Salt_2024'
+        password = self._get_machine_identifier().encode('utf-8')
+        
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password))
+        return key
+
+    def _derive_simple_key(self) -> bytes:
+        """从机器特征派生简单加密密钥（XOR备用方案使用）
 
         Returns:
             bytes: 派生出的密钥字节
+        """
+        machine_id = self._get_machine_identifier()
+        return hashlib.sha256(machine_id.encode('utf-8')).digest()
+
+    def _get_machine_identifier(self) -> str:
+        """获取机器标识符，用于派生加密密钥
+
+        Returns:
+            str: 机器标识符字符串
         """
         machine_id = f"{os.name}-{sys.platform}"
         try:
@@ -246,7 +344,7 @@ class CryptoService:
         except Exception:
             pass
         machine_id += "-SubnetPlanner_HiddenInfo_Key"
-        return hashlib.sha256(machine_id.encode('utf-8')).digest()
+        return machine_id
 
     @staticmethod
     def mask_password(password: str) -> str:

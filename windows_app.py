@@ -9922,11 +9922,27 @@ class SubnetPlannerApp:
             cursor="hand2",  # 鼠标指针为手形
         )
         
-        self.about_label.bind("<Button-1>", lambda e: self.show_about_dialog())
-
-        # 绑定鼠标事件实现悬停效果
-        self.about_label.bind("<Enter>", self.on_about_link_enter)
-        self.about_label.bind("<Leave>", self.on_about_link_leave)
+        self.about_pressed = False
+        
+        def on_about_press(e):
+            self.about_pressed = True
+        
+        def on_about_release(e):
+            if self.about_pressed:
+                self.about_pressed = False
+                self.show_about_dialog()
+        
+        def on_about_enter(e):
+            self.on_about_link_enter(e)
+        
+        def on_about_leave(e):
+            self.about_pressed = False
+            self.on_about_link_leave(e)
+        
+        self.about_label.bind("<Button-1>", on_about_press)
+        self.about_label.bind("<ButtonRelease-1>", on_about_release)
+        self.about_label.bind("<Enter>", on_about_enter)
+        self.about_label.bind("<Leave>", on_about_leave)
 
         # 创建钉住按钮，使用图片替代emoji，确保所有语言下大小一致
         try:
@@ -9990,10 +10006,27 @@ class SubnetPlannerApp:
                 highlightcolor=border_color,
                 cursor="hand2",
             )
-        self.pin_label.bind("<Button-1>", lambda e: self.toggle_pin_window())
-
-        self.pin_label.bind("<Enter>", self.on_about_link_enter)
-        self.pin_label.bind("<Leave>", self.on_about_link_leave)
+        self.pin_pressed = False
+        
+        def on_pin_press(e):
+            self.pin_pressed = True
+        
+        def on_pin_release(e):
+            if self.pin_pressed:
+                self.pin_pressed = False
+                self.toggle_pin_window()
+        
+        def on_pin_enter(e):
+            self.on_about_link_enter(e)
+        
+        def on_pin_leave(e):
+            self.pin_pressed = False
+            self.on_about_link_leave(e)
+        
+        self.pin_label.bind("<Button-1>", on_pin_press)
+        self.pin_label.bind("<ButtonRelease-1>", on_pin_release)
+        self.pin_label.bind("<Enter>", on_pin_enter)
+        self.pin_label.bind("<Leave>", on_pin_leave)
         
         # 使用固定像素位置放置所有右上角控件，避免动态计算导致的偏移问题
         # 关于按钮（右侧第一个）
@@ -10412,10 +10445,34 @@ class SubnetPlannerApp:
         
         # 为邮箱添加点击事件，启动邮件客户端
         import webbrowser
-
-        def open_email_client():
-            webbrowser.open("mailto:ejones.cn@hotmail.com")
-        email_label.bind("<Button-1>", lambda e: open_email_client())
+        
+        email_pressed = [False]
+        original_email_color = "#1976d2"
+        hover_email_color = "#42a5f5"
+        pressed_email_color = "#d32f2f"
+        
+        def on_email_enter(e):
+            if not email_pressed[0]:
+                email_label.config(foreground=hover_email_color)
+        
+        def on_email_press(e):
+            email_pressed[0] = True
+            email_label.config(foreground=pressed_email_color)
+        
+        def on_email_release(e):
+            email_label.config(foreground=hover_email_color)
+            if email_pressed[0]:
+                email_pressed[0] = False
+                webbrowser.open("mailto:ejones.cn@hotmail.com")
+        
+        def on_email_leave(e):
+            email_pressed[0] = False
+            email_label.config(foreground=original_email_color)
+        
+        email_label.bind("<Enter>", on_email_enter)
+        email_label.bind("<Button-1>", on_email_press)
+        email_label.bind("<ButtonRelease-1>", on_email_release)
+        email_label.bind("<Leave>", on_email_leave)
 
         # 按钮区域
         button_frame = ttk.Frame(inner_frame)
@@ -10546,9 +10603,29 @@ class SubnetPlannerApp:
             
             # 添加开源地址链接
             import webbrowser
-
-            def open_github_link():
-                webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+            
+            github_pressed = [False]
+            original_github_color = "#1976d2"
+            hover_github_color = "#42a5f5"
+            pressed_github_color = "#d32f2f"
+            
+            def on_github_enter(e):
+                if not github_pressed[0]:
+                    github_label.config(foreground=hover_github_color)
+            
+            def on_github_press(e):
+                github_pressed[0] = True
+                github_label.config(foreground=pressed_github_color)
+            
+            def on_github_release(e):
+                github_label.config(foreground=hover_github_color)
+                if github_pressed[0]:
+                    github_pressed[0] = False
+                    webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+            
+            def on_github_leave(e):
+                github_pressed[0] = False
+                github_label.config(foreground=original_github_color)
             
             github_label = ttk.Label(qr_content, 
                                    text="https://gitcode.com/ejones-cn/Subnet_Planner", 
@@ -10557,7 +10634,10 @@ class SubnetPlannerApp:
                                    foreground="#1976d2",
                                    cursor="hand2")
             github_label.pack(pady=(5, 5))
-            github_label.bind("<Button-1>", lambda e: open_github_link())
+            github_label.bind("<Enter>", on_github_enter)
+            github_label.bind("<Button-1>", on_github_press)
+            github_label.bind("<ButtonRelease-1>", on_github_release)
+            github_label.bind("<Leave>", on_github_leave)
             
             # 关闭按钮
             close_button = ttk.Button(qr_content, 
@@ -10586,19 +10666,35 @@ class SubnetPlannerApp:
                              style="About.TButton")
         ok_button.pack(side=tk.LEFT)
 
-        # 将焦点聚焦到确定按钮上，使用更可靠的方式
-        about_window.dialog.after_idle(ok_button.focus_set)
-        about_window.dialog.after_idle(ok_button.focus_force)
-
         # 绑定回车键事件，确保按回车键能关闭对话框
         about_window.dialog.bind('<Return>', lambda e: ok_button.invoke())
         about_window.dialog.bind('<Escape>', lambda e: ok_button.invoke())
 
         # 添加开源地址链接
         import webbrowser
-
-        def open_github_link():
-            webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+        
+        github_pressed = [False]
+        original_github_color = "#1976d2"
+        hover_github_color = "#42a5f5"
+        pressed_github_color = "#d32f2f"
+        
+        def on_github_enter(e):
+            if not github_pressed[0]:
+                github_label.config(foreground=hover_github_color)
+        
+        def on_github_press(e):
+            github_pressed[0] = True
+            github_label.config(foreground=pressed_github_color)
+        
+        def on_github_release(e):
+            github_label.config(foreground=hover_github_color)
+            if github_pressed[0]:
+                github_pressed[0] = False
+                webbrowser.open("https://gitcode.com/ejones-cn/Subnet_Planner")
+        
+        def on_github_leave(e):
+            github_pressed[0] = False
+            github_label.config(foreground=original_github_color)
         
         github_label = ttk.Label(
             inner_frame, 
@@ -10609,7 +10705,10 @@ class SubnetPlannerApp:
             cursor="hand2"
         )
         github_label.pack(anchor=tk.CENTER, pady=(5, 5))
-        github_label.bind("<Button-1>", lambda e: open_github_link())
+        github_label.bind("<Enter>", on_github_enter)
+        github_label.bind("<Button-1>", on_github_press)
+        github_label.bind("<ButtonRelease-1>", on_github_release)
+        github_label.bind("<Leave>", on_github_leave)
         
         # 添加版权信息，使用动态字体设置，灰色调
         copyright_label = ttk.Label(
