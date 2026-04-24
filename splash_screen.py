@@ -14,7 +14,7 @@ class SplashScreen:
         self.star_speed = []
         self.star_direction = []
         self.star_velocities = []  # 新增：用于存储星星速度
-        self.star_count = 50
+        self.star_count = 40
         self.mouse_x, self.mouse_y = -1000, -1000
         self._loading_text_anim_id = None
         self._star_anim_id = None
@@ -50,7 +50,7 @@ class SplashScreen:
         main_frame = tk.Frame(self.splash, bg='#F1F5F9')
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        left_frame = tk.Frame(main_frame, bg='#F1F5F9', width=229, height=390)
+        left_frame = tk.Frame(main_frame, bg='#F1F5F9', width=227, height=390)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=40, pady=30)
         left_frame.pack_propagate(False)  # 禁止Frame根据内容自动调整大小
         
@@ -76,13 +76,13 @@ class SplashScreen:
         self._start_animations()
     
     def _init_stars(self):
-        # 调整画布比例为1:1（正方形）
-        canvas_size = 450  # 正方形画布
+        # 调整画布比例为1:1.1（长方形）
+        canvas_size = 450 * 493  # 长方形画布
         self.canvas = tk.Canvas(self.right_frame, width=canvas_size, height=canvas_size, bg='#0F172A', highlightthickness=0)
-        self.canvas.pack(fill=tk.NONE, expand=False, padx=20, pady=20)  # 不填充，保持原大小
+        self.canvas.pack(fill=tk.NONE, expand=False, padx=10, pady=10)  # 不填充，保持原大小
         
         for _ in range(self.star_count):
-            x = random.randint(20, 471)  # 适应491宽度
+            x = random.randint(20, 473)  # 适应493宽度
             y = random.randint(20, 430)   # 适应450高度
             self.stars.append((x, y))
             self.star_offsets.append((0, 0))
@@ -132,7 +132,7 @@ class SplashScreen:
             ('172.16.0.0/12', star_densities[index_85][0]), # IPv4较密集区域
             ('192.168.0.0/16', star_densities[index_70][0]),# IPv4中等密度区域
             ('100.64.0.0/10', star_densities[index_55][0]), # IPv4较松散区域
-            ('2000::/3', star_densities[index_40][0]),      # IPv6全球单播地址
+            ('2001:db8:85a3::/64', star_densities[index_40][0]), # IPv6全球单播地址
             ('2001:db8::/32', star_densities[index_25][0]), # IPv6文档示例地址
         ]
     
@@ -195,7 +195,7 @@ class SplashScreen:
             # 绘制12x10格的棋盘格，考虑边距后居中显示
             grid_cols = 11
             grid_rows = 10
-            grid_size = 41  # 格子大小调整为45px
+            grid_size = 43  # 格子大小调整为45px
             
             # 计算棋盘格总大小
             total_grid_width = grid_cols * grid_size
