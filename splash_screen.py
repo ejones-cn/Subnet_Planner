@@ -95,8 +95,14 @@ class SplashScreen:
         def on_mouse_move(event):
             self.mouse_x = event.x
             self.mouse_y = event.y
+
+        def on_mouse_leave(event):
+            # 鼠标离开画布，不再吸引星星
+            self.mouse_x = -1000
+            self.mouse_y = -1000
         
         self.canvas.bind('<Motion>', on_mouse_move)
+        self.canvas.bind('<Leave>', on_mouse_leave)
         
         density_radius = 120
         star_densities = []
@@ -439,7 +445,7 @@ class SplashScreen:
                         label_x = x
                         label_y = y - 15
                         
-                        margin = 50
+                        margin = 2 * 1.5 
                         
                         # 边界检测
                         if label_x - text_width // 2 - padding < margin:
@@ -452,7 +458,7 @@ class SplashScreen:
                             label_y = canvas_height - margin - text_height // 2 - padding
                         
                         # 标签重叠检测和避免
-                        overlap_margin = 10  # 标签之间的最小间距
+                        overlap_margin = 2 * 1.5  # 标签之间的最小间距
                         current_label_rect = (
                             label_x - text_width // 2 - padding - overlap_margin,
                             label_y - text_height // 2 - padding - overlap_margin,
