@@ -14,7 +14,7 @@ class SplashScreen:
         self.star_speed = []
         self.star_direction = []
         self.star_velocities = []  # 新增：用于存储星星速度
-        self.star_count = 60
+        self.star_count = 50
         self.mouse_x, self.mouse_y = -1000, -1000
         self._loading_text_anim_id = None
         self._star_anim_id = None
@@ -348,11 +348,11 @@ class SplashScreen:
                     mouse_to_mid = ((mid_x - self.mouse_x) ** 2 + (mid_y - self.mouse_y) ** 2) ** 0.5
                     
                     if distance < 100:
-                        if mouse_to_mid < 60:
+                        if mouse_to_mid < 30:
                             # 鼠标非常靠近，最粗最亮
                             color = '#22C55E'  # 亮绿色
                             width = max(1.1, 1.5 - distance / 75)  # 范围：1.1-1.5
-                        elif mouse_to_mid < 100:
+                        elif mouse_to_mid < 80:
                             # 鼠标靠近，较粗
                             color = '#4ADE80'  # 鲜绿色
                             width = max(0.75, 1.1 - distance / 90)  # 范围：0.75-1.1
