@@ -192,7 +192,7 @@ class SplashScreen:
             canvas_width = self.canvas.winfo_width() or 493
             canvas_height = self.canvas.winfo_height() or 450
             
-            # 绘制12x10格的棋盘格，考虑边距后居中显示
+            # 绘制11x10格的棋盘格，考虑边距后居中显示
             grid_cols = 11
             grid_rows = 10
             grid_size = 43  # 格子大小调整为43px
