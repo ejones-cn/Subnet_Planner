@@ -202,9 +202,9 @@ class SplashScreen:
             total_grid_height = grid_rows * grid_size
             
             # 考虑边距（画布边缘留出空间）
-            margin = 0.001  # 边距调整为1像素
-            available_width = canvas_width - margin * 2
-            available_height = canvas_height - margin * 2
+            margin = 0.1  # 边距调整为1像素
+            available_width = canvas_width - margin
+            available_height = canvas_height - margin
             
             # 如果棋盘格超过可用空间，则缩小
             scale = min(available_width / total_grid_width, available_height / total_grid_height, 1)
