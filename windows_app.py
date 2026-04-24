@@ -931,42 +931,126 @@ class SplashScreen:
         except Exception as e:
             print(f"Failed to create text elements: {str(e)}")
         
-        # 右侧图片区
+        # 右侧图片区 - 使用动态绘制的星空连线效果
         try:
-            from PIL import Image, ImageTk
-            import os
-            image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "splash_image.png")
+            # 创建画布用于动态绘制
+            self.canvas = tk.Canvas(self.right_frame, width=500, height=450, bg='#0F172A', highlightthickness=0)
+            self.canvas.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
             
-            # 动态生成启动图片，确保使用当前语言
-            try:
-                import sys
-                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-                from generate_splash_image import create_splash_image
-                create_splash_image()  # 重新生成图片以确保使用当前语言
-            except Exception as gen_e:
-                print(f"Failed to regenerate splash image: {str(gen_e)}")
+            # 初始化星空数据
+            self.stars = []
+            self.star_count = 80  # 减少星星数量到80
+            self.star_offsets = []
+            self.star_speed = []
+            self.star_direction = []
             
-            if os.path.exists(image_path):
-                try:
-                    image = Image.open(image_path)
-                    # 调整图片尺寸以适应右侧区域
-                    image = image.resize((500, 450), Image.LANCZOS)
-                    photo = ImageTk.PhotoImage(image)
+            import random
+            # 生成随机星星
+            for i in range(self.star_count):
+                # 随机位置，分布在整个画布上
+                x = random.randint(20, 480)
+                y = random.randint(20, 430)
+                self.stars.append((x, y))
+                self.star_offsets.append((0, 0))
+                self.star_speed.append(random.uniform(0.3, 0.8))  # 增加速度
+                self.star_direction.append((random.uniform(-1, 1), random.uniform(-1, 1)))
+            
+            # 鼠标位置
+            self.mouse_x, self.mouse_y = -1000, -1000
+            
+            # 绑定鼠标移动事件
+            def on_mouse_move(event):
+                self.mouse_x = event.x
+                self.mouse_y = event.y
+            
+            self.canvas.bind('<Motion>', on_mouse_move)
+            
+            # 为IP标签绑定距离较远且远离边界的星星
+            self.ip_labels = []
+            used_stars = set()
+            labels = ['192.168.1.0/24', '10.0.0.0/16', '172.16.0.0/12']
+            canvas_width = 500
+            canvas_height = 450
+            border_margin = 50  # 边界边距
+            
+            for text in labels:
+                # 尝试找到一个与已选星星距离较远且远离边界的星星
+                best_star = None
+                best_score = 0
+                
+                for i in range(self.star_count):
+                    if i not in used_stars:
+                        x, y = self.stars[i]
+                        
+                        # 计算距离边界的距离
+                        distance_to_left = x
+                        distance_to_right = canvas_width - x
+                        distance_to_top = y
+                        distance_to_bottom = canvas_height - y
+                        
+                        # 计算最小边界距离
+                        min_border_distance = min(
+                            distance_to_left, distance_to_right, 
+                            distance_to_top, distance_to_bottom
+                        )
+                        
+                        # 如果星星太靠近边界，跳过
+                        if min_border_distance < border_margin:
+                            continue
+                        
+                        # 计算与已选星星的最小距离
+                        min_star_distance = float('inf')
+                        for star_idx in used_stars:
+                            x2, y2 = self.stars[star_idx]
+                            distance = ((x - x2) ** 2 + (y - y2) ** 2) ** 0.5
+                            if distance < min_star_distance:
+                                min_star_distance = distance
+                        
+                        # 计算综合得分（边界距离 + 星星距离）
+                        score = min_border_distance + (min_star_distance if used_stars else 100)
+                        
+                        # 选择得分最高的星星
+                        if score > best_score:
+                            best_score = score
+                            best_star = i
+                
+                if best_star is not None:
+                    self.ip_labels.append((text, best_star))
+                    used_stars.add(best_star)
+                else:
+                    # 如果找不到合适的星星，选择一个离边界较远的随机星星
+                    candidates = []
+                    for i in range(self.star_count):
+                        if i not in used_stars:
+                            x, y = self.stars[i]
+                            distance_to_left = x
+                            distance_to_right = canvas_width - x
+                            distance_to_top = y
+                            distance_to_bottom = canvas_height - y
+                            min_border_distance = min(
+                                distance_to_left, distance_to_right, 
+                                distance_to_top, distance_to_bottom
+                            )
+                            if min_border_distance >= border_margin:
+                                candidates.append(i)
                     
-                    self._image_label = ttk.Label(self.right_frame, image=photo)
-                    self._image_label.image = photo
-                    self._image_label.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-                except Exception as img_e:
-                    print(f"Failed to process splash image: {str(img_e)}")
-                    # 如果图片处理失败，创建一个专业的占位符
-                    self._create_placeholder_image()
-            else:
-                # 如果图片文件不存在，创建一个专业的占位符
-                self._create_placeholder_image()
+                    if candidates:
+                        random_star = random.choice(candidates)
+                        self.ip_labels.append((text, random_star))
+                        used_stars.add(random_star)
+                    else:
+                        # 如果所有星星都太靠近边界，随机选择一个
+                        random_star = random.randint(0, self.star_count - 1)
+                        self.ip_labels.append((text, random_star))
+                        used_stars.add(random_star)
+            
+            # 开始所有动画
+            self._start_animations()
+            
         except Exception as e:
-            print(f"Failed to load splash image: {str(e)}")
-            # 如果PIL导入失败，创建一个简单的占位符
-            self._create_simple_placeholder()
+            print(f"Failed to create dynamic star visualization: {str(e)}")
+            # 如果动态绘制失败，创建一个专业的占位符
+            self._create_placeholder_image()
     
     def _create_placeholder_image(self):
         """创建一个专业的占位符图像，接近Adobe风格"""
@@ -1032,6 +1116,180 @@ class SplashScreen:
         """启动所有动画"""
         if self.loading_text:
             self._animate_loading_text()
+        if hasattr(self, 'canvas') and self.canvas:
+            self._start_star_animation()
+    
+    def _start_star_animation(self):
+        """开始星空连线动画"""
+        if not self.canvas or not self.splash:
+            return
+        self._star_anim_id = self.splash.after(30, self._update_star_animation)  # 提高帧率
+    
+    def _update_star_animation(self):
+        """更新星空连线动画"""
+        if not self.canvas or not self.splash:
+            return
+        
+        try:
+            # 清空画布
+            self.canvas.delete('all')
+            
+            # 绘制网格背景
+            for i in range(0, 500, 40):
+                self.canvas.create_line(i, 0, i, 450, fill='#1E293B', width=1)
+            for i in range(0, 450, 40):
+                self.canvas.create_line(0, i, 500, i, fill='#1E293B', width=1)
+            
+            # 更新星星位置
+            import random
+            new_stars = []
+            for i, (x, y) in enumerate(self.stars):
+                # 计算新位置
+                dx, dy = self.star_direction[i]
+                new_dx = dx * self.star_speed[i]
+                new_dy = dy * self.star_speed[i]
+                
+                # 更新偏移量
+                off_x, off_y = self.star_offsets[i]
+                new_off_x = off_x + new_dx
+                new_off_y = off_y + new_dy
+                
+                # 限制偏移范围
+                max_offset = 15
+                if abs(new_off_x) > max_offset:
+                    self.star_direction[i] = (-dx, dy)
+                    new_off_x = max_offset * (1 if new_off_x > 0 else -1)
+                if abs(new_off_y) > max_offset:
+                    self.star_direction[i] = (dx, -dy)
+                    new_off_y = max_offset * (1 if new_off_y > 0 else -1)
+                
+                # 随机改变方向
+                if random.random() < 0.1:
+                    self.star_direction[i] = (random.uniform(-1, 1), random.uniform(-1, 1))
+                
+                # 响应鼠标位置 - 增强吸引效果
+                mouse_distance = ((x + new_off_x - self.mouse_x) ** 2 + (y + new_off_y - self.mouse_y) ** 2) ** 0.5
+                if mouse_distance < 150:  # 增加影响范围到150像素
+                    # 鼠标吸引效果 - 大幅增强
+                    mouse_force = (150 - mouse_distance) / 150
+                    mouse_dx = (self.mouse_x - (x + new_off_x)) * 0.015 * mouse_force  # 增加力度
+                    mouse_dy = (self.mouse_y - (y + new_off_y)) * 0.015 * mouse_force
+                    new_off_x += mouse_dx
+                    new_off_y += mouse_dy
+                
+                # 更新偏移量
+                self.star_offsets[i] = (new_off_x, new_off_y)
+                
+                # 计算最终位置
+                final_x = x + new_off_x
+                final_y = y + new_off_y
+                new_stars.append((final_x, final_y))
+            
+            # 绘制连接线（星空连线效果 - 增强鼠标附近的变化）
+            for i in range(len(new_stars)):
+                for j in range(i + 1, len(new_stars)):
+                    x1, y1 = new_stars[i]
+                    x2, y2 = new_stars[j]
+                    distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+                    
+                    # 计算鼠标对这条线的影响
+                    mid_x, mid_y = (x1 + x2) / 2, (y1 + y2) / 2
+                    mouse_to_mid = ((mid_x - self.mouse_x) ** 2 + (mid_y - self.mouse_y) ** 2) ** 0.5
+                    
+                    # 只绘制距离较近的星星之间的连线
+                    if distance < 100:  # 增加连线距离到100像素
+                        # 如果鼠标在附近，动态调整颜色和粗细
+                        if mouse_to_mid < 100:
+                            # 鼠标附近的连线更亮更粗
+                            color = '#22C55E'  # 亮绿色
+                            width = max(1, 2 - distance / 50)
+                        elif distance < 40:
+                            color = '#22C55E'  # 亮绿色
+                            width = max(0.5, 1.5 - distance / 27)
+                        elif distance < 70:
+                            color = '#16A34A'  # 中绿色
+                            width = max(0.5, 1 - distance / 47)
+                        else:
+                            color = '#166534'  # 暗绿色
+                            width = max(0.5, 0.8 - distance / 67)
+                        
+                        self.canvas.create_line(
+                            x1, y1, x2, y2,
+                            fill=color, width=width
+                        )
+            
+            # 绘制星星 - 增强鼠标附近星星的变化
+            for i, (x, y) in enumerate(new_stars):
+                # 计算星星到鼠标的距离
+                distance_to_mouse = ((x - self.mouse_x) ** 2 + (y - self.mouse_y) ** 2) ** 0.5
+                if distance_to_mouse < 80:  # 增加影响范围到80像素
+                    # 鼠标附近的星星变得非常大非常亮
+                    star_size = max(4, 8 - distance_to_mouse / 10)  # 增大星星大小
+                    star_color = '#22C55E'  # 亮绿色
+                else:
+                    star_size = random.uniform(1, 2)
+                    star_color = '#94A3B8'  # 灰色星星
+                
+                # 绘制星星（使用小圆点表示）
+                self.canvas.create_oval(
+                    x - star_size, y - star_size,
+                    x + star_size, y + star_size,
+                    fill=star_color, outline='')
+                
+                # 添加星星的闪烁效果
+                if random.random() < 0.15:  # 增加闪烁概率
+                    self.canvas.create_oval(
+                        x - star_size * 2, y - star_size * 2,
+                        x + star_size * 2, y + star_size * 2,
+                        fill='#4ADE80', outline='')  # 更亮的闪烁颜色
+            
+            # 绘制IP标签 - 随绑定的星星飘动
+            if hasattr(self, 'ip_labels'):
+                for text, star_index in self.ip_labels:
+                    if star_index < len(new_stars):
+                        # 获取绑定星星的位置
+                        x, y = new_stars[star_index]
+                        # 绘制标签背景
+                        bbox = self.canvas.bbox(self.canvas.create_text(0, 0, text=text, font=('微软雅黑', 12)))
+                        if bbox:
+                            text_width = bbox[2] - bbox[0]
+                            # 计算标签的边界
+                            label_width = text_width + 20  # 加上左右边距
+                            label_height = 20  # 固定高度
+                            
+                            # 边界检查，确保标签在画布范围内
+                            canvas_width = 500
+                            canvas_height = 450
+                            
+                            # 调整x坐标
+                            if x - label_width // 2 < 0:
+                                x = label_width // 2
+                            elif x + label_width // 2 > canvas_width:
+                                x = canvas_width - label_width // 2
+                            
+                            # 调整y坐标
+                            if y - label_height // 2 < 0:
+                                y = label_height // 2
+                            elif y + label_height // 2 > canvas_height:
+                                y = canvas_height - label_height // 2
+                            
+                            # 绘制标签背景
+                            self.canvas.create_rectangle(
+                                x - text_width // 2 - 10, y - 10,
+                                x + text_width // 2 + 10, y + 10,
+                                fill='#1E293B', outline='#334155'
+                            )
+                        # 绘制标签文本
+                        self.canvas.create_text(
+                            x, y,
+                            text=text, fill='#22C55E', font=('微软雅黑', 12)
+                        )
+            
+            # 继续动画
+            self._star_anim_id = self.splash.after(30, self._update_star_animation)
+            
+        except Exception as e:
+            print(f"Error in star animation: {str(e)}")
     
     def _stop_animations(self):
         """停止所有动画"""
@@ -1041,6 +1299,14 @@ class SplashScreen:
             except Exception:
                 pass
             self._loading_text_anim_id = None
+        
+        # 停止星空动画
+        if hasattr(self, '_star_anim_id') and self._star_anim_id and self.splash:
+            try:
+                self.splash.after_cancel(self._star_anim_id)
+            except Exception:
+                pass
+            self._star_anim_id = None
     
     def _animate_loading_text(self):
         """动画加载文本"""
@@ -1048,15 +1314,29 @@ class SplashScreen:
             return
         
         try:
+            # 尝试获取标签的状态，验证它是否仍然存在
             current_text = self.loading_text.cget('text')
             if current_text.endswith('...'):
                 new_text = "加载中"
             else:
                 new_text = current_text + '.'
+            
+            # 再次检查splash是否存在
+            if not self.splash:
+                return
+                
             self.loading_text.config(text=new_text)
             self._loading_text_anim_id = self.splash.after(500, self._animate_loading_text)
         except Exception as e:
             print(f"Error in loading text animation: {str(e)}")
+            # 停止动画
+            if hasattr(self, '_loading_text_anim_id') and self._loading_text_anim_id:
+                try:
+                    if self.splash:
+                        self.splash.after_cancel(self._loading_text_anim_id)
+                except Exception:
+                    pass
+                self._loading_text_anim_id = None
     
     def update_progress(self, module_name):
         """更新加载进度
@@ -1064,39 +1344,82 @@ class SplashScreen:
         Args:
             module_name: 已加载的模块名称
         """
-        # 将更新请求添加到队列
-        self.update_queue.append(module_name)
-        
-        # 触发主线程处理更新
-        if self.splash:
-            try:
-                self.splash.after(0, self._process_update_queue)
-            except Exception as e:
-                print(f"Error scheduling update: {str(e)}")
+        # 检查启动画面是否仍然存在
+        if not self.splash:
+            return
+            
+        # 检查status_text是否存在且可访问
+        if not hasattr(self, 'status_text') or not self.status_text:
+            return
+            
+        # 直接更新UI
+        try:
+            # 尝试获取标签的状态，验证它是否仍然存在
+            self.status_text.cget('text')
+            # 尝试更新状态文本
+            self.status_text.config(text=f"正在加载: {module_name}")
+            # 确保窗口更新
+            self.splash.update()
+        except Exception as e:
+            # 标签已不存在或不可访问，不做处理
+            pass
     
     def _process_update_queue(self):
         """处理UI更新队列，确保在主线程中执行"""
         try:
+            # 检查窗口是否存在
+            if not self.splash:
+                # 清空队列以防止后续错误
+                self.update_queue.clear()
+                return
+                
+            # 尝试验证status_text是否存在且有效
+            try:
+                # 尝试获取标签的状态，验证它是否仍然存在
+                if not hasattr(self, 'status_text') or not self.status_text:
+                    # 标签不存在，清空队列
+                    self.update_queue.clear()
+                    return
+                
+                # 尝试获取标签的文本，验证它是否仍然可访问
+                self.status_text.cget('text')
+            except Exception:
+                # 标签已不存在或不可访问，清空队列
+                self.update_queue.clear()
+                return
+                
             while self.update_queue:
                 module_name = self.update_queue.pop(0)
                 self.loaded_modules += 1
                 # 更新状态文本为当前加载的模块
-                if self.status_text:
+                try:
                     self.status_text.config(text=f"正在加载: {module_name}")
+                except Exception as e:
+                    print(f"Error updating UI: {str(e)}")
+                    # 清空队列以防止更多错误
+                    self.update_queue.clear()
+                    break
                 
                 # 确保窗口更新
                 if self.splash:
                     try:
                         self.splash.update()
                     except:
-                        pass
+                        # 清空队列以防止更多错误
+                        self.update_queue.clear()
+                        break
         except Exception as e:
             print(f"Error processing update queue: {str(e)}")
+            # 清空队列以防止更多错误
+            self.update_queue.clear()
     
     def close(self):
         """关闭启动画面"""
         # 停止动画
         self._stop_animations()
+        
+        # 清空更新队列
+        self.update_queue.clear()
         
         # 释放图片资源
         if self._image_label:
@@ -18743,14 +19066,13 @@ class SubnetPlannerApp:
 
 
 def load_application(splash, root):
-    """后台加载应用程序模块
+    """加载应用程序模块
     
     Args:
         splash: 启动画面实例
         root: 主窗口实例
     """
     import time
-    import threading
     from window_utils import setup_window_settings
     from config_manager import get_config
     
@@ -18769,46 +19091,34 @@ def load_application(splash, root):
         ("加载完成", 0.5)
     ]
     
-    # 定义实际的加载函数，将在后台线程中执行
-    def actual_load():
-        # 加载配置
-        try:
-            config = get_config()
-        except Exception as e:
-            print(f"Error loading config: {str(e)}")
+    print("开始加载应用")
+    
+    # 加载配置
+    try:
+        config = get_config()
+        print("配置加载完成")
+    except Exception as e:
+        print(f"Error loading config: {str(e)}")
+    
+    # 模拟加载过程
+    for i, (module, delay) in enumerate(modules):
+        print(f"加载模块: {module}")
         
-        # 模拟其他加载任务
-        for module, delay in modules:
-            time.sleep(delay)
-    
-    # 创建并启动后台线程
-    load_thread = threading.Thread(target=actual_load)
-    load_thread.daemon = True
-    load_thread.start()
-    
-    # 在主线程中更新UI
-    for module, delay in modules:
-        # 更新状态文本
-        try:
-            if splash.status_text:
-                splash.status_text.config(text=f"正在加载: {module}")
-            # 确保窗口更新
-            if splash.splash:
-                splash.splash.update()
-        except Exception as e:
-            print(f"Error updating UI: {str(e)}")
+        # 更新启动画面状态
+        splash.update_progress(module)
         
         # 等待一段时间，模拟加载过程
-        time.sleep(delay)
+        start_time = time.time()
+        while time.time() - start_time < delay:
+            # 保持主循环运行，确保启动画面能够更新
+            try:
+                root.update()
+                splash.splash.update()
+            except Exception as e:
+                print(f"Error updating window: {str(e)}")
+            time.sleep(0.01)
     
-    # 等待后台线程完成
-    while load_thread.is_alive():
-        # 保持主循环运行，确保启动画面能够更新
-        root.update()
-        time.sleep(0.01)
-    
-    # 额外的延迟，让用户有足够的时间看到加载完成的状态
-    time.sleep(1.0)
+    print("加载过程完成")
 
 if __name__ == "__main__":
     # 导入窗口工具模块
