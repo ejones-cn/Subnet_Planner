@@ -4417,6 +4417,174 @@
     "ja": "利用可能なアドレス",
     "ko": "사용 가능한 주소"
   },
+  "cryptography_not_available": {
+    "zh": "加密库不可用",
+    "zh_tw": "加密庫不可用",
+    "en": "Cryptography library not available",
+    "ja": "暗号化ライブラリが利用できません",
+    "ko": "암호화 라이브러리를 사용할 수 없습니다"
+  },
+  "ctypes_not_available": {
+    "zh": "ctypes模块不可用",
+    "zh_tw": "ctypes模組不可用",
+    "en": "ctypes module not available",
+    "ja": "ctypesモジュールが利用できません",
+    "ko": "ctypes 모듈을 사용할 수 없습니다"
+  },
+  "non_windows_platform": {
+    "zh": "非Windows平台",
+    "zh_tw": "非Windows平台",
+    "en": "Non-Windows platform",
+    "ja": "Windows以外のプラットフォーム",
+    "ko": "Windows가 아닌 플랫폼"
+  },
+  "encryption_failed": {
+    "zh": "加密失败",
+    "zh_tw": "加密失敗",
+    "en": "Encryption failed",
+    "ja": "暗号化に失敗しました",
+    "ko": "암호화 실패"
+  },
+  "decryption_failed": {
+    "zh": "解密失败",
+    "zh_tw": "解密失敗",
+    "en": "Decryption failed",
+    "ja": "復号化に失敗しました",
+    "ko": "복호화 실패"
+  },
+  "fernet_encryption_failed": {
+    "zh": "Fernet加密失败",
+    "zh_tw": "Fernet加密失敗",
+    "en": "Fernet encryption failed",
+    "ja": "Fernet暗号化に失敗しました",
+    "ko": "Fernet 암호화 실패"
+  },
+  "fernet_decryption_failed": {
+    "zh": "Fernet解密失败",
+    "zh_tw": "Fernet解密失敗",
+    "en": "Fernet decryption failed",
+    "ja": "Fernet復号化に失敗しました",
+    "ko": "Fernet 복호화 실패"
+  },
+  "loading_resources": {
+    "zh": "加载资源",
+    "zh_tw": "載入資源",
+    "en": "Loading resources",
+    "ja": "リソースを読み込んでいます",
+    "ko": "리소스를 로드하는 중"
+  },
+  "initializing_components": {
+    "zh": "初始化组件",
+    "zh_tw": "初始化組件",
+    "en": "Initializing components",
+    "ja": "コンポーネントを初期化しています",
+    "ko": "컴포넌트 초기화 중"
+  },
+  "loading_database": {
+    "zh": "加载数据库",
+    "zh_tw": "載入資料庫",
+    "en": "Loading database",
+    "ja": "データベースを読み込んでいます",
+    "ko": "데이터베이스 로드 중"
+  },
+  "setting_up_ui": {
+    "zh": "设置用户界面",
+    "zh_tw": "設定使用者介面",
+    "en": "Setting up UI",
+    "ja": "ユーザーインターフェースを設定しています",
+    "ko": "UI 설정 중"
+  },
+  "loading_plugins": {
+    "zh": "加载插件",
+    "zh_tw": "載入外掛",
+    "en": "Loading plugins",
+    "ja": "プラグインを読み込んでいます",
+    "ko": "플러그인 로드 중"
+  },
+  "checking_updates": {
+    "zh": "检查更新",
+    "zh_tw": "檢查更新",
+    "en": "Checking updates",
+    "ja": "更新を確認しています",
+    "ko": "업데이트 확인 중"
+  },
+  "finalizing_setup": {
+    "zh": "完成设置",
+    "zh_tw": "完成設定",
+    "en": "Finalizing setup",
+    "ja": "設定を完了しています",
+    "ko": "설정 완료 중"
+  },
+  "config": {
+    "zh": "配置",
+    "zh_tw": "配置",
+    "en": "Config",
+    "ja": "設定",
+    "ko": "구성"
+  },
+  "internationalization": {
+    "zh": "国际化",
+    "zh_tw": "國際化",
+    "en": "Internationalization",
+    "ja": "国際化",
+    "ko": "국제화"
+  },
+  "database": {
+    "zh": "数据库",
+    "zh_tw": "資料庫",
+    "en": "Database",
+    "ja": "データベース",
+    "ko": "데이터베이스"
+  },
+  "ui_components": {
+    "zh": "UI组件",
+    "zh_tw": "UI組件",
+    "en": "UI Components",
+    "ja": "UIコンポーネント",
+    "ko": "UI 구성 요소"
+  },
+  "network_services": {
+    "zh": "网络服务",
+    "zh_tw": "網路服務",
+    "en": "Network Services",
+    "ja": "ネットワークサービス",
+    "ko": "네트워크 서비스"
+  },
+  "plugins": {
+    "zh": "插件",
+    "zh_tw": "外掛",
+    "en": "Plugins",
+    "ja": "プラグイン",
+    "ko": "플러그인"
+  },
+  "styles": {
+    "zh": "样式",
+    "zh_tw": "樣式",
+    "en": "Styles",
+    "ja": "スタイル",
+    "ko": "스타일"
+  },
+  "history": {
+    "zh": "历史记录",
+    "zh_tw": "歷史記錄",
+    "en": "History",
+    "ja": "履歴",
+    "ko": "히스토리"
+  },
+  "settings": {
+    "zh": "设置",
+    "zh_tw": "設定",
+    "en": "Settings",
+    "ja": "設定",
+    "ko": "설정"
+  },
+  "completion": {
+    "zh": "完成",
+    "zh_tw": "完成",
+    "en": "Completion",
+    "ja": "完了",
+    "ko": "완료"
+  },
   "chart_drawing_failed": {
     "zh": "图表绘制失败",
     "zh_tw": "圖表繪製失敗",

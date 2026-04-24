@@ -829,94 +829,295 @@ class SplashScreen:
         Args:
             parent: 父窗口对象，如果为None则创建独立窗口
         """
-        # 创建一个无标题、无边框的窗口
-        self.splash = tk.Toplevel(parent)
-        self.splash.overrideredirect(True)  # 移除窗口装饰
-        self.splash.attributes('-topmost', True)  # 始终在最上层
+        # 初始化属性
+        self._loading_text_anim_id = None
+        self._image_label = None
+        self.splash = None
+        self.left_frame = None
+        self.right_frame = None
+        self.loading_text = None
+        self.status_text = None
+        self.loaded_modules = 0
+        self.total_modules = 11
+        self.update_queue = []  # 用于存储UI更新请求
         
-        # 窗口尺寸
-        width = 400
-        height = 300
+        # 创建一个无标题、无边框的窗口
+        try:
+            self.splash = tk.Toplevel(parent)
+            self.splash.overrideredirect(True)
+            self.splash.attributes('-topmost', True)
+            # 设置背景为白色，符合Adobe当前风格
+            self.splash.configure(bg="white")
+        except Exception as e:
+            print(f"Failed to create splash window: {str(e)}")
+            self.splash = None
+            return
+        
+        # 窗口尺寸 - 接近Adobe风格的比例
+        width = 900
+        height = 500
         
         # 居中显示
-        self.splash.update_idletasks()
-        screen_width = self.splash.winfo_screenwidth()
-        screen_height = self.splash.winfo_screenheight()
-        x = (screen_width - width) // 2
-        y = (screen_height - height) // 2
-        self.splash.geometry(f"{width}x{height}+{x}+{y}")
+        try:
+            self.splash.update_idletasks()
+            screen_width = self.splash.winfo_screenwidth()
+            screen_height = self.splash.winfo_screenheight()
+            x = (screen_width - width) // 2
+            y = (screen_height - height) // 2
+            self.splash.geometry(f"{width}x{height}+{x}+{y}")
+        except Exception as e:
+            print(f"Failed to set splash window geometry: {str(e)}")
         
-        # 创建背景框架
-        self.frame = ttk.Frame(self.splash, padding="20")
-        self.frame.pack(fill=tk.BOTH, expand=True)
+        # 创建主框架，使用网格布局
+        try:
+            main_frame = ttk.Frame(self.splash)
+            main_frame.pack(fill=tk.BOTH, expand=True)
+            
+            # 创建左侧文字区
+            self.left_frame = ttk.Frame(main_frame, padding="60")
+            self.left_frame.grid(row=0, column=0, sticky="nsew")
+            
+            # 创建右侧图片区
+            self.right_frame = ttk.Frame(main_frame)
+            self.right_frame.grid(row=0, column=1, sticky="nsew")
+            
+            # 设置列权重，左侧文字区占30%，右侧图片区占70%
+            main_frame.columnconfigure(0, weight=3)
+            main_frame.columnconfigure(1, weight=7)
+            main_frame.rowconfigure(0, weight=1)
+        except Exception as e:
+            print(f"Failed to create splash frames: {str(e)}")
+            self.splash = None
+            return
         
         # 应用程序名称
         from version import get_version
-        app_name = _("app_name")
-        version = get_version()
+        self.app_name = "子网规划师"  # 直接使用中文，避免翻译问题
+        self.version = get_version()
         
-        # 创建标题标签
-        title_label = ttk.Label(
-            self.frame, 
-            text=app_name, 
-            font=('Arial', 24, 'bold')
-        )
-        title_label.pack(pady=(50, 10))
+        # 左侧文字区内容
+        try:
+            # 应用名称
+            title_label = ttk.Label(
+                self.left_frame, 
+                text=self.app_name, 
+                font=('微软雅黑', 36, 'bold')
+            )
+            title_label.pack(anchor="w", pady=(0, 10))
+            
+            # 版本号
+            version_label = ttk.Label(
+                self.left_frame, 
+                text=f"v{self.version}", 
+                font=('微软雅黑', 14)
+            )
+            version_label.pack(anchor="w", pady=(0, 40))
+            
+            # 状态文本 - 显示加载进度信息
+            self.status_text = ttk.Label(
+                self.left_frame, 
+                text="正在加载资源...", 
+                font=('微软雅黑', 12)
+            )
+            self.status_text.pack(anchor="w", pady=(0, 20))
+            
+            # 加载动画文本
+            self.loading_text = ttk.Label(
+                self.left_frame, 
+                text="加载中", 
+                font=('微软雅黑', 10)
+            )
+            self.loading_text.pack(anchor="w")
+        except Exception as e:
+            print(f"Failed to create text elements: {str(e)}")
         
-        # 创建版本标签
-        version_label = ttk.Label(
-            self.frame, 
-            text=f"v{version}", 
-            font=('Arial', 12)
-        )
-        version_label.pack(pady=(0, 30))
-        
-        # 创建加载动画区域
-        self.loading_frame = ttk.Frame(self.frame)
-        self.loading_frame.pack(pady=20)
-        
-        # 创建加载文本
-        self.loading_text = ttk.Label(
-            self.loading_frame, 
-            text=_('loading'), 
-            font=('Arial', 10)
-        )
-        self.loading_text.pack()
-        
-        # 创建进度条
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(
-            self.frame, 
-            variable=self.progress_var, 
-            length=300, 
-            mode='indeterminate'
-        )
-        self.progress_bar.pack(pady=20)
+        # 右侧图片区
+        try:
+            from PIL import Image, ImageTk
+            import os
+            image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "splash_image.png")
+            
+            # 动态生成启动图片，确保使用当前语言
+            try:
+                import sys
+                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                from generate_splash_image import create_splash_image
+                create_splash_image()  # 重新生成图片以确保使用当前语言
+            except Exception as gen_e:
+                print(f"Failed to regenerate splash image: {str(gen_e)}")
+            
+            if os.path.exists(image_path):
+                try:
+                    image = Image.open(image_path)
+                    # 调整图片尺寸以适应右侧区域
+                    image = image.resize((500, 450), Image.LANCZOS)
+                    photo = ImageTk.PhotoImage(image)
+                    
+                    self._image_label = ttk.Label(self.right_frame, image=photo)
+                    self._image_label.image = photo
+                    self._image_label.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+                except Exception as img_e:
+                    print(f"Failed to process splash image: {str(img_e)}")
+                    # 如果图片处理失败，创建一个专业的占位符
+                    self._create_placeholder_image()
+            else:
+                # 如果图片文件不存在，创建一个专业的占位符
+                self._create_placeholder_image()
+        except Exception as e:
+            print(f"Failed to load splash image: {str(e)}")
+            # 如果PIL导入失败，创建一个简单的占位符
+            self._create_simple_placeholder()
+    
+    def _create_placeholder_image(self):
+        """创建一个专业的占位符图像，接近Adobe风格"""
+        try:
+            from PIL import Image, ImageDraw, ImageFont, ImageTk
+            
+            # 创建一个白色背景的图像
+            image = Image.new('RGB', (500, 450), color='white')
+            draw = ImageDraw.Draw(image)
+            
+            # 尝试使用系统字体
+            try:
+                font = ImageFont.truetype("msyh.ttf", 36)  # 微软雅黑
+            except:
+                try:
+                    font = ImageFont.truetype("arial.ttf", 36)
+                except:
+                    font = ImageFont.load_default()
+            
+            # 添加应用名称
+            draw.text((250, 225), self.app_name, fill='#1a73e8', font=font, anchor='mm')
+            
+            # 添加装饰元素
+            # 顶部蓝色条
+            draw.rectangle([(0, 0), (500, 5)], fill='#1a73e8')
+            # 底部蓝色条
+            draw.rectangle([(0, 445), (500, 450)], fill='#1a73e8')
+            
+            photo = ImageTk.PhotoImage(image)
+            
+            self._image_label = ttk.Label(self.right_frame, image=photo)
+            self._image_label.image = photo
+            self._image_label.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        except Exception as e:
+            print(f"Failed to create placeholder image: {str(e)}")
+            # 如果创建占位符也失败，创建一个简单的替代方案
+            self._create_simple_placeholder()
+    
+    def _create_simple_placeholder(self):
+        """创建一个简单的占位符"""
+        try:
+            # 创建一个蓝色背景的标签作为占位符
+            placeholder_label = ttk.Label(
+                self.right_frame, 
+                text=self.app_name, 
+                font=('微软雅黑', 24),
+                background='#f0f4f8'
+            )
+            placeholder_label.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        except Exception as e:
+            print(f"Failed to create simple placeholder: {str(e)}")
         
         # 开始动画
-        self.progress_bar.start()
-        self._animate_loading_text()
+        self._start_animations()
         
         # 确保窗口显示
-        self.splash.update()
+        try:
+            self.splash.update()
+        except Exception as e:
+            print(f"Failed to update splash window: {str(e)}")
+    
+    def _start_animations(self):
+        """启动所有动画"""
+        if self.loading_text:
+            self._animate_loading_text()
+    
+    def _stop_animations(self):
+        """停止所有动画"""
+        if self._loading_text_anim_id and self.splash:
+            try:
+                self.splash.after_cancel(self._loading_text_anim_id)
+            except Exception:
+                pass
+            self._loading_text_anim_id = None
     
     def _animate_loading_text(self):
         """动画加载文本"""
-        current_text = self.loading_text.cget('text')
-        if current_text.endswith('...'):
-            new_text = _('loading')
-        else:
-            new_text = current_text + '.'
-        self.loading_text.config(text=new_text)
-        self.splash.after(500, self._animate_loading_text)
+        if not self.loading_text or not self.splash:
+            return
+        
+        try:
+            current_text = self.loading_text.cget('text')
+            if current_text.endswith('...'):
+                new_text = "加载中"
+            else:
+                new_text = current_text + '.'
+            self.loading_text.config(text=new_text)
+            self._loading_text_anim_id = self.splash.after(500, self._animate_loading_text)
+        except Exception as e:
+            print(f"Error in loading text animation: {str(e)}")
+    
+    def update_progress(self, module_name):
+        """更新加载进度
+        
+        Args:
+            module_name: 已加载的模块名称
+        """
+        # 将更新请求添加到队列
+        self.update_queue.append(module_name)
+        
+        # 触发主线程处理更新
+        if self.splash:
+            try:
+                self.splash.after(0, self._process_update_queue)
+            except Exception as e:
+                print(f"Error scheduling update: {str(e)}")
+    
+    def _process_update_queue(self):
+        """处理UI更新队列，确保在主线程中执行"""
+        try:
+            while self.update_queue:
+                module_name = self.update_queue.pop(0)
+                self.loaded_modules += 1
+                # 更新状态文本为当前加载的模块
+                if self.status_text:
+                    self.status_text.config(text=f"正在加载: {module_name}")
+                
+                # 确保窗口更新
+                if self.splash:
+                    try:
+                        self.splash.update()
+                    except:
+                        pass
+        except Exception as e:
+            print(f"Error processing update queue: {str(e)}")
     
     def close(self):
         """关闭启动画面"""
-        try:
-            self.progress_bar.stop()
-            self.splash.destroy()
-        except Exception:
-            pass
+        # 停止动画
+        self._stop_animations()
+        
+        # 释放图片资源
+        if self._image_label:
+            try:
+                self._image_label.image = None
+                self._image_label.destroy()
+            except Exception:
+                pass
+            self._image_label = None
+        
+        # 销毁窗口
+        if self.splash:
+            try:
+                self.splash.destroy()
+            except Exception as e:
+                print(f"Error closing splash window: {str(e)}")
+            self.splash = None
+    
+    def __del__(self):
+        """析构函数，确保资源正确释放"""
+        self.close()
 
 
 def center_window(window, parent=None):
@@ -2217,26 +2418,14 @@ class SubnetPlannerApp:
         split = history_record['split']
 
         # 检测IP版本并自动切换
-        try:
-            # 检测父网段的IP版本
-            parent_net = ipaddress.ip_network(parent, strict=False)
-            detected_version = f"IPv{parent_net.version}"
-            
-            # 如果检测到的版本与当前选中版本不同，则切换IP版本
-            if detected_version != self.split_ip_version_var.get():
-                self.split_ip_version_var.set(detected_version)
-                self.on_split_ip_version_change()
-        except ValueError:
+        detected_version = self.validation_service.detect_ip_version(parent)
+        if not detected_version:
             # 如果父网段检测失败，尝试检测切分段
-            try:
-                split_net = ipaddress.ip_network(split, strict=False)
-                detected_version = f"IPv{split_net.version}"
-                if detected_version != self.split_ip_version_var.get():
-                    self.split_ip_version_var.set(detected_version)
-                    self.on_split_ip_version_change()
-            except ValueError:
-                # 都检测失败，保持当前版本
-                pass
+            detected_version = self.validation_service.detect_ip_version(split)
+        
+        if detected_version and detected_version != self.split_ip_version_var.get():
+            self.split_ip_version_var.set(detected_version)
+            self.on_split_ip_version_change()
 
         # 填充到输入框
         self.parent_entry.delete(0, tk.END)
@@ -2656,7 +2845,7 @@ class SubnetPlannerApp:
         vcmd = (self.root.register(validate_split_parent), '%P')
         self.parent_entry = ttk.Combobox(
             input_frame,
-            values=self.split_parent_networks,  # 使用过滤后的记录列表
+            values=list(self.split_parent_networks),  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
@@ -2677,7 +2866,7 @@ class SubnetPlannerApp:
         vcmd = (self.root.register(validate_split_segment), '%P')
         self.split_entry = ttk.Combobox(
             input_frame,
-            values=self.split_networks,  # 使用过滤后的记录列表
+            values=list(self.split_networks),  # 使用过滤后的记录列表
             font=(font_family, font_size),
             validate='all',
             validatecommand=vcmd,
@@ -3132,7 +3321,7 @@ class SubnetPlannerApp:
         vcmd = (self.root.register(validate_planning_parent), '%P')
         self.planning_parent_entry = ttk.Combobox(
             parent_input_frame,
-            values=self.planning_parent_networks,  # 使用包含两条记录的列表
+            values=list(self.planning_parent_networks),  # 使用包含两条记录的列表
             width=8,
             font=(font_family, font_size),
             validate='all',
@@ -5483,7 +5672,7 @@ class SubnetPlannerApp:
             
             # 更新输入框默认值和下拉列表
             self.planning_parent_entry.insert(0, default_parent)
-            self.planning_parent_entry.config(values=self.planning_parent_networks)
+            self.planning_parent_entry.config(values=list(self.planning_parent_networks))
             
         except Exception as e:
             self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
@@ -5516,10 +5705,10 @@ class SubnetPlannerApp:
             
             # 更新输入框默认值和下拉列表
             self.parent_entry.insert(0, default_parent)
-            self.parent_entry.config(values=self.split_parent_networks)
+            self.parent_entry.config(values=list(self.split_parent_networks))
             
             self.split_entry.insert(0, default_split)
-            self.split_entry.config(values=self.split_networks)
+            self.split_entry.config(values=list(self.split_networks))
             
         except Exception as e:
             self.show_error(_("error"), f"{_("ip_version_change_failed")}: {str(e)}")
@@ -8712,6 +8901,12 @@ class SubnetPlannerApp:
         # 填充标签列表
         self.update_tab_order_listbox()
 
+        # 添加显示启动画面按钮
+        show_splash_btn = ttk.Button(
+            tab_order_frame, text='显示启动画面', width=20, style=button_style, command=self.show_splash
+        )
+        show_splash_btn.grid(row=1, column=0, columnspan=2, sticky=tk.EW, padx=5, pady=10)
+
         # 创建按钮框架，垂直排列操作按钮
         button_frame = ttk.Frame(tab_order_frame)
         button_frame.grid(row=0, column=1, sticky=tk.N, padx=(5, 0), pady=(0, 2))
@@ -8733,24 +8928,6 @@ class SubnetPlannerApp:
             command=self.move_selected_tab_down
         )
         move_down_btn.grid(row=1, column=0, pady=2)
-
-        # 置顶按钮
-        move_top_btn = ttk.Button(
-            button_frame,
-            text="↑",
-            width=3,
-            command=self.move_selected_tab_to_top
-        )
-        move_top_btn.grid(row=2, column=0, pady=2)
-
-        # 置底按钮
-        move_bottom_btn = ttk.Button(
-            button_frame,
-            text="↓",
-            width=3,
-            command=self.move_selected_tab_to_bottom
-        )
-        move_bottom_btn.grid(row=3, column=0, pady=2)
 
         # 关闭按钮框架
         close_frame = ttk.Frame(content_frame)
@@ -8800,6 +8977,29 @@ class SubnetPlannerApp:
             finally:
                 # 确保无论如何都将test_dialog设置为None
                 self.test_dialog = None
+
+    def show_splash(self):
+        """显示启动画面，用于调试
+        启动画面会一直显示，直到用户点击画面才退出
+        """
+        # 直接使用已定义的SplashScreen类，不需要导入
+        splash = SplashScreen(self.root)
+        
+        # 添加点击事件，点击启动画面时关闭
+        def close_splash_on_click(event):
+            try:
+                if splash.splash:
+                    splash.splash.destroy()
+            except:
+                pass
+        
+        # 绑定点击事件到启动画面窗口
+        if splash.splash:
+            splash.splash.bind('<Button-1>', close_splash_on_click)
+            
+            # 确保启动画面在最上层
+            splash.splash.lift()
+            splash.splash.attributes('-topmost', True)
 
     def open_hidden_info_dialog(self, event=None):
         """打开隐藏信息管理对话框（快捷键：Ctrl+Shift+H）
@@ -9192,50 +9392,6 @@ class SubnetPlannerApp:
             new_items = self.tab_order_tree.get_children()
             if tab_index + 1 < len(new_items):
                 self.tab_order_tree.selection_set(new_items[tab_index + 1])
-            # 保存到配置文件
-            self.top_level_notebook.save_tab_order()
-
-    def move_selected_tab_to_top(self):
-        """将选中的标签移动到最顶部"""
-        if not hasattr(self, 'tab_order_tree'):
-            return
-        
-        selected_items = self.tab_order_tree.selection()
-        if not selected_items:
-            return
-        
-        # 获取选中项的索引
-        all_items = self.tab_order_tree.get_children()
-        tab_index = all_items.index(selected_items[0])
-        
-        if self.top_level_notebook.move_tab_to_top(tab_index):
-            self.update_tab_order_listbox()
-            # 重新选中移动后的位置（顶部）
-            new_items = self.tab_order_tree.get_children()
-            if new_items:
-                self.tab_order_tree.selection_set(new_items[0])
-            # 保存到配置文件
-            self.top_level_notebook.save_tab_order()
-
-    def move_selected_tab_to_bottom(self):
-        """将选中的标签移动到最底部"""
-        if not hasattr(self, 'tab_order_tree'):
-            return
-        
-        selected_items = self.tab_order_tree.selection()
-        if not selected_items:
-            return
-        
-        # 获取选中项的索引
-        all_items = self.tab_order_tree.get_children()
-        tab_index = all_items.index(selected_items[0])
-        
-        if self.top_level_notebook.move_tab_to_bottom(tab_index):
-            self.update_tab_order_listbox()
-            # 重新选中移动后的位置（底部）
-            new_items = self.tab_order_tree.get_children()
-            if new_items:
-                self.tab_order_tree.selection_set(new_items[-1])
             # 保存到配置文件
             self.top_level_notebook.save_tab_order()
 
@@ -15585,11 +15741,7 @@ class SubnetPlannerApp:
         Returns:
             bool: 是否为有效的IPv4地址
         """
-        try:
-            ip = ipaddress.ip_address(ip_address.strip())
-            return isinstance(ip, ipaddress.IPv4Address)
-        except ValueError:
-            return False
+        return self.validation_service.is_valid_ipv4(ip_address)
     
     def is_ip_in_network(self, ip_address, network):
         """检查IP地址是否在指定的网络范围内
@@ -15601,12 +15753,7 @@ class SubnetPlannerApp:
         Returns:
             bool: IP地址是否在网络范围内
         """
-        try:
-            ip = ipaddress.ip_address(ip_address.strip())
-            net = ipaddress.ip_network(network.strip(), strict=False)
-            return ip in net
-        except ValueError:
-            return False
+        return self.validation_service.is_ip_in_network(ip_address, network)
     
     def _format_expiry_date(self, date_str: str) -> str:
         """格式化过期日期，确保包含时间部分
@@ -18595,6 +18742,74 @@ class SubnetPlannerApp:
             self.show_error(_('error'), message)
 
 
+def load_application(splash, root):
+    """后台加载应用程序模块
+    
+    Args:
+        splash: 启动画面实例
+        root: 主窗口实例
+    """
+    import time
+    import threading
+    from window_utils import setup_window_settings
+    from config_manager import get_config
+    
+    # 定义加载模块列表
+    modules = [
+        ("配置文件", 0.3),
+        ("国际化资源", 0.2),
+        ("数据库初始化", 0.4),
+        ("UI组件", 0.3),
+        ("网络服务", 0.3),
+        ("插件系统", 0.2),
+        ("样式系统", 0.2),
+        ("历史记录", 0.2),
+        ("用户设置", 0.2),
+        ("应用实例", 0.4),
+        ("加载完成", 0.5)
+    ]
+    
+    # 定义实际的加载函数，将在后台线程中执行
+    def actual_load():
+        # 加载配置
+        try:
+            config = get_config()
+        except Exception as e:
+            print(f"Error loading config: {str(e)}")
+        
+        # 模拟其他加载任务
+        for module, delay in modules:
+            time.sleep(delay)
+    
+    # 创建并启动后台线程
+    load_thread = threading.Thread(target=actual_load)
+    load_thread.daemon = True
+    load_thread.start()
+    
+    # 在主线程中更新UI
+    for module, delay in modules:
+        # 更新状态文本
+        try:
+            if splash.status_text:
+                splash.status_text.config(text=f"正在加载: {module}")
+            # 确保窗口更新
+            if splash.splash:
+                splash.splash.update()
+        except Exception as e:
+            print(f"Error updating UI: {str(e)}")
+        
+        # 等待一段时间，模拟加载过程
+        time.sleep(delay)
+    
+    # 等待后台线程完成
+    while load_thread.is_alive():
+        # 保持主循环运行，确保启动画面能够更新
+        root.update()
+        time.sleep(0.01)
+    
+    # 额外的延迟，让用户有足够的时间看到加载完成的状态
+    time.sleep(1.0)
+
 if __name__ == "__main__":
     # 导入窗口工具模块
     from window_utils import setup_window_settings
@@ -18607,6 +18822,9 @@ if __name__ == "__main__":
     # 显示启动画面
     splash = SplashScreen()
     root.update()  # 确保启动画面显示
+    
+    # 执行后台加载
+    load_application(splash, root)
     
     # 设置双击间隔
     try:
@@ -18623,18 +18841,9 @@ if __name__ == "__main__":
         # 在某些系统上不支持此命令，使用系统默认值即可
         pass
     
-    # 获取DPI缩放因子（如果未定义则默认为1.0）
-    # 全局变量已在文件开头定义，无需再次声明
-    try:
-        pass  # SCALE_FACTOR已在文件开头定义
-    except NameError:
-        SCALE_FACTOR = 1.0
-    
-    # 设置窗口初始大小 - 根据DPI缩放因子调整
+    # 设置窗口初始大小
     BASE_WIDTH = 1050
     BASE_HEIGHT = 950
-    
-    # 使用默认窗口大小
     WINDOW_WIDTH = BASE_WIDTH
     WINDOW_HEIGHT = BASE_HEIGHT
     
@@ -18652,6 +18861,7 @@ if __name__ == "__main__":
     )
     
     # 创建应用实例
+    from windows_app import SubnetPlannerApp
     app = SubnetPlannerApp(root)
     
     # 关闭启动画面

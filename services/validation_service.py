@@ -71,21 +71,23 @@ class ValidationService:
 
     def validate_ip_address(self, ip_str, ip_version=None):
         if not ip_str:
-            return {'valid': True, 'error': None}
+            return {'valid': True, 'error': None, 'version': None}
 
         try:
             addr = ipaddress.ip_address(ip_str)
+            version = addr.version
             if ip_version:
                 expected_version = 6 if ip_version == "IPv6" else 4
                 if addr.version != expected_version:
                     return {
                         'valid': False,
-                        'error': _("ip_version_mismatch")
+                        'error': _("ip_version_mismatch"),
+                        'version': version
                     }
-            return {'valid': True, 'error': None}
+            return {'valid': True, 'error': None, 'version': version}
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
-            return {'valid': False, 'error': error_result.get('error', str(e))}
+            return {'valid': False, 'error': error_result.get('error', str(e)), 'version': None}
 
     def validate_split_input(self, parent, split):
         if not parent:
@@ -166,3 +168,75 @@ class ValidationService:
                 }
 
         return {'valid': True, 'error': None, 'error_code': None}
+
+    def is_valid_ipv4(self, ip_address: str) -> bool:
+        """验证是否为有效的IPv4地址
+        
+        Args:
+            ip_address: 要验证的IP地址字符串
+            
+        Returns:
+            bool: 是否为有效的IPv4地址
+        """
+        result = self.validate_ip_address(ip_address, ip_version="IPv4")
+        return result['valid']
+
+    def is_valid_ipv6(self, ip_address: str) -> bool:
+        """验证是否为有效的IPv6地址
+        
+        Args:
+            ip_address: 要验证的IP地址字符串
+            
+        Returns:
+            bool: 是否为有效的IPv6地址
+        """
+        result = self.validate_ip_address(ip_address, ip_version="IPv6")
+        return result['valid']
+
+    def is_ip_in_network(self, ip_address: str, network: str) -> bool:
+        """检查IP地址是否在指定的网络范围内
+        
+        Args:
+            ip_address: 要检查的IP地址
+            network: 网络地址（CIDR格式）
+            
+        Returns:
+            bool: IP地址是否在网络范围内
+        """
+        try:
+            ip = ipaddress.ip_address(ip_address.strip())
+            net = ipaddress.ip_network(network.strip(), strict=False)
+            return ip in net
+        except ValueError:
+            return False
+
+    def get_ip_version(self, ip_or_network: str) -> int | None:
+        """获取IP地址或网络的版本
+        
+        Args:
+            ip_or_network: IP地址或网络字符串
+            
+        Returns:
+            int | None: IP版本（4或6），如果无效则返回None
+        """
+        try:
+            if '/' in ip_or_network:
+                net = ipaddress.ip_network(ip_or_network.strip(), strict=False)
+                return net.version
+            else:
+                addr = ipaddress.ip_address(ip_or_network.strip())
+                return addr.version
+        except ValueError:
+            return None
+
+    def detect_ip_version(self, ip_or_network: str) -> str | None:
+        """检测IP地址或网络的版本，返回格式化字符串
+        
+        Args:
+            ip_or_network: IP地址或网络字符串
+            
+        Returns:
+            str | None: IP版本字符串（"IPv4"或"IPv6"），如果无效则返回None
+        """
+        version = self.get_ip_version(ip_or_network)
+        return f"IPv{version}" if version else None
