@@ -189,20 +189,20 @@ class SplashScreen:
             self.canvas.delete('all')
             
             # 获取画布实际大小
-            canvas_width = self.canvas.winfo_width() or 491
+            canvas_width = self.canvas.winfo_width() or 493
             canvas_height = self.canvas.winfo_height() or 450
             
             # 绘制12x10格的棋盘格，考虑边距后居中显示
             grid_cols = 11
             grid_rows = 10
-            grid_size = 43  # 格子大小调整为45px
+            grid_size = 43  # 格子大小调整为43px
             
             # 计算棋盘格总大小
             total_grid_width = grid_cols * grid_size
             total_grid_height = grid_rows * grid_size
             
             # 考虑边距（画布边缘留出空间）
-            margin = 0.1  # 边距调整为1像素
+            margin = 0.001  # 边距调整为1像素
             available_width = canvas_width - margin * 2
             available_height = canvas_height - margin * 2
             
