@@ -2,7 +2,7 @@ import tkinter as tk
 import random
 from version import __version__
 from i18n import _
-from style_manager import get_splash_font_size, get_splash_font_family
+from font_config import get_splash_font_size, get_splash_font_family
 
 class SplashScreen:
     def __init__(self, parent=None):

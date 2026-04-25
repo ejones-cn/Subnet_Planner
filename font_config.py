@@ -5,6 +5,7 @@
 """
 
 from version import get_version
+from i18n import get_language
 
 __version__ = get_version()
 
@@ -289,3 +290,89 @@ class FontConfig:
         lang_settings = cls.SPLASH_FONT_SETTINGS.get(language, cls.SPLASH_FONT_SETTINGS["default"])
         sizes = lang_settings.get("sizes", {})
         return sizes.get(font_type, 12)
+    
+    @classmethod
+    def get_pin_button_font_size(cls) -> int:
+        """获取钉住按钮的字体大小设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.PIN_BUTTON_FONT_SIZE_SETTINGS.get(
+            current_language, 
+            cls.PIN_BUTTON_FONT_SIZE_SETTINGS["default"]
+        )
+    
+    @classmethod
+    def get_pin_button_font_family(cls) -> str:
+        """获取钉住按钮的字体家族设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.PIN_BUTTON_FONT_FAMILY_SETTINGS.get(
+            current_language, 
+            cls.PIN_BUTTON_FONT_FAMILY_SETTINGS["default"]
+        )
+    
+    @classmethod
+    def get_function_button_font_size(cls) -> int:
+        """获取功能按钮的字体大小设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS.get(
+            current_language, 
+            cls.FUNCTION_BUTTON_FONT_SIZE_SETTINGS["default"]
+        )
+    
+    @classmethod
+    def get_info_bar_font_size(cls) -> int:
+        """获取信息栏的字体大小设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.INFO_BAR_FONT_SIZE_SETTINGS.get(
+            current_language, 
+            cls.INFO_BAR_FONT_SIZE_SETTINGS["default"]
+        )
+    
+    @classmethod
+    def get_move_button_font(cls) -> str:
+        """获取移动按钮的字体设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.MOVE_BUTTON_FONT_SETTINGS.get(
+            current_language, 
+            cls.MOVE_BUTTON_FONT_SETTINGS["default"]
+        )
+    
+    @classmethod
+    def get_splash_font_family_current(cls) -> str:
+        """获取启动画面的字体家族设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.get_splash_font_family(current_language)
+    
+    @classmethod
+    def get_splash_font_size_current(cls, font_type: str) -> int:
+        """获取启动画面的字体大小设置（自动使用当前语言）"""
+        current_language = get_language()
+        return cls.get_splash_font_size(current_language, font_type)
+
+
+def get_pin_button_font_size() -> int:
+    """获取钉住按钮的字体大小设置（自动使用当前语言）"""
+    return FontConfig.get_pin_button_font_size()
+
+def get_pin_button_font_family() -> str:
+    """获取钉住按钮的字体家族设置（自动使用当前语言）"""
+    return FontConfig.get_pin_button_font_family()
+
+def get_function_button_font_size() -> int:
+    """获取功能按钮的字体大小设置（自动使用当前语言）"""
+    return FontConfig.get_function_button_font_size()
+
+def get_info_bar_font_size() -> int:
+    """获取信息栏的字体大小设置（自动使用当前语言）"""
+    return FontConfig.get_info_bar_font_size()
+
+def get_move_button_font() -> str:
+    """获取移动按钮的字体设置（自动使用当前语言）"""
+    return FontConfig.get_move_button_font()
+
+def get_splash_font_family() -> str:
+    """获取启动画面的字体家族设置（自动使用当前语言）"""
+    return FontConfig.get_splash_font_family_current()
+
+def get_splash_font_size(font_type: str) -> int:
+    """获取启动画面的字体大小设置（自动使用当前语言）"""
+    return FontConfig.get_splash_font_size_current(font_type)

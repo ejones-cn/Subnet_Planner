@@ -70,11 +70,13 @@ from style_manager import (
     init_style_manager,
     update_styles,
     get_current_font_settings,
+    get_style_manager,
+)
+from font_config import (
     get_pin_button_font_size,
     get_function_button_font_size,
     get_info_bar_font_size,
     get_move_button_font,
-    get_style_manager,
 )
 
 # 尝试导入DateEntry，如果失败则设置为None
@@ -13732,68 +13734,76 @@ class SubnetPlannerApp:
         if networks:
             return
         
-        # 添加大网段
-        self.ipam.add_network('10.0.0.0/8', '集团网段')
-        self.ipam.add_network('192.168.0.0/16', '办公网段')
+        from i18n import get_language, translator
+        current_lang = get_language()
         
-        # 添加中网段
-        self.ipam.add_network('10.0.0.0/16', '总部网段')
-        self.ipam.add_network('192.168.1.0/24', '办公室网段')
+        # 获取当前语言的样例网络数据
+        sample_networks = translator.translations.get('sample_networks', {}).get(current_lang, [])
+        if not sample_networks:
+            # 如果当前语言没有样例数据，使用默认数据
+            sample_networks = [
+                ['10.0.0.0/8', 'Corporate Network'],
+                ['192.168.0.0/16', 'Office Network'],
+                ['10.0.0.0/16', 'Headquarters Network'],
+                ['192.168.1.0/24', 'Office Room Network'],
+                ['10.0.0.0/24', 'Server Network'],
+                ['10.0.1.0/24', 'HR Department Network'],
+                ['10.0.2.0/24', 'Employee Wireless Network'],
+                ['2001:db8::/32', 'Corporate IPv6 Network'],
+                ['fd00::/16', 'Internal IPv6 Network'],
+                ['2001:db8:1::/48', 'Headquarters IPv6 Network'],
+                ['fd00:1::/48', 'Office IPv6 Network'],
+                ['2001:db8:1:1::/64', 'Server IPv6 Network'],
+                ['2001:db8:1:2::/64', 'HR Department IPv6 Network'],
+                ['fd00:1:1::/64', 'Employee Wireless IPv6 Network']
+            ]
         
-        # 添加小网段
-        self.ipam.add_network('10.0.0.0/24', '服务器网段')
-        self.ipam.add_network('10.0.1.0/24', '人事部网段')
-        self.ipam.add_network('10.0.2.0/24', '员工无线网段')
+        # 添加样例网络
+        for network in sample_networks:
+            if len(network) >= 2:
+                network_address, description = network[0], network[1]
+                self.ipam.add_network(network_address, description)
         
-        # 为办公室网络分配一些IP地址
-        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.10', 'PC-001', '总经理办公室')
-        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.11', 'PC-002', '技术部经理')
-        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.20', 'PC-003', '技术部员工')
-        self.ipam.allocate_ip('192.168.1.0/24', '192.168.1.21', 'PC-004', '技术部员工')
-        self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.1', '路由器', '')
-        self.ipam.reserve_ip('192.168.1.0/24', '192.168.1.254', '网关', '')
+        # 获取当前语言的样例IP数据
+        sample_ips = translator.translations.get('sample_ips', {}).get(current_lang, [])
+        if not sample_ips:
+            # 如果当前语言没有样例数据，使用默认数据
+            sample_ips = [
+                ['192.168.1.0/24', '192.168.1.10', 'PC-001', 'General Manager Office'],
+                ['192.168.1.0/24', '192.168.1.11', 'PC-002', 'Technical Department Manager'],
+                ['192.168.1.0/24', '192.168.1.20', 'PC-003', 'Technical Department Employee'],
+                ['192.168.1.0/24', '192.168.1.21', 'PC-004', 'Technical Department Employee'],
+                ['192.168.1.0/24', '192.168.1.1', 'Router', ''],
+                ['192.168.1.0/24', '192.168.1.254', 'Gateway', ''],
+                ['10.0.0.0/24', '10.0.0.10', 'Server-001', 'File Server'],
+                ['10.0.0.0/24', '10.0.0.11', 'Server-002', 'Database Server'],
+                ['10.0.0.0/24', '10.0.0.12', 'Server-003', 'Web Server'],
+                ['10.0.0.0/24', '10.0.0.1', 'Router', ''],
+                ['10.0.0.0/24', '10.0.0.254', 'Gateway', ''],
+                ['10.0.1.0/24', '10.0.1.10', 'HR-001', 'HR Manager'],
+                ['10.0.1.0/24', '10.0.1.11', 'HR-002', 'HR Staff'],
+                ['2001:db8:1:1::/64', '2001:db8:1:1::10', 'Server-IPv6-001', 'File Server'],
+                ['2001:db8:1:1::/64', '2001:db8:1:1::11', 'Server-IPv6-002', 'Database Server'],
+                ['2001:db8:1:1::/64', '2001:db8:1:1::12', 'Server-IPv6-003', 'Web Server'],
+                ['2001:db8:1:1::/64', '2001:db8:1:1::1', 'Router', ''],
+                ['2001:db8:1:1::/64', '2001:db8:1:1::ffff', 'Gateway', ''],
+                ['2001:db8:1:2::/64', '2001:db8:1:2::10', 'HR-IPv6-001', 'HR Manager'],
+                ['2001:db8:1:2::/64', '2001:db8:1:2::11', 'HR-IPv6-002', 'HR Staff'],
+                ['fd00:1:1::/64', 'fd00:1:1::10', 'WiFi-001', 'Wireless Terminal 1'],
+                ['fd00:1:1::/64', 'fd00:1:1::11', 'WiFi-002', 'Wireless Terminal 2'],
+                ['fd00:1:1::/64', 'fd00:1:1::1', 'Wireless Router', '']
+            ]
         
-        # 为服务器网络分配一些IP地址
-        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.10', 'Server-001', '文件服务器')
-        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.11', 'Server-002', '数据库服务器')
-        self.ipam.allocate_ip('10.0.0.0/24', '10.0.0.12', 'Server-003', 'Web服务器')
-        self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.1', '路由器', '')
-        self.ipam.reserve_ip('10.0.0.0/24', '10.0.0.254', '网关', '')
-        
-        # 为人事部网络分配一些IP地址
-        self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.10', 'HR-001', '人事主管')
-        self.ipam.allocate_ip('10.0.1.0/24', '10.0.1.11', 'HR-002', '人事专员')
-        
-        # ========== IPv6 样例数据 ==========
-        
-        # 添加大网段
-        self.ipam.add_network('2001:db8::/32', '集团IPv6网段')
-        self.ipam.add_network('fd00::/16', '内部IPv6网段')
-        
-        # 添加中网段
-        self.ipam.add_network('2001:db8:1::/48', '总部IPv6网段')
-        self.ipam.add_network('fd00:1::/48', '办公IPv6网段')
-        
-        # 添加小网段
-        self.ipam.add_network('2001:db8:1:1::/64', '服务器IPv6网段')
-        self.ipam.add_network('2001:db8:1:2::/64', '人事部IPv6网段')
-        self.ipam.add_network('fd00:1:1::/64', '员工无线IPv6网段')
-        
-        # 为服务器IPv6网络分配IP地址
-        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::10', 'Server-IPv6-001', '文件服务器')
-        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::11', 'Server-IPv6-002', '数据库服务器')
-        self.ipam.allocate_ip('2001:db8:1:1::/64', '2001:db8:1:1::12', 'Server-IPv6-003', 'Web服务器')
-        self.ipam.reserve_ip('2001:db8:1:1::/64', '2001:db8:1:1::1', '路由器', '')
-        self.ipam.reserve_ip('2001:db8:1:1::/64', '2001:db8:1:1::ffff', '网关', '')
-        
-        # 为人事部IPv6网络分配IP地址
-        self.ipam.allocate_ip('2001:db8:1:2::/64', '2001:db8:1:2::10', 'HR-IPv6-001', '人事主管')
-        self.ipam.allocate_ip('2001:db8:1:2::/64', '2001:db8:1:2::11', 'HR-IPv6-002', '人事专员')
-        
-        # 为员工无线IPv6网络分配IP地址
-        self.ipam.allocate_ip('fd00:1:1::/64', 'fd00:1:1::10', 'WiFi-001', '无线终端1')
-        self.ipam.allocate_ip('fd00:1:1::/64', 'fd00:1:1::11', 'WiFi-002', '无线终端2')
-        self.ipam.reserve_ip('fd00:1:1::/64', 'fd00:1:1::1', '无线路由器', '')
+        # 添加样例IP地址
+        for ip_data in sample_ips:
+            if len(ip_data) >= 4:
+                network, ip_address, hostname, description = ip_data[0], ip_data[1], ip_data[2], ip_data[3]
+                if hostname in ['路由器', '网关', '无线路由器', 'Router', 'Gateway', 'Wireless Router', 'ルーター', 'ゲートウェイ', '無線ルーター', '라우터', '게이트웨이', '무선 라우터']:
+                    # 保留地址
+                    self.ipam.reserve_ip(network, ip_address, hostname, description)
+                else:
+                    # 分配地址
+                    self.ipam.allocate_ip(network, ip_address, hostname, description)
         
         # 刷新IPAM数据
         self.refresh_ipam_networks()
