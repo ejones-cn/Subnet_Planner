@@ -13800,8 +13800,12 @@ class SubnetPlannerApp:
         # 读取翻译文件获取设备名称列表（使用全局缓存避免重复读取）
         if not hasattr(self, '_translations_cache'):
             translations_file = os.path.join(os.path.dirname(__file__), 'translations.json')
-            with open(translations_file, 'r', encoding='utf-8') as f:
-                self._translations_cache = json.load(f)
+            try:
+                with open(translations_file, 'r', encoding='utf-8') as f:
+                    self._translations_cache = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                print(f"Failed to load translations: {e}")
+                self._translations_cache = {}
         
         reserved_device_names = self._translations_cache.get('sample_device_names', {}).get(current_language, [])
         
