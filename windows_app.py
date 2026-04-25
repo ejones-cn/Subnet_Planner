@@ -2781,8 +2781,8 @@ class SubnetPlannerApp:
         self.setup_ipam_page()
 
         # 添加顶级标签页（传入tab_id以支持跨语言保存标签次序）
-        self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec", tab_id="subnet_planning")
         self.top_level_notebook.add_tab(_("ip_address_management"), self.ipam_frame, "#e3f2fd", tab_id="ip_address_management")
+        self.top_level_notebook.add_tab(_("subnet_planning"), self.planning_frame, "#fce4ec", tab_id="subnet_planning")
         self.top_level_notebook.add_tab(_("subnet_split"), self.split_frame, "#fff3e0", tab_id="subnet_split")
         self.top_level_notebook.add_tab(_("advanced_tools"), self.advanced_frame, "#e8f5e9", tab_id="advanced_tools")
 
