@@ -6,7 +6,54 @@
 提供窗口设置和管理相关的辅助功能
 """
 
+import os
+import sys
 import tkinter as tk
+
+
+def get_app_directory() -> str:
+    """获取应用程序所在目录
+    
+    优先使用 sys.argv[0]（最可靠的方法，适用于所有打包方式）
+    其次使用 Windows API ctypes（仅限 Windows 平台）
+    最后回退到 __file__（开发环境）
+    
+    Returns:
+        应用程序所在目录的绝对路径
+    """
+    app_dir = None
+    
+    # 优先使用 sys.argv[0]（这是最可靠的方法）
+    if sys.argv and sys.argv[0]:
+        exe_path = sys.argv[0]
+        if not os.path.isabs(exe_path):
+            exe_path = os.path.abspath(exe_path)
+        if os.path.exists(exe_path):
+            app_dir = os.path.dirname(exe_path)
+    
+    # 如果 sys.argv[0] 不可用，尝试使用 ctypes（仅限Windows平台）
+    if app_dir is None and sys.platform == 'win32':
+        try:
+            import ctypes
+            from ctypes import wintypes
+            
+            GetModuleFileNameW = ctypes.windll.kernel32.GetModuleFileNameW
+            GetModuleFileNameW.argtypes = [wintypes.HMODULE, wintypes.LPWSTR, wintypes.DWORD]
+            GetModuleFileNameW.restype = wintypes.DWORD
+            
+            buffer = ctypes.create_unicode_buffer(260)
+            if GetModuleFileNameW(None, buffer, 260) > 0:
+                exe_path = buffer.value
+                if os.path.exists(exe_path):
+                    app_dir = os.path.dirname(exe_path)
+        except Exception:
+            pass
+    
+    # 如果以上都失败，使用 __file__（开发环境）
+    if app_dir is None:
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    return app_dir
 
 
 def setup_window_settings(root: tk.Tk, width: int = 1050, height: int = 950, lock_width: bool = True, min_width: int = 1050, min_height: int = 950, max_width: int = 10000, max_height: int = 10000, position: tuple[int, int] | None = None) -> None:

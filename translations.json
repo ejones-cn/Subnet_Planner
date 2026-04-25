@@ -651,6 +651,13 @@
     "ja": "テーマ切り替え",
     "ko": "테마 전환"
   },
+  "theme_switch_error": {
+    "zh": "主题切换出错",
+    "zh_tw": "主題切換出錯",
+    "en": "Theme switch error",
+    "ja": "テーマ切り替えエラー",
+    "ko": "테마 전환 오류"
+  },
   "select_theme": {
     "zh": "选择主题",
     "zh_tw": "選擇主題",

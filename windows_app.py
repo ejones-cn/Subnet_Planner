@@ -8491,6 +8491,11 @@ class SubnetPlannerApp:
             try:
                 # 使用系统内置主题切换，彻底移除sv-ttk，解决黑色底色问题
                 self.style.theme_use(new_theme)
+                
+                # theme_use() 会重置所有样式，需要重新应用全局字体设置
+                from style_manager import update_styles
+                update_styles()
+                
                 # 重新配置Treeview样式，确保在新主题下表格线仍然可见
                 tree_names = [
                     'split_tree',
@@ -8544,7 +8549,7 @@ class SubnetPlannerApp:
                 config = get_config()
                 config.set_ui_theme(new_theme)
             except (tk.TclError, AttributeError) as e:
-                print(f"主题切换出错: {e}")
+                print(f"{_('theme_switch_error')}: {e}")
                 # 出错时恢复到默认主题
                 self.style.theme_use("vista")
 
@@ -18511,17 +18516,17 @@ def load_application(splash, root):
     
     # 定义加载模块列表
     modules = [
-        (_("config_file"), 0.6),
-        (_("i18n_resources"), 0.4),
-        (_("database_init"), 0.8),
-        (_("ui_components"), 0.6),
-        (_("network_services"), 0.6),
-        (_("plugin_system"), 0.4),
-        (_("style_system"), 0.4),
-        (_("history"), 0.4),
-        (_("user_settings"), 0.4),
-        (_("app_instance"), 0.8),
-        (_("loading_complete"), 1.0)
+        (_("config_file"), 0.8),
+        (_("i18n_resources"), 0.6),
+        (_("database_init"), 1.0),
+        (_("ui_components"), 0.8),
+        (_("network_services"), 0.8),
+        (_("plugin_system"), 0.6),
+        (_("style_system"), 0.6),
+        (_("history"), 0.6),
+        (_("user_settings"), 0.6),
+        (_("app_instance"), 1.0),
+        (_("loading_complete"), 1.2)
     ]
     
     print(_("start_loading"))

@@ -16,6 +16,7 @@ from typing import Any
 # 导入国际化模块
 from i18n import translate as _
 from validators import IPAMValidator
+from window_utils import get_app_directory
 
 import ipaddress
 from ip_subnet_calculator import ip_to_int
@@ -31,7 +32,7 @@ class IPAMSQLite:
             db_file: 数据库文件路径，为None时自动使用程序所在目录
         """
         # 获取应用程序所在目录（确保在单文件模式下也能正确获取）
-        self.app_dir: str = self._get_app_directory()
+        self.app_dir: str = get_app_directory()
         
         if db_file is None:
             # 使用应用程序目录作为数据库位置
@@ -44,46 +45,6 @@ class IPAMSQLite:
         if not os.path.exists(self.backup_dir):
             os.makedirs(self.backup_dir)
         self.init_db()
-    
-    def _get_app_directory(self) -> str:
-        """获取应用程序所在目录
-        
-        Returns:
-            str: 应用程序所在目录路径
-        """
-        app_dir = None
-        
-        # 优先使用 sys.argv[0]（这是最可靠的方法）
-        if sys.argv and sys.argv[0]:
-            exe_path = sys.argv[0]
-            if not os.path.isabs(exe_path):
-                exe_path = os.path.abspath(exe_path)
-            if os.path.exists(exe_path):
-                app_dir = os.path.dirname(exe_path)
-        
-        # 如果 sys.argv[0] 不可用，尝试使用 ctypes（仅限Windows平台）
-        if app_dir is None and sys.platform == 'win32':
-            try:
-                import ctypes
-                from ctypes import wintypes
-                
-                GetModuleFileNameW = ctypes.windll.kernel32.GetModuleFileNameW
-                GetModuleFileNameW.argtypes = [wintypes.HMODULE, wintypes.LPWSTR, wintypes.DWORD]
-                GetModuleFileNameW.restype = wintypes.DWORD
-                
-                buffer = ctypes.create_unicode_buffer(260)
-                if GetModuleFileNameW(None, buffer, 260) > 0:
-                    exe_path = buffer.value
-                    if os.path.exists(exe_path):
-                        app_dir = os.path.dirname(exe_path)
-            except Exception:
-                pass
-        
-        # 如果以上都失败，使用 __file__（非单文件模式）
-        if app_dir is None:
-            app_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        return app_dir
     
     def init_db(self) -> None:
         """初始化数据库"""
@@ -2739,7 +2700,7 @@ class IPAMSQLite:
             backup_list: list[dict[str, Any]] = []
             backup_names = set()
             
-            # 添加数据库中的备份记录
+            # 添加数据库中的备份记录（仅包含实际文件存在的记录）
             for backup_row in backup_rows:
                 if isinstance(backup_row, tuple) and len(backup_row) >= 6:
                     int(backup_row[0])  # backup_id 未使用
@@ -2748,6 +2709,21 @@ class IPAMSQLite:
                     backup_time: str = str(backup_row[3])
                     network_count: int = int(backup_row[4])
                     ip_count: int = int(backup_row[5])
+                    
+                    # 检查备份文件是否实际存在
+                    abs_backup_path = self._get_absolute_backup_path(backup_path)
+                    if not os.path.exists(abs_backup_path):
+                        # 文件不存在，从数据库中删除该记录
+                        try:
+                            del_conn = sqlite3.connect(self.db_file)
+                            del_cursor = del_conn.cursor()
+                            del_cursor.execute('DELETE FROM backups WHERE backup_name = ?', (backup_name,))
+                            del_conn.commit()
+                            del_conn.close()
+                        except Exception:
+                            pass
+                        continue
+                    
                     backup_list.append({
                         'filename': backup_name,
                         'file_path': backup_path,
