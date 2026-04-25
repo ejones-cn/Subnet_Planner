@@ -13794,11 +13794,25 @@ class SubnetPlannerApp:
                 ['fd00:1:1::/64', 'fd00:1:1::1', 'Wireless Router', '']
             ]
         
+        # 从翻译系统获取保留设备名称列表
+        from i18n import get_language
+        import json
+        import os
+        
+        # 读取翻译文件获取设备名称列表
+        translations_file = os.path.join(os.path.dirname(__file__), 'translations.json')
+        with open(translations_file, 'r', encoding='utf-8') as f:
+            translations = json.load(f)
+        
+        # 获取当前语言的保留设备名称
+        current_language = get_language()
+        reserved_device_names = translations.get('sample_device_names', {}).get(current_language, [])
+        
         # 添加样例IP地址
         for ip_data in sample_ips:
             if len(ip_data) >= 4:
                 network, ip_address, hostname, description = ip_data[0], ip_data[1], ip_data[2], ip_data[3]
-                if hostname in ['路由器', '网关', '无线路由器', 'Router', 'Gateway', 'Wireless Router', 'ルーター', 'ゲートウェイ', '無線ルーター', '라우터', '게이트웨이', '무선 라우터']:
+                if hostname in reserved_device_names:
                     # 保留地址
                     self.ipam.reserve_ip(network, ip_address, hostname, description)
                 else:
