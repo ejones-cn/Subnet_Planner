@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import Canvas, Frame
 import math
 import ipaddress
-from style_manager import get_current_font_settings
+from style_manager import get_current_font_settings, get_canvas_font_settings
 from version import get_version
 
 # 直接从 i18n 模块导入翻译函数，并重命名为 translate 以避免与局部变量冲突
@@ -36,12 +36,16 @@ SPLIT_COLOR = "#4a7eb4"
 
 
 def _get_font_settings() -> tuple[str, int]:
-    """获取当前语言的字体设置
+    """获取当前语言的Canvas字体设置
+
+    Canvas create_text 使用 Tk 内置文本渲染引擎，不会像 ttk 控件那样
+    在字体回退时进行度量同步。因此需要使用具有全面 CJK 覆盖的字体，
+    避免因字体回退导致的字符粗细大小不一致问题。
 
     Returns:
         tuple: (字体名称, 字体大小)
     """
-    return get_current_font_settings()
+    return get_canvas_font_settings()
 
 
 def _calculate_bar_width(network_range: float, log_min: float, log_max: float, chart_width: float, min_bar_width: float) -> float:

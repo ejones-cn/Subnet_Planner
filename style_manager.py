@@ -31,7 +31,7 @@ class StyleManager:
     BUTTON_PADDING_SETTINGS = {
         "zh": (0, 1),
         "zh_tw": (0, 2),
-        "ja": (2, 4),
+        "ja": (2, 1),
         "ko": (2, 2),
         "default": (3, 3)
     }
@@ -48,8 +48,8 @@ class StyleManager:
     # 标签页垂直内边距设置映射表（用于 ColoredNotebook）
     TAB_VERTICAL_PADDING_SETTINGS = {
         "zh": 2,
-        "zh_tw": 4,
-        "ja": 6,
+        "zh_tw": 2,
+        "ja": 1,
         "ko": 2,
         "default": 4
     }
@@ -230,7 +230,7 @@ class StyleManager:
         self.style.configure("Move.TButton", **move_button_style, padding=button_padding)  # type: ignore
 
         # 滚动条样式
-        scrollbar_style = {"width": 3}
+        scrollbar_style = {"width": 1}
         for scrollbar_type in ["TScrollbar", "Vertical.TScrollbar", "Horizontal.TScrollbar"]:
             self.style.configure(scrollbar_type, **scrollbar_style)
 
@@ -320,6 +320,20 @@ def get_current_font_settings():
         return style_manager.get_current_font_settings()
     current_language = get_language()
     return FontConfig.get_ui_font_settings(current_language)
+
+
+def get_canvas_font_settings():
+    """获取当前语言的Canvas字体设置
+
+    Canvas create_text 使用 Tk 内置文本渲染引擎，不会像 ttk 控件那样
+    在字体回退时进行度量同步。因此需要使用具有全面 CJK 覆盖的字体，
+    避免因字体回退导致的字符粗细大小不一致问题。
+
+    Returns:
+        tuple: (字体名称, 字体大小)
+    """
+    current_language = get_language()
+    return FontConfig.get_canvas_font_settings(current_language)
 
 
 

@@ -10074,6 +10074,17 @@ class SubnetPlannerApp:
         # 重新创建所有UI元素，实现语言更新
         self.destroy_all_widgets()
         self.recreate_ui()
+        
+        # 重新绘制拓扑图，应用新的字体设置
+        if hasattr(self, 'topology_visualizer'):
+            # 尝试获取当前选中的网络
+            selected_network = None
+            if hasattr(self, 'ipam_network_tree'):
+                selected_items = self.ipam_network_tree.selection()
+                if selected_items:
+                    selected_network = self.ipam_network_tree.item(selected_items[0], 'values')[0]
+            # 刷新可视化
+            self.refresh_visualization(selected_network)
     
     def destroy_all_widgets(self):
         """销毁所有子组件"""

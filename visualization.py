@@ -38,7 +38,7 @@ import ipaddress
 import tkinter as tk
 from tkinter import Canvas
 from typing import Callable, Any
-from style_manager import get_current_font_settings
+from style_manager import get_current_font_settings, get_canvas_font_settings
 from i18n import _
 
 # 模块版本
@@ -1018,14 +1018,14 @@ class NetworkTopologyVisualizer:
         gradient_items = shape_tuple[1] if len(shape_tuple) > 1 else []
         shadow_items = shape_tuple[2] if len(shape_tuple) > 2 else []
         
-        # 获取字体设置
-        font_family, font_size = get_current_font_settings()
+        # 获取Canvas专用字体设置（使用具有全面CJK覆盖的字体，避免字体回退导致字符粗细大小不一致）
+        font_family, font_size = get_canvas_font_settings()
         
         # 创建节点文本
         text_id = self.canvas.create_text(
-            x + NODE_WIDTH / 2, y + NODE_HEIGHT / 4,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.2,
             text=name,
-            font=(font_family, font_size - 2, "bold"),
+            font=(font_family, font_size),
             fill=TEXT_COLOR
         )
         
@@ -1035,9 +1035,9 @@ class NetworkTopologyVisualizer:
             subnet_text = subnet_text[:17] + "..."
         
         subnet_id = self.canvas.create_text(
-            x + NODE_WIDTH / 2, y + NODE_HEIGHT / 2,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.5,
             text=subnet_text,
-            font=(font_family, font_size - 3),
+            font=(font_family, font_size - 2),
             fill=TEXT_COLOR
         )
         
@@ -1055,9 +1055,9 @@ class NetworkTopologyVisualizer:
             ip_info_text = f"{used_ips_str}/{total_ips_str}"
         
         ip_info_id = self.canvas.create_text(
-            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 3 / 4,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.8,
             text=ip_info_text,
-            font=(font_family, font_size - 4),
+            font=(font_family, font_size - 3),
             fill=TEXT_COLOR
         )
         
@@ -1987,8 +1987,8 @@ class NetworkTopologyVisualizer:
         
         self.tooltip.bind("<Leave>", on_tooltip_leave)
         
-        # 获取字体设置
-        font_family, font_size = get_current_font_settings()
+        # 获取Canvas专用字体设置（tooltip也使用Canvas专用字体，确保CJK字符一致）
+        font_family, font_size = get_canvas_font_settings()
         
         # 添加提示文本
         tk.Label(
@@ -2175,7 +2175,7 @@ class NetworkTopologyVisualizer:
             relief=tk.FLAT,
             padx=4,
             pady=2,
-            font=("Arial", 10),
+            font=("Segoe UI", 10),
             cursor="hand2"
         )
         self.fullscreen_button.place(relx=1.0, rely=0.0, x=-12, y=12, anchor=tk.NE)
@@ -2314,7 +2314,7 @@ class NetworkTopologyVisualizer:
             relief=tk.FLAT,
             padx=4,
             pady=2,
-            font=("Arial", 10),
+            font=("Segoe UI", 10),
             cursor="hand2",
             activebackground="#c0392b"
         )
@@ -2470,7 +2470,7 @@ class NetworkTopologyVisualizer:
             relief=tk.FLAT,
             padx=8,
             pady=4,
-            font=("Arial", 12, "bold"),
+            font=("Segoe UI", 12, "bold"),
             cursor="hand2"
         )
         self.zoom_in_button = zoom_in
@@ -2489,7 +2489,7 @@ class NetworkTopologyVisualizer:
             relief=tk.FLAT,
             padx=8,
             pady=4,
-            font=("Arial", 12, "bold"),
+            font=("Segoe UI", 12, "bold"),
             cursor="hand2"
         )
         self.zoom_out_button = zoom_out
@@ -2508,7 +2508,7 @@ class NetworkTopologyVisualizer:
             relief=tk.FLAT,
             padx=8,
             pady=4,
-            font=("Arial", 12),
+            font=("Segoe UI", 12),
             cursor="hand2"
         )
         self.reset_button = reset
@@ -2522,7 +2522,7 @@ class NetworkTopologyVisualizer:
             text=f"{int(self.scale * 100)}%",
             bg="#34495e",
             fg="white",
-            font=("Arial", 10),
+            font=("Segoe UI", 10),
             padx=6,
             pady=2,
             width=4

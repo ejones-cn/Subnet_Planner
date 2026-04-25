@@ -97,8 +97,20 @@ class FontConfig:
     UI_FONT_SETTINGS: dict[str, tuple[str, int]] = {
         "zh": ("微软雅黑", 11),
         "zh_tw": ("Microsoft JhengHei", 11),
-        "ja": ("MS Gothic", 11),
+        "ja": ("Meiryo", 10),
         "ko": ("Malgun Gothic", 11),
+        "default": ("Segoe UI", 10)
+    }
+    
+    # Canvas 专用字体配置
+    # Tk Canvas create_text 使用 Tk 内置文本渲染引擎，不会像 ttk 控件那样
+    # 在字体回退时进行度量同步，导致回退字符与主字体字符粗细大小不一致。
+    # 因此 Canvas 需要使用具有全面 CJK 覆盖的字体，避免字体回退。
+    CANVAS_FONT_SETTINGS: dict[str, tuple[str, int]] = {
+        "zh": ("微软雅黑", 11),
+        "zh_tw": ("Microsoft JhengHei", 11),
+        "ja": ("微软雅黑", 10),
+        "ko": ("微软雅黑", 11),
         "default": ("Segoe UI", 10)
     }
     
@@ -165,7 +177,7 @@ class FontConfig:
             }
         },
         "ja": {
-            "font": "MS Gothic",
+            "font": "Meiryo",
             "sizes": {
                 "title": 30,
                 "version": 12,
@@ -222,6 +234,22 @@ class FontConfig:
     def get_ui_font_settings(cls, language: str) -> tuple[str, int]:
         """获取UI字体设置"""
         return cls.UI_FONT_SETTINGS.get(language, cls.UI_FONT_SETTINGS["default"])
+
+    @classmethod
+    def get_canvas_font_settings(cls, language: str) -> tuple[str, int]:
+        """获取Canvas字体设置
+        
+        Canvas create_text 使用 Tk 内置文本渲染引擎，不会像 ttk 控件那样
+        在字体回退时进行度量同步。因此需要使用具有全面 CJK 覆盖的字体，
+        避免因字体回退导致的字符粗细大小不一致问题。
+        
+        Args:
+            language: 当前语言代码
+            
+        Returns:
+            tuple: (字体名称, 字体大小)
+        """
+        return cls.CANVAS_FONT_SETTINGS.get(language, cls.CANVAS_FONT_SETTINGS["default"])
 
     @classmethod
     def get_font_test_text(cls, language: str) -> str:
