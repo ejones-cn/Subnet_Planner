@@ -6,6 +6,7 @@ from PIL import ImageFont
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from font_config import FontConfig  # noqa: E402
+from i18n import _  # noqa: E402
 
 
 class FontManager:
@@ -24,11 +25,11 @@ class FontManager:
             if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
                 if hasattr(pdfmetrics, '_fonts') and "ChineseFont" in pdfmetrics._fonts:  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                     del pdfmetrics._fonts["ChineseFont"]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
-                    print("🧹 已清除 ReportLab PDF 字体注册")
+                    print(_("font_cleared_pdf"))
         except Exception as e:
-            print(f"⚠️ 清除 PDF 字体注册时出现警告: {e}")
+            print(_("font_clear_warning", e=str(e)))
 
-        print("🧹 已清除字体缓存")
+        print(_("font_cache_cleared"))
 
     def __init__(self) -> None:
         self.has_asian_font: bool = False
@@ -39,23 +40,23 @@ class FontManager:
         current_lang = get_language()
 
         if FontManager._font_path_lang == current_lang and FontManager._font_path_cache:
-            print(f"🔍 [init] 使用已注册的字体缓存 (语言: {current_lang})")
+            print(_("font_using_cached", current_lang=current_lang))
             self.has_asian_font = True
         else:
-            print(f"[init] 字体将在导出PDF时注册 (语言: {current_lang})")
+            print(_("font_will_register", current_lang=current_lang))
             self.has_asian_font = False
 
     def register_pdf_fonts(self) -> bool:
         from i18n import get_language
         current_lang = get_language()
-        print(f"🔍 导出PDF时当前语言: {current_lang}")
+        print(_("font_pdf_current_lang", current_lang=current_lang))
 
         if FontManager._font_path_lang == current_lang and FontManager._font_path_cache:
-            print(f"🔍 使用已注册的PDF字体缓存 (语言: {current_lang})")
+            print(_("font_using_cached_pdf", current_lang=current_lang))
             self.has_asian_font = True
             return True
 
-        print(f"🔍 语言已切换或无缓存，需要重新注册字体 (旧语言: {FontManager._font_path_lang}, 新语言: {current_lang})")
+        print(_("font_need_reregister", old_lang=FontManager._font_path_lang or "None", new_lang=current_lang))
 
         font_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
 
@@ -70,25 +71,25 @@ class FontManager:
             potential_path = os.path.join(font_dir, font_file)
             if os.path.exists(potential_path):
                 font_path = potential_path
-                print(f"🔍 找到可用字体: {font_file} 在 {font_path}")
+                print(_("font_found", font_file=font_file, font_path=font_path))
                 break
             else:
-                print(f"⚠️ 字体文件不存在: {potential_path}")
+                print(_("font_not_found", potential_path=potential_path))
 
         if font_path:
             try:
-                print(f"🔍 尝试注册字体: {font_path}")
-                print(f"🔍 当前已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+                print(_("font_try_register", font_path=font_path))
+                print(_("font_current_registered", font_names=pdfmetrics.getRegisteredFontNames()))
 
                 font_name = "ChineseFont"
                 if font_name in pdfmetrics.getRegisteredFontNames():
-                    print(f"🔍 字体 '{font_name}' 已注册,先删除再重新注册")
+                    print(_("font_already_registered", font_name=font_name))
                     try:
                         if hasattr(pdfmetrics, '_fonts') and font_name in pdfmetrics._fonts:  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                             del pdfmetrics._fonts[font_name]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
-                            print("🔍 已删除旧的字体注册")
+                            print(_("font_old_deleted"))
                     except Exception as del_error:
-                        print(f"⚠️ 删除旧字体时出现警告: {del_error}")
+                        print(_("font_delete_warning", del_error=str(del_error)))
 
                 pdfmetrics.registerFont(TTFont(font_name, font_path))
                 self.has_asian_font = True
@@ -96,33 +97,33 @@ class FontManager:
                 FontManager._font_path_cache = font_path
                 FontManager._font_path_lang = current_lang
 
-                print(f"✅ 成功注册字体: {os.path.basename(font_path)} 作为 {font_name}")
-                print(f"🔍 注册后已注册字体: {pdfmetrics.getRegisteredFontNames()}")
+                print(_("font_registered_success", font_file=os.path.basename(font_path), font_name=font_name))
+                print(_("font_registered_after", font_names=pdfmetrics.getRegisteredFontNames()))
 
                 test_text = FontConfig.get_font_test_text(current_lang)
                 try:
                     from reportlab.pdfbase.pdfmetrics import stringWidth
                     width = stringWidth(test_text, font_name, 10)
-                    print(f"✅ 字体测试通过: '{test_text}' 宽度={width}")
+                    print(_("font_test_passed", test_text=test_text, width=width))
                 except Exception as test_error:
-                    print(f"⚠️ 字体测试失败: {test_error}")
+                    print(_("font_test_failed", test_error=str(test_error)))
 
             except Exception as e:
-                print(f"❌ 注册字体失败: {e}")
-                print(f"❌ 异常类型: {type(e).__name__}")
+                print(_("font_register_failed", e=str(e)))
+                print(_("font_exception_type", exception_type=type(e).__name__))
                 traceback.print_exc()
 
                 if "ChineseFont" in pdfmetrics.getRegisteredFontNames():
-                    print("🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)")
+                    print(_("font_use_previous"))
                     self.has_asian_font = True
                 else:
-                    print("🔍 无可用字体,将使用默认字体(Helvetica)")
+                    print(_("font_use_default"))
                     self.has_asian_font = False
         else:
-            print("🔍 未找到合适字体，将使用默认字体")
+            print(_("font_no_suitable"))
             self.has_asian_font = False
 
-        print(f"🔍 使用的主要字体: ChineseFont, has_asian_font={self.has_asian_font}")
+        print(_("font_using_main", has_asian_font=self.has_asian_font))
         return self.has_asian_font
 
     def load_system_font(self, font_size=36, bold_offset=4, verbose=False):
@@ -130,7 +131,7 @@ class FontManager:
 
         if cache_key in FontManager._font_cache:
             if verbose:
-                print(f"使用缓存的字体 (size={font_size}, bold_offset={bold_offset})")
+                print(_("font_using_cached_system", font_size=font_size, bold_offset=bold_offset))
             return FontManager._font_cache[cache_key]
 
         font = None
@@ -153,21 +154,21 @@ class FontManager:
                         bold_font = ImageFont.truetype(font_path, size + bold_offset)
                         font_loaded = True
                         if verbose:
-                            print(f"成功加载{font_name}字体: {font_path}")
+                            print(_("font_loaded_success", font_name=font_name, font_path=font_path))
                         break
                     except (FileNotFoundError, IOError, OSError, ValueError, TypeError) as e:
                         if verbose:
-                            print(f"尝试加载{font_name}失败: {e}")
+                            print(_("font_load_failed", font_name=font_name, e=str(e)))
                         continue
 
             if not font_loaded:
                 font = ImageFont.load_default()
                 bold_font = ImageFont.load_default()
                 if verbose:
-                    print("使用默认字体")
+                    print(_("font_use_default_system"))
         except (IOError, OSError, ValueError, TypeError) as e:
             if verbose:
-                print(f"加载系统字体失败: {e}")
+                print(_("font_load_system_failed", e=str(e)))
             font = ImageFont.load_default()
             bold_font = ImageFont.load_default()
 

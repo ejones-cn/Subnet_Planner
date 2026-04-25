@@ -147,6 +147,27 @@ class StyleManager:
         """
         current_language = get_language()
         return FontConfig.get_move_button_font(current_language)
+    
+    def get_splash_font_family(self):
+        """获取当前语言的启动画面字体家族设置
+
+        Returns:
+            str: 启动画面字体家族
+        """
+        current_language = get_language()
+        return FontConfig.get_splash_font_family(current_language)
+    
+    def get_splash_font_size(self, font_type):
+        """获取当前语言的启动画面字体大小设置
+
+        Args:
+            font_type: 字体类型，支持 "title", "version", "status", "loading"
+
+        Returns:
+            int: 启动画面字体大小
+        """
+        current_language = get_language()
+        return FontConfig.get_splash_font_size(current_language, font_type)
 
     def get_tab_width(self):
         """获取当前语言的标签宽度设置
@@ -405,3 +426,25 @@ def get_move_button_font():
     """
     current_language = get_language()
     return FontConfig.get_move_button_font(current_language)
+
+
+def get_splash_font_family():
+    """获取当前语言的启动画面字体家族设置
+
+    Returns:
+        str: 启动画面字体家族
+    """
+    current_language = get_language()
+    return FontConfig.get_splash_font_family(current_language)
+
+def get_splash_font_size(font_type):
+    """获取当前语言的启动画面字体大小设置
+
+    Args:
+        font_type: 字体类型，支持 "title", "version", "status", "loading"
+
+    Returns:
+        int: 启动画面字体大小
+    """
+    current_language = get_language()
+    return FontConfig.get_splash_font_size(current_language, font_type)

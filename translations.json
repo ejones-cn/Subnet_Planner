@@ -192,8 +192,8 @@
   "subnet_planner": {
     "zh": "子网规划师",
     "zh_tw": "子網規劃師",
-    "en": "Subnet Planner",
-    "ja": "サブネット計画ツール",
+    "en": "SubnetPlanner",
+    "ja": "子网計画師",
     "ko": "서브넷 플래너"
   },
   "save_subnet_split_result": {
@@ -1018,8 +1018,8 @@
   "app_name": {
     "zh": "子网规划师",
     "zh_tw": "子網規劃師",
-    "en": "Subnet Planner",
-    "ja": "サブネット計画ツール",
+    "en": "SubnetPlanner",
+    "ja": "子网計画師",
     "ko": "서브넷 플래너"
   },
   "version": {
@@ -3175,7 +3175,7 @@
     "zh": "专业的子网规划工具",
     "zh_tw": "專業的子網規劃工具",
     "en": "Professional Subnet Planning Tool",
-    "ja": "プロフェッショナルなサブネット計画ツール",
+    "ja": "プロフェッショナルな子网計画師",
     "ko": "전문 서브넷 계획 도구"
   },
   "success": {
@@ -5032,5 +5032,509 @@
     "en": "Save",
     "ja": "保存",
     "ko": "저장"
+  },
+  "splash_loading": {
+    "zh": "加载中",
+    "zh_tw": "載入中",
+    "en": "Loading",
+    "ja": "読み込み中",
+    "ko": "로딩 중"
+  },
+  "splash_loading_module": {
+    "zh": "正在加载: {module_name}",
+    "zh_tw": "正在載入: {module_name}",
+    "en": "Loading: {module_name}",
+    "ja": "読み込み中: {module_name}",
+    "ko": "로딩 중: {module_name}"
+  },
+  "font_cleared_pdf": {
+    "zh": "🧹 已清除 ReportLab PDF 字体注册",
+    "zh_tw": "🧹 已清除 ReportLab PDF 字體註冊",
+    "en": "🧹 Cleared ReportLab PDF font registration",
+    "ja": "🧹 ReportLab PDF フォント登録をクリアしました",
+    "ko": "🧹 ReportLab PDF 글꼴 등록을 삭제했습니다"
+  },
+  "font_clear_warning": {
+    "zh": "⚠️ 清除 PDF 字体注册时出现警告: {e}",
+    "zh_tw": "⚠️ 清除 PDF 字體註冊時出現警告: {e}",
+    "en": "⚠️ Warning when clearing PDF font registration: {e}",
+    "ja": "⚠️ PDF フォント登録のクリア中に警告が発生しました: {e}",
+    "ko": "⚠️ PDF 글꼴 등록 삭제 중 경고 발생: {e}"
+  },
+  "font_cache_cleared": {
+    "zh": "🧹 已清除字体缓存",
+    "zh_tw": "🧹 已清除字體快取",
+    "en": "🧹 Font cache cleared",
+    "ja": "🧹 フォントキャッシュをクリアしました",
+    "ko": "🧹 글꼴 캐시를 삭제했습니다"
+  },
+  "font_using_cached": {
+    "zh": "🔍 [init] 使用已注册的字体缓存 (语言: {current_lang})",
+    "zh_tw": "🔍 [init] 使用已註冊的字體快取 (語言: {current_lang})",
+    "en": "🔍 [init] Using registered font cache (language: {current_lang})",
+    "ja": "🔍 [init] 登録済みのフォントキャッシュを使用しています (言語: {current_lang})",
+    "ko": "🔍 [init] 등록된 글꼴 캐시를 사용합니다 (언어: {current_lang})"
+  },
+  "font_will_register": {
+    "zh": "[init] 字体将在导出PDF时注册 (语言: {current_lang})",
+    "zh_tw": "[init] 字體將在匯出PDF時註冊 (語言: {current_lang})",
+    "en": "[init] Font will be registered when exporting PDF (language: {current_lang})",
+    "ja": "[init] フォントはPDF出力時に登録されます (言語: {current_lang})",
+    "ko": "[init] 글꼴은 PDF 내보내기 시 등록됩니다 (언어: {current_lang})"
+  },
+  "font_pdf_current_lang": {
+    "zh": "🔍 导出PDF时当前语言: {current_lang}",
+    "zh_tw": "🔍 匯出PDF時目前語言: {current_lang}",
+    "en": "🔍 Current language when exporting PDF: {current_lang}",
+    "ja": "🔍 PDF出力時の現在の言語: {current_lang}",
+    "ko": "🔍 PDF 내보내기 시 현재 언어: {current_lang}"
+  },
+  "font_using_cached_pdf": {
+    "zh": "🔍 使用已注册的PDF字体缓存 (语言: {current_lang})",
+    "zh_tw": "🔍 使用已註冊的PDF字體快取 (語言: {current_lang})",
+    "en": "🔍 Using registered PDF font cache (language: {current_lang})",
+    "ja": "🔍 登録済みのPDFフォントキャッシュを使用しています (言語: {current_lang})",
+    "ko": "🔍 등록된 PDF 글꼴 캐시를 사용합니다 (언어: {current_lang})"
+  },
+  "font_need_reregister": {
+    "zh": "🔍 语言已切换或无缓存，需要重新注册字体 (旧语言: {old_lang}, 新语言: {new_lang})",
+    "zh_tw": "🔍 語言已切換或無快取，需要重新註冊字體 (舊語言: {old_lang}, 新語言: {new_lang})",
+    "en": "🔍 Language changed or no cache, need to re-register font (old language: {old_lang}, new language: {new_lang})",
+    "ja": "🔍 言語が切り替わったかキャッシュがないため、フォントを再登録する必要があります (旧言語: {old_lang}, 新言語: {new_lang})",
+    "ko": "🔍 언어가 변경되었거나 캐시가 없어 글꼴을 다시 등록해야 합니다 (이전 언어: {old_lang}, 새 언어: {new_lang})"
+  },
+  "font_found": {
+    "zh": "🔍 找到可用字体: {font_file} 在 {font_path}",
+    "zh_tw": "🔍 找到可用字體: {font_file} 在 {font_path}",
+    "en": "🔍 Found available font: {font_file} at {font_path}",
+    "ja": "🔍 使用可能なフォントを見つけました: {font_file} at {font_path}",
+    "ko": "🔍 사용 가능한 글꼴을 찾았습니다: {font_file} at {font_path}"
+  },
+  "font_not_found": {
+    "zh": "⚠️ 字体文件不存在: {potential_path}",
+    "zh_tw": "⚠️ 字體檔案不存在: {potential_path}",
+    "en": "⚠️ Font file does not exist: {potential_path}",
+    "ja": "⚠️ フォントファイルが存在しません: {potential_path}",
+    "ko": "⚠️ 글꼴 파일이 존재하지 않습니다: {potential_path}"
+  },
+  "font_try_register": {
+    "zh": "🔍 尝试注册字体: {font_path}",
+    "zh_tw": "🔍 嘗試註冊字體: {font_path}",
+    "en": "🔍 Trying to register font: {font_path}",
+    "ja": "🔍 フォントの登録を試みています: {font_path}",
+    "ko": "🔍 글꼴 등록을 시도합니다: {font_path}"
+  },
+  "font_current_registered": {
+    "zh": "🔍 当前已注册字体: {font_names}",
+    "zh_tw": "🔍 目前已註冊字體: {font_names}",
+    "en": "🔍 Currently registered fonts: {font_names}",
+    "ja": "🔍 現在登録されているフォント: {font_names}",
+    "ko": "🔍 현재 등록된 글꼴: {font_names}"
+  },
+  "font_already_registered": {
+    "zh": "🔍 字体 '{font_name}' 已注册,先删除再重新注册",
+    "zh_tw": "🔍 字體 '{font_name}' 已註冊,先刪除再重新註冊",
+    "en": "🔍 Font '{font_name}' is already registered, deleting first then re-registering",
+    "ja": "🔍 フォント '{font_name}' はすでに登録されています。削除してから再登録します",
+    "ko": "🔍 글꼴 '{font_name}'이 이미 등록되어 있습니다. 먼저 삭제한 후 다시 등록합니다"
+  },
+  "font_old_deleted": {
+    "zh": "🔍 已删除旧的字体注册",
+    "zh_tw": "🔍 已刪除舊的字體註冊",
+    "en": "🔍 Deleted old font registration",
+    "ja": "🔍 古いフォント登録を削除しました",
+    "ko": "🔍 이전 글꼴 등록을 삭제했습니다"
+  },
+  "font_delete_warning": {
+    "zh": "⚠️ 删除旧字体时出现警告: {del_error}",
+    "zh_tw": "⚠️ 刪除舊字體時出現警告: {del_error}",
+    "en": "⚠️ Warning when deleting old font: {del_error}",
+    "ja": "⚠️ 古いフォントの削除中に警告が発生しました: {del_error}",
+    "ko": "⚠️ 이전 글꼴 삭제 중 경고 발생: {del_error}"
+  },
+  "font_registered_success": {
+    "zh": "✅ 成功注册字体: {font_file} 作为 {font_name}",
+    "zh_tw": "✅ 成功註冊字體: {font_file} 作為 {font_name}",
+    "en": "✅ Successfully registered font: {font_file} as {font_name}",
+    "ja": "✅ フォントの登録に成功しました: {font_file} を {font_name} として",
+    "ko": "✅ 글꼴 등록 성공: {font_file}을 {font_name}으로 등록했습니다"
+  },
+  "font_registered_after": {
+    "zh": "🔍 注册后已注册字体: {font_names}",
+    "zh_tw": "🔍 註冊後已註冊字體: {font_names}",
+    "en": "🔍 Registered fonts after registration: {font_names}",
+    "ja": "🔍 登録後の登録済みフォント: {font_names}",
+    "ko": "🔍 등록 후 등록된 글꼴: {font_names}"
+  },
+  "font_test_passed": {
+    "zh": "✅ 字体测试通过: '{test_text}' 宽度={width}",
+    "zh_tw": "✅ 字體測試通過: '{test_text}' 寬度={width}",
+    "en": "✅ Font test passed: '{test_text}' width={width}",
+    "ja": "✅ フォントテストに合格しました: '{test_text}' 幅={width}",
+    "ko": "✅ 글꼴 테스트 통과: '{test_text}' 너비={width}"
+  },
+  "font_test_failed": {
+    "zh": "⚠️ 字体测试失败: {test_error}",
+    "zh_tw": "⚠️ 字體測試失敗: {test_error}",
+    "en": "⚠️ Font test failed: {test_error}",
+    "ja": "⚠️ フォントテストに失敗しました: {test_error}",
+    "ko": "⚠️ 글꼴 테스트 실패: {test_error}"
+  },
+  "font_register_failed": {
+    "zh": "❌ 注册字体失败: {e}",
+    "zh_tw": "❌ 註冊字體失敗: {e}",
+    "en": "❌ Failed to register font: {e}",
+    "ja": "❌ フォントの登録に失敗しました: {e}",
+    "ko": "❌ 글꼴 등록 실패: {e}"
+  },
+  "font_exception_type": {
+    "zh": "❌ 异常类型: {exception_type}",
+    "zh_tw": "❌ 異常類型: {exception_type}",
+    "en": "❌ Exception type: {exception_type}",
+    "ja": "❌ 例外タイプ: {exception_type}",
+    "ko": "❌ 예외 유형: {exception_type}"
+  },
+  "font_use_previous": {
+    "zh": "🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)",
+    "zh_tw": "🔍 使用之前註冊的 ChineseFont 字體(可能不支援目前語言)",
+    "en": "🔍 Using previously registered ChineseFont (may not support current language)",
+    "ja": "🔍 以前に登録された ChineseFont を使用しています (現在の言語をサポートしていない可能性があります)",
+    "ko": "🔍 이전에 등록된 ChineseFont를 사용합니다 (현재 언어를 지원하지 않을 수 있습니다)"
+  },
+  "font_use_default": {
+    "zh": "🔍 无可用字体,将使用默认字体(Helvetica)",
+    "zh_tw": "🔍 無可用字體,將使用預設字體(Helvetica)",
+    "en": "🔍 No available font, will use default font (Helvetica)",
+    "ja": "🔍 使用可能なフォントがないため、デフォルトのフォント (Helvetica) を使用します",
+    "ko": "🔍 사용 가능한 글꼴이 없어 기본 글꼴(Helvetica)을 사용합니다"
+  },
+  "font_no_suitable": {
+    "zh": "🔍 未找到合适字体，将使用默认字体",
+    "zh_tw": "🔍 未找到合適字體，將使用預設字體",
+    "en": "🔍 No suitable font found, will use default font",
+    "ja": "🔍 適切なフォントが見つからなかったため、デフォルトのフォントを使用します",
+    "ko": "🔍 적합한 글꼴을 찾을 수 없어 기본 글꼴을 사용합니다"
+  },
+  "font_using_main": {
+    "zh": "🔍 使用的主要字体: ChineseFont, has_asian_font={has_asian_font}",
+    "zh_tw": "🔍 使用的主要字體: ChineseFont, has_asian_font={has_asian_font}",
+    "en": "🔍 Main font used: ChineseFont, has_asian_font={has_asian_font}",
+    "ja": "🔍 使用されているメインフォント: ChineseFont, has_asian_font={has_asian_font}",
+    "ko": "🔍 사용되는 주 글꼴: ChineseFont, has_asian_font={has_asian_font}"
+  },
+  "font_using_cached_system": {
+    "zh": "使用缓存的字体 (size={font_size}, bold_offset={bold_offset})",
+    "zh_tw": "使用快取的字體 (size={font_size}, bold_offset={bold_offset})",
+    "en": "Using cached font (size={font_size}, bold_offset={bold_offset})",
+    "ja": "キャッシュされたフォントを使用しています (size={font_size}, bold_offset={bold_offset})",
+    "ko": "캐시된 글꼴을 사용합니다 (size={font_size}, bold_offset={bold_offset})"
+  },
+  "font_loaded_success": {
+    "zh": "成功加载{font_name}字体: {font_path}",
+    "zh_tw": "成功載入{font_name}字體: {font_path}",
+    "en": "Successfully loaded {font_name} font: {font_path}",
+    "ja": "{font_name}フォントのロードに成功しました: {font_path}",
+    "ko": "{font_name} 글꼴 로드 성공: {font_path}"
+  },
+  "font_load_failed": {
+    "zh": "尝试加载{font_name}失败: {e}",
+    "zh_tw": "嘗試載入{font_name}失敗: {e}",
+    "en": "Failed to load {font_name}: {e}",
+    "ja": "{font_name}のロードに失敗しました: {e}",
+    "ko": "{font_name} 로드 실패: {e}"
+  },
+  "font_use_default_system": {
+    "zh": "使用默认字体",
+    "zh_tw": "使用預設字體",
+    "en": "Using default font",
+    "ja": "デフォルトのフォントを使用しています",
+    "ko": "기본 글꼴을 사용합니다"
+  },
+  "font_load_system_failed": {
+    "zh": "加载系统字体失败: {e}",
+    "zh_tw": "載入系統字體失敗: {e}",
+    "en": "Failed to load system font: {e}",
+    "ja": "システムフォントのロードに失敗しました: {e}",
+    "ko": "시스템 글꼴 로드 실패: {e}"
+  },
+  "network_topology_fullscreen": {
+    "zh": "网络拓扑图 - 全屏模式",
+    "zh_tw": "網路拓撲圖 - 全螢幕模式",
+    "en": "Network Topology - Full Screen Mode",
+    "ja": "ネットワークトポロジー - フルスクリーンモード",
+    "ko": "네트워크 토폴로지 - 전체 화면 모드"
+  },
+  "refresh_data_failed": {
+    "zh": "刷新数据失败: {e}",
+    "zh_tw": "刷新數據失敗: {e}",
+    "en": "Failed to refresh data: {e}",
+    "ja": "データの更新に失敗しました: {e}",
+    "ko": "데이터 새로고침 실패: {e}"
+  },
+  "allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "ko": "할당됨"
+  },
+  "reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済み",
+    "ko": "예약됨"
+  },
+  "released": {
+    "zh": "已释放",
+    "zh_tw": "已釋放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
+  },
+  "remaining_ip": {
+    "zh": "剩余IP",
+    "zh_tw": "剩餘IP",
+    "en": "Remaining IP",
+    "ja": "残りのIP",
+    "ko": "남은 IP"
+  },
+  "total_ip": {
+    "zh": "总IP",
+    "zh_tw": "總IP",
+    "en": "Total IP",
+    "ja": "総IP",
+    "ko": "총 IP"
+  },
+  "canvas_size_warning": {
+    "zh": "警告: 无法获取画布尺寸，重试次数: {retry_count}",
+    "zh_tw": "警告: 無法獲取畫布尺寸，重試次數: {retry_count}",
+    "en": "Warning: Failed to get canvas size, retry count: {retry_count}",
+    "ja": "警告: キャンバスサイズの取得に失敗しました、リトライ回数: {retry_count}",
+    "ko": "경고: 캔버스 크기를 가져올 수 없습니다, 재시도 횟수: {retry_count}"
+  },
+  "show_splash": {
+    "zh": "显示启动画面",
+    "zh_tw": "顯示啟動畫面",
+    "en": "Show Splash Screen",
+    "ja": "スプラッシュ画面を表示",
+    "ko": "스플래시 화면 표시"
+  },
+  "config_file": {
+    "zh": "配置文件",
+    "zh_tw": "配置文件",
+    "en": "Config File",
+    "ja": "設定ファイル",
+    "ko": "구성 파일"
+  },
+  "i18n_resources": {
+    "zh": "国际化资源",
+    "zh_tw": "國際化資源",
+    "en": "i18n Resources",
+    "ja": "国際化リソース",
+    "ko": "국제화 리소스"
+  },
+  "database_init": {
+    "zh": "数据库初始化",
+    "zh_tw": "資料庫初始化",
+    "en": "Database Initialization",
+    "ja": "データベース初期化",
+    "ko": "데이터베이스 초기화"
+  },
+  "plugin_system": {
+    "zh": "插件系统",
+    "zh_tw": "外掛系統",
+    "en": "Plugin System",
+    "ja": "プラグインシステム",
+    "ko": "플러그인 시스템"
+  },
+  "style_system": {
+    "zh": "样式系统",
+    "zh_tw": "樣式系統",
+    "en": "Style System",
+    "ja": "スタイルシステム",
+    "ko": "스타일 시스템"
+  },
+  "user_settings": {
+    "zh": "用户设置",
+    "zh_tw": "使用者設定",
+    "en": "User Settings",
+    "ja": "ユーザー設定",
+    "ko": "사용자 설정"
+  },
+  "app_instance": {
+    "zh": "应用实例",
+    "zh_tw": "應用實例",
+    "en": "App Instance",
+    "ja": "アプリインスタンス",
+    "ko": "앱 인스턴스"
+  },
+  "loading_complete": {
+    "zh": "加载完成",
+    "zh_tw": "載入完成",
+    "en": "Loading Complete",
+    "ja": "読み込み完了",
+    "ko": "로딩 완료"
+  },
+  "start_loading": {
+    "zh": "开始加载应用",
+    "zh_tw": "開始載入應用",
+    "en": "Starting Application Loading",
+    "ja": "アプリの読み込みを開始",
+    "ko": "애플리케이션 로딩 시작"
+  },
+  "config_loaded": {
+    "zh": "配置加载完成",
+    "zh_tw": "配置載入完成",
+    "en": "Config Loaded",
+    "ja": "設定の読み込み完了",
+    "ko": "구성 로드 완료"
+  },
+  "loading_module": {
+    "zh": "加载模块：{module}",
+    "zh_tw": "載入模組：{module}",
+    "en": "Loading Module: {module}",
+    "ja": "モジュールを読み込み中：{module}",
+    "ko": "모듈 로딩 중：{module}"
+  },
+  "loading_process_complete": {
+    "zh": "加载过程完成",
+    "zh_tw": "載入過程完成",
+    "en": "Loading Process Complete",
+    "ja": "読み込みプロセス完了",
+    "ko": "로딩 프로세스 완료"
+  },
+  "quantity": {
+    "zh": "数量:",
+    "zh_tw": "數量:",
+    "en": "Quantity:",
+    "ja": "数量:",
+    "ko": "수량:"
+  },
+  "sequential": {
+    "zh": "连续",
+    "zh_tw": "連續",
+    "en": "Sequential",
+    "ja": "連続",
+    "ko": "연속"
+  },
+  "random": {
+    "zh": "随机",
+    "zh_tw": "隨機",
+    "en": "Random",
+    "ja": "ランダム",
+    "ko": "랜덤"
+  },
+  "batch": {
+    "zh": "批量",
+    "zh_tw": "批次",
+    "en": "Batch",
+    "ja": "バッチ",
+    "ko": "배치"
+  },
+  "auto": {
+    "zh": "自动",
+    "zh_tw": "自動",
+    "en": "Auto",
+    "ja": "自動",
+    "ko": "자동"
+  },
+  "date_format": {
+    "zh": "格式：YYYY-MM-DD",
+    "zh_tw": "格式：YYYY-MM-DD",
+    "en": "Format: YYYY-MM-DD",
+    "ja": "形式：YYYY-MM-DD",
+    "ko": "형식：YYYY-MM-DD"
+  },
+  "ip_statistics_error": {
+    "zh": "获取IP统计信息时出错：{e}",
+    "zh_tw": "獲取IP統計資訊時出錯：{e}",
+    "en": "Error getting IP statistics: {e}",
+    "ja": "IP統計情報の取得エラー：{e}",
+    "ko": "IP 통계 정보 가져오기 오류：{e}"
+  },
+  "subnet_error": {
+    "zh": "获取子网时出错：{e}",
+    "zh_tw": "獲取子網時出錯：{e}",
+    "en": "Error getting subnet: {e}",
+    "ja": "サブネットの取得エラー：{e}",
+    "ko": "서브넷 가져오기 오류：{e}"
+  },
+  "network_type_keywords": {
+    "zh": {
+      "server": ["服务器", "server"],
+      "management": ["管理", "management", "mgmt", "监控", "monitor"],
+      "wireless": ["无线", "wifi", "wireless"],
+      "client": ["客户", "client"],
+      "office": ["办公", "office"],
+      "production": ["生产", "prod", "production"],
+      "test": ["测试", "test", "dev"],
+      "dmz": ["安全", "security", "dmz"],
+      "storage": ["存储", "storage", "nas"],
+      "backup": ["备份", "backup"],
+      "iot": ["物联网", "iot", "物联"],
+      "voip": ["语音", "voip", "电话", "语音电话"],
+      "network": ["网络设备", "network", "网络", "交换机", "路由器", "switch", "router"]
+    },
+    "zh_tw": {
+      "server": ["伺服器", "server"],
+      "management": ["管理", "management", "mgmt", "監控", "monitor"],
+      "wireless": ["無線", "wifi", "wireless"],
+      "client": ["客戶", "client"],
+      "office": ["辦公", "office"],
+      "production": ["生產", "prod", "production"],
+      "test": ["測試", "test", "dev"],
+      "dmz": ["安全", "security", "dmz"],
+      "storage": ["儲存", "storage", "nas"],
+      "backup": ["備份", "backup"],
+      "iot": ["物聯網", "iot", "物聯"],
+      "voip": ["語音", "voip", "電話", "語音電話"],
+      "network": ["網路設備", "network", "網路", "交換機", "路由器", "switch", "router"]
+    },
+    "en": {
+      "server": ["server"],
+      "management": ["management", "mgmt", "monitor"],
+      "wireless": ["wifi", "wireless"],
+      "client": ["client"],
+      "office": ["office"],
+      "production": ["prod", "production"],
+      "test": ["test", "dev"],
+      "dmz": ["security", "dmz"],
+      "storage": ["storage", "nas"],
+      "backup": ["backup"],
+      "iot": ["iot", "internet of things"],
+      "voip": ["voip", "voice", "phone", "telephony"],
+      "network": ["network", "switch", "router", "network device", "network equipment"]
+    },
+    "ja": {
+      "server": ["サーバー", "server"],
+      "management": ["管理", "management", "mgmt", "監視", "monitor"],
+      "wireless": ["無線", "wifi", "wireless"],
+      "client": ["クライアント", "client"],
+      "office": ["オフィス", "office"],
+      "production": ["本番", "prod", "production"],
+      "test": ["テスト", "test", "dev"],
+      "dmz": ["セキュリティ", "security", "dmz"],
+      "storage": ["ストレージ", "storage", "nas"],
+      "backup": ["バックアップ", "backup"],
+      "iot": ["iot", "モノのインターネット"],
+      "voip": ["voip", "音声", "電話", "テレフォニー"],
+      "network": ["network", "ネットワーク", "スイッチ", "ルーター", "ネットワーク機器"]
+    },
+    "ko": {
+      "server": ["서버", "server"],
+      "management": ["관리", "management", "mgmt", "모니터", "monitor"],
+      "wireless": ["무선", "wifi", "wireless"],
+      "client": ["클라이언트", "client"],
+      "office": ["사무실", "office"],
+      "production": ["생산", "prod", "production"],
+      "test": ["테스트", "test", "dev"],
+      "dmz": ["보안", "security", "dmz"],
+      "storage": ["저장", "storage", "nas"],
+      "backup": ["백업", "backup"],
+      "iot": ["iot", "사물인터넷"],
+      "voip": ["voip", "음성", "전화", "통신"],
+      "network": ["network", "네트워크", "스위치", "라우터", "네트워크 장비"]
+    }
   }
 }

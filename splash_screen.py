@@ -1,6 +1,8 @@
 import tkinter as tk
 import random
 from version import __version__
+from i18n import _
+from style_manager import get_splash_font_size, get_splash_font_family
 
 class SplashScreen:
     def __init__(self, parent=None):
@@ -54,19 +56,20 @@ class SplashScreen:
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=40, pady=30)
         left_frame.pack_propagate(False)  # 禁止Frame根据内容自动调整大小
         
-        title_label = tk.Label(left_frame, text="子网规划师", font=('微软雅黑', 32, 'bold'), bg='#F1F5F9', fg='#1E293B')
+        font_family = get_splash_font_family()
+        title_label = tk.Label(left_frame, text=_('app_name'), font=(font_family, get_splash_font_size('title'), 'bold'), bg='#F1F5F9', fg='#1E293B')
         title_label.pack(pady=(0, 10))
-        
-        version_label = tk.Label(left_frame, text=f"v{__version__}", font=('微软雅黑', 14), bg='#F1F5F9', fg='#64748B')
+
+        version_label = tk.Label(left_frame, text=f"v{__version__}", font=(font_family, get_splash_font_size('version')), bg='#F1F5F9', fg='#64748B')
         version_label.pack(pady=(0, 30))
-        
+
         status_frame = tk.Frame(left_frame, bg='#F1F5F9')
         status_frame.pack(fill=tk.X)
-        
-        self.status_text = tk.Label(status_frame, text="正在加载资源...", font=('微软雅黑', 12), bg='#F1F5F9', fg='#475569')
+
+        self.status_text = tk.Label(status_frame, text=_('loading_resources'), font=(font_family, get_splash_font_size('status')), bg='#F1F5F9', fg='#475569')
         self.status_text.pack(anchor=tk.W, pady=(0, 5))
-        
-        self.loading_text = tk.Label(status_frame, text="加载中", font=('微软雅黑', 12), bg='#F1F5F9', fg='#0EA5E9')
+
+        self.loading_text = tk.Label(status_frame, text=_('splash_loading'), font=(font_family, get_splash_font_size('loading')), bg='#F1F5F9', fg='#0EA5E9')
         self.loading_text.pack(anchor=tk.W)
         
         self.right_frame = tk.Frame(main_frame, bg='#0F172A')
@@ -169,7 +172,7 @@ class SplashScreen:
         try:
             current_text = self.loading_text.cget('text')
             if current_text.endswith('...'):
-                new_text = "加载中"
+                new_text = _("splash_loading")
             else:
                 new_text = current_text + '.'
             
@@ -530,7 +533,7 @@ class SplashScreen:
                 
                 if self.status_text and self.splash:
                     try:
-                        self.status_text.config(text=f"正在加载: {module_name}")
+                        self.status_text.config(text=_("splash_loading_module", module_name=module_name))
                     except Exception as e:
                         print(f"Error updating UI: {str(e)}")
                         self.update_queue.clear()

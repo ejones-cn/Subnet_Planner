@@ -142,6 +142,55 @@ class FontConfig:
         "ko": "Segoe UI",
         "default": "Segoe UI"
     }
+    
+    # 启动画面字体设置
+    SPLASH_FONT_SETTINGS: dict[str, dict[str, any]] = {
+        "zh": {
+            "font": "微软雅黑",
+            "sizes": {
+                "title": 32,
+                "version": 14,
+                "status": 12,
+                "loading": 12
+            }
+        },
+        "zh_tw": {
+            "font": "Microsoft JhengHei",
+            "sizes": {
+                "title": 32,
+                "version": 14,
+                "status": 12,
+                "loading": 12
+            }
+        },
+        "ja": {
+            "font": "MS Gothic",
+            "sizes": {
+                "title": 30,
+                "version": 12,
+                "status": 10,
+                "loading": 10
+            }
+        },
+        "ko": {
+            "font": "Malgun Gothic",
+            "sizes": {
+                "title": 26,
+                "version": 12,
+                "status": 10,
+                "loading": 10
+            }
+        },
+        "default": {
+            "font": "Segoe UI",
+            "sizes": {
+                "title": 24,
+                "version": 11,
+                "status": 9,
+                "loading": 9
+            }
+        }
+    }
 
     FONT_TEST_TEXTS: dict[str, str] = {
         "ko": "한글테스트",
@@ -212,3 +261,31 @@ class FontConfig:
     def get_move_button_font(cls, language: str) -> str:
         """获取移动按钮的字体设置（仅字体，不包含大小）"""
         return cls.MOVE_BUTTON_FONT_SETTINGS.get(language, cls.MOVE_BUTTON_FONT_SETTINGS["default"])
+    
+    @classmethod
+    def get_splash_font_family(cls, language: str) -> str:
+        """获取启动画面的字体家族设置
+        
+        Args:
+            language: 当前语言
+            
+        Returns:
+            str: 字体家族名称
+        """
+        lang_settings = cls.SPLASH_FONT_SETTINGS.get(language, cls.SPLASH_FONT_SETTINGS["default"])
+        return lang_settings.get("font", "Segoe UI")
+    
+    @classmethod
+    def get_splash_font_size(cls, language: str, font_type: str) -> int:
+        """获取启动画面的字体大小设置
+        
+        Args:
+            language: 当前语言
+            font_type: 字体类型，支持 "title", "version", "status", "loading"
+            
+        Returns:
+            int: 字体大小
+        """
+        lang_settings = cls.SPLASH_FONT_SETTINGS.get(language, cls.SPLASH_FONT_SETTINGS["default"])
+        sizes = lang_settings.get("sizes", {})
+        return sizes.get(font_type, 12)

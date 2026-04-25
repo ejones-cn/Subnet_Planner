@@ -39,6 +39,7 @@ import tkinter as tk
 from tkinter import Canvas
 from typing import Callable, Any
 from style_manager import get_current_font_settings
+from i18n import _
 
 # 模块版本
 __version__ = "1.0.0"
@@ -1623,7 +1624,7 @@ class NetworkTopologyVisualizer:
                 return
             else:
                 # 多次重试后仍无法获取尺寸，记录日志并返回
-                print(f"警告: 无法获取画布尺寸，重试次数: {retry_count}")
+                print(_("canvas_size_warning", retry_count=retry_count))
                 return
         
         # 计算所有节点的边界框
@@ -2023,38 +2024,38 @@ class NetworkTopologyVisualizer:
             total_str = format_large_number(total, use_scientific=True)
             
             tk.Label(
-                frame, 
-                text=f"已分配: {allocated_str}", 
-                font=(font_family, font_size - 1), 
-                fg="#ddd", 
+                frame,
+                text=f"{_('allocated')}: {allocated_str}",
+                font=(font_family, font_size - 1),
+                fg="#ddd",
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
-                frame, 
-                text=f"已保留: {reserved_str}", 
-                font=(font_family, font_size - 1), 
-                fg="#ddd", 
+                frame,
+                text=f"{_('reserved')}: {reserved_str}",
+                font=(font_family, font_size - 1),
+                fg="#ddd",
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
-                frame, 
-                text=f"已释放: {available_str}", 
-                font=(font_family, font_size - 1), 
-                fg="#ddd", 
+                frame,
+                text=f"{_('released')}: {available_str}",
+                font=(font_family, font_size - 1),
+                fg="#ddd",
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
-                frame, 
-                text=f"剩余IP: {remaining_str}", 
-                font=(font_family, font_size - 1), 
-                fg="#ddd", 
+                frame,
+                text=f"{_('remaining_ip')}: {remaining_str}",
+                font=(font_family, font_size - 1),
+                fg="#ddd",
                 bg="#333"
             ).pack(anchor=tk.W)
             tk.Label(
-                frame, 
-                text=f"总IP: {total_str}", 
-                font=(font_family, font_size - 1), 
-                fg="#ddd", 
+                frame,
+                text=f"{_('total_ip')}: {total_str}",
+                font=(font_family, font_size - 1),
+                fg="#ddd",
                 bg="#333"
             ).pack(anchor=tk.W)
         
@@ -2203,7 +2204,7 @@ class NetworkTopologyVisualizer:
         
         # 创建全屏顶层窗口
         self.fullscreen_window = tk.Toplevel()
-        self.fullscreen_window.title("网络拓扑图 - 全屏模式")
+        self.fullscreen_window.title(_("network_topology_fullscreen"))
         self.fullscreen_window.attributes("-fullscreen", True)
         self.fullscreen_window.config(bg=BACKGROUND_COLOR, bd=0, highlightthickness=0)
         
@@ -2941,7 +2942,7 @@ class NetworkTopologyVisualizer:
                 network_data = self.data_callback()
                 self.draw_topology(network_data)
             except Exception as e:
-                print(f"刷新数据失败: {e}")
+                print(_("refresh_data_failed", e=str(e)))
     
     def _schedule_update(self):
         """安排下一次更新"""

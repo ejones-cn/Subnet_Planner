@@ -4414,6 +4414,7 @@ class SubnetPlannerApp:
         cell_data = str(values[column_index])
 
         # 特殊处理：如果是隐藏信息表且复制的是密码列（索引2），获取真实密码
+        # 检查 _hidden_info_tree 是否存在，防止在未初始化时访问
         if hasattr(self, '_hidden_info_tree') and tree == self._hidden_info_tree and column_index == 2:
             record_id = int(item)
             for record in getattr(self, '_hidden_info_raw_data', []):
@@ -8607,7 +8608,7 @@ class SubnetPlannerApp:
 
         # 添加显示启动画面按钮
         show_splash_btn = ttk.Button(
-            tab_order_frame, text='显示启动画面', width=20, style=button_style, command=self.show_splash
+            tab_order_frame, text=_('show_splash'), width=20, style=button_style, command=self.show_splash
         )
         show_splash_btn.grid(row=1, column=0, columnspan=2, sticky=tk.EW, padx=5, pady=10)
 
@@ -17137,7 +17138,7 @@ class SubnetPlannerApp:
             parent_dialog: 父对话框
         """
         # 创建对话框
-        dialog = ComplexDialog(parent_dialog.dialog, _('extend_expiry'), 500, 300, resizable=False, modal=True)
+        dialog = ComplexDialog(parent_dialog.dialog, _('extend_expiry'), 400, 200, resizable=False, modal=True)
         
         # 设置字体
         font_family, font_size = get_current_font_settings()
@@ -17241,10 +17242,10 @@ class SubnetPlannerApp:
                 dialog.destroy()
         
         # 添加确定按钮
-        dialog.add_button(_('confirm'), on_confirm, column=1)
+        dialog.add_button(_('confirm'), on_confirm, column=2)
         
         # 添加取消按钮
-        dialog.add_button(_('cancel'), dialog.destroy, column=2)
+        dialog.add_button(_('cancel'), dialog.destroy, column=1)
         
         # 显示对话框
         dialog.show()
@@ -17820,19 +17821,19 @@ class SubnetPlannerApp:
             batch_mode_frame = ttk.Frame(auto_allocate_frame)
             
             # 数量输入（调整字号）
-            ttk.Label(batch_mode_frame, text="数量:", font=('微软雅黑', 9)).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(batch_mode_frame, text=_("quantity"), font=('微软雅黑', 9)).pack(side=tk.LEFT, padx=(0, 5))
             quantity_border, quantity_entry = create_bordered_entry(batch_mode_frame, width=5)
             quantity_border.pack(side=tk.LEFT, padx=(0, 10))
             quantity_entry.insert(0, "10")  # 默认值
             
             # 生成模式选择
             generate_mode_var = tk.StringVar(value='sequential')  # 默认连续生成
-            ttk.Radiobutton(batch_mode_frame, text="连续", variable=generate_mode_var, value='sequential').pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Radiobutton(batch_mode_frame, text="随机", variable=generate_mode_var, value='random').pack(side=tk.LEFT)
+            ttk.Radiobutton(batch_mode_frame, text=_("sequential"), variable=generate_mode_var, value='sequential').pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Radiobutton(batch_mode_frame, text=_("random"), variable=generate_mode_var, value='random').pack(side=tk.LEFT)
             # 添加批量复选框（调整位置，减少缩进）
             batch_check = ttk.Checkbutton(
                 auto_allocate_frame, 
-                text="批量", 
+                text=_("batch"), 
                 variable=batch_var, 
                 command=lambda: toggle_batch_mode()
             )
@@ -17845,7 +17846,7 @@ class SubnetPlannerApp:
             # 添加自动复选框
             auto_allocate_check = ttk.Checkbutton(
                 auto_allocate_frame, 
-                text="自动", 
+                text=_("auto"), 
                 variable=auto_allocate_var, 
                 command=toggle_auto_allocate
             )
@@ -18025,7 +18026,7 @@ class SubnetPlannerApp:
                     # 检查IP地址是否在网络范围内
                     if ip_address_obj not in ip_network:
                         # 显示错误提示
-                        self.show_error(_('error'), "IP地址不在所选网络范围内")
+                        self.show_error(_('error'), _('ip_not_in_network'))
                         return False
                 except Exception as e:
                     # IP地址格式错误或网络解析失败
@@ -18267,7 +18268,7 @@ class SubnetPlannerApp:
                     network_tree[parent_cidr]['children'].append(current_cidr)
             
         except Exception as e:
-            print(f"获取子网时出错: {e}")
+            print(_("subnet_error", e=str(e)))
         
         # 生成网络数据
         network_data = []
@@ -18306,7 +18307,7 @@ class SubnetPlannerApp:
                     "network_total": network_total
                 }
             except Exception as e:
-                print(f"获取IP统计信息时出错: {e}")
+                print(_("ip_statistics_error", e=str(e)))
             
             node_id = f"node_{node_id_counter}"
             node_id_counter += 1
@@ -18327,40 +18328,45 @@ class SubnetPlannerApp:
             name_lower = net_info['name'].lower()
             cidr_lower = cidr.lower()
             
-            # 根据网络名称关键词判断类型
-            if '服务器' in name_lower or 'server' in name_lower:
-                device_type = "server"
-                subnet_type = "server"  # 暖橙色
-            elif '管理' in name_lower or 'management' in name_lower or 'mgmt' in name_lower:
-                device_type = "client"
-                subnet_type = "management"  # 柔和紫色
-            elif '无线' in name_lower or 'wifi' in name_lower or 'wireless' in name_lower:
-                device_type = "wireless"
-                subnet_type = "wireless"  # 深蓝色
-            elif '客户' in name_lower or 'client' in name_lower:
-                device_type = "switch"
-                subnet_type = "client"  # 青绿色
-            elif '办公' in name_lower or 'office' in name_lower:
-                device_type = "office"
-                subnet_type = "office"  # 绿色
-            elif '生产' in name_lower or 'prod' in name_lower or 'production' in name_lower:
-                device_type = "production"
-                subnet_type = "production"  # 橙色
-            elif '测试' in name_lower or 'test' in name_lower or 'dev' in name_lower:
-                device_type = "test"
-                subnet_type = "test"  # 紫色
-            elif '监控' in name_lower or 'monitor' in name_lower:
-                device_type = "switch"
-                subnet_type = "management"  # 柔和紫色
-            elif '安全' in name_lower or 'security' in name_lower or 'dmz' in name_lower:
-                device_type = "dmz"
-                subnet_type = "dmz"  # 玫红色
-            elif '存储' in name_lower or 'storage' in name_lower or 'nas' in name_lower:
-                device_type = "storage"
-                subnet_type = "storage"  # 橙红色
-            elif '备份' in name_lower or 'backup' in name_lower:
-                device_type = "backup"
-                subnet_type = "backup"  # 浅绿色
+            # 根据网络名称关键词判断类型（多语言支持）
+            from i18n import get_language
+            current_lang = get_language()
+            
+            # 设备类型和子网类型映射
+            type_mapping = {
+                "server": ("server", "server"),          # 暖橙色
+                "management": ("client", "management"),    # 柔和紫色
+                "wireless": ("wireless", "wireless"),      # 深蓝色
+                "client": ("switch", "client"),          # 青绿色
+                "office": ("office", "office"),          # 绿色
+                "production": ("production", "production"),  # 橙色
+                "test": ("test", "test"),              # 紫色
+                "dmz": ("dmz", "dmz"),              # 玫红色
+                "storage": ("storage", "storage"),        # 橙红色
+                "backup": ("backup", "backup"),         # 浅绿色
+                "iot": ("iot", "iot"),               # 浅蓝色
+                "voip": ("voip", "voip"),             # 深蓝色
+                "network": ("switch", "network")        # 柔和橙色
+            }
+            
+            # 从翻译文件获取关键词
+            from i18n import translator
+            keywords_config = translator.translations.get('network_type_keywords', {})
+            lang_keywords = keywords_config.get(current_lang, {})
+            
+            # 遍历关键词进行匹配
+            matched_type = None
+            for type_name, type_keywords in lang_keywords.items():
+                for keyword in type_keywords:
+                    if keyword.lower() in name_lower:
+                        matched_type = type_name
+                        break
+                if matched_type:
+                    break
+            
+            # 如果匹配到类型，设置对应的设备类型和子网类型
+            if matched_type and matched_type in type_mapping:
+                device_type, subnet_type = type_mapping[matched_type]
             # 根据网络层级设置设备类型和子网类型（如果没有关键词匹配）
             elif level > 0:
                 if level == 1:
@@ -18459,31 +18465,31 @@ def load_application(splash, root):
     
     # 定义加载模块列表
     modules = [
-        ("配置文件", 0.6),
-        ("国际化资源", 0.4),
-        ("数据库初始化", 0.8),
-        ("UI组件", 0.6),
-        ("网络服务", 0.6),
-        ("插件系统", 0.4),
-        ("样式系统", 0.4),
-        ("历史记录", 0.4),
-        ("用户设置", 0.4),
-        ("应用实例", 0.8),
-        ("加载完成", 1.0)
+        (_("config_file"), 0.6),
+        (_("i18n_resources"), 0.4),
+        (_("database_init"), 0.8),
+        (_("ui_components"), 0.6),
+        (_("network_services"), 0.6),
+        (_("plugin_system"), 0.4),
+        (_("style_system"), 0.4),
+        (_("history"), 0.4),
+        (_("user_settings"), 0.4),
+        (_("app_instance"), 0.8),
+        (_("loading_complete"), 1.0)
     ]
     
-    print("开始加载应用")
+    print(_("start_loading"))
     
     # 加载配置
     try:
         config = get_config()
-        print("配置加载完成")
+        print(_("config_loaded"))
     except Exception as e:
         print(f"Error loading config: {str(e)}")
     
     # 模拟加载过程
     for i, (module, delay) in enumerate(modules):
-        print(f"加载模块: {module}")
+        print(_("loading_module", module=module))
         
         # 更新启动画面状态
         splash.update_progress(module)
@@ -18499,7 +18505,7 @@ def load_application(splash, root):
                 print(f"Error updating window: {str(e)}")
             time.sleep(0.1)
     
-    print("加载过程完成")
+    print(_("loading_process_complete"))
 
 if __name__ == "__main__":
     # 导入窗口工具模块
