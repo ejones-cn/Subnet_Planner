@@ -12028,10 +12028,10 @@ class SubnetPlannerApp:
 
         # 创建按钮
         confirm_btn = ttk.Button(button_container, text=_('confirm'), command=execute_action)
-        confirm_btn.pack(side=tk.LEFT, padx=5)
+        confirm_btn.pack(side=tk.LEFT, padx=10)
 
         cancel_btn = ttk.Button(button_container, text=_('cancel'), command=dialog.destroy)
-        cancel_btn.pack(side=tk.LEFT, padx=5)
+        cancel_btn.pack(side=tk.LEFT, padx=0)
         # 显示对话框
         dialog.show()
     
