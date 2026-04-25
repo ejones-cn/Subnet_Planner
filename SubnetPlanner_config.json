@@ -3,7 +3,7 @@
   "language": "zh",
   "window": {
     "width": 1050,
-    "height": 952,
+    "height": 950,
     "maximized": false,
     "x": null,
     "y": null
@@ -14,7 +14,7 @@
   },
   "ui": {
     "theme": "vista",
-    "font_size": 12,
+    "font_size": 11,
     "tab_order": [
       "ip_address_management",
       "subnet_planning",

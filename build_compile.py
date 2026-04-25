@@ -301,7 +301,7 @@ def _generate_spec_content(version: str, output_filename: str, onefile: bool) ->
             "idlelib", "pydoc", "test", "lib2to3",
             "debug", "code", "codeop", "readline", "rlcompleter",
         ]
-        datas = [["translations.json", "."], ["Subnet_Planner.ico", "."], ["Picture", "Picture"]]
+        datas = [["translations.json", "."], ["Subnet_Planner.ico", "."], ["Picture", "Picture"], ["SubnetPlanner_config.json", "."]]
     
     excludes_str = ",\n                 ".join(f"'{module}'" for module in excludes)
     datas_str = ",\n             ".join(f"('{data[0]}', '{data[1]}')" for data in datas)
@@ -488,6 +488,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--windows-icon-from-ico=Subnet_Planner.ico",
             "--include-data-file=translations.json=translations.json",
             "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
+            "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
             "--include-data-dir=Picture=Picture",
             "--enable-plugin=tk-inter",
             "--windows-console-mode=disable",

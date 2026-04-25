@@ -8,7 +8,74 @@
 
 import json
 import os
+import sys
 from typing import cast
+
+
+def get_app_base_path() -> str:
+    """获取应用程序基础路径
+    
+    在开发环境中返回脚本所在目录
+    在PyInstaller打包环境中返回EXE所在目录或_MEIPASS临时目录
+    
+    Returns:
+        应用程序基础路径
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller打包环境
+        if hasattr(sys, '_MEIPASS'):
+            # 单文件模式：使用临时解压目录
+            return sys._MEIPASS
+        else:
+            # 多文件模式：使用EXE所在目录
+            return os.path.dirname(sys.executable)
+    else:
+        # 开发环境：使用脚本所在目录
+        return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_config_dir() -> str:
+    """获取配置文件目录
+    
+    在开发环境中返回脚本所在目录
+    在打包环境中返回EXE所在目录
+    
+    Returns:
+        配置文件目录
+    """
+    app_dir = None
+    
+    # 优先使用 sys.argv[0]（这是最可靠的方法）
+    if sys.argv and sys.argv[0]:
+        exe_path = sys.argv[0]
+        if not os.path.isabs(exe_path):
+            exe_path = os.path.abspath(exe_path)
+        if os.path.exists(exe_path):
+            app_dir = os.path.dirname(exe_path)
+    
+    # 如果 sys.argv[0] 不可用，尝试使用 ctypes（仅限Windows平台）
+    if app_dir is None and sys.platform == 'win32':
+        try:
+            import ctypes
+            from ctypes import wintypes
+            
+            GetModuleFileNameW = ctypes.windll.kernel32.GetModuleFileNameW
+            GetModuleFileNameW.argtypes = [wintypes.HMODULE, wintypes.LPWSTR, wintypes.DWORD]
+            GetModuleFileNameW.restype = wintypes.DWORD
+            
+            buffer = ctypes.create_unicode_buffer(260)
+            if GetModuleFileNameW(None, buffer, 260) > 0:
+                exe_path = buffer.value
+                if os.path.exists(exe_path):
+                    app_dir = os.path.dirname(exe_path)
+        except Exception:
+            pass
+    
+    # 如果以上都失败
+    if app_dir is None:
+        app_dir = os.path.dirname(sys.executable)
+    
+    return app_dir
 
 
 class ConfigManager:
@@ -21,8 +88,8 @@ class ConfigManager:
         "version": CURRENT_VERSION,
         "language": "zh",
         "window": {
-            "width": 1200,
-            "height": 800,
+            "width": 1050,
+            "height": 950,
             "maximized": False,
             "x": None,
             "y": None
@@ -53,7 +120,7 @@ class ConfigManager:
             config_file: 配置文件路径，默认为 SubnetPlanner_config.json
         """
         if config_file is None:
-            self._config_file: str = os.path.join(os.path.dirname(__file__), 'SubnetPlanner_config.json')
+            self._config_file: str = os.path.join(get_config_dir(), 'SubnetPlanner_config.json')
         else:
             self._config_file = config_file
         

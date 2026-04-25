@@ -18553,6 +18553,7 @@ def load_application(splash, root):
     
     print(_("loading_process_complete"))
 
+
 if __name__ == "__main__":
     # 导入窗口工具模块
     from window_utils import setup_window_settings
@@ -18560,28 +18561,37 @@ if __name__ == "__main__":
     
     # 创建主窗口
     root = tk.Tk()
-    root.withdraw()  # 先隐藏主窗口
+    
+    # 立即隐藏窗口，避免闪现
+    root.withdraw()
+    
+    from version import get_version
+    version = get_version()
+    root.title(f"子网规划师 v{version}")
+    
+    # 设置窗口图标
+    icon_path = os.path.join(os.path.dirname(__file__), "Subnet_Planner.ico")
+    if os.path.exists(icon_path):
+        try:
+            root.iconbitmap(icon_path)
+        except Exception as e:
+            print(f"Error setting icon: {str(e)}")
     
     # 显示启动画面
     splash = SplashScreen()
-    root.update()  # 确保启动画面显示
     
-    # 执行后台加载
+    # 执行加载
     load_application(splash, root)
     
     # 设置双击间隔
     try:
-        # 尝试获取系统双击间隔（毫秒）
         double_click_time = root.tk.call('tk', 'getDoubleClickTime')
     except Exception:
-        # 如果获取失败，使用合理的默认值（Windows默认通常是500ms）
         double_click_time = 500
     
-    # 设置全局双击间隔
     try:
         root.tk.call('tk', 'setDoubleClickTime', double_click_time)
     except Exception:
-        # 在某些系统上不支持此命令，使用系统默认值即可
         pass
     
     # 设置窗口初始大小
@@ -18615,8 +18625,6 @@ if __name__ == "__main__":
     
     # 设置主窗口关闭事件处理程序
     def on_main_window_close():
-        """主窗口关闭事件处理函数"""
-        # 销毁所有窗口和组件
         root.destroy()
     
     root.protocol("WM_DELETE_WINDOW", on_main_window_close)
