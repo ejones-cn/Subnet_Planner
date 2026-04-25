@@ -33,7 +33,7 @@ class ConfigManager:
         },
         "ui": {
             "theme": "vista",
-            "font_size": 12,
+            "font_size": 11,
             "tab_order": []
         },
         "recent_files": [],
