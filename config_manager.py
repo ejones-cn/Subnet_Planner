@@ -32,7 +32,7 @@ class ConfigManager:
             "frequency": "daily"
         },
         "ui": {
-            "theme": "default",
+            "theme": "vista",
             "font_size": 12,
             "tab_order": []
         },
@@ -451,8 +451,8 @@ class ConfigManager:
         Returns:
             主题名称
         """
-        result = self.get('ui.theme', 'default')
-        return result if isinstance(result, str) else 'default'
+        result = self.get('ui.theme', 'vista')
+        return result if isinstance(result, str) else 'vista'
     
     def set_ui_theme(self, theme: str) -> bool:
         """设置UI主题
