@@ -1035,7 +1035,7 @@ class NetworkTopologyVisualizer:
             subnet_text = subnet_text[:17] + "..."
         
         subnet_id = self.canvas.create_text(
-            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.5,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.6,
             text=subnet_text,
             font=(font_family, font_size - 2),
             fill=TEXT_COLOR
@@ -1055,7 +1055,7 @@ class NetworkTopologyVisualizer:
             ip_info_text = f"{used_ips_str}/{total_ips_str}"
         
         ip_info_id = self.canvas.create_text(
-            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.8,
+            x + NODE_WIDTH / 2, y + NODE_HEIGHT * 0.9,
             text=ip_info_text,
             font=(font_family, font_size - 3),
             fill=TEXT_COLOR

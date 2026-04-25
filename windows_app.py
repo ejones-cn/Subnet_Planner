@@ -10343,7 +10343,7 @@ class SubnetPlannerApp:
             self.style.configure("About.TButton",
                                focuscolor="none",
                                focuswidth=0,
-                               padding=(10, 5))
+                               padding=(10, 2))
             self.style.map("About.TButton",
                           focuscolor=[("focus", "none")],
                           focuswidth=[("focus", 0)])
@@ -10567,11 +10567,12 @@ class SubnetPlannerApp:
             
             # 添加提示信息
             tip_label = ttk.Label(qr_content, 
-                               text=_(
-                                   "donate_tip"), 
+                               text=_("donate_tip"), 
                                font=(font_family, 10),
                                style="About.TLabel",
-                               foreground="#666666")
+                               foreground="#666666",
+                               wraplength=360,  # 减小换行宽度，确保文字完全显示
+                               justify=tk.LEFT)  # 设置文本左对齐
             tip_label.pack(pady=(5, 5))
             
             # 添加开源地址链接
@@ -10625,7 +10626,7 @@ class SubnetPlannerApp:
         
         # 添加扫码捐赠按钮
         qr_button = ttk.Button(button_frame, 
-                            text=_('scan_qr_donate'), 
+                            text=_('donate'), 
                             command=show_donate_qr, 
                             width=10,
                             style="About.TButton")
@@ -11942,14 +11943,14 @@ class SubnetPlannerApp:
         if selected_records is None:
             selected_records = [{'id': ip_id, 'ip_address': ip_address}]
         # 创建对话框，使用parent_dialog.dialog作为父窗口
-        dialog = ComplexDialog(parent_dialog.dialog, _('resolve_conflict'), 500, 350, resizable=False, modal=True)
+        dialog = ComplexDialog(parent_dialog.dialog, _('resolve_conflict'), 400, 260, resizable=False, modal=True)
         
         # 获取当前字体设置
         from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 主框架
-        main_frame = ttk.Frame(dialog.content_frame, padding=20)
+        main_frame = ttk.Frame(dialog.content_frame, padding=(15, 0))
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 说明文字
@@ -11961,8 +11962,8 @@ class SubnetPlannerApp:
                       font=(font_family, font_size, 'bold')).pack(anchor='w', pady=(0, 10))
         
         # 操作选项框架
-        action_frame = ttk.LabelFrame(main_frame, text=_('select_action'), padding=15)
-        action_frame.pack(fill=tk.X, pady=(0, 20))
+        action_frame = ttk.LabelFrame(main_frame, text=_('select_action'), padding=(25,10))
+        action_frame.pack(fill=tk.X, pady=(0, 0))
         
         # 操作选项
         action_var = tk.StringVar(value='keep')
@@ -11980,10 +11981,6 @@ class SubnetPlannerApp:
         ttk.Radiobutton(action_frame, text=_('release_this_ip'), 
                         variable=action_var, value='release', style="Custom.TRadiobutton").pack(anchor='w', pady=5)
         
-        # 按钮框架 - 使用明确的布局
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(20, 0), side=tk.BOTTOM)
-
         def execute_action():
             action = action_var.get()
 
@@ -12022,13 +12019,19 @@ class SubnetPlannerApp:
             except Exception:
                 pass
 
+        # 按钮框架（放在dialog底部，固定位置）
+        button_frame = ttk.Frame(dialog.dialog)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=(0, 15))
+        
+        button_container = ttk.Frame(button_frame)
+        button_container.pack(side=tk.RIGHT)
+
         # 创建按钮
-        confirm_btn = ttk.Button(button_frame, text=_('confirm'), command=execute_action)
+        confirm_btn = ttk.Button(button_container, text=_('confirm'), command=execute_action)
         confirm_btn.pack(side=tk.LEFT, padx=5)
 
-        cancel_btn = ttk.Button(button_frame, text=_('cancel'), command=dialog.destroy)
-        cancel_btn.pack(side=tk.RIGHT, padx=5)
-        
+        cancel_btn = ttk.Button(button_container, text=_('cancel'), command=dialog.destroy)
+        cancel_btn.pack(side=tk.LEFT, padx=5)
         # 显示对话框
         dialog.show()
     

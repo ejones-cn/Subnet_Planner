@@ -31,8 +31,8 @@ class StyleManager:
     BUTTON_PADDING_SETTINGS = {
         "zh": (0, 1),
         "zh_tw": (0, 2),
-        "ja": (2, 1),
-        "ko": (2, 2),
+        "ja": (0, 1),
+        "ko": (0, 3),
         "default": (3, 3)
     }
 
@@ -50,7 +50,7 @@ class StyleManager:
         "zh": 2,
         "zh_tw": 2,
         "ja": 1,
-        "ko": 2,
+        "ko": 4,
         "default": 4
     }
 

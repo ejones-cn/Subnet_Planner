@@ -98,20 +98,27 @@ class FontConfig:
         "zh": ("微软雅黑", 11),
         "zh_tw": ("Microsoft JhengHei", 11),
         "ja": ("Meiryo", 10),
-        "ko": ("Malgun Gothic", 11),
+        "ko": ("Malgun Gothic", 10),
         "default": ("Segoe UI", 10)
     }
     
     # Canvas 专用字体配置
     # Tk Canvas create_text 使用 Tk 内置文本渲染引擎，不会像 ttk 控件那样
     # 在字体回退时进行度量同步，导致回退字符与主字体字符粗细大小不一致。
-    # 因此 Canvas 需要使用具有全面 CJK 覆盖的字体，避免字体回退。
+    #
+    # 设计原则：
+    # - 中文系统：使用"微软雅黑"，全面覆盖简体中文字符，避免回退
+    # - 日语/韩语系统：也使用"微软雅黑"，因为软件界面语言是中文，
+    #   拓扑图主要显示中文内容（中文字符回退少，即使回退也与界面一致）
+    # - 如果需要显示日文/韩文，会回退到系统字体，与界面回退行为一致
+    #
+    # 注意：在纯日语/韩语软件环境下，可能需要不同的字体配置
     CANVAS_FONT_SETTINGS: dict[str, tuple[str, int]] = {
         "zh": ("微软雅黑", 11),
         "zh_tw": ("Microsoft JhengHei", 11),
-        "ja": ("微软雅黑", 10),
+        "ja": ("微软雅黑", 11),
         "ko": ("微软雅黑", 11),
-        "default": ("Segoe UI", 10)
+        "default": ("Segoe UI", 11)
     }
     
     PIN_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
@@ -135,7 +142,7 @@ class FontConfig:
         "zh": 10,
         "zh_tw": 11,
         "ja": 10,
-        "ko": 9,
+        "ko": 10,
         "default": 9
     }
     
