@@ -406,8 +406,6 @@ class InfoDialog(DialogBase):
     
     def _init_ui(self):
         """初始化界面"""
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 添加消息文本
@@ -460,8 +458,6 @@ class ConfirmDialog(DialogBase):
     
     def _init_ui(self):
         """初始化界面"""
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 添加消息文本
@@ -526,8 +522,6 @@ class InputDialog(DialogBase):
     
     def _init_ui(self):
         """初始化界面"""
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 配置内容框架的网格布局
@@ -657,8 +651,6 @@ class SelectDialog(DialogBase):
     
     def _init_ui(self):
         """初始化界面"""
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 创建滚动框架
@@ -763,8 +755,6 @@ class ComplexDialog(DialogBase):
         Returns:
             tuple: (label_widget, entry_widget) 标签和输入框组件
         """
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 添加标签（自动添加冒号）
@@ -798,8 +788,6 @@ class ComplexDialog(DialogBase):
         Returns:
             ttk.Label: 标签组件
         """
-        # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         label = ttk.Label(
@@ -8493,7 +8481,6 @@ class SubnetPlannerApp:
                 self.style.theme_use(new_theme)
                 
                 # theme_use() 会重置所有样式，需要重新应用全局字体设置
-                from style_manager import update_styles
                 update_styles()
                 
                 # 重新配置Treeview样式，确保在新主题下表格线仍然可见
@@ -10080,7 +10067,6 @@ class SubnetPlannerApp:
         self.root.title(f"{self.app_name} v{self.app_version}")
         
         # 更新样式，确保新创建的UI元素使用正确的样式
-        from style_manager import update_styles
         update_styles()
         
         # 重新创建所有UI元素，实现语言更新
@@ -11806,7 +11792,6 @@ class SubnetPlannerApp:
         dialog = ComplexDialog(self.root, _('ip_conflicts'), 800, 600, resizable=True, modal=True)
         
         # 设置字体
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 创建主框架
@@ -11958,7 +11943,6 @@ class SubnetPlannerApp:
         dialog = ComplexDialog(parent_dialog.dialog, _('resolve_conflict'), 400, 260, resizable=False, modal=True)
         
         # 获取当前字体设置
-        from style_manager import get_current_font_settings
         font_family, font_size = get_current_font_settings()
         
         # 主框架
@@ -12339,7 +12323,6 @@ class SubnetPlannerApp:
     def _show_import_compare_dialog(self, validated_data: dict):
         """显示导入数据对话框"""
         try:
-            from style_manager import get_current_font_settings
             font_family, font_size = get_current_font_settings()
 
             dialog = ComplexDialog(self.root, _('import_data'), 800, 600, resizable=True, modal=True)
@@ -14211,7 +14194,6 @@ class SubnetPlannerApp:
             column_type = config.get('column_types', {}).get(column_index, 'entry')
             
             # 获取字体设置
-            from style_manager import get_current_font_settings
             font_family, font_size = get_current_font_settings()
             
             if column_type == 'combobox':
