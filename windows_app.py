@@ -3195,8 +3195,8 @@ class SubnetPlannerApp:
             tag = "even" if index % 2 == 0 else "odd"
             self.pool_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
 
-        # 调用方法更新序号
-        self.update_requirements_tree_zebra_stripes()
+        # 调用方法更新序号和斑马条纹
+        self.update_planning_tables_zebra_stripes()
 
         self.configure_treeview_styles(self.requirements_tree)
         self.configure_treeview_styles(self.pool_tree)  # 配置需求池表格样式
