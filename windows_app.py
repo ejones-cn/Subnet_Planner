@@ -4414,7 +4414,7 @@ class SubnetPlannerApp:
         cell_data = str(values[column_index])
 
         # 特殊处理：如果是隐藏信息表且复制的是密码列（索引2），获取真实密码
-        if tree == self._hidden_info_tree and column_index == 2:
+        if hasattr(self, '_hidden_info_tree') and tree == self._hidden_info_tree and column_index == 2:
             record_id = int(item)
             for record in getattr(self, '_hidden_info_raw_data', []):
                 if record.get('id') == record_id:
