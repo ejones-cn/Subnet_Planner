@@ -3178,15 +3178,22 @@ class SubnetPlannerApp:
             ("party", "20"),
             ("discipline", "10"),
             ("it_department", "20"),
+        ]
+        for index, (name_key, hosts) in enumerate(requirements_data, 1):
+            tag = "even" if index % 2 == 0 else "odd"
+            self.requirements_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
+
+        # 需求池示例数据 - 最后5条
+        pool_data = [
             ("engineering", "20"),
             ("sales", "20"),
             ("rd", "15"),
             ("production", "100"),
             ("transportation", "20"),
         ]
-        for index, (name_key, hosts) in enumerate(requirements_data, 1):
+        for index, (name_key, hosts) in enumerate(pool_data, 1):
             tag = "even" if index % 2 == 0 else "odd"
-            self.requirements_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
+            self.pool_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
 
         # 调用方法更新序号
         self.update_requirements_tree_zebra_stripes()
