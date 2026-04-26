@@ -14,6 +14,11 @@ from datetime import datetime
 from typing import NamedTuple, cast
 from enum import Enum
 
+# Windows 终端默认 GBK 编码无法输出 emoji，强制使用 UTF-8
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 class CompileType(Enum):
     NUITKA = "nuitka"
@@ -235,6 +240,298 @@ def process_output_file(
     return True
 
 
+def _clean_dist_directory(dist_dir: str) -> None:
+    """清理 dist 目录中不必要的文件，减小体积和文件数
+    
+    Args:
+        dist_dir: dist 目录路径
+    """
+    print("\n🧹 清理 dist 目录中不必要的文件...")
+    
+    removed_count = 0
+    removed_size = 0
+    
+    # 1. 清理 tcl/tzdata - 只保留 Asia 和 Etc 目录（中国用户需要）
+    tzdata_dir = os.path.join(dist_dir, "tcl", "tzdata")
+    if os.path.exists(tzdata_dir):
+        for item in os.listdir(tzdata_dir):
+            item_path = os.path.join(tzdata_dir, item)
+            if os.path.isdir(item_path) and item not in ("Asia", "Etc"):
+                try:
+                    size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(item_path, onerror=lambda e: None) for f in fn)
+                    removed_size += size
+                    removed_count += sum(1 for _, _, fn in os.walk(item_path, onerror=lambda e: None) for _ in fn)
+                    shutil.rmtree(item_path, ignore_errors=True)
+                except OSError:
+                    pass
+    
+    # 2. 清理 tcl/tzdata - 保留中日韩及常用地区
+    if os.path.exists(tzdata_dir):
+        # 保留：Asia（中日韩）、Etc（UTC等）、Pacific、America（少量）
+        keep_regions = {"Asia", "Etc", "Pacific"}
+        for item in os.listdir(tzdata_dir):
+            item_path = os.path.join(tzdata_dir, item)
+            if os.path.isdir(item_path) and item not in keep_regions:
+                try:
+                    size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(item_path, onerror=lambda e: None) for f in fn)
+                    removed_size += size
+                    removed_count += sum(1 for _, _, fn in os.walk(item_path, onerror=lambda e: None) for _ in fn)
+                    shutil.rmtree(item_path, ignore_errors=True)
+                except OSError:
+                    pass
+    
+    # 3. 清理 tcl/tzdata/Asia - 保留中日韩相关时区
+    asia_dir = os.path.join(tzdata_dir, "Asia")
+    if os.path.exists(asia_dir):
+        # 简中/繁中/日/韩/英相关时区
+        keep_zones = {
+            "Shanghai", "Hong_Kong", "Taipei", "Macao",       # 中
+            "Tokyo", "Seoul", "Singapore",                     # 日韩
+            "Kolkata", "Bangkok", "Dubai", "Manila",           # 常用亚洲
+        }
+        for item in os.listdir(asia_dir):
+            item_path = os.path.join(asia_dir, item)
+            if os.path.isfile(item_path):
+                zone_name = item.replace(".msg", "")
+                if zone_name not in keep_zones:
+                    removed_size += os.path.getsize(item_path)
+                    removed_count += 1
+                    os.remove(item_path)
+    
+    # 4. 清理 tcl/tzdata/Pacific - 只保留常用
+    pacific_dir = os.path.join(tzdata_dir, "Pacific")
+    if os.path.exists(pacific_dir):
+        keep_zones = {"Auckland", "Fiji"}
+        for item in os.listdir(pacific_dir):
+            item_path = os.path.join(pacific_dir, item)
+            if os.path.isfile(item_path):
+                zone_name = item.replace(".msg", "")
+                if zone_name not in keep_zones:
+                    removed_size += os.path.getsize(item_path)
+                    removed_count += 1
+                    os.remove(item_path)
+    
+    # 5. 清理 tcl/msgs - 保留中日韩英消息文件
+    for msgs_dir in [
+        os.path.join(dist_dir, "tcl", "msgs"),
+        os.path.join(dist_dir, "tk", "msgs"),
+    ]:
+        if os.path.exists(msgs_dir):
+            # 保留：简中、繁中、日、韩、英的消息文件
+            keep_prefixes = ("zh_cn", "zh_tw", "zh_hk", "ja", "ko", "en")
+            for item in os.listdir(msgs_dir):
+                item_path = os.path.join(msgs_dir, item)
+                if os.path.isfile(item_path):
+                    item_lower = item.lower()
+                    if not any(item_lower.startswith(p) for p in keep_prefixes):
+                        removed_size += os.path.getsize(item_path)
+                        removed_count += 1
+                        os.remove(item_path)
+    
+    # 4. 清理 tk/images - 删除不必要的大图片
+    tk_images_dir = os.path.join(dist_dir, "tk", "images")
+    if os.path.exists(tk_images_dir):
+        for item in os.listdir(tk_images_dir):
+            item_path = os.path.join(tk_images_dir, item)
+            if os.path.isfile(item_path):
+                removed_size += os.path.getsize(item_path)
+                removed_count += 1
+                os.remove(item_path)
+        if not os.listdir(tk_images_dir):
+            os.rmdir(tk_images_dir)
+    
+    # 6. 清理 tcl/encoding 目录 - 保留中日韩英必需编码
+    encoding_dir = os.path.join(dist_dir, "tcl", "encoding")
+    if not os.path.exists(encoding_dir):
+        encoding_dir = os.path.join(dist_dir, "encoding")
+    if os.path.exists(encoding_dir):
+        keep_encodings = {
+            # 中文编码
+            "cp936.enc", "gb2312.enc", "gbk.enc", "gb18030.enc",
+            "big5.enc", "cp950.enc",                                    # 繁中
+            # 日韩编码
+            "cp932.enc", "shiftjis.enc", "euc-jp.enc",                 # 日
+            "cp949.enc", "euc-kr.enc", "ksc5601.enc",                  # 韩
+            # 通用编码
+            "utf-8.enc", "ascii.enc", "iso8859-1.enc", "cp1252.enc",
+            "symbol.enc", "dingbats.enc",                               # 字体符号
+        }
+        for item in os.listdir(encoding_dir):
+            item_path = os.path.join(encoding_dir, item)
+            if os.path.isfile(item_path) and item not in keep_encodings:
+                removed_size += os.path.getsize(item_path)
+                removed_count += 1
+                os.remove(item_path)
+        if os.path.exists(encoding_dir) and not os.listdir(encoding_dir):
+            try:
+                os.rmdir(encoding_dir)
+            except OSError:
+                pass
+    
+    # 7. 清理 tcl 脚本 - 删除开发/调试用脚本（auto.tcl/clock.tcl 是运行时必需的，不能删除）
+    tcl_dir = os.path.join(dist_dir, "tcl")
+    if os.path.exists(tcl_dir):
+        remove_tcl_files = {
+            "parray.tcl", "tm.tcl",
+            "safe.tcl", "safetk.tcl",
+            "tcltest-2.5.3.tm", "tcltest.tcl",
+            "pkgIndex.tcl", "package.tcl",
+            "history.tcl", "word.tcl",
+            "obsolete.tcl", "unsupported.tcl",
+        }
+        for root, _, files in os.walk(tcl_dir, onerror=lambda e: None):
+            for f in files:
+                if f in remove_tcl_files:
+                    fpath = os.path.join(root, f)
+                    if os.path.exists(fpath):
+                        removed_size += os.path.getsize(fpath)
+                        removed_count += 1
+                        os.remove(fpath)
+    
+    # 8. 清理无扩展名的文件（Nuitka 生成的编译缓存）
+    for item in os.listdir(dist_dir):
+        item_path = os.path.join(dist_dir, item)
+        if os.path.isfile(item_path) and not os.path.splitext(item)[1]:
+            if os.path.getsize(item_path) < 100:
+                continue
+            removed_size += os.path.getsize(item_path)
+            removed_count += 1
+            os.remove(item_path)
+    
+    # 9. 删除空目录
+    for root, dirs, _ in os.walk(dist_dir, topdown=False, onerror=lambda e: None):
+        for d in dirs:
+            dir_path = os.path.join(root, d)
+            try:
+                if not os.listdir(dir_path):
+                    os.rmdir(dir_path)
+            except OSError:
+                pass
+    
+    removed_size_mb = removed_size / (1024 * 1024)
+    print(f"   🗑️  删除了 {removed_count} 个文件，节省 {removed_size_mb:.1f} MB")
+    
+    # UPX 压缩 DLL 和 PYD 文件
+    _upx_compress_dist(dist_dir)
+
+
+def _upx_compress_dist(dist_dir: str) -> None:
+    """使用 UPX 压缩 dist 目录中的 DLL 和 PYD 文件
+    
+    Args:
+        dist_dir: dist 目录路径
+    """
+    # 查找 UPX
+    upx_path = None
+
+    # 1. 先用 shutil.which 查找（可能返回 junction point 路径）
+    which_result = shutil.which("upx")
+    if which_result:
+        # 解析 junction point 获取真实路径，避免 WinError 448
+        real_path = os.path.realpath(which_result)
+        if os.path.isfile(real_path):
+            try:
+                result = subprocess.run([real_path, "--version"], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    upx_path = real_path
+                    print(f"   ✅ 找到 UPX: {real_path}")
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+
+    # 2. 检查常见安装路径（包括 WinGet）
+    if not upx_path:
+        local_appdata = os.environ.get("LOCALAPPDATA", "")
+        common_paths = [
+            # WinGet 安装路径（遍历 Packages 子目录查找）
+            os.path.join(local_appdata, "Microsoft", "WinGet", "Packages"),
+            # 传统安装路径
+            os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "UPX", "upx.exe"),
+            os.path.join(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "UPX", "upx.exe"),
+            os.path.join(local_appdata, "Programs", "UPX", "upx.exe"),
+        ]
+        for p in common_paths:
+            if not os.path.exists(p):
+                continue
+            # 如果是目录（如 WinGet Packages），遍历查找 upx.exe
+            if os.path.isdir(p) and "Packages" in p:
+                for root, _, files in os.walk(p, onerror=lambda e: None):
+                    for f in files:
+                        if f.lower() == "upx.exe":
+                            candidate = os.path.realpath(os.path.join(root, f))
+                            try:
+                                result = subprocess.run([candidate, "--version"], capture_output=True, text=True, timeout=5)
+                                if result.returncode == 0:
+                                    upx_path = candidate
+                                    print(f"   ✅ 找到 UPX: {candidate}")
+                                    break
+                            except (OSError, subprocess.TimeoutExpired):
+                                continue
+                    if upx_path:
+                        break
+            elif os.path.isfile(p):
+                real_p = os.path.realpath(p)
+                try:
+                    result = subprocess.run([real_p, "--version"], capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        upx_path = real_p
+                        print(f"   ✅ 找到 UPX: {real_p}")
+                        break
+                except (OSError, subprocess.TimeoutExpired):
+                    continue
+    
+    if not upx_path:
+        print("   ℹ️  UPX 未安装，跳过 DLL/PYD 压缩")
+        print("      安装 UPX 可进一步减小 50-70% 体积: https://upx.github.io/")
+        return
+    
+    print(f"   🗜️  使用 UPX 压缩 DLL/PYD 文件...")
+    
+    # 收集目标文件
+    targets = []
+    target_exts = (".dll", ".pyd")
+    for root, _, files in os.walk(dist_dir, onerror=lambda e: None):
+        for f in files:
+            if f.lower().endswith(target_exts):
+                targets.append(os.path.realpath(os.path.join(root, f)))
+    
+    if not targets:
+        print("   ℹ️  未找到 DLL/PYD 文件，跳过压缩")
+        return
+    
+    before_size = sum(os.path.getsize(t) for t in targets if os.path.exists(t))
+    compressed_count = 0
+    
+    # 压缩（排除无法压缩或不建议压缩的文件）
+    import re
+    # python3XX.dll: 压缩后可能导致启动问题
+    # vcruntime*.dll / msvcp*.dll: MSVC 运行时，UPX 无法压缩
+    exclude_pattern = re.compile(
+        r"^(python3\d*|vcruntime\d+(_\d+)?|msvcp\d+(_\d+)?)\.dll$",
+        re.IGNORECASE
+    )
+    for target in targets:
+        if exclude_pattern.match(os.path.basename(target)):
+            continue
+        try:
+            result = subprocess.run(
+                [upx_path, "--best", target],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode == 0:
+                compressed_count += 1
+            elif "already packed" in result.stderr.lower():
+                pass  # 已压缩过，跳过
+            else:
+                print(f"      ⚠️  压缩失败: {os.path.basename(target)}")
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    
+    after_size = sum(os.path.getsize(t) for t in targets if os.path.exists(t))
+    saved_mb = (before_size - after_size) / (1024 * 1024)
+    ratio = (1 - after_size / before_size) * 100 if before_size > 0 else 0
+    print(f"   ✅ UPX 压缩完成: {compressed_count} 个文件，节省 {saved_mb:.1f} MB (压缩率 {ratio:.0f}%)")
+
+
 def _restore_database_and_backups(
     temp_db_dir: str,
     original_db: str,
@@ -301,7 +598,7 @@ def _generate_spec_content(version: str, output_filename: str, onefile: bool) ->
             "idlelib", "pydoc", "test", "lib2to3",
             "debug", "code", "codeop", "readline", "rlcompleter",
         ]
-        datas = [["translations.json", "."], ["Subnet_Planner.ico", "."], ["Picture", "Picture"], ["SubnetPlanner_config.json", "."]]
+        datas = [["translations.json", "."], ["Picture", "Picture"], ["SubnetPlanner_config.json", "."]]
     
     excludes_str = ",\n                 ".join(f"'{module}'" for module in excludes)
     datas_str = ",\n             ".join(f"('{data[0]}', '{data[1]}')" for data in datas)
@@ -344,7 +641,7 @@ exe = EXE(pyz,
         upx_exclude=[],
         runtime_tmpdir=None,
         console=False,
-        icon='Subnet_Planner.ico',
+        icon='icon.ico',
         disable_windowed_traceback=False,
         argv_emulation=False,
         target_arch=None,
@@ -501,9 +798,8 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--include-module=style_manager",
             "--include-module=chart_utils",
             "--include-module=visualization",
-            "--windows-icon-from-ico=Subnet_Planner.ico",
+            "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
-            "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
             "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
             "--include-data-dir=Picture=Picture",
             "--enable-plugin=tk-inter",
@@ -525,7 +821,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             f"--company-name={version_resource['company_name']}",
             f"--copyright={version_resource['copyright']}",
             f"--file-description={version_resource['file_description']}",
-            f"--output-filename={output_filename}",
+            f"--output-filename={output_filename if onefile else 'SubnetPlanner.exe'}",
             "windows_app.py"
         ]
         
@@ -558,24 +854,42 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
                 print("❌ 未找到编译输出目录 (.dist)")
                 return False
             
-            # 重命名为目标目录名
-            dest_dir = os.path.join(output_dir, f"{output_filename.rsplit('.', 1)[0]}_Nuitka.dist")
+            # 先清理源目录中的不必要文件（在复制前清理更高效）
+            try:
+                _clean_dist_directory(dist_dir)
+            except OSError as e:
+                print(f"   ⚠️  清理过程中遇到文件系统问题（已跳过）: {e}")
+            
+            # 重命名目录中的 exe（目录模式不带版本号，方便升级替换）
+            # Nuitka 通过 --output-filename 可能已直接命名为 SubnetPlanner.exe
+            standalone_exe_name = "SubnetPlanner.exe"
+            old_exe = os.path.join(dist_dir, "windows_app.exe")
+            if os.path.exists(old_exe):
+                os.rename(old_exe, os.path.join(dist_dir, standalone_exe_name))
+            
+            # 对 exe 进行签名（在源目录中签名）
+            src_exe = os.path.join(dist_dir, standalone_exe_name)
+            if os.path.exists(src_exe):
+                sign_executable(src_exe, pfx_password, signtool_path)
+            
+            # 重命名目录为目标名称（目录模式不带版本号，方便升级替换）
+            dest_dir = os.path.join(output_dir, "SubnetPlanner_Nuitka.dist")
             if os.path.exists(dest_dir):
-                shutil.rmtree(dest_dir)
-            shutil.copytree(dist_dir, dest_dir)
+                shutil.rmtree(dest_dir, ignore_errors=True)
             
-            # 重命名目录中的 exe
-            old_exe = os.path.join(dest_dir, "windows_app.exe")
-            new_exe = os.path.join(dest_dir, output_filename)
-            if os.path.exists(old_exe) and old_exe != new_exe:
-                os.rename(old_exe, new_exe)
-            
-            # 对 exe 进行签名
-            if os.path.exists(new_exe):
-                sign_executable(new_exe, pfx_password, signtool_path)
+            # 直接重命名目录（比复制快且避免挂载点问题）
+            try:
+                os.rename(dist_dir, dest_dir)
+            except OSError:
+                # 如果跨盘符无法重命名，则复制
+                try:
+                    shutil.copytree(dist_dir, dest_dir, ignore_dangling_symlinks=True, dirs_exist_ok=True)
+                except TypeError:
+                    # Python 3.12 以下不支持 dirs_exist_ok
+                    shutil.copytree(dist_dir, dest_dir)
             
             # 计算总大小
-            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir) for f in fn)
+            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir, onerror=lambda e: None) for f in fn)
             size_mb = total_size / (1024 * 1024)
             print(f"📦 输出目录: {dest_dir}")
             print(f"📏 目录总大小: {size_mb:.2f} MB")
@@ -641,7 +955,7 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
                 sign_executable(exe_path, pfx_password, signtool_path)
             
             # 计算总大小
-            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir) for f in fn)
+            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir, onerror=lambda e: None) for f in fn)
             size_mb = total_size / (1024 * 1024)
             print(f"📦 输出目录: {dest_dir}")
             print(f"📏 目录总大小: {size_mb:.2f} MB")

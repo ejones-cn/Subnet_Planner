@@ -1,0 +1,5994 @@
+{
+  "__version__": "3.0.0",
+  "error": {
+    "zh": "错误",
+    "zh_tw": "錯誤",
+    "en": "Error",
+    "ja": "エラー",
+    "ko": "오류"
+  },
+  "input_error": {
+    "zh": "输入错误",
+    "zh_tw": "輸入錯誤",
+    "en": "Input Error",
+    "ja": "入力エラー",
+    "ko": "입력 오류"
+  },
+  "ok": {
+    "zh": "确定",
+    "zh_tw": "確定",
+    "en": "OK",
+    "ja": "確定",
+    "ko": "확인"
+  },
+  "cancel": {
+    "zh": "取消",
+    "zh_tw": "取消",
+    "en": "Cancel",
+    "ja": "取消",
+    "ko": "취소"
+  },
+  "yes": {
+    "zh": "是",
+    "en": "Yes",
+    "ja": "はい",
+    "zh_tw": "是",
+    "ko": "네"
+  },
+  "no": {
+    "zh": "否",
+    "en": "No",
+    "ja": "いいえ",
+    "zh_tw": "否",
+    "ko": "아니오"
+  },
+  "sample_device_names": {
+    "zh": ["路由器", "网关", "无线路由器"],
+    "zh_tw": ["路由器", "閘道", "無線路由器"],
+    "en": ["Router", "Gateway", "Wireless Router"],
+    "ja": ["ルーター", "ゲートウェイ", "無線ルーター"],
+    "ko": ["라우터", "게이트웨이", "무선 라우터"]
+  },
+  "continue_adding": {
+    "zh": "是否继续添加",
+    "zh_tw": "是否繼續添加",
+    "en": "Continue adding",
+    "ja": "追加を続けますか",
+    "ko": "계속 추가하시겠습니까"
+  },
+  "confirm": {
+    "zh": "确认",
+    "zh_tw": "確認",
+    "en": "Confirm",
+    "ja": "確認",
+    "ko": "확인"
+  },
+  "confirmation": {
+    "zh": "确认",
+    "zh_tw": "確認",
+    "en": "Confirmation",
+    "ja": "確認",
+    "ko": "확인"
+  },
+  "confirm_remove_network": {
+    "zh": "确定要删除选中的网络吗？",
+    "zh_tw": "確定要刪除選中的網路嗎？",
+    "en": "Are you sure you want to delete the selected network?",
+    "ja": "選択したネットワークを削除してもよろしいですか？",
+    "ko": "선택한 네트워크를 삭제하시겠습니까?"
+  },
+  "confirm_remove_networks": {
+    "zh": "确定要删除选中的 {count} 个网络吗？",
+    "zh_tw": "確定要刪除選中的 {count} 個網路嗎？",
+    "en": "Are you sure you want to delete the selected {count} networks?",
+    "ja": "選択した {count} 個のネットワークを削除してもよろしいですか？",
+    "ko": "선택한 {count}개의 네트워크를 삭제하시겠습니까?"
+  },
+  "remove_networks_success": {
+    "zh": "成功删除 {count} 个网络",
+    "zh_tw": "成功刪除 {count} 個網路",
+    "en": "Successfully removed {count} networks",
+    "ja": "{count} 個のネットワークを削除しました",
+    "ko": "{count}개의 네트워크를 삭제했습니다"
+  },
+  "remove_networks_partial": {
+    "zh": "成功删除 {success} 个网络，{failed} 个删除失败",
+    "zh_tw": "成功刪除 {success} 個網路，{failed} 個刪除失敗",
+    "en": "Successfully removed {success} networks, {failed} failed",
+    "ja": "{success} 個のネットワークを削除しました。{failed} 個の削除に失敗しました",
+    "ko": "{success}개의 네트워크를 삭제했습니다. {failed}개는 삭제에 실패했습니다"
+  },
+  "remove_networks_failed": {
+    "zh": "删除网络失败",
+    "zh_tw": "刪除網路失敗",
+    "en": "Failed to remove networks",
+    "ja": "ネットワークの削除に失敗しました",
+    "ko": "네트워크 삭제에 실패했습니다"
+  },
+  "available_ips_detected": {
+    "zh": "检测到可用IP地址",
+    "zh_tw": "檢測到可用IP位址",
+    "en": "Available IP Addresses Detected",
+    "ja": "利用可能なIPアドレスが検出されました",
+    "ko": "사용 가능한 IP 주소 감지"
+  },
+  "no_available_ips_found": {
+    "zh": "未找到可用IP地址",
+    "zh_tw": "未找到可用IP位址",
+    "en": "No available IP addresses found",
+    "ja": "利用可能なIPアドレスが見つかりませんでした",
+    "ko": "사용 가능한 IP 주소를 찾을 수 없습니다"
+  },
+  "no_expired_ips_found": {
+    "zh": "未找到过期IP地址",
+    "zh_tw": "未找到過期IP位址",
+    "en": "No expired IP addresses found",
+    "ja": "期限切れのIPアドレスが見つかりませんでした",
+    "ko": "만료된 IP 주소를 찾을 수 없습니다"
+  },
+  "cleanup_selected": {
+    "zh": "清理选中",
+    "zh_tw": "清理選中",
+    "en": "Cleanup Selected",
+    "ja": "選択したものをクリーンアップ",
+    "ko": "선택한 항목 정리"
+  },
+  "cleanup_all": {
+    "zh": "全部清理",
+    "zh_tw": "全部清理",
+    "en": "Cleanup All",
+    "ja": "すべてをクリーンアップ",
+    "ko": "모두 정리"
+  },
+  "successfully_cleaned_ips": {
+    "zh": "成功清理了{count}个IP地址",
+    "zh_tw": "成功清理了{count}個IP位址",
+    "en": "Successfully cleaned up {count} IP addresses",
+    "ja": "{count}個のIPアドレスを正常にクリーンアップしました",
+    "ko": "{count}개의 IP 주소를 성공적으로 정리했습니다"
+  },
+  "add": {
+    "zh": "添加",
+    "zh_tw": "新增",
+    "en": "Add",
+    "ja": "追加",
+    "ko": "추가"
+  },
+  "delete": {
+    "zh": "删除",
+    "zh_tw": "刪除",
+    "en": "Delete",
+    "ja": "削除",
+    "ko": "삭제"
+  },
+  "undo": {
+    "zh": "撤销",
+    "zh_tw": "復原",
+    "en": "Undo",
+    "ja": "戻す",
+    "ko": "되돌리기"
+  },
+  "import": {
+    "zh": "导入",
+    "zh_tw": "匯入",
+    "en": "Import",
+    "ja": "取込",
+    "ko": "임포트"
+  },
+  "add_subnet_requirement": {
+    "zh": "添加子网需求",
+    "zh_tw": "新增子網需求",
+    "en": "Add Subnet Requirement",
+    "ja": "サブネット要件の追加",
+    "ko": "서브넷 요구 사항 추가"
+  },
+  "split_segment_info": {
+    "zh": "切分段信息",
+    "zh_tw": "切分段資訊",
+    "en": "Split Segment Info",
+    "ja": "分割セグメント情報",
+    "ko": "분할 정보"
+  },
+  "remaining_segment_info": {
+    "zh": "剩余网段信息",
+    "zh_tw": "剩餘網段資訊",
+    "en": "Remaining Segment Info",
+    "ja": "残りのセグメント情報",
+    "ko": "남은 네트워크 세그먼트"
+  },
+  "subnet_planner": {
+    "zh": "子网规划师",
+    "zh_tw": "子網規劃師",
+    "en": "SubnetPlanner",
+    "ja": "子网計画師",
+    "ko": "서브넷 플래너"
+  },
+  "save_subnet_split_result": {
+    "zh": "保存子网切分结果",
+    "zh_tw": "儲存子網切分結果",
+    "en": "Save Subnet Split Result",
+    "ja": "サブネット分割結果の保存",
+    "ko": "서브넷 분할 결과 저장"
+  },
+  "save_subnet_planning_result": {
+    "zh": "保存子网规划结果",
+    "zh_tw": "儲存子網規劃結果",
+    "en": "Save Subnet Planning Result",
+    "ja": "サブネット計画結果の保存",
+    "ko": "서브넷 계획 결과 저장"
+  },
+  "result_successfully_exported": {
+    "zh": "结果已成功导出到: {file_path}",
+    "zh_tw": "結果已成功匯出到：{file_path}",
+    "en": "Result successfully exported to: {file_path}",
+    "ja": "結果が正常にエクスポートされました：{file_path}",
+    "ko": "성공적으로 내보낸 결과: {file_path}"
+  },
+  "export_failed": {
+    "zh": "数据导出失败",
+    "zh_tw": "資料匯出失敗",
+    "en": "Data export failed",
+    "ja": "データのエクスポートに失敗しました",
+    "ko": "데이터 내보내기 실패"
+  },
+  "apply_theme": {
+    "zh": "应用主题",
+    "zh_tw": "套用主題",
+    "en": "Apply Theme",
+    "ja": "テーマを適用",
+    "ko": "테마 적용"
+  },
+  "close": {
+    "zh": "关闭",
+    "zh_tw": "關閉",
+    "en": "Close",
+    "ja": "閉じる",
+    "ko": "닫기"
+  },
+  "history": {
+    "zh": "历史记录",
+    "zh_tw": "歷史記錄",
+    "en": "History",
+    "ja": "履歴",
+    "ko": "히스토리"
+  },
+  "parent_network": {
+    "zh": "父网段",
+    "zh_tw": "父網段",
+    "en": "Parent Network",
+    "ja": "親ネットワーク",
+    "ko": "상위 네트워크"
+  },
+  "split_segments": {
+    "zh": "切分段",
+    "zh_tw": "切分段",
+    "en": "Split Segments",
+    "ja": "分割セグメント",
+    "ko": "분할 세그먼트"
+  },
+  "execute_split": {
+    "zh": "执行切分",
+    "zh_tw": "執行切分",
+    "en": "Split",
+    "ja": "分割実行",
+    "ko": "분할 실행"
+  },
+  "reexecute_split": {
+    "zh": "重新切分",
+    "zh_tw": "重新切分",
+    "en": "Re-Split",
+    "ja": "再分割",
+    "ko": "재분할"
+  },
+  "split_result": {
+    "zh": "切分结果",
+    "zh_tw": "切分結果",
+    "en": "Split Result",
+    "ja": "分割結果",
+    "ko": "분할 결과"
+  },
+  "export_result": {
+    "zh": "导出结果",
+    "zh_tw": "匯出結果",
+    "en": "Export Result",
+    "ja": "エクスポート結果",
+    "ko": "결과 내보내기"
+  },
+  "one_click_export": {
+    "zh": "一键导出",
+    "zh_tw": "一鍵匯出",
+    "en": "One-Click Export",
+    "ja": "エクスポート",
+    "ko": "원클릭 내보내기"
+  },
+  "select_export_directory": {
+    "zh": "选择导出目录",
+    "zh_tw": "選擇匯出目錄",
+    "en": "Select Export Directory",
+    "ja": "エクスポートディレクトリを選択",
+    "ko": "내보내기 디렉터리 선택"
+  },
+  "one_click_export_success": {
+    "zh": "一键导出成功！导出目录：{dir}",
+    "zh_tw": "一鍵匯出成功！匯出目錄：{dir}",
+    "en": "One-click export succeeded! Export directory: {dir}",
+    "ja": "ワンクリックエクスポートが成功しました！エクスポートディレクトリ：{dir}",
+    "ko": "원클릭 내보내기에 성공했습니다! 내보내기 디렉터리: {dir}"
+  },
+  "one_click_export_failed": {
+    "zh": "一键导出失败：{error}",
+    "zh_tw": "一鍵匯出失敗：{error}",
+    "en": "One-click export failed: {error}",
+    "ja": "ワンクリックエクスポートが失敗しました：{error}",
+    "ko": "원클릭 내보내기 실패: {error}"
+  },
+  "one_click_pdf": {
+    "zh": "一键PDF",
+    "zh_tw": "一鍵PDF",
+    "en": "One-Click PDF",
+    "ja": "ワンクリックPDF",
+    "ko": "원클릭 PDF"
+  },
+  "one_click_pdf_success": {
+    "zh": "一键PDF导出成功！导出目录：{dir}",
+    "zh_tw": "一鍵PDF匯出成功！匯出目錄：{dir}",
+    "en": "One-click PDF export succeeded! Export directory: {dir}",
+    "ja": "ワンクリックPDFエクスポートが成功しました！エクスポートディレクトリ：{dir}",
+    "ko": "원클릭 PDF 내보내기에 성공했습니다! 내보내기 디렉터리: {dir}"
+  },
+  "one_click_pdf_failed": {
+    "zh": "一键PDF导出失败：{error}",
+    "zh_tw": "一鍵PDF匯出失敗：{error}",
+    "en": "One-click PDF export failed: {error}",
+    "ja": "ワンクリックPDFエクスポートが失敗しました：{error}",
+    "ko": "원클릭 PDF 내보내기 실패: {error}"
+  },
+  "parent_network_settings": {
+    "zh": "父网段设置",
+    "zh_tw": "父網段設定",
+    "en": "Parent Network Settings",
+    "ja": "親ネットワーク設定",
+    "ko": "상위 네트워크 설정"
+  },
+  "requirements_pool": {
+    "zh": "需求池",
+    "zh_tw": "需求池",
+    "en": "Requirements Pool",
+    "ja": "要件プール",
+    "ko": "요구 사항 풀"
+  },
+  "subnet_requirements": {
+    "zh": "子网需求",
+    "zh_tw": "子網需求",
+    "en": "Subnet Requirements",
+    "ja": "サブネット要件",
+    "ko": "서브넷 요구 사항"
+  },
+  "move_records": {
+    "zh": "↔",
+    "zh_tw": "↔",
+    "en": "↔",
+    "ja": "↔",
+    "ko": "↔"
+  },
+  "planning_result": {
+    "zh": "规划结果",
+    "zh_tw": "規劃結果",
+    "en": "Planning Result",
+    "ja": "計画結果",
+    "ko": "계획 결과"
+  },
+  "subnet_planning": {
+    "zh": "子网规划",
+    "zh_tw": "子網規劃",
+    "en": "Subnet Planning",
+    "ja": "サブネット計画",
+    "ko": "서브넷 계획"
+  },
+  "subnet_split": {
+    "zh": "子网切分",
+    "zh_tw": "子網切分",
+    "en": "Subnet Split",
+    "ja": "サブネット分割",
+    "ko": "서브넷 분할"
+  },
+  "advanced_tools": {
+    "zh": "高级工具",
+    "zh_tw": "進階工具",
+    "en": "Advanced Tools",
+    "ja": "高度なツール",
+    "ko": "고급 도구"
+  },
+  "input_parameters": {
+    "zh": "输入参数",
+    "zh_tw": "輸入參數",
+    "en": "Input Parameters",
+    "ja": "入力パラメータ",
+    "ko": "입력 인자:"
+  },
+  "hint": {
+    "zh": "提示",
+    "zh_tw": "提示",
+    "en": "Hint",
+    "ja": "ヒント",
+    "ko": "알림"
+  },
+  "subnet_name": {
+    "zh": "子网名称",
+    "zh_tw": "子網名稱",
+    "en": "Subnet Name",
+    "ja": "サブネット名",
+    "ko": "서브넷 이름"
+  },
+  "host_count": {
+    "zh": "主机数量",
+    "zh_tw": "主機數量",
+    "en": "Hosts",
+    "ja": "ホスト数",
+    "ko": "호스트 수"
+  },
+  "save_to_pool": {
+    "zh": "暂存到池",
+    "zh_tw": "暫存到池",
+    "en": "Save to Pool",
+    "ja": "プールに保存",
+    "ko": "풀에 저장"
+  },
+  "import_from_file": {
+    "zh": "从文件导入",
+    "zh_tw": "從檔案匯入",
+    "en": "Import from File",
+    "ja": "ファイルからインポート",
+    "ko": "파일에서 가져오기"
+  },
+  "select_file_to_import": {
+    "zh": "选择要导入的文件",
+    "zh_tw": "選擇要匯入的檔案",
+    "en": "Select File to Import",
+    "ja": "取込ファイルを選択",
+    "ko": "가져오려는 파일 선택"
+  },
+  "import_requirements_pool": {
+    "zh": "导入需求池",
+    "zh_tw": "匯入需求池",
+    "en": "Import Pool",
+    "ja": "プール取込",
+    "ko": "풀 가져오기"
+  },
+  "import_subnet_requirements": {
+    "zh": "导入子网需求",
+    "zh_tw": "匯入子網需求",
+    "en": "Import Subnet",
+    "ja": "サブネット取込",
+    "ko": "서브넷 가져오기"
+  },
+  "save_template": {
+    "zh": "保存模板",
+    "zh_tw": "儲存範本",
+    "en": "Save Template",
+    "ja": "テンプレートを保存",
+    "ko": "템플릿 저장"
+  },
+  "export_planning": {
+    "zh": "导出规划",
+    "zh_tw": "匯出規劃",
+    "en": "Export Planning",
+    "ja": "エクスポート計画",
+    "ko": "계획 내보내기"
+  },
+  "sync_to_ipam": {
+    "zh": "导入到IPAM",
+    "zh_tw": "導入到IPAM",
+    "en": "Import to IPAM",
+    "ja": "IPAMにインポート",
+    "ko": "IPAM에 가져오기"
+  },
+  "sync_success": {
+    "zh": "成功同步 {count} 个子网到地址管理",
+    "zh_tw": "成功同步 {count} 個子網到地址管理",
+    "en": "Successfully synced {count} subnets to IPAM",
+    "ja": "{count}個のサブネットをIPAMに同期しました",
+    "ko": "{count}개의 서브넷을 IPAM에 동기화했습니다"
+  },
+  "no_subnet_to_sync": {
+    "zh": "没有可同步的子网数据",
+    "zh_tw": "沒有可同步的子網數據",
+    "en": "No subnet data to sync",
+    "ja": "同期するサブネットデータがありません",
+    "ko": "동기화할 서브넷 데이터가 없습니다"
+  },
+  "execute_planning": {
+    "zh": "执行规划",
+    "zh_tw": "執行規劃",
+    "en": "Plan",
+    "ja": "計画実行",
+    "ko": "계획 실행"
+  },
+  "required_count": {
+    "zh": "需求数",
+    "zh_tw": "需求數",
+    "en": "Required",
+    "ja": "必要数",
+    "ko": "요구 사항 수"
+  },
+  "available_count": {
+    "zh": "可用数",
+    "zh_tw": "可用數",
+    "en": "Available",
+    "ja": "可能数",
+    "ko": "사용 가능 수"
+  },
+  "ipv6_address_info": {
+    "zh": "IPv6地址信息查询",
+    "zh_tw": "IPv6位址資訊查詢",
+    "en": "IPv6 Address Information",
+    "ja": "IPv6アドレス情報検索",
+    "ko": "IPv6 주소 정보 조회"
+  },
+  "ipv6_address": {
+    "zh": "IPv6地址",
+    "zh_tw": "IPv6位址",
+    "en": "IPv6 Address",
+    "ja": "IPv6アドレス",
+    "ko": "IPv6 주소"
+  },
+  "cidr": {
+    "zh": "CIDR",
+    "zh_tw": "CIDR",
+    "en": "CIDR",
+    "ja": "CIDR",
+    "ko": "CIDR"
+  },
+  "query_info": {
+    "zh": "查询信息",
+    "zh_tw": "查詢資訊",
+    "en": "Query Info",
+    "ja": "情報を照会",
+    "ko": "조회 정보"
+  },
+  "query_result": {
+    "zh": "查询结果",
+    "zh_tw": "查詢結果",
+    "en": "Query Result",
+    "ja": "照会結果",
+    "ko": "조회 결과"
+  },
+  "merge_subnets": {
+    "zh": "子网合并列表",
+    "zh_tw": "子網合併列表",
+    "en": "Merge Subnets",
+    "ja": "サブネット統合リスト",
+    "ko": "서브넷 병합 목록"
+  },
+  "overlap_subnets": {
+    "zh": "重叠检测列表",
+    "zh_tw": "重疊檢測列表",
+    "en": "Overlap Detection List",
+    "ja": "重複検出リスト",
+    "ko": "오버랩 감지 목록"
+  },
+  "merge_subnet": {
+    "zh": "合并子网",
+    "zh_tw": "合併子網",
+    "en": "Merge Subnet",
+    "ja": "サブネットを統合",
+    "ko": "서브넷 병합"
+  },
+  "ip_address_range": {
+    "zh": "IP地址范围",
+    "zh_tw": "IP位址範圍",
+    "en": "IP Address Range",
+    "ja": "IPアドレス範囲",
+    "ko": "IP 주소 범위"
+  },
+  "start": {
+    "zh": "起始",
+    "zh_tw": "起始",
+    "en": "Start",
+    "ja": "開始",
+    "ko": "시작"
+  },
+  "end": {
+    "zh": "结束",
+    "zh_tw": "結束",
+    "en": "End",
+    "ja": "終了",
+    "ko": "끝"
+  },
+  "convert_to_cidr": {
+    "zh": "转换为CIDR",
+    "zh_tw": "轉換為CIDR",
+    "en": "Convert to CIDR",
+    "ja": "CIDRに変換",
+    "ko": "CIDR로 변환"
+  },
+  "ipv4_address_info": {
+    "zh": "IPv4地址信息查询",
+    "zh_tw": "IPv4位址資訊查詢",
+    "en": "IPv4 Address Information",
+    "ja": "IPv4アドレス情報検索",
+    "ko": "IPv4 주소 정보 조회"
+  },
+  "ipv4_address": {
+    "zh": "IPv4地址",
+    "zh_tw": "IPv4位址",
+    "en": "IPv4 Address",
+    "ja": "IPv4アドレス",
+    "ko": "IPv4 주소"
+  },
+  "subnet_mask": {
+    "zh": "子网掩码",
+    "zh_tw": "子網遮罩",
+    "en": "Subnet Mask",
+    "ja": "サブマスク",
+    "ko": "서브넷 마스크"
+  },
+  "check_overlap": {
+    "zh": "检测重叠",
+    "zh_tw": "檢測重疊",
+    "en": "Check Overlap",
+    "ja": "重複チェック",
+    "ko": "중첩 검사"
+  },
+  "detection_result": {
+    "zh": "检测结果",
+    "zh_tw": "檢測結果",
+    "en": "Detection Result",
+    "ja": "検出結果",
+    "ko": "검출 결과"
+  },
+  "function_debug_panel": {
+    "zh": "功能调试面板",
+    "zh_tw": "功能調試面板",
+    "en": "Function Debug Panel",
+    "ja": "機能デバッグパネル",
+    "ko": "기능성 디버깅 패널"
+  },
+  "theme_switch": {
+    "zh": "主题切换",
+    "zh_tw": "主題切換",
+    "en": "Theme Switch",
+    "ja": "テーマ切り替え",
+    "ko": "테마 전환"
+  },
+  "theme_switch_error": {
+    "zh": "主题切换出错",
+    "zh_tw": "主題切換出錯",
+    "en": "Theme switch error",
+    "ja": "テーマ切り替えエラー",
+    "ko": "테마 전환 오류"
+  },
+  "select_theme": {
+    "zh": "选择主题",
+    "zh_tw": "選擇主題",
+    "en": "Select Theme",
+    "ja": "テーマを選択",
+    "ko": "주제 선택"
+  },
+  "window_lock": {
+    "zh": "窗口锁定",
+    "zh_tw": "視窗鎖定",
+    "en": "Window Lock",
+    "ja": "ウィンドウロック",
+    "ko": "창문 잠금"
+  },
+  "lock_window_width": {
+    "zh": "锁定窗口横向尺寸（禁止调整宽度）",
+    "zh_tw": "鎖定視窗橫向尺寸（禁止調整寬度）",
+    "en": "Lock window horizontal size (disable width adjustment)",
+    "ja": "ウィンドウの横サイズをロック（幅調整不可）",
+    "ko": "창 가로 치수 잠금 (너비 조정 안 함)"
+  },
+  "about": {
+    "zh": "关于",
+    "zh_tw": "關於",
+    "en": "About",
+    "ja": "について",
+    "ko": "소개"
+  },
+  "author": {
+    "zh": "作者",
+    "zh_tw": "作者",
+    "en": "Author",
+    "ja": "作者",
+    "ko": "작성자"
+  },
+  "index": {
+    "zh": "序号",
+    "zh_tw": "序號",
+    "en": "Index",
+    "ja": "番号",
+    "ko": "번호"
+  },
+  "network_address": {
+    "zh": "网络地址",
+    "zh_tw": "網路位址",
+    "en": "Network Addrs",
+    "ja": "ネットアド",
+    "ko": "네트워크 주소"
+  },
+  "network_end_address": {
+    "zh": "网段结束地址",
+    "zh_tw": "網段結束位址",
+    "en": "Network End Addr",
+    "ja": "ネットワーク終了アドレス",
+    "ko": "네트워크 종료 주소"
+  },
+  "wildcard_mask": {
+    "zh": "通配符掩码",
+    "zh_tw": "萬用字元遮罩",
+    "en": "Wildcard Mask",
+    "ja": "ワイルドマスク",
+    "ko": "와일드카드 마스크"
+  },
+  "broadcast_address": {
+    "zh": "广播地址",
+    "zh_tw": "廣播位址",
+    "en": "Broadcast Addrs",
+    "ja": "同報アドレス",
+    "ko": "방송 주소"
+  },
+  "usable_address_count": {
+    "zh": "可用地址数",
+    "zh_tw": "可用位址數",
+    "en": "Usable Addrs",
+    "ja": "利用可能数",
+    "ko": "사용 가능 수"
+  },
+  "item": {
+    "zh": "项目",
+    "zh_tw": "項目",
+    "en": "Item",
+    "ja": "項目",
+    "ko": "항목"
+  },
+  "value": {
+    "zh": "值",
+    "zh_tw": "值",
+    "en": "Value",
+    "ja": "値",
+    "ko": "값"
+  },
+  "allocated_subnets": {
+    "zh": "已分配子网",
+    "zh_tw": "已分配子網",
+    "en": "Allocated Subnets",
+    "ja": "割当済サブネット",
+    "ko": "할당된 서브넷"
+  },
+  "remaining_subnets": {
+    "zh": "剩余网段",
+    "zh_tw": "剩餘網段",
+    "en": "Remaining Subnets",
+    "ja": "残りのセグメント",
+    "ko": "남은 서브넷"
+  },
+  "distribution_chart": {
+    "zh": "网段分布图",
+    "zh_tw": "網段分佈圖",
+    "en": "Distribution Chart",
+    "ja": "セグメント分布図",
+    "ko": "서브넷 분포도"
+  },
+  "record_already_exists": {
+    "zh": "中已存在名称为 '{name}' 的记录",
+    "zh_tw": "中已存在名稱為 '{name}' 的記錄",
+    "en": "already contains a record named '{name}'",
+    "ja": "には {name} という名前の記録が既に存在します",
+    "ko": "이름이 '{name}' 인 레코드가 이미 존재합니다"
+  },
+  "input_cannot_be_empty": {
+    "zh": "输入不能为空",
+    "zh_tw": "輸入不能為空",
+    "en": "Input cannot be empty",
+    "ja": "入力は空にできません",
+    "ko": "입력은 비워둘 수 없습니다"
+  },
+  "subnet_already_exists": {
+    "zh": "已经存在名称为 '{name}' 的子网，请使用其他名称",
+    "zh_tw": "已經存在名稱為 '{name}' 的子網，請使用其他名稱",
+    "en": "A subnet named '{name}' already exists, please use another name",
+    "ja": "{name} という名前のサブネットが既に存在します。",
+    "ko": "이름이 '{name}' 인 서브넷이 이미 존재합니다. 다른 이름을 사용하십시오"
+  },
+  "host_count_must_be_greater_than_0": {
+    "zh": "主机数量必须大于0",
+    "zh_tw": "主機數量必須大於0",
+    "en": "Host count must be greater than 0",
+    "ja": "ホスト数は0より大きくなければなりません",
+    "ko": "호스트 수는 0보다 커야 합니다."
+  },
+  "please_enter_parent_network": {
+    "zh": "请输入父网段",
+    "zh_tw": "請輸入父網段",
+    "en": "Please enter parent network",
+    "ja": "親ネットワークを入力してください",
+    "ko": "상위 네트워크를 입력하십시오"
+  },
+  "invalid_parent_network_format": {
+    "zh": "父网段格式不正确，请输入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式不正確，請輸入有效的CIDR格式（例如：192.168.1.0/24 或 2001:0db8::/64）",
+    "en": "Invalid parent network format, please enter a valid CIDR format (e.g., 192.168.1.0/24 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワーク形式です。有効なCIDR形式を入力してください（例：192.168.1.0/24 または 2001:0db8::/64）",
+    "ko": "상위 네트워크 형식이 잘못되었습니다. 유효한 CIDR 형식을 입력하십시오 (예: 192.168.1.0/24 또는 2001:0db8::/64)."
+  },
+  "please_add_at_least_one_requirement": {
+    "zh": "请添加至少一个子网需求",
+    "zh_tw": "請新增至少一個子網需求",
+    "en": "Please add at least one subnet requirement",
+    "ja": "少なくとも1つのサブネット要件を追加してください",
+    "ko": "하나 이상의 서브넷 요구 사항을 추가하십시오"
+  },
+  "subnet_planning_failed": {
+    "zh": "子网规划失败",
+    "zh_tw": "子網規劃失敗",
+    "en": "Subnet planning failed",
+    "ja": "サブネット計画に失敗しました",
+    "ko": "서브넷 계획 실패"
+  },
+  "unknown_error_occurred": {
+    "zh": "发生未知错误",
+    "zh_tw": "發生未知錯誤",
+    "en": "An unknown error occurred",
+    "ja": "未知のエラー",
+    "ko": "알 수 없는 오류가 발생했습니다"
+  },
+  "invalid_parent_network_cidr": {
+    "zh": "父网段格式无效，请输入有效的CIDR格式（如: 10.0.0.0/8 或 2001:0db8::/64）",
+    "zh_tw": "父網段格式無效，請輸入有效的CIDR格式（如：10.0.0.0/8 或 2001:0db8::/64）",
+    "en": "Invalid parent network CIDR format, please enter a valid CIDR (e.g., 10.0.0.0/8 or 2001:0db8::/64)",
+    "ja": "無効な親ネットワークCIDR形式です。有効なCIDRを入力してください（例：10.0.0.0/8 または 2001:0db8::/64）",
+    "ko": "잘못된 상위 네트워크 형식입니다. 유효한 CIDR 형식 (예: 10.0.0.0/8 또는 2001:0db8::/64) 을 입력하십시오."
+  },
+  "invalid_subnet_format": {
+    "zh": "无效的子网格式: {subnets}",
+    "zh_tw": "無效的子網格式：{subnets}",
+    "en": "Invalid subnet format: {subnets}",
+    "ja": "無効なサブネット形式：{subnets}",
+    "ko": "유효하지 않은 서브넷 형식: {subnets}"
+  },
+  "invalid_cidr_format": {
+    "zh": "无效的CIDR格式",
+    "zh_tw": "無效的CIDR格式",
+    "en": "Invalid CIDR format",
+    "ja": "無効なCIDR形式",
+    "ko": "유효하지 않은 CIDR 형식"
+  },
+  "prefix_required": {
+    "zh": "需要输入CIDR格式（如 10.0.0.0/8）",
+    "zh_tw": "需要輸入CIDR格式（如 10.0.0.0/8）",
+    "en": "CIDR format required (e.g., 10.0.0.0/8)",
+    "ja": "CIDR形式が必要です（例：10.0.0.0/8）",
+    "ko": "CIDR 형식이 필요합니다（예: 10.0.0.0/8）"
+  },
+  "prefix_not_allowed": {
+    "zh": "不允许包含前缀（请输入纯IP地址，如 10.0.0.1）",
+    "zh_tw": "不允許包含前綴（請輸入純IP地址，如 10.0.0.1）",
+    "en": "Prefix not allowed (enter IP address only, e.g., 10.0.0.1)",
+    "ja": "プレフィックスは許可されていません（IPアドレスのみを入力してください、例：10.0.0.1）",
+    "ko": "접두사는 허용되지 않습니다（IP 주소만 입력하세요、예: 10.0.0.1）"
+  },
+  "invalid_format": {
+    "zh": "无效格式",
+    "zh_tw": "無效格式",
+    "en": "Invalid format",
+    "ja": "無効な形式",
+    "ko": "유효하지 않은 형식"
+  },
+  "invalid_split_segment_cidr": {
+    "zh": "切分网段格式无效，请输入有效的CIDR格式（如: 10.21.50.0/23 或 2001:0db8::/64）",
+    "zh_tw": "切分網段格式無效，請輸入有效的CIDR格式（如：10.21.50.0/23 或 2001:0db8::/64）",
+    "en": "Invalid split segment CIDR format, please enter a valid CIDR (e.g., 10.21.50.0/23 or 2001:0db8::/64)",
+    "ja": "無効な分割セグメントCIDR形式です。有効なCIDRを入力してください（例：10.21.50.0/23 または 2001:0db8::/64）",
+    "ko": "유효하지 않은 세분화 형식입니다. 유효한 CIDR 형식을 입력하십시오 (예: 10.21.50.0/23 또는 2001:0db8::/64)."
+  },
+  "ip_versions_not_compatible": {
+    "zh": "IP版本不兼容：父网段和切分网段必须是相同的IP版本（IPv4或IPv6）",
+    "zh_tw": "IP版本不兼容：父網段和切分段網段必須是相同的IP版本（IPv4或IPv6）",
+    "en": "IP versions not compatible: Parent network and split segment must be the same IP version (IPv4 or IPv6)",
+    "ja": "IPバージョンが互換性がありません：親ネットワークと分割セグメントは同じIPバージョン（IPv4またはIPv6）でなければなりません",
+    "ko": "IP 버전이 호환되지 않습니다. 상위 네트워크와 분할 세그먼트는 동일한 IP 버전 (IPv4 또는 IPv6) 이어야 합니다."
+  },
+  "parent_and_split_cidr_cannot_be_empty": {
+    "zh": "父网段和切分网段都不能为空！",
+    "zh_tw": "父網段和切分網段都不能為空！",
+    "en": "Parent network and split segment cannot be empty!",
+    "ja": "親ネットワークと分割セグメントは空にできません！",
+    "ko": "상위 또는 분할 세그먼트는 비워 둘 수 없습니다!"
+  },
+  "please_enter_subnet_name": {
+    "zh": "请输入子网名称",
+    "zh_tw": "請輸入子網名稱",
+    "en": "Please enter subnet name",
+    "ja": "サブネット名を入力してください",
+    "ko": "서브넷 이름을 입력하십시오"
+  },
+  "please_enter_valid_host_count": {
+    "zh": "请输入有效的主机数量",
+    "zh_tw": "請輸入有效的主機數量",
+    "en": "Please enter a valid host count",
+    "ja": "有効なホスト数を入力してください",
+    "ko": "올바른 호스트 수를 입력하세요."
+  },
+  "msg_template_generation_failed": {
+    "zh": "模板生成失败",
+    "zh_tw": "範本生成失敗",
+    "en": "Template generation failed",
+    "ja": "テンプレート生成に失敗しました",
+    "ko": "템플릿 생성 실패"
+  },
+  "msg_file_parse_failed": {
+    "zh": "文件解析失败",
+    "zh_tw": "檔案解析失敗",
+    "en": "File parsing failed",
+    "ja": "ファイル解析に失敗しました",
+    "ko": "파일 구문 분석 실패"
+  },
+  "failed": {
+    "zh": "失败",
+    "zh_tw": "失敗",
+    "en": "failed",
+    "ja": "失敗",
+    "ko": "실패"
+  },
+  "operation_failed": {
+    "zh": "操作失败",
+    "zh_tw": "操作失敗",
+    "en": "Operation failed",
+    "ja": "操作に失敗しました",
+    "ko": "작동 실패"
+  },
+  "show_compare_dialog_failed": {
+    "zh": "显示比对对话框失败",
+    "zh_tw": "顯示比對對話框失敗",
+    "en": "Failed to show comparison dialog",
+    "ja": "比較ダイアログの表示に失敗しました",
+    "ko": "비교 대화 상자 표시 실패"
+  },
+  "build_compare_table_failed": {
+    "zh": "构建比对表格失败",
+    "zh_tw": "構建比對表格失敗",
+    "en": "Failed to build comparison table",
+    "ja": "比較テーブルの構築に失敗しました",
+    "ko": "비교 테이블 구축 실패"
+  },
+  "query_failed": {
+    "zh": "查询失败",
+    "zh_tw": "查詢失敗",
+    "en": "Query failed",
+    "ja": "検索に失敗しました",
+    "ko": "조회 실패"
+  },
+  "conversion_failed": {
+    "zh": "转换失败",
+    "zh_tw": "轉換失敗",
+    "en": "Conversion failed",
+    "ja": "変換に失敗しました",
+    "ko": "변환 실패"
+  },
+  "execute_subnet_overlap_detection_failed": {
+    "zh": "执行子网重叠检测失败",
+    "zh_tw": "執行子網重疊檢測失敗",
+    "en": "Failed to execute subnet overlap detection",
+    "ja": "サブネット重複検出の実行に失敗しました",
+    "ko": "서브넷 오버랩 감지를 수행하지 못했습니다"
+  },
+  "please_select_records_to_move": {
+    "zh": "请先选择要移动的{record_type}记录",
+    "zh_tw": "請先選擇要移動的{record_type}記錄",
+    "en": "Please select {record_type} records to move first",
+    "ja": "最初に移動する{record_type}記録を選択してください",
+    "ko": "먼저 이동하려는 {record_type} 을 (를) 선택하십시오."
+  },
+  "please_select_records_to_swap": {
+    "zh": "请同时选择两个表格中的记录进行交换",
+    "zh_tw": "請同時選擇兩個表格中的記錄進行交換",
+    "en": "Please select records from both tables to swap",
+    "ja": "両方のテーブルから交換する記録を選択してください",
+    "ko": "교환을 위해 두 양식의 레코드를 선택하십시오"
+  },
+  "split_segment": {
+    "zh": "切分网段",
+    "zh_tw": "切分網段",
+    "en": "Split Segment",
+    "ja": "分割セグメント",
+    "ko": "네트워크 세그먼트 분할"
+  },
+  "start_address": {
+    "zh": "起始地址",
+    "zh_tw": "起始位址",
+    "en": "Start Address",
+    "ja": "開始アドレス",
+    "ko": "시작 주소"
+  },
+  "end_address": {
+    "zh": "结束地址",
+    "zh_tw": "結束位址",
+    "en": "End Address",
+    "ja": "終了アドレス",
+    "ko": "끝 주소"
+  },
+  "total_addresses": {
+    "zh": "总地址数",
+    "zh_tw": "總位址數",
+    "en": "Total Addresses",
+    "ja": "総アドレス数",
+    "ko": "총 주소"
+  },
+  "usable_addresses": {
+    "zh": "可用地址数",
+    "zh_tw": "可用位址數",
+    "en": "Usable Address",
+    "ja": "利用可能数",
+    "ko": "사용 가능 수"
+  },
+  "prefix_length": {
+    "zh": "前缀",
+    "zh_tw": "前綴",
+    "en": "Prefix",
+    "ja": "プレフィックス",
+    "ko": "도메인 첫머리"
+  },
+  "app_name": {
+    "zh": "子网规划师",
+    "zh_tw": "子網規劃師",
+    "en": "SubnetPlanner",
+    "ja": "子网計画師",
+    "ko": "서브넷 플래너"
+  },
+  "version": {
+    "zh": "版本",
+    "zh_tw": "版本",
+    "en": "Version",
+    "ja": "バージョン",
+    "ko": "버전"
+  },
+  "unknown": {
+    "zh": "未知",
+    "zh_tw": "未知",
+    "en": "Unknown",
+    "ja": "未知",
+    "ko": "알 수 없는"
+  },
+  "total_hosts": {
+    "zh": "总主机数",
+    "en": "Total Hosts",
+    "ja": "総ホスト数",
+    "zh_tw": "總主機數",
+    "ko": "총 호스트 수"
+  },
+  "usable_hosts": {
+    "zh": "可用主机数",
+    "en": "Usable Hosts",
+    "ja": "利用可能数",
+    "zh_tw": "可用主機數",
+    "ko": "사용 가능한 호스트 수"
+  },
+  "address_format": {
+    "zh": "地址格式",
+    "en": "Address Format",
+    "ja": "アドレス形式",
+    "zh_tw": "位址格式",
+    "ko": "주소 형식"
+  },
+  "compressed_format": {
+    "zh": "压缩格式",
+    "en": "Compressed Format",
+    "ja": "圧縮形式",
+    "zh_tw": "壓縮格式",
+    "ko": "압축 형식"
+  },
+  "expanded_format": {
+    "zh": "展开格式",
+    "en": "Expanded Format",
+    "ja": "展開形式",
+    "zh_tw": "展開格式",
+    "ko": "형식 확장"
+  },
+  "reverse_dns_format": {
+    "zh": "反向DNS格式",
+    "en": "Reverse DNS Format",
+    "ja": "リバースDNS形式",
+    "zh_tw": "反向DNS格式",
+    "ko": "역방향 DNS 형식"
+  },
+  "mapped_ipv4_address": {
+    "zh": "映射的IPv4地址",
+    "en": "Mapped IPv4 Address",
+    "ja": "マップされたIPv4アドレス",
+    "zh_tw": "映射的IPv4位址",
+    "ko": "매핑된 IPv4 주소"
+  },
+  "address_properties": {
+    "zh": "地址属性",
+    "en": "Address Properties",
+    "ja": "アドレスプロパティ",
+    "zh_tw": "位址屬性",
+    "ko": "주소 속성"
+  },
+  "section_address_range": {
+    "zh": "地址范围",
+    "en": "Address Range",
+    "ja": "アドレス範囲",
+    "zh_tw": "位址範圍",
+    "ko": "주소 범위"
+  },
+  "section_binary_representation": {
+    "zh": "二进制表示",
+    "en": "Binary Representation",
+    "ja": "バイナリ表現",
+    "zh_tw": "二進制表示",
+    "ko": "이진 표현"
+  },
+  "section_hexadecimal_representation": {
+    "zh": "十六进制表示",
+    "en": "Hexadecimal Representation",
+    "ja": "16進数表現",
+    "zh_tw": "十六進制表示",
+    "ko": "16진수 표현"
+  },
+  "section_decimal_representation": {
+    "zh": "十进制表示",
+    "en": "Decimal Representation",
+    "ja": "10進数表現",
+    "zh_tw": "十進制表示",
+    "ko": "소수점 표현"
+  },
+  "section_ip_properties": {
+    "zh": "IP属性",
+    "en": "IP Properties",
+    "ja": "IPプロパティ",
+    "zh_tw": "IP屬性",
+    "ko": "IP 속성"
+  },
+  "section_extended_info": {
+    "zh": "扩展信息",
+    "en": "Extended Info",
+    "ja": "拡張情報",
+    "zh_tw": "擴展資訊",
+    "ko": "확장 정보"
+  },
+  "row_number": {
+    "zh": "行号",
+    "en": "Row",
+    "ja": "行番号",
+    "zh_tw": "行號",
+    "ko": "줄 숫자"
+  },
+  "is_global_routable": {
+    "zh": "是否全局可路由",
+    "en": "Is Globally Routable",
+    "ja": "グローバルルーティング",
+    "zh_tw": "是否全域可路由",
+    "ko": "전 세계로 라우팅 가능"
+  },
+  "is_private_address": {
+    "zh": "是否私有地址",
+    "en": "Is Private Address",
+    "ja": "プライベートアドレス",
+    "zh_tw": "是否私有位址",
+    "ko": "비공개 주소 사용 여부"
+  },
+  "is_private": {
+    "zh": "是否私有地址",
+    "en": "Is Private",
+    "ja": "プライベート",
+    "zh_tw": "是否私有位址",
+    "ko": "비공개 주소 사용 여부"
+  },
+  "is_reserved": {
+    "zh": "是否保留地址",
+    "en": "Is Reserved",
+    "ja": "予約",
+    "zh_tw": "是否保留位址",
+    "ko": "주소를 유지하시겠습니까?"
+  },
+  "is_loopback": {
+    "zh": "是否回环地址",
+    "en": "Is Loopback",
+    "ja": "ループバック",
+    "zh_tw": "是否回環位址",
+    "ko": "주소를 루프백할지 여부"
+  },
+  "is_multicast": {
+    "zh": "是否组播地址",
+    "en": "Is Multicast",
+    "ja": "マルチキャスト",
+    "zh_tw": "是否組播位址",
+    "ko": "주소 멀티캐스트 여부"
+  },
+  "is_global": {
+    "zh": "是否全局可路由",
+    "en": "Is Global",
+    "ja": "グローバル",
+    "zh_tw": "是否全域可路由",
+    "ko": "전 세계로 라우팅 가능"
+  },
+  "is_link_local": {
+    "zh": "是否链路本地地址",
+    "en": "Is Link Local",
+    "ja": "リンクローカル",
+    "zh_tw": "是否鏈路本地位址",
+    "ko": "링크-로컬 주소 여부"
+  },
+  "is_unspecified": {
+    "zh": "是否未指定地址",
+    "en": "Is Unspecified",
+    "ja": "未指定",
+    "zh_tw": "是否未指定位址",
+    "ko": "주소가 지정되지 않았습니다"
+  },
+  "is_ipv4_mapped": {
+    "zh": "是否IPv4映射地址",
+    "en": "Is IPv4 Mapped",
+    "ja": "IPv4マップ",
+    "zh_tw": "是否IPv4映射位址",
+    "ko": "IPv4 주소 매핑 여부"
+  },
+  "address_structure_analysis": {
+    "zh": "地址结构分析",
+    "en": "Address Structure Analysis",
+    "ja": "アドレス構造分析",
+    "zh_tw": "位址結構分析",
+    "ko": "주소 구조 분석"
+  },
+  "prefix_analysis": {
+    "zh": "前缀分析",
+    "en": "Prefix Analysis",
+    "ja": "プレフィックス分析",
+    "zh_tw": "前綴分析",
+    "ko": "접두사 분석"
+  },
+  "address_segment_count": {
+    "zh": "地址段数量",
+    "en": "Address Segment Count",
+    "ja": "アドレスセグメント数",
+    "zh_tw": "位址段數量",
+    "ko": "주소 네트워크 세그먼트 수"
+  },
+  "binary_representation": {
+    "zh": "二进制表示",
+    "en": "Binary Representation",
+    "ja": "バイナリ表現",
+    "zh_tw": "二進制表示",
+    "ko": "이진 표현"
+  },
+  "hexadecimal_representation": {
+    "zh": "十六进制表示",
+    "en": "Hexadecimal Representation",
+    "ja": "16進数表現",
+    "zh_tw": "十六進制表示",
+    "ko": "16진수 표현"
+  },
+  "decimal_value_representation": {
+    "zh": "十进制值表示",
+    "en": "Decimal Value Representation",
+    "ja": "10進値表現",
+    "zh_tw": "十進制值表示",
+    "ko": "십진수 값 표현"
+  },
+  "address_segment_details": {
+    "zh": "地址段详情",
+    "en": "Address Segment Details",
+    "ja": "アドレスセグメントの詳細",
+    "zh_tw": "位址段詳情",
+    "ko": "주소 네트워크 세그먼트 세부 정보"
+  },
+  "network_scale_and_usage": {
+    "zh": "网络规模与用途",
+    "en": "Network Scale and Usage",
+    "ja": "ネットワーク規模と使用法",
+    "zh_tw": "網路規模與用途",
+    "ko": "네트워크 규모"
+  },
+  "subnet_size": {
+    "zh": "子网规模",
+    "en": "Subnet Size",
+    "ja": "サブネットサイズ",
+    "zh_tw": "子網規模",
+    "ko": "서브넷 크기"
+  },
+  "main_usage": {
+    "zh": "主要用途",
+    "en": "Main Usage",
+    "ja": "主な用途",
+    "zh_tw": "主要用途",
+    "ko": "기본 사용"
+  },
+  "configuration_advice": {
+    "zh": "配置建议",
+    "en": "Configuration Advice",
+    "ja": "設定アドバイス",
+    "zh_tw": "設定建議",
+    "ko": "구성 제안"
+  },
+  "network_configuration": {
+    "zh": "网络配置",
+    "en": "Network Configuration",
+    "ja": "ネットワーク設定",
+    "zh_tw": "網路設定",
+    "ko": "네트워크 설정"
+  },
+  "rfc_standards_reference": {
+    "zh": "RFC标准参考",
+    "en": "RFC Standards Reference",
+    "ja": "RFC標準リファレンス",
+    "zh_tw": "RFC標準參考",
+    "ko": "RFC 표준 참조"
+  },
+  "extended_information": {
+    "zh": "扩展信息",
+    "en": "Extended Information",
+    "ja": "拡張情報",
+    "zh_tw": "擴展資訊",
+    "ko": "확장 정보"
+  },
+  "address_usage": {
+    "zh": "地址用途",
+    "en": "Address Usage",
+    "ja": "アドレスの使用法",
+    "zh_tw": "位址用途",
+    "ko": "주소 사용"
+  },
+  "rfc_specification": {
+    "zh": "RFC规范",
+    "en": "RFC Specification",
+    "ja": "RFC仕様",
+    "zh_tw": "RFC規範",
+    "ko": "RFC 사양"
+  },
+  "ipv4_query": {
+    "zh": "IPv4查询",
+    "en": "IPv4 Query",
+    "ja": "IPv4検索",
+    "zh_tw": "IPv4查詢",
+    "ko": "IPv4 조회"
+  },
+  "ipv6_query": {
+    "zh": "IPv6查询",
+    "en": "IPv6 Query",
+    "ja": "IPv6検索",
+    "zh_tw": "IPv6查詢",
+    "ko": "IPv6 조회"
+  },
+  "multicast_address_note": {
+    "zh": "多播地址说明",
+    "en": "Multicast Address Note",
+    "ja": "マルチキャストアドレスの説明",
+    "zh_tw": "多播位址說明",
+    "ko": "멀티캐스트 주소 설명"
+  },
+  "ipv6_multicast_note": {
+    "zh": "IPv6使用多播地址代替广播，多播地址以FF开头",
+    "en": "IPv6 uses multicast addresses instead of broadcast, multicast addresses start with FF",
+    "ja": "IPv6はブロードキャストの代わりにマルチキャストアドレスを使用し、マルチキャストアドレスはFFで始まります",
+    "zh_tw": "IPv6使用多播位址代替廣播，多播位址以FF開頭",
+    "ko": "IPv6는 브로드캐스트 대신 멀티캐스트 주소를 사용하며 멀티캐스트 주소는 FF로 시작합니다"
+  },
+  "subnet_merge": {
+    "zh": "子网合并",
+    "en": "Subnet Merge",
+    "ja": "サブネット統合",
+    "zh_tw": "子網合併",
+    "ko": "서브넷 병합"
+  },
+  "overlap_detection": {
+    "zh": "重叠检测",
+    "en": "Overlap Detection",
+    "ja": "重複検出",
+    "zh_tw": "重疊檢測",
+    "ko": "오버랩 감지"
+  },
+  "contained_in": {
+    "zh": "包含于",
+    "en": "contained in",
+    "ja": "含まれる",
+    "zh_tw": "包含於",
+    "ko": "에 포함됨"
+  },
+  "project": {
+    "zh": "项目",
+    "en": "Item",
+    "ja": "項目",
+    "zh_tw": "項目",
+    "ko": "항목"
+  },
+  "status": {
+    "zh": "状态",
+    "en": "Status",
+    "ja": "ステータス",
+    "zh_tw": "狀態",
+    "ko": "상태"
+  },
+  "description": {
+    "zh": "描述",
+    "en": "Description",
+    "ja": "説明",
+    "zh_tw": "描述",
+    "ko": "설명"
+  },
+  "address_type": {
+    "zh": "地址类型",
+    "en": "Address Type",
+    "ja": "アドレスタイプ",
+    "zh_tw": "位址類型",
+    "ko": "주소 유형"
+  },
+  "save_requirement": {
+    "zh": "保存需求",
+    "en": "Save Requirement",
+    "ja": "要件を保存",
+    "zh_tw": "儲存需求",
+    "ko": "요건 저장"
+  },
+  "download_excel_template": {
+    "zh": "下载Excel模板",
+    "en": "Excel Template",
+    "ja": "Excelテンプレート",
+    "zh_tw": "下載Excel範本",
+    "ko": "Excel 템플릿 다운로드"
+  },
+  "download_csv_template": {
+    "zh": "下载CSV模板",
+    "en": "CSV Template",
+    "ja": "CSVテンプレート",
+    "zh_tw": "下載CSV範本",
+    "ko": "CSV 템플릿 다운로드"
+  },
+  "download_template": {
+    "zh": "下载模板",
+    "zh_tw": "下載範本",
+    "en": "Download Template",
+    "ja": "テンプレートをダウンロード",
+    "ko": "템플릿 다운로드"
+  },
+  "download_template_failed": {
+    "zh": "下载模板失败",
+    "en": "Download template failed",
+    "ja": "テンプレートのダウンロードに失敗",
+    "zh_tw": "下載範本失敗",
+    "ko": "템플릿 다운로드 실패"
+  },
+  "download_template_success": {
+    "zh": "模板下载成功",
+    "en": "Template download successful",
+    "ja": "テンプレートのダウンロードに成功",
+    "zh_tw": "範本下載成功",
+    "ko": "템플릿 다운로드 성공"
+  },
+  "file_name": {
+    "zh": "文件名",
+    "en": "File Name",
+    "ja": "ファイル名",
+    "zh_tw": "文件名",
+    "ko": "파일 이름"
+  },
+  "backup_time": {
+    "zh": "备份时间",
+    "en": "Backup Time",
+    "ja": "バックアップ時間",
+    "zh_tw": "備份時間",
+    "ko": "백업 시간"
+  },
+  "network_count": {
+    "zh": "网络数",
+    "en": "Network Count",
+    "ja": "ネットワーク数",
+    "zh_tw": "網路數",
+    "ko": "네트워크 수"
+  },
+  "extend_expiry": {
+    "zh": "延期",
+    "zh_tw": "延期",
+    "en": "Extend Expiry",
+    "ja": "期限延長",
+    "ko": "만료 연장"
+  },
+  "select_extend_duration": {
+    "zh": "选择延期时间",
+    "zh_tw": "選擇延期時間",
+    "en": "Select Extend Duration",
+    "ja": "延長期間を選択",
+    "ko": "연장 기간 선택"
+  },
+  "1_month": {
+    "zh": "1个月",
+    "zh_tw": "1個月",
+    "en": "1 Month",
+    "ja": "1ヶ月",
+    "ko": "1개월"
+  },
+  "3_months": {
+    "zh": "3个月",
+    "zh_tw": "3個月",
+    "en": "3 Months",
+    "ja": "3ヶ月",
+    "ko": "3개월"
+  },
+  "6_months": {
+    "zh": "6个月",
+    "zh_tw": "6個月",
+    "en": "6 Months",
+    "ja": "6ヶ月",
+    "ko": "6개월"
+  },
+  "1_year": {
+    "zh": "1年",
+    "zh_tw": "1年",
+    "en": "1 Year",
+    "ja": "1年",
+    "ko": "1년"
+  },
+  "3_years": {
+    "zh": "3年",
+    "zh_tw": "3年",
+    "en": "3 Years",
+    "ja": "3年",
+    "ko": "3년"
+  },
+  "5_years": {
+    "zh": "5年",
+    "zh_tw": "5年",
+    "en": "5 Years",
+    "ja": "5年",
+    "ko": "5년"
+  },
+  "successfully_extended_ips": {
+    "zh": "成功延期了{count}个IP地址",
+    "zh_tw": "成功延期了{count}個IP位址",
+    "en": "Successfully extended {count} IP addresses",
+    "ja": "{count}個のIPアドレスの期限を延長しました",
+    "ko": "{count}개의 IP 주소를 성공적으로 연장했습니다"
+  },
+  "backup": {
+    "zh": "备份",
+    "en": "Backup",
+    "ja": "バックアップ",
+    "zh_tw": "備份",
+    "ko": "백업"
+  },
+  "restore": {
+    "zh": "恢复",
+    "en": "Restore",
+    "ja": "復元",
+    "zh_tw": "復原",
+    "ko": "복원"
+  },
+  "auto_backup_frequency": {
+    "zh": "自动备份周期",
+    "en": "Auto Backup Frequency",
+    "ja": "自動バックアップ頻度",
+    "zh_tw": "自動備份週期",
+    "ko": "자동 백업 빈도"
+  },
+  "disabled": {
+    "zh": "禁用",
+    "en": "Disabled",
+    "ja": "無効",
+    "zh_tw": "禁用",
+    "ko": "비활성화"
+  },
+  "hourly": {
+    "zh": "每小时",
+    "en": "Hourly",
+    "ja": "毎時",
+    "zh_tw": "每小時",
+    "ko": "매시간"
+  },
+  "daily": {
+    "zh": "每日",
+    "en": "Daily",
+    "ja": "毎日",
+    "zh_tw": "每日",
+    "ko": "매일"
+  },
+  "weekly": {
+    "zh": "每周",
+    "en": "Weekly",
+    "ja": "毎週",
+    "zh_tw": "每週",
+    "ko": "매주"
+  },
+  "monthly": {
+    "zh": "每月",
+    "en": "Monthly",
+    "ja": "毎月",
+    "zh_tw": "每月",
+    "ko": "매월"
+  },
+  "auto_backup_frequency_set_to": {
+    "zh": "自动备份周期已设置为",
+    "en": "Auto backup frequency has been set to",
+    "ja": "自動バックアップ頻度が設定されました",
+    "zh_tw": "自動備份週期已設定為",
+    "ko": "자동 백업 빈도가 설정되었습니다"
+  },
+  "save_config_failed": {
+    "zh": "保存配置失败",
+    "en": "Failed to save configuration",
+    "ja": "設定の保存に失敗しました",
+    "zh_tw": "儲存設定失敗",
+    "ko": "구성 저장 실패"
+  },
+  "please_select_backup_to_restore": {
+    "zh": "请选择要恢复的备份",
+    "en": "Please select a backup to restore",
+    "ja": "復元するバックアップを選択してください",
+    "zh_tw": "請選擇要復原的備份",
+    "ko": "복원할 백업을 선택하십시오"
+  },
+  "confirm_restore_backup": {
+    "zh": "确定要恢复备份",
+    "en": "Are you sure you want to restore backup",
+    "ja": "バックアップを復元してもよろしいですか",
+    "zh_tw": "確定要復原備份",
+    "ko": "백업을 복원하시겠습니까"
+  },
+  "question_mark": {
+    "zh": "吗？",
+    "en": "?",
+    "ja": "？",
+    "zh_tw": "嗎？",
+    "ko": "?"
+  },
+  "data_restore_success": {
+    "zh": "数据恢复成功",
+    "en": "Data restore successful",
+    "ja": "データの復元に成功しました",
+    "zh_tw": "資料復原成功",
+    "ko": "데이터 복원 성공"
+  },
+  "vlan_invalid_format": {
+    "zh": "VLAN格式无效，请输入数字",
+    "zh_tw": "VLAN格式無效，請輸入數字",
+    "en": "VLAN format is invalid, please enter numbers only",
+    "ja": "VLAN形式が無効です、数字のみを入力してください",
+    "ko": "VLAN 형식이 유효하지 않습니다. 숫자만 입력하세요"
+  },
+  "vlan_out_of_range": {
+    "zh": "VLAN值超出范围(1-4094)",
+    "zh_tw": "VLAN值超出範圍(1-4094)",
+    "en": "VLAN value out of range (1-4094)",
+    "ja": "VLAN値が範囲外です(1-4094)",
+    "ko": "VLAN 값이 범위를 벗어났습니다(1-4094)"
+  },
+  "network_import_export": {
+    "zh": "网段导入/导出",
+    "zh_tw": "網段匯入/匯出",
+    "en": "Network Import/Export",
+    "ja": "輸入/出力",
+    "ko": "가져오기/보내기"
+  },
+  "network_segment": {
+    "zh": "IP地址范围",
+    "zh_tw": "IP位址範圍",
+    "en": "IP Range",
+    "ja": "IPアドレス範囲",
+    "ko": "IP 주소 범위"
+  },
+  "data_restore_failed": {
+    "zh": "数据恢复失败",
+    "en": "Data restore failed",
+    "ja": "データの復元に失敗しました",
+    "zh_tw": "資料復原失敗",
+    "ko": "데이터 복원 실패"
+  },
+  "please_select_backup_to_delete": {
+    "zh": "请选择要删除的备份",
+    "en": "Please select a backup to delete",
+    "ja": "削除するバックアップを選択してください",
+    "zh_tw": "請選擇要刪除的備份",
+    "ko": "삭제할 백업을 선택하십시오"
+  },
+  "confirm_delete_backup": {
+    "zh": "确定要删除备份",
+    "en": "Are you sure you want to delete backup",
+    "ja": "バックアップを削除してもよろしいですか",
+    "zh_tw": "確定要刪除備份",
+    "ko": "백업을 삭제하시겠습니까"
+  },
+  "confirm_delete_multiple_backups": {
+    "zh": "确定要删除 {count} 个备份文件吗？",
+    "en": "Are you sure you want to delete {count} backup files?",
+    "ja": "{count} 個のバックアップファイルを削除してもよろしいですか？",
+    "zh_tw": "確定要刪除 {count} 個備份檔案嗎？",
+    "ko": "{count} 개의 백업 파일을 삭제하시겠습니까?"
+  },
+  "delete_failed": {
+    "zh": "删除 {name} 失败",
+    "en": "Failed to delete {name}",
+    "ja": "{name} の削除に失敗しました",
+    "zh_tw": "刪除 {name} 失敗",
+    "ko": "{name} 삭제 실패"
+  },
+  "successfully_deleted_backups": {
+    "zh": "成功删除 {count} 个备份文件",
+    "en": "Successfully deleted {count} backup files",
+    "ja": "{count} 個のバックアップファイルを正常に削除しました",
+    "zh_tw": "成功刪除 {count} 個備份檔案",
+    "ko": "{count} 개의 백업 파일이 성공적으로 삭제되었습니다"
+  },
+  "auto_scan_network": {
+    "zh": "自动扫描网络",
+    "en": "Auto Scan Network",
+    "ja": "ネットワーク自動スキャン",
+    "zh_tw": "自動掃描網路",
+    "ko": "자동 네트워크 스캔"
+  },
+  "network_address_cidr_format": {
+    "zh": "网络地址 (CIDR)",
+    "en": "Network Addr (CIDR)",
+    "ja": "ネットアドレス (CIDR)",
+    "zh_tw": "網路位址 (CIDR)",
+    "ko": "네트워크 주소 (CIDR)"
+  },
+  "thread_count": {
+    "zh": "线程数",
+    "en": "Thread Count",
+    "ja": "スレッド",
+    "zh_tw": "執行緒數",
+    "ko": "스레드 수"
+  },
+  "timeout_ms": {
+    "zh": "超时时间 (毫秒)",
+    "en": "Timeout (milliseconds)",
+    "ja": "タイムアウト (ms)",
+    "zh_tw": "逾時時間 (毫秒)",
+    "ko": "타임아웃 (밀리초)"
+  },
+  "please_enter_network_address": {
+    "zh": "请输入网络地址",
+    "en": "Please enter network address",
+    "ja": "ネットワークアドレスを入力してください",
+    "zh_tw": "請輸入網路位址",
+    "ko": "네트워크 주소를 입력하십시오"
+  },
+  "network_scan": {
+    "zh": "网络扫描",
+    "en": "Network Scan",
+    "ja": "ネットワークスキャン",
+    "zh_tw": "網路掃描",
+    "ko": "네트워크 스캔"
+  },
+  "scanning_network": {
+    "zh": "正在扫描网络",
+    "en": "Scanning network",
+    "ja": "ネットワークをスキャン中",
+    "zh_tw": "正在掃描網路",
+    "ko": "네트워크 스캔 중"
+  },
+  "preparing_to_scan": {
+    "zh": "准备开始扫描...",
+    "en": "Preparing to scan...",
+    "ja": "スキャンの準備中...",
+    "zh_tw": "準備開始掃描...",
+    "ko": "스캔 준비 중..."
+  },
+  "start_scan": {
+    "zh": "扫描",
+    "en": "Scan",
+    "ja": "スキャン",
+    "zh_tw": "掃描",
+    "ko": "스캔"
+  },
+  "scan_method": {
+    "zh": "扫描方式",
+    "en": "Scan Method",
+    "ja": "スキャン方式",
+    "zh_tw": "掃描方式",
+    "ko": "스캔 방식"
+  },
+  "scanning": {
+    "zh": "正在扫描",
+    "en": "Scanning",
+    "ja": "スキャン中",
+    "zh_tw": "正在掃描",
+    "ko": "스캔 중"
+  },
+  "found_active_ips": {
+    "zh": "发现活动IP",
+    "en": "Active IPs Found",
+    "ja": "アクティブIP発見",
+    "zh_tw": "發現活動IP",
+    "ko": "활성 IP 발견"
+  },
+  "scan_complete": {
+    "zh": "扫描完成",
+    "en": "Scan Complete",
+    "ja": "スキャン完了",
+    "zh_tw": "掃描完成",
+    "ko": "스캔 완료"
+  },
+  "confirm_import_scan_results": {
+    "zh": "扫描完成，发现 {count} 个活动IP地址。\n\n是否将这些IP地址导入到网络 {network} 中？",
+    "en": "Scan complete, found {count} active IP addresses.\n\nDo you want to import these IP addresses into network {network}?",
+    "ja": "スキャン完了、{count}個のアクティブIPアドレスを発見しました。\n\nこれらのIPアドレスをネットワーク {network} にインポートしますか？",
+    "zh_tw": "掃描完成，發現 {count} 個活動IP位址。\n\n是否將這些IP位址匯入到網路 {network} 中？",
+    "ko": "스캔 완료, {count}개의 활성 IP 주소를 발견했습니다.\n\n이 IP 주소들을 네트워크 {network}에 가져오시겠습니까?"
+  },
+  "import_canceled": {
+    "zh": "导入已取消",
+    "en": "Import Canceled",
+    "ja": "インポートをキャンセル",
+    "zh_tw": "匯入已取消",
+    "ko": "가져오기 취소"
+  },
+  "scan_results_not_imported": {
+    "zh": "扫描结果未导入到数据库",
+    "en": "Scan results not imported to database",
+    "ja": "スキャン結果はデータベースにインポートされていません",
+    "zh_tw": "掃描結果未匯入到資料庫",
+    "ko": "스캔 결과가 데이터베이스에 가져오지 않았습니다"
+  },
+  "scan_failed": {
+    "zh": "扫描失败",
+    "en": "Scan Failed",
+    "ja": "スキャン失敗",
+    "zh_tw": "掃描失敗",
+    "ko": "스캔 실패"
+  },
+  "no_active_ips_found": {
+    "zh": "未发现活动IP地址",
+    "en": "No active IP addresses found",
+    "ja": "アクティブなIPアドレスが見つかりません",
+    "zh_tw": "未發現活動IP位址",
+    "ko": "활성 IP 주소를 찾을 수 없습니다"
+  },
+  "auto_scan_discovered": {
+    "zh": "自动扫描发现",
+    "en": "Auto scan discovered",
+    "ja": "自動スキャン発見",
+    "zh_tw": "自動掃描發現",
+    "ko": "자동 스캔 발견"
+  },
+  "scan_result_success": {
+    "zh": "扫描完成，发现 {found} 个活动IP，成功添加 {added} 个到IPAM",
+    "en": "Scan complete, found {found} active IPs, successfully added {added} to IPAM",
+    "ja": "スキャン完了、{found}個のアクティブIPを発見、{added}個をIPAMに追加",
+    "zh_tw": "掃描完成，發現 {found} 個活動IP，成功添加 {added} 個到IPAM",
+    "ko": "스캔 완료, {found}개의 활성 IP 발견, {added}개를 IPAM에 추가"
+  },
+  "scan_result_with_failures": {
+    "zh": "扫描完成，发现 {found} 个活动IP，成功添加 {added} 个，{failed} 个添加失败（可能已分配）",
+    "en": "Scan complete, found {found} active IPs, added {added}, {failed} failed (may already be allocated)",
+    "ja": "スキャン完了、{found}個のアクティブIP発見、{added}個追加、{failed}個失敗（既に割り当て済みの可能性）",
+    "zh_tw": "掃描完成，發現 {found} 個活動IP，成功添加 {added} 個，{failed} 個添加失敗（可能已分配）",
+    "ko": "스캔 완료, {found}개의 활성 IP 발견, {added}개 추가, {failed}개 실패 (이미 할당되었을 수 있음)"
+  },
+  "large_network_warning": {
+    "zh": "大网络扫描警告",
+    "en": "Large Network Warning",
+    "ja": "大規模ネットワークスキャン警告",
+    "zh_tw": "大網路掃描警告",
+    "ko": "대규모 네트워크 스캔 경고"
+  },
+  "large_network_confirm_message": {
+    "zh": "网络 {network} 包含 {total} 个主机地址，扫描可能需要较长时间。是否继续？",
+    "en": "Network {network} contains {total} host addresses. Scanning may take a long time. Continue?",
+    "ja": "ネットワーク {network} には {total} 個のホストアドレスが含まれています。スキャンに時間がかかる場合があります。続行しますか？",
+    "zh_tw": "網路 {network} 包含 {total} 個主機位址，掃描可能需要較長時間。是否繼續？",
+    "ko": "네트워크 {network}에 {total}개의 호스트 주소가 포함되어 있습니다. 스캔에 시간이 오래 걸릴 수 있습니다. 계속하시겠습니까?"
+  },
+  "thread_count_range_error": {
+    "zh": "线程数必须在1到200之间",
+    "en": "Thread count must be between 1 and 200",
+    "ja": "スレッド数は1から200の間である必要があります",
+    "zh_tw": "執行緒數必須在1到200之間",
+    "ko": "스레드 수는 1에서 200 사이여야 합니다"
+  },
+  "thread_count_invalid": {
+    "zh": "线程数必须是有效的整数",
+    "en": "Thread count must be a valid integer",
+    "ja": "スレッド数は有効な整数である必要があります",
+    "zh_tw": "執行緒數必須是有效的整數",
+    "ko": "스레드 수는 유효한 정수여야 합니다"
+  },
+  "timeout_range_error": {
+    "zh": "超时时间必须在100到10000毫秒之间",
+    "en": "Timeout must be between 100 and 10000 milliseconds",
+    "ja": "タイムアウトは100から10000ミリ秒の間である必要があります",
+    "zh_tw": "逾時時間必須在100到10000毫秒之間",
+    "ko": "타임아웃은 100에서 10000밀리초 사이여야 합니다"
+  },
+  "timeout_invalid": {
+    "zh": "超时时间必须是有效的整数",
+    "en": "Timeout must be a valid integer",
+    "ja": "タイムアウトは有効な整数である必要があります",
+    "zh_tw": "逾時時間必須是有效的整數",
+    "ko": "타임아웃은 유효한 정수여야 합니다"
+  },
+  "check_expired_ips": {
+    "zh": "检查过期",
+    "en": "Check Expired",
+    "ja": "期限切れ確認",
+    "zh_tw": "檢查過期",
+    "ko": "만료 확인"
+  },
+  "check_conflicts": {
+    "zh": "检查冲突",
+    "en": "Check Conflicts",
+    "ja": "衝突確認",
+    "zh_tw": "檢查衝突",
+    "ko": "충돌 확인"
+  },
+  "ip_usage_statistics": {
+    "zh": "IP地址使用情况",
+    "en": "IP Usage Statistics",
+    "ja": "IP使用状況",
+    "zh_tw": "IP位址使用情況",
+    "ko": "IP 사용 현황"
+  },
+  "no_data_available": {
+    "zh": "暂无数据",
+    "en": "No Data Available",
+    "ja": "データがありません",
+    "zh_tw": "暫無數據",
+    "ko": "데이터 없음"
+  },
+  "release_selected": {
+    "zh": "释放选中",
+    "en": "Release Selected",
+    "ja": "選択を解放",
+    "zh_tw": "釋放選中",
+    "ko": "선택 해제"
+  },
+  "release_all": {
+    "zh": "全部释放",
+    "en": "Release All",
+    "ja": "すべてを解放",
+    "zh_tw": "全部釋放",
+    "ko": "모두 해제"
+  },
+  "batch_set_expiry_date": {
+    "zh": "过期设置",
+    "en": "Expiry Settings",
+    "ja": "有効期限設定",
+    "zh_tw": "過期設定",
+    "ko": "만료 설정"
+  },
+  "expired": {
+    "zh": "已过期",
+    "en": "Expired",
+    "ja": "期限切れ",
+    "zh_tw": "已過期",
+    "ko": "만료됨"
+  },
+  "expiring_soon": {
+    "zh": "即将过期",
+    "en": "Expiring",
+    "ja": "期限間近",
+    "zh_tw": "即將過期",
+    "ko": "곧 만료"
+  },
+  "not_expired": {
+    "zh": "未过期",
+    "en": "Valid",
+    "ja": "有効",
+    "zh_tw": "未過期",
+    "ko": "유효"
+  },
+  "date_format_yyyy_mm_dd": {
+    "zh": "格式: YYYY-MM-DD",
+    "en": "Format: YYYY-MM-DD",
+    "ja": "形式: YYYY-MM-DD",
+    "zh_tw": "格式: YYYY-MM-DD",
+    "ko": "형식: YYYY-MM-DD"
+  },
+  "please_enter_expiry_date": {
+    "zh": "请输入过期日期",
+    "en": "Please enter expiry date",
+    "ja": "有効期限を入力してください",
+    "zh_tw": "請輸入過期日期",
+    "ko": "만료 날짜를 입력하십시오"
+  },
+  "reallocate_address": {
+    "zh": "重新分配地址",
+    "en": "Reallocate Address",
+    "ja": "アドレスを再割り当て",
+    "zh_tw": "重新分配位址",
+    "ko": "주소 재할당"
+  },
+  "reserve_address_again": {
+    "zh": "重新保留地址",
+    "en": "Re-reserve Address",
+    "ja": "アドレスを再予約",
+    "zh_tw": "重新保留位址",
+    "ko": "주소 재예약"
+  },
+  "convert_to_reserved": {
+    "zh": "保留地址",
+    "en": "Reserve Address",
+    "ja": "予約済みに変換",
+    "zh_tw": "保留地址",
+    "ko": "주소 예약"
+  },
+  "convert_to_allocated": {
+    "zh": "分配地址",
+    "en": "Allocate Address",
+    "ja": "割り当て済みに変換",
+    "zh_tw": "分配地址",
+    "ko": "주소 할당"
+  },
+  "clear_expiry_date": {
+    "zh": "清除",
+    "en": "Clear",
+    "ja": "クリア",
+    "zh_tw": "清除",
+    "ko": "지우기"
+  },
+  "successfully_released_ips": {
+    "zh": "成功释放 {count} 个IP地址",
+    "en": "Successfully released {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを正常に解放しました",
+    "zh_tw": "成功釋放 {count} 個IP位址",
+    "ko": "{count} 개의 IP 주소가 성공적으로 해제되었습니다"
+  },
+  "successfully_restored_ips_allocated": {
+    "zh": "成功恢复 {count} 个IP地址为已分配",
+    "en": "Successfully restored {count} IP addresses to allocated",
+    "ja": "{count} 個のIPアドレスを割り当て済みに正常に戻しました",
+    "zh_tw": "成功恢復 {count} 個IP位址為已分配",
+    "ko": "{count} 개의 IP 주소가 할당된 상태로 성공적으로 복원되었습니다"
+  },
+  "successfully_restored_ips_reserved": {
+    "zh": "成功恢复 {count} 个IP地址为保留IP",
+    "en": "Successfully restored {count} IP addresses to reserved",
+    "ja": "{count} 個のIPアドレスを予約済みに正常に戻しました",
+    "zh_tw": "成功恢復 {count} 個IP位址為保留IP",
+    "ko": "{count} 개의 IP 주소가 예약된 상태로 성공적으로 복원되었습니다"
+  },
+  "failed_to_restore_ips": {
+    "zh": "恢复失败 {count} 个IP地址，请检查是否存在重复分配或冲突",
+    "en": "Failed to restore {count} IP addresses. Please check for duplicate allocations or conflicts",
+    "ja": "{count} 個のIPアドレスの復元に失敗しました。重複した割り当てまたは競合がないか確認してください",
+    "zh_tw": "恢復失敗 {count} 個IP位址，請檢查是否存在重複分配或衝突",
+    "ko": "{count} 개의 IP 주소 복원 실패. 중복 할당 또는 충돌이 없는지 확인하세요"
+  },
+  "ip_already_available_no_need_to_release": {
+    "zh": "所选IP地址已经是可用状态，无需释放",
+    "en": "Selected IP address is already available, no need to release",
+    "ja": "選択したIPアドレスは既に利用可能な状態です。解放する必要はありません",
+    "zh_tw": "所選IP位址已經是可用狀態，無需釋放",
+    "ko": "선택한 IP 주소는 이미 사용 가능한 상태입니다. 해제할 필요가 없습니다"
+  },
+  "expired_ips_detected": {
+    "zh": "过期IP检测",
+    "en": "Expired IPs Detected",
+    "ja": "期限切れIPの検出",
+    "zh_tw": "過期IP檢測",
+    "ko": "만료된 IP 감지"
+  },
+  "please_select_ips_to_set_expiry": {
+    "zh": "请选择要设置过期日期的IP地址",
+    "en": "Please select IP addresses to set expiry date",
+    "ja": "有効期限を設定するIPアドレスを選択してください",
+    "zh_tw": "請選擇要設定過期日期的IP位址",
+    "ko": "만료 날짜를 설정할 IP 주소를 선택하십시오"
+  },
+  "default_netmask": {
+    "zh": "默认子网掩码",
+    "en": "Default Subnet Mask",
+    "ja": "デフォルトサブネットマスク",
+    "zh_tw": "預設子網遮罩",
+    "ko": "기본 서브넷 마스크"
+  },
+  "integer_representation": {
+    "zh": "整数表示",
+    "en": "Integer Representation",
+    "ja": "整数表現",
+    "zh_tw": "整數表示",
+    "ko": "정수 표현"
+  },
+  "please_select_a_history_record": {
+    "zh": "请选择一条历史记录",
+    "en": "Please select a history record",
+    "ja": "履歴記録を1つ選択してください",
+    "zh_tw": "請選擇一條歷史記錄",
+    "ko": "히스토리를 선택하십시오"
+  },
+  "please_select_record_to_delete": {
+    "zh": "请先选择要删除的记录",
+    "en": "Please select the record to delete",
+    "ja": "削除記録を選択してください",
+    "zh_tw": "請先選擇要刪除的記錄",
+    "ko": "먼저 삭제할 레코드를 선택하십시오"
+  },
+  "no_undoable_delete_operation": {
+    "zh": "没有可撤销的删除操作",
+    "en": "No undoable delete operation",
+    "ja": "元に戻せる削除操作はありません",
+    "zh_tw": "沒有可撤銷的刪除操作",
+    "ko": "되돌릴 수 있는 삭제가 없습니다"
+  },
+  "no_undoable_operation": {
+    "zh": "没有可撤销的操作",
+    "en": "No undoable operation",
+    "ja": "元に戻せる操作はありません",
+    "zh_tw": "沒有可撤銷的操作",
+    "ko": "되돌리기 작업 없음"
+  },
+  "please_select_record_to_move_or_swap": {
+    "zh": "请选择要移动或交换的记录",
+    "en": "Please select the record to move or swap",
+    "ja": "移動または交換する記録を選択してください",
+    "zh_tw": "請選擇要移動或交換的記錄",
+    "ko": "이동하거나 교체할 레코드를 선택하십시오"
+  },
+  "data_import_summary": {
+    "zh": "共 {total_count} 条数据，{valid_count} 条有效，{error_count} 条无效",
+    "en": "Total {total_count} records, {valid_count} valid, {error_count} invalid",
+    "ja": "合計 {total_count} 件のデータ、{valid_count} 件有効、{error_count} 件無効",
+    "zh_tw": "共 {total_count} 條數據，{valid_count} 條有效，{error_count} 條無效",
+    "ko": "{total_count}/{valid_count} 유효, {error_count} 유효하지 않음"
+  },
+  "valid": {
+    "zh": "有效",
+    "en": "Valid",
+    "ja": "有効",
+    "zh_tw": "有效",
+    "ko": "유효"
+  },
+  "none": {
+    "zh": "无",
+    "en": "None",
+    "ja": "なし",
+    "zh_tw": "無",
+    "ko": "없음"
+  },
+  "msg_already_exists": {
+    "zh": "中已存在名称为 '{name}' 的记录",
+    "en": "already contains a record named '{name}'",
+    "ja": "には {name} という名前の記録が既に存在します",
+    "zh_tw": "中已存在名稱為 '{name}' 的記錄",
+    "ko": "이름이 '{name}' 인 레코드가 이미 존재합니다"
+  },
+  "no_valid_data_found": {
+    "zh": "文件中没有找到有效数据",
+    "en": "No valid data found in the file",
+    "ja": "ファイル内に有効なデータが見つかりません",
+    "zh_tw": "檔案中沒有找到有效數據",
+    "ko": "파일에서 유효한 데이터를 찾을 수 없습니다"
+  },
+  "no_data_to_import": {
+    "zh": "没有可导入的数据",
+    "en": "No data to import",
+    "ja": "取込するデータがありません",
+    "zh_tw": "沒有可匯入的數據",
+    "ko": "가져올 데이터 없음"
+  },
+  "confirm_delete": {
+    "zh": "确认删除",
+    "en": "Confirm Delete",
+    "ja": "削除を確認",
+    "zh_tw": "確認刪除",
+    "ko": "삭제 확인"
+  },
+  "delete_confirmation_message": {
+    "zh": "确定要删除选中的记录吗？此操作可以通过撤销按钮恢复。",
+    "en": "Are you sure you want to delete the selected records? This operation can be undone using the undo button.",
+    "ja": "選択した記録を削除してもよろしいですか？この操作は元に戻すボタンで元に戻せます。",
+    "zh_tw": "確定要刪除選中的記錄嗎？此操作可以通過撤銷按鈕恢復。",
+    "ko": "정말로 선택한 레코드를 삭제하시겠습니까? 이 작업은 되돌리기 버튼으로 되돌릴 수 있습니다."
+  },
+  "test_info_display_effect": {
+    "zh": "点击下方按钮测试不同类型的信息栏显示效果：",
+    "en": "Click the buttons below to test different information bar display effects:",
+    "ja": "下のボタンをクリックして、さまざまなタイプの情報バー表示効果をテストしてください：",
+    "zh_tw": "點擊下方按鈕測試不同類型的資訊欄顯示效果：",
+    "ko": "다양한 유형의 인포바 디스플레이를 테스트하려면 아래 버튼을 클릭하십시오."
+  },
+  "auto_scan": {
+    "zh": "自动扫描",
+    "zh_tw": "自動掃描",
+    "en": "Auto Scan",
+    "ja": "自動スキャン",
+    "ko": "자동 스캔"
+  },
+  "import_data": {
+    "zh": "导入",
+    "zh_tw": "匯入",
+    "en": "Import",
+    "ja": "インポート",
+    "ko": "가져오기"
+  },
+  "backup_restore": {
+    "zh": "备份/恢复",
+    "zh_tw": "備份/恢復",
+    "en": "Backup/Restore",
+    "ja": "バック/復",
+    "ko": "백업/복원"
+  },
+  "ip_address_management": {
+    "zh": "地址管理",
+    "zh_tw": "位址管理",
+    "en": "Addr Management",
+    "ja": "アドレス管理",
+    "ko": "주소 관리"
+  },
+  "allocate_address": {
+    "zh": "分配地址",
+    "zh_tw": "分配位址",
+    "en": "Allocate Address",
+    "ja": "アドレスを割り当てる",
+    "ko": "주소 할당"
+  },
+  "reserve_address": {
+    "zh": "保留地址",
+    "zh_tw": "保留位址",
+    "en": "Reserve Address",
+    "ja": "アドレスを予約",
+    "ko": "주소 예약"
+  },
+  "allocate_reserve_address": {
+    "zh": "分配/保留",
+    "zh_tw": "分配/保留",
+    "en": "Allocate/Reserve",
+    "ja": "割当/予約",
+    "ko": "할당/예약"
+  },
+  "batch_allocate": {
+    "zh": "批量分配",
+    "zh_tw": "批量分配",
+    "en": "Batch Allocate",
+    "ja": "一括割当",
+    "ko": "일괄 할당"
+  },
+  "batch_migrate": {
+    "zh": "批量迁移",
+    "zh_tw": "批量遷移",
+    "en": "Batch Migrate",
+    "ja": "一括移行",
+    "ko": "일괄 이동"
+  },
+  "please_select_ips_to_migrate": {
+    "zh": "请选择要迁移的IP地址",
+    "zh_tw": "請選擇要遷移的IP位址",
+    "en": "Please select IP addresses to migrate",
+    "ja": "移行するIPアドレスを選択してください",
+    "ko": "이동할 IP 주소를 선택하십시오"
+  },
+  "no_networks_available": {
+    "zh": "没有可用的网络",
+    "zh_tw": "沒有可用的網路",
+    "en": "No networks available",
+    "ja": "利用可能なネットワークがありません",
+    "ko": "사용 가능한 네트워크가 없습니다"
+  },
+  "selected_ips_count": {
+    "zh": "已选择 {count} 个IP地址",
+    "zh_tw": "已選擇 {count} 個IP位址",
+    "en": "Selected {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを選択",
+    "ko": "{count}개의 IP 주소 선택"
+  },
+  "target_network": {
+    "zh": "目标网络",
+    "zh_tw": "目標網路",
+    "en": "Target Network",
+    "ja": "ターゲットネットワーク",
+    "ko": "대상 네트워크"
+  },
+  "please_select_target_network": {
+    "zh": "请选择目标网络",
+    "zh_tw": "請選擇目標網路",
+    "en": "Please select target network",
+    "ja": "ターゲットネットワークを選択してください",
+    "ko": "대상 네트워크를 선택하십시오"
+  },
+  "release_address": {
+    "zh": "释放地址",
+    "zh_tw": "釋放位址",
+    "en": "Release Address",
+    "ja": "解放",
+    "ko": "주소 해제"
+  },
+  "cleanup_unused": {
+    "zh": "清理地址",
+    "zh_tw": "清理地址",
+    "en": "Cleanup Addresses",
+    "ja": "アドレスをクリーンアップ",
+    "ko": "주소 정리"
+  },
+  "keyword": {
+    "zh": "关键词",
+    "zh_tw": "關鍵詞",
+    "en": "Keyword",
+    "ja": "キーワード",
+    "ko": "키워드"
+  },
+  "scope": {
+    "zh": "范围",
+    "zh_tw": "範圍",
+    "en": "Scope",
+    "ja": "範囲",
+    "ko": "범위"
+  },
+  "search_mode": {
+    "zh": "搜索模式",
+    "zh_tw": "搜尋模式",
+    "en": "Search Mode",
+    "ja": "検索モード",
+    "ko": "검색 모드"
+  },
+  "all": {
+    "zh": "全部",
+    "zh_tw": "全部",
+    "en": "All",
+    "ja": "すべて",
+    "ko": "전체"
+  },
+  "exact_match": {
+    "zh": "精确匹配",
+    "zh_tw": "精確匹配",
+    "en": "Exact Match",
+    "ja": "完全一致",
+    "ko": "정확한 일치"
+  },
+  "contains": {
+    "zh": "包含",
+    "zh_tw": "包含",
+    "en": "Contains",
+    "ja": "含む",
+    "ko": "포함"
+  },
+  "regex": {
+    "zh": "正则表达式",
+    "zh_tw": "正則表達式",
+    "en": "Regex",
+    "ja": "正規表現",
+    "ko": "정규 표현식"
+  },
+  "allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割当済",
+    "ko": "할당됨"
+  },
+  "reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済",
+    "ko": "예약됨"
+  },
+  "allocated_time": {
+    "zh": "分配时间",
+    "zh_tw": "分配時間",
+    "en": "Allocated Time",
+    "ja": "割り当て時間",
+    "ko": "할당 시간"
+  },
+  "allocated_at": {
+    "zh": "分配时间",
+    "zh_tw": "分配時間",
+    "en": "Allocated At",
+    "ja": "割り当て時間",
+    "ko": "할당 시간"
+  },
+  "expiry_date": {
+    "zh": "过期日期",
+    "zh_tw": "過期日期",
+    "en": "Expiry Date",
+    "ja": "有効期限",
+    "ko": "만료 날짜"
+  },
+  "statistical_analysis": {
+    "zh": "统计分析",
+    "zh_tw": "統計分析",
+    "en": "Statistical Analysis",
+    "ja": "統計分析",
+    "ko": "통계 분석"
+  },
+  "import_export": {
+    "zh": "导入/导出",
+    "zh_tw": "導入/匯出",
+    "en": "Import/Export",
+    "ja": "輸入/出力",
+    "ko": "가져오기/보내기"
+  },
+  "choose_import_export_method": {
+    "zh": "请选择导入/导出方式：",
+    "zh_tw": "請選擇導入/匯出方式：",
+    "en": "Please choose import/export method:",
+    "ja": "インポート/エクスポート方法を選択してください：",
+    "ko": "가져오기/내보내기 방법을 선택하세요："
+  },
+  "network_management": {
+    "zh": "网段管理",
+    "zh_tw": "網段管理",
+    "en": "Networks",
+    "ja": "ネットワーク管理",
+    "ko": "네트워크 관리"
+  },
+  "network_cidr": {
+    "zh": "CIDR",
+    "zh_tw": "CIDR",
+    "en": "CIDR",
+    "ja": "CIDR",
+    "ko": "CIDR"
+  },
+  "add_network": {
+    "zh": "添加网段",
+    "zh_tw": "新增網段",
+    "en": "Add Network",
+    "ja": "追加",
+    "ko": "네트워크 추가"
+  },
+  "remove_network": {
+    "zh": "移除网段",
+    "zh_tw": "移除網段",
+    "en": "Remove Network",
+    "ja": "削除",
+    "ko": "네트워크 제거"
+  },
+  "created_at": {
+    "zh": "创建时间",
+    "zh_tw": "建立時間",
+    "en": "Created At",
+    "ja": "作成日時",
+    "ko": "생성 시간"
+  },
+  "ip_count": {
+    "zh": "IP数量",
+    "zh_tw": "IP數量",
+    "en": "IP Count",
+    "ja": "IP数",
+    "ko": "IP 수"
+  },
+  "hostname": {
+    "zh": "主机名",
+    "zh_tw": "主機名",
+    "en": "Hostname",
+    "ja": "ホスト名",
+    "ko": "호스트 이름"
+  },
+  "please_select_ip_address": {
+    "zh": "请选择IP地址",
+    "zh_tw": "請選擇IP位址",
+    "en": "Please select IP address",
+    "ja": "IPアドレスを選択してください",
+    "ko": "IP 주소를 선택하십시오"
+  },
+  "failed_to_release_ip": {
+    "zh": "释放IP地址失败",
+    "zh_tw": "釋放IP位址失敗",
+    "en": "Failed to release IP address",
+    "ja": "IPアドレスの解放に失敗しました",
+    "ko": "IP 주소 해제 실패"
+  },
+  "please_enter_ip_address": {
+    "zh": "请输入IP地址",
+    "zh_tw": "請輸入IP位址",
+    "en": "Please enter IP address",
+    "ja": "IPアドレスを入力してください",
+    "ko": "IP 주소를 입력하십시오"
+  },
+  "network_removed_successfully": {
+    "zh": "网络移除成功",
+    "zh_tw": "網路移除成功",
+    "en": "Network removed successfully",
+    "ja": "ネットワークの削除に成功しました",
+    "ko": "네트워크 제거 성공"
+  },
+  "network_added_successfully": {
+    "zh": "网络添加成功",
+    "zh_tw": "網路添加成功",
+    "en": "Network added successfully",
+    "ja": "ネットワークの追加に成功しました",
+    "ko": "네트워크 추가 성공"
+  },
+  "please_select_network": {
+    "zh": "请先选择要导出的网段",
+    "zh_tw": "請先選擇要匯出的網段",
+    "en": "Please select networks to export",
+    "ja": "エクスポートするネットワークを選択してください",
+    "ko": "내보낼 네트워크를 선택하세요"
+  },
+  "please_select_network_for_allocation": {
+    "zh": "请先选择要分配/保留地址的网段",
+    "zh_tw": "請先選擇要分配/保留地址的網段",
+    "en": "Please select a network for allocation/reservation",
+    "ja": "割り当て/予約するネットワークを選択してください",
+    "ko": "할당/예약할 네트워크를 선택하세요"
+  },
+  "please_enter_network": {
+    "zh": "请输入网络",
+    "zh_tw": "請輸入網路",
+    "en": "Please enter network",
+    "ja": "ネットワークを入力してください",
+    "ko": "네트워크를 입력하십시오"
+  },
+  "network_topology": {
+    "zh": "网络拓扑",
+    "zh_tw": "網路拓撲",
+    "en": "Network Topology",
+    "ja": "トポロジ",
+    "ko": "네트워크 토폴로지"
+  },
+  "refresh": {
+    "zh": "刷新",
+    "zh_tw": "重新整理",
+    "en": "Refresh",
+    "ja": "更新",
+    "ko": "새로 고침"
+  },
+  "ipv6_address_type_mismatch": {
+    "zh": "无法合并不同类型的IPv6地址（如全局地址和链路本地地址）",
+    "zh_tw": "無法合併不同類型的IPv6位址（如全域位址和鏈路本地位址）",
+    "en": "Cannot merge different types of IPv6 addresses (e.g., global addresses and link-local addresses)",
+    "ja": "異なるタイプのIPv6アドレス（グローバルアドレスやリンクローカルアドレスなど）を統合することはできません",
+    "ko": "서로 다른 유형의 IPv6 주소(예: 전역 주소 및 링크-로컬 주소)는 병합할 수 없습니다"
+  },
+  "different_ip_versions_cannot_be_converted": {
+    "zh": "不同IP版本的地址无法转换或合并",
+    "zh_tw": "不同IP版本的位址無法轉換或合併",
+    "en": "Different IP versions cannot be converted or merged",
+    "ja": "異なるIPバージョンのアドレスは変換または統合できません",
+    "ko": "서로 다른 IP 버전의 주소는 변환하거나 병합할 수 없습니다"
+  },
+  "cannot_convert_ip_range_to_cidr": {
+    "zh": "无法将IP范围转换为CIDR",
+    "zh_tw": "無法將IP範圍轉換為CIDR",
+    "en": "Cannot convert IP range to CIDR",
+    "ja": "IP範囲をCIDRに変換できません",
+    "ko": "IP 범위를 CIDR로 변환할 수 없습니다"
+  },
+  "error_message": {
+    "zh": "错误信息",
+    "zh_tw": "錯誤訊息",
+    "en": "Error Message",
+    "ja": "エラーメッセージ",
+    "ko": "오류 메시지"
+  },
+  "no_ip_conflicts_found": {
+    "zh": "没有发现IP冲突",
+    "en": "No IP conflicts found",
+    "ja": "IP衝突が見つかりませんでした",
+    "zh_tw": "沒有發現IP衝突",
+    "ko": "IP 충돌이 발견되지 않았습니다"
+  },
+  "ip_conflicts": {
+    "zh": "IP冲突",
+    "en": "IP Conflicts",
+    "ja": "IP衝突",
+    "zh_tw": "IP衝突",
+    "ko": "IP 충돌"
+  },
+  "found_ip_conflicts_count": {
+    "zh": "共发现 {count} 个IP冲突",
+    "zh_tw": "共發現 {count} 個IP衝突",
+    "en": "Found {count} IP conflicts",
+    "ja": "{count} 件のIP競合を発見",
+    "ko": "{count}개의 IP 충돌을 발견"
+  },
+  "found_available_ips_count": {
+    "zh": "共发现 {count} 个可用IP地址，分布在 {network_count} 个网络中",
+    "zh_tw": "共發現 {count} 個可用IP位址，分佈在 {network_count} 個網路中",
+    "en": "Found {count} available IP addresses across {network_count} networks",
+    "ja": "{count} 個の利用可能なIPアドレスが {network_count} 個のネットワークに分布",
+    "ko": "{network_count}개의 네트워크에 {count}개의 사용 가능한 IP 주소 발견"
+  },
+  "found_expired_ips_count": {
+    "zh": "共发现 {count} 个过期IP地址，分布在 {network_count} 个网络中",
+    "zh_tw": "共發現 {count} 個過期IP位址，分佈在 {network_count} 個網路中",
+    "en": "Found {count} expired IP addresses across {network_count} networks",
+    "ja": "{count} 個の期限切れIPアドレスが {network_count} 個のネットワークに分布",
+    "ko": "{network_count}개의 네트워크에 {count}개의 만료된 IP 주소 발견"
+  },
+  "backup_stats_info": {
+    "zh": "当前系统：{network_count} 个网络，{ip_count} 个IP地址 | 备份文件：{backup_count} 个",
+    "zh_tw": "當前系統：{network_count} 個網路，{ip_count} 個IP位址 | 備份檔案：{backup_count} 個",
+    "en": "Current system: {network_count} networks, {ip_count} IP addresses | Backup files: {backup_count}",
+    "ja": "現在のシステム：{network_count} ネットワーク、{ip_count} IPアドレス | バックアップファイル：{backup_count} 件",
+    "ko": "현재 시스템: {network_count}개 네트워크, {ip_count}개 IP 주소 | 백업 파일: {backup_count}개"
+  },
+  "handle_conflict": {
+    "zh": "处理冲突",
+    "en": "Handle Conflict",
+    "ja": "衝突を処理",
+    "zh_tw": "處理衝突",
+    "ko": "충돌 처리"
+  },
+  "please_select_conflict": {
+    "zh": "请选择要处理的冲突",
+    "en": "Please select a conflict to handle",
+    "ja": "処理する衝突を選択してください",
+    "zh_tw": "請選擇要處理的衝突",
+    "ko": "처리할 충돌을 선택하세요"
+  },
+  "check_conflict_failed": {
+    "zh": "检查冲突失败",
+    "en": "Failed to check conflicts",
+    "ja": "衝突チェックに失敗しました",
+    "zh_tw": "檢查衝突失敗",
+    "ko": "충돌 확인에 실패했습니다"
+  },
+  "resolve_conflict": {
+    "zh": "解决冲突",
+    "en": "Resolve Conflict",
+    "ja": "衝突を解決",
+    "zh_tw": "解決衝突",
+    "ko": "충돌 해결"
+  },
+  "select_action": {
+    "zh": "选择操作",
+    "en": "Select Action",
+    "ja": "操作を選択",
+    "zh_tw": "選擇操作",
+    "ko": "작업 선택"
+  },
+  "keep_this_record": {
+    "zh": "保留此记录",
+    "en": "Keep this record",
+    "ja": "この記録を保持",
+    "zh_tw": "保留此記錄",
+    "ko": "이 레코드 유지"
+  },
+  "delete_this_record": {
+    "zh": "删除此记录",
+    "en": "Delete this record",
+    "ja": "この記録を削除",
+    "zh_tw": "刪除此記錄",
+    "ko": "이 레코드 삭제"
+  },
+  "release_this_ip": {
+    "zh": "释放此IP",
+    "en": "Release this IP",
+    "ja": "このIPを解放",
+    "zh_tw": "釋放此IP",
+    "ko": "이 IP 해제"
+  },
+  "selected_ip": {
+    "zh": "选中的IP",
+    "en": "Selected IP",
+    "ja": "選択されたIP",
+    "zh_tw": "選中的IP",
+    "ko": "선택된 IP"
+  },
+  "conflict_resolved": {
+    "zh": "冲突已解决",
+    "en": "Conflict resolved",
+    "ja": "衝突が解決されました",
+    "zh_tw": "衝突已解決",
+    "ko": "충돌 해결됨"
+  },
+  "deleted_records": {
+    "zh": "已删除 {count} 条记录",
+    "en": "Deleted {count} records",
+    "ja": "{count} 件の記録を削除しました",
+    "zh_tw": "已刪除 {count} 條記錄",
+    "ko": "{count} 개의 레코드가 삭제되었습니다"
+  },
+  "resolve_conflict_failed": {
+    "zh": "解决冲突失败",
+    "en": "Failed to resolve conflict",
+    "ja": "衝突の解決に失敗しました",
+    "zh_tw": "解決衝突失敗",
+    "ko": "충돌 해결 실패"
+  },
+  "ip_subnet": {
+    "zh": "IP子网",
+    "zh_tw": "IP子網",
+    "en": "IPSubnet",
+    "ja": "IPサブネット",
+    "ko": "IP 서브넷"
+  },
+  "test_success_message": {
+    "zh": "测试正确信息",
+    "en": "Test Success Message",
+    "ja": "成功テスト",
+    "zh_tw": "測試正確資訊",
+    "ko": "올바른 정보 테스트"
+  },
+  "test_error_message": {
+    "zh": "测试错误信息",
+    "en": "Test Error Message",
+    "ja": "エラーテスト",
+    "zh_tw": "測試錯誤資訊",
+    "ko": "테스트 오류 메시지"
+  },
+  "test_long_text_message": {
+    "zh": "测试长文本信息",
+    "en": "Test Long Message",
+    "ja": "長文テスト",
+    "zh_tw": "測試長文本資訊",
+    "ko": "긴 메시지 테스트"
+  },
+  "test_mixed_language": {
+    "zh": "测试中英文混排",
+    "en": "Test Mixed Language",
+    "ja": "混在言語のテスト",
+    "zh_tw": "測試中英文混排",
+    "ko": "중영 혼합 테스트"
+  },
+  "clear_subnet_split_and_planning": {
+    "zh": "清空子网切分和规划",
+    "en": "Clear Subnet Split and Planning",
+    "ja": "サブネット分割と計画をクリア",
+    "zh_tw": "清空子網切分和規劃",
+    "ko": "서브넷 분할 및 계획 지우기"
+  },
+  "function_debug": {
+    "zh": "功能调试",
+    "en": "Function Debug",
+    "ja": "機能デバッグ",
+    "zh_tw": "功能調試",
+    "ko": "기능 디버깅"
+  },
+  "top_level_tab_order": {
+    "zh": "顶级标签次序",
+    "en": "Top Level Tab Order",
+    "ja": "トップレベルタブ順序",
+    "zh_tw": "頂級標籤次序",
+    "ko": "최상위 탭 순서"
+  },
+  "test_success_content": {
+    "zh": "测试正确信息：操作成功！",
+    "en": "Test success message: Operation successful!",
+    "ja": "成功メッセージのテスト：操作に成功しました！",
+    "zh_tw": "測試正確資訊：操作成功！",
+    "ko": "올바른 정보 테스트: 작동 성공!"
+  },
+  "test_error_content": {
+    "zh": "测试错误信息：操作失败！",
+    "en": "Test error message: Operation failed!",
+    "ja": "エラーメッセージのテスト：操作に失敗しました！",
+    "zh_tw": "測試錯誤資訊：操作失敗！",
+    "ko": "테스트 오류 메시지: 작업이 실패했습니다!"
+  },
+  "test_long_text_content": {
+    "zh": "测试长文本信息：这是一条非常长的测试信息，用于测试信息栏的文本截断功能。",
+    "en": "Test long text message: This is a very long test message used to test the text truncation feature of the information bar.",
+    "ja": "長いテキストメッセージのテスト：これは非常に長いテストメッセージで、情報バーのテキスト切り捨て機能をテストするために使用されます。",
+    "zh_tw": "測試長文本資訊：這是一條非常長的測試資訊，用於測試資訊欄的文本截斷功能。",
+    "ko": "긴 텍스트 메시지 테스트: 이것은 인포바의 텍스트 잘라내기 기능을 테스트하기 위한 매우 긴 테스트 메시지입니다."
+  },
+  "test_mixed_text_content": {
+    "zh": "中英文混排测试：",
+    "en": "Mixed language test: ",
+    "ja": "混在言語のテスト：",
+    "zh_tw": "中英文混排測試：",
+    "ko": "중국어-영어 혼합 테스트:"
+  },
+  "donate": {
+    "zh": "捐助",
+    "zh_tw": "捐助",
+    "en": "Donate",
+    "ja": "寄付",
+    "ko": "기부"
+  },
+  "scan_qr_donate": {
+    "zh": "扫码捐助",
+    "zh_tw": "掃碼捐助",
+    "en": "Scan QR to Donate",
+    "ja": "QRコードをスキャンして寄付",
+    "ko": "QR 코드 스캔 후 기부"
+  },
+  "wechat": {
+    "zh": "微信",
+    "zh_tw": "微信",
+    "en": "WeChat",
+    "ja": "WeChat",
+    "ko": "WeChat"
+  },
+  "alipay": {
+    "zh": "支付宝",
+    "zh_tw": "支付寶",
+    "en": "Alipay",
+    "ja": "Alipay",
+    "ko": "Alipay"
+  },
+  "wechat_qr": {
+    "zh": "微信二维码",
+    "zh_tw": "微信二維碼",
+    "en": "WeChat QR Code",
+    "ja": "WeChat QRコード",
+    "ko": "WeChat QR 코드"
+  },
+  "alipay_qr": {
+    "zh": "支付宝二维码",
+    "zh_tw": "支付寶二維碼",
+    "en": "Alipay QR Code",
+    "ja": "Alipay QRコード",
+    "ko": "Alipay QR 코드"
+  },
+  "enter_subnet_list": {
+    "zh": "请输入子网列表",
+    "en": "Please enter subnet list",
+    "ja": "サブネットリストを入力してください",
+    "zh_tw": "請輸入子網列表",
+    "ko": "서브넷 목록을 입력하십시오"
+  },
+  "no_overlap": {
+    "zh": "无",
+    "en": "No",
+    "ja": "なし",
+    "zh_tw": "無",
+    "ko": "없음"
+  },
+  "no_subnet_overlap_detected": {
+    "zh": "未检测到子网重叠",
+    "en": "No subnet overlap detected",
+    "ja": "サブネットの重複は検出されませんでした",
+    "zh_tw": "未檢測到子網重疊",
+    "ko": "서브넷 겹침이 감지되지 않음"
+  },
+  "overlap": {
+    "zh": "重叠",
+    "en": "Overlap",
+    "ja": "重複",
+    "zh_tw": "重疊",
+    "ko": "겹침"
+  },
+  "ip_address": {
+    "zh": "IP地址",
+    "en": "IP Address",
+    "ja": "IP",
+    "zh_tw": "IP位址",
+    "ko": "IP 주소"
+  },
+  "network_class": {
+    "zh": "网络类别",
+    "en": "Network Class",
+    "ja": "ネットワーククラス",
+    "zh_tw": "網路類別",
+    "ko": "네트워크 카테고리"
+  },
+  "first_usable_address": {
+    "zh": "第一个可用地址",
+    "en": "First Usable Address",
+    "ja": "最初の利用可能なアドレス",
+    "zh_tw": "第一個可用位址",
+    "ko": "사용 가능한 첫 번째 주소"
+  },
+  "last_usable_address": {
+    "zh": "最后一个可用地址",
+    "en": "Last Usable Address",
+    "ja": "最後の利用可能なアドレス",
+    "zh_tw": "最後一個可用位址",
+    "ko": "사용 가능한 마지막 주소"
+  },
+  "cidr_prefix": {
+    "zh": "CIDR前缀",
+    "en": "CIDR Prefix",
+    "ja": "CIDRプレフィックス",
+    "zh_tw": "CIDR前綴",
+    "ko": "CIDR 접두사"
+  },
+  "first_usable_host": {
+    "zh": "第一个可用主机",
+    "en": "First Usable Host",
+    "ja": "最初の利用可能なホスト",
+    "zh_tw": "第一個可用主機",
+    "ko": "사용 가능한 첫 번째 호스트"
+  },
+  "last_usable_host": {
+    "zh": "最后一个可用主机",
+    "en": "Last Usable Host",
+    "ja": "最後の利用可能なホスト",
+    "zh_tw": "最後一個可用主機",
+    "ko": "사용 가능한 마지막 호스트"
+  },
+  "single_host_address": {
+    "zh": "单主机地址（/128前缀）",
+    "en": "Single Host Address (/128 Prefix)",
+    "ja": "単一ホストアドレス （/128プレフィックス）",
+    "zh_tw": "單主機位址（/128前綴）",
+    "ko": "단일 호스트 주소 (/128 접두사)"
+  },
+  "small_network": {
+    "zh": "小型网络（/64前缀）",
+    "en": "Small Network (/64 Prefix)",
+    "ja": "小規模ネットワーク （/64プレフィックス）",
+    "zh_tw": "小型網路（/64前綴）",
+    "ko": "소규모 네트워크 (/64 접두사)"
+  },
+  "medium_network": {
+    "zh": "中型网络（/48前缀）",
+    "en": "Medium Network (/48 Prefix)",
+    "ja": "中規模ネットワーク （/48プレフィックス）",
+    "zh_tw": "中型網路（/48前綴）",
+    "ko": "중간 네트워크 (/48 접두사)"
+  },
+  "regional_network": {
+    "zh": "区域级网络（/{0} 前缀）",
+    "en": "Regional Network (/ {0} Prefix)",
+    "ja": "地域ネットワーク （/ {0}プレフィックス）",
+    "zh_tw": "區域級網路（/{0} 前綴）",
+    "ko": "영역 레벨 네트워크 (/{0} 접두사)"
+  },
+  "large_network": {
+    "zh": "大型网络（/{0} 前缀）",
+    "en": "Large Network (/ {0} Prefix)",
+    "ja": "大規模ネットワーク （/ {0}プレフィックス）",
+    "zh_tw": "大型網路（/{0} 前綴）",
+    "ko": "대형 네트워크 (/{0} 접두사)"
+  },
+  "extra_large_network": {
+    "zh": "超大型网络（/32或更短前缀）",
+    "en": "Extra Large Network (/32 or Shorter Prefix)",
+    "ja": "超大規模ネットワーク （/32またはそれより短いプレフィックス）",
+    "zh_tw": "超大型網路（/32或更短前綴）",
+    "ko": "매우 큰 네트워크 (/32 이하 접두사)"
+  },
+  "special_network": {
+    "zh": "特殊网络（/{0} 前缀）",
+    "en": "Special Network (/ {0} Prefix)",
+    "ja": "特殊ネットワーク （/ {0}プレフィックス）",
+    "zh_tw": "特殊網路（/{0} 前綴）",
+    "ko": "특수 네트워크 (/{0} 접두사)"
+  },
+  "purpose_loopback_ipv6": {
+    "zh": "用于本地主机测试和诊断",
+    "en": "Used for local host testing and diagnostics",
+    "ja": "ローカルホストのテストと診断に使用",
+    "zh_tw": "用於本地主機測試和診斷",
+    "ko": "localhost 테스트 및 진단용"
+  },
+  "purpose_link_local": {
+    "zh": "用于同一链路内的设备通信，无需路由器",
+    "en": "Used for communication between devices on the same link, no router needed",
+    "ja": "同じリンク内のデバイス間通信に使用、ルーターは不要",
+    "zh_tw": "用於同一鏈路內的設備通信，無需路由器",
+    "ko": "동일한 링크 내에서 장치 통신에 사용되며 라우터가 필요하지 않습니다"
+  },
+  "purpose_multicast_ipv6": {
+    "zh": "用于一对多通信，支持组播应用",
+    "en": "Used for one-to-many communication, supports multicast applications",
+    "ja": "一対多通信に使用、マルチキャストアプリケーションをサポート",
+    "zh_tw": "用於一對多通信，支援群播應用",
+    "ko": "일대다 통신을 위한 멀티캐스트 애플리케이션 지원"
+  },
+  "purpose_ipv4_mapped": {
+    "zh": "用于在IPv6网络中表示IPv4地址",
+    "en": "Used to represent IPv4 addresses in IPv6 networks",
+    "ja": "IPv6ネットワーク内でIPv4アドレスを表すために使用",
+    "zh_tw": "用於在IPv6網路中表示IPv4位址",
+    "ko": "IPv6 네트워크의 IPv4 주소를 나타내는 데 사용됩니다."
+  },
+  "purpose_ipv4_ipv6_translation": {
+    "zh": "用于IPv4/IPv6网络之间的地址转换",
+    "en": "Used for address translation between IPv4 and IPv6 networks",
+    "ja": "IPv4/IPv6ネットワーク間のアドレス変換に使用",
+    "zh_tw": "用於IPv4/IPv6網路之間的位址轉換",
+    "ko": "IPv4/IPv6 네트워크 간의 주소 변환에 사용됨"
+  },
+  "purpose_ula": {
+    "zh": "用于内部网络通信，不可路由到公网",
+    "en": "Used for internal network communication, not routable to the public internet",
+    "ja": "内部ネットワーク通信に使用、公衆インターネットワークにはルーティング不可",
+    "zh_tw": "用於內部網路通信，不可路由到公網",
+    "ko": "내부 네트워크 통신의 경우 공용 네트워크로 라우팅할 수 없음"
+  },
+  "purpose_documentation": {
+    "zh": "用于文档示例和教学，不用于实际网络部署",
+    "en": "Used for documentation examples and teaching, not for actual network deployment",
+    "ja": "ドキュメントの例と教育に使用、実際のネットワーク展開には使用しない",
+    "zh_tw": "用於文檔範例和教學，不用於實際網路部署",
+    "ko": "실제 네트워크 배포가 아닌 문서 샘플 및 교육에 사용됨"
+  },
+  "purpose_blackhole": {
+    "zh": "用于黑洞路由，丢弃不需要的流量",
+    "en": "Used for blackhole routing, discarding unwanted traffic",
+    "ja": "ブラックホールルーティングに使用、不要なトラフィックを破棄",
+    "zh_tw": "用於黑洞路由，丟棄不需要的流量",
+    "ko": "원치 않는 트래픽을 드롭하는 블랙홀 라우팅에 사용"
+  },
+  "purpose_orchid": {
+    "zh": "用于ORCHID（Overlay Routable Cryptographic Hash Identifiers）系统",
+    "en": "Used for ORCHID (Overlay Routable Cryptographic Hash Identifiers) system",
+    "ja": "ORCHID（Overlay Routable Cryptographic Hash Identifiers）システムに使用",
+    "zh_tw": "用於ORCHID（Overlay Routable Cryptographic Hash Identifiers）系統",
+    "ko": "Orchid (Overlay Routable Cryptographic Hash Identifier) 시스템용"
+  },
+  "purpose_unspecified": {
+    "zh": "表示未指定地址，通常用于初始启动阶段",
+    "en": "Represents unspecified address, typically used during initial startup phase",
+    "ja": "未指定アドレスを表し、通常は初期起動フェーズで使用",
+    "zh_tw": "表示未指定位址，通常用於初始啟動階段",
+    "ko": "일반적으로 초기 시작 단계에서 사용되는 지정되지 않은 주소를 나타냅니다."
+  },
+  "purpose_deprecated_site_local": {
+    "zh": "已弃用的站点本地地址，不建议在新网络中使用",
+    "en": "Deprecated site-local address, not recommended for use in new networks",
+    "ja": "非推奨のサイトローカルアドレス、新しいネットワークでは使用しないことを推奨",
+    "zh_tw": "已棄用的站點本地位址，不建議在新網路中使用",
+    "ko": "사용되지 않는 사이트 로컬 주소, 새 네트워크에 대해 사용되지 않음"
+  },
+  "purpose_specific": {
+    "zh": "根据地址类型和前缀规划的特定用途",
+    "en": "Specific purpose based on address type and prefix planning",
+    "ja": "アドレスタイプとプレフィックス計画に基づく特定の用途",
+    "zh_tw": "根據位址類型和前綴規劃的特定用途",
+    "ko": "주소 유형 및 접두사를 기반으로 계획된 특정 용도"
+  },
+  "purpose_global_unicast": {
+    "zh": "全球单播地址，用于公网通信",
+    "en": "Global unicast address, used for public network communication",
+    "ja": "グローバルユニキャストアドレス、公衆ネットワーク通信に使用",
+    "zh_tw": "全球單播位址，用於公網通信",
+    "ko": "공용 네트워크 통신을 위한 글로벌 유니캐스트 주소"
+  },
+  "advice_global_routable": {
+    "zh": "建议配置防火墙规则，限制不必要的入站访问",
+    "en": "It is recommended to configure firewall rules to restrict unnecessary inbound access",
+    "ja": "ファイアウォールルールを設定し、不要な受信アクセスを制限することを推奨",
+    "zh_tw": "建議設定防火牆規則，限制不必要的入站訪問",
+    "ko": "불필요한 인바운드 액세스를 제한하도록 방화벽 규칙을 구성하는 것이 좋습니다."
+  },
+  "advice_private_network": {
+    "zh": "建议使用SLAAC或DHCPv6自动分配地址",
+    "en": "It is recommended to use SLAAC or DHCPv6 for automatic address assignment",
+    "ja": "SLAACまたはDHCPv6を使用してアドレスを自動割り当てることを推奨",
+    "zh_tw": "建議使用SLAAC或DHCPv6自動分配位址",
+    "ko": "SLAAC 또는 DHCPv6을 사용한 자동 주소 할당 권장"
+  },
+  "advice_prefix_length": {
+    "zh": "\n建议为终端设备分配/64前缀，符合IPv6最佳实践",
+    "en": "\nIt is recommended to assign /64 prefixes to end devices, which complies with IPv6 best practices",
+    "ja": "エンドデバイスには/64プレフィックスを割り当てることを推奨、IPv6のベストプラクティスに準拠",
+    "zh_tw": "\n建議為終端設備分配/64前綴，符合IPv6最佳實踐",
+    "ko": "IPv6 모범 사례에 따라/64 접두사를 최종 장치에 할당하는 것이 좋습니다."
+  },
+  "related_rfc": {
+    "zh": "相关RFC",
+    "en": "Related RFCs",
+    "ja": "関連するRFC",
+    "zh_tw": "相關RFC",
+    "ko": "관련 RFC"
+  },
+  "network_prefix": {
+    "zh": "网络前缀",
+    "en": "Network Prefix",
+    "ja": "ネットワークプレフィックス",
+    "zh_tw": "網路前綴",
+    "ko": "네트워크 접두사"
+  },
+  "segment_index": {
+    "zh": "第{0}段",
+    "en": "Segment {0}",
+    "ja": "セグメント {0}",
+    "zh_tw": "第{0}段",
+    "ko": "단락 {0}"
+  },
+  "segment_value": {
+    "zh": "{0} (十六进制) = {1} (十进制) = {2} (二进制)",
+    "en": "{0} (Hex) = {1} (Decimal) = {2} (Binary)",
+    "ja": "{0} （16進数） = {1} （10進数） = {2} （2進数）",
+    "zh_tw": "{0} (十六進制) = {1} (十進制) = {2} (二進制)",
+    "ko": "{0} (16진수) = {1} (십진수) = {2} (이진수)"
+  },
+  "segment_value_zero": {
+    "zh": "0000 (十六进制) = 0 (十进制) = 0000000000000000 (二进制)",
+    "en": "0000 (Hex) = 0 (Decimal) = 0000000000000000 (Binary)",
+    "ja": "0000 （16進数） = 0 （10進数） = 0000000000000000 （2進数）",
+    "zh_tw": "0000 (十六進制) = 0 (十進制) = 0000000000000000 (二進制)",
+    "ko": "0000 (16진수) = 0 (10진수) = 0000000000000000 (이진수)"
+  },
+  "enter_subnet_merge_list": {
+    "zh": "请输入子网合并列表",
+    "en": "Please enter subnet merge list",
+    "ja": "サブネット統合リストを入力してください",
+    "zh_tw": "請輸入子網合併列表",
+    "ko": "서브넷 병합 목록을 입력하십시오"
+  },
+  "enter_ipv6_address": {
+    "zh": "请输入IPv6地址",
+    "en": "Please enter IPv6 address",
+    "ja": "IPv6アドレスを入力してください",
+    "zh_tw": "請輸入IPv6位址",
+    "ko": "IPv6 주소를 입력하세요"
+  },
+  "enter_ip_address": {
+    "zh": "请输入IP地址",
+    "en": "Please enter IP address",
+    "ja": "IPアドレスを入力してください",
+    "zh_tw": "請輸入IP位址",
+    "ko": "IP 주소를 입력하세요"
+  },
+  "ip_purpose": {
+    "zh": "IP地址用途",
+    "en": "IP Address Purpose",
+    "ja": "IPアドレスの用途",
+    "zh_tw": "IP位址用途",
+    "ko": "IP 주소 사용"
+  },
+  "purpose_loopback": {
+    "zh": "本地回环地址，用于测试本地网络",
+    "en": "Local loopback address, used for testing local network",
+    "ja": "ローカルループバックアドレス、ローカルネットワークのテストに使用",
+    "zh_tw": "本地迴環位址，用於測試本地網路",
+    "ko": "로컬 네트워크 테스트를 위한 로컬 루프백 주소"
+  },
+  "purpose_private": {
+    "zh": "私有地址，用于内部网络",
+    "en": "Private address, used for internal network",
+    "ja": "プライベートアドレス、内部ネットワークに使用",
+    "zh_tw": "私有位址，用於內部網路",
+    "ko": "내부 네트워크용 비공개 주소"
+  },
+  "purpose_multicast": {
+    "zh": "组播地址，用于一对多通信",
+    "en": "Multicast address, used for one-to-many communication",
+    "ja": "マルチキャストアドレス、一対多通信に使用",
+    "zh_tw": "組播位址，用於一對多通信",
+    "ko": "일대다 통신을 위한 멀티캐스트 주소"
+  },
+  "purpose_reserved": {
+    "zh": "保留地址，用于特殊用途",
+    "en": "Reserved address, used for special purposes",
+    "ja": "予約アドレス、特殊な用途に使用",
+    "zh_tw": "保留位址，用於特殊用途",
+    "ko": "특수 목적으로 주소를 보관하세요."
+  },
+  "purpose_global": {
+    "zh": "全球可路由地址，用于公网通信",
+    "en": "Globally routable address, used for public network communication",
+    "ja": "グローバルルーティング可能なアドレス、公衆ネットワーク通信に使用",
+    "zh_tw": "全球可路由位址，用於公網通信",
+    "ko": "공용 네트워크 트래픽에 대한 글로벌 라우팅 가능 주소"
+  },
+  "purpose_unknown": {
+    "zh": "未知用途",
+    "en": "Unknown purpose",
+    "ja": "未知の用途",
+    "zh_tw": "未知用途",
+    "ko": "알 수 없는 사용"
+  },
+  "size_small": {
+    "zh": "小型网络，适合家庭或小型办公室",
+    "en": "Small network, suitable for home or small office",
+    "ja": "小規模ネットワーク、家庭または小規模オフィスに適しています",
+    "zh_tw": "小型網路，適合家庭或小型辦公室",
+    "ko": "가정 또는 소규모 사무실을 위한 소규모 네트워크"
+  },
+  "size_medium": {
+    "zh": "中型网络，适合企业或校园网络",
+    "en": "Medium network, suitable for enterprise or campus network",
+    "ja": "中規模ネットワーク、企業またはキャンパスネットワークに適しています",
+    "zh_tw": "中型網路，適合企業或校園網路",
+    "ko": "기업 또는 캠퍼스 네트워크를 위한 중간 규모 네트워크"
+  },
+  "size_large": {
+    "zh": "大型网络，适合大型机构或运营商",
+    "en": "Large network, suitable for large organizations or ISPs",
+    "ja": "大規模ネットワーク、大規模組織またはISPに適しています",
+    "zh_tw": "大型網路，適合大型機構或運營商",
+    "ko": "대규모 기관 또는 운영자를 위한 대규모 네트워크"
+  },
+  "advice_large_subnet": {
+    "zh": "建议划分为多个子网，便于管理和减少广播域",
+    "en": "It is recommended to divide into multiple subnets for easier management and reduced broadcast domains",
+    "ja": "管理を容易にし、ブロードキャストドメインを減らすために、複数のサブネットに分割することを推奨",
+    "zh_tw": "建議劃分為多個子網，便於管理和減少廣播域",
+    "ko": "브로드캐스트 도메인을 쉽게 관리하고 줄이기 위해 여러 서브넷으로 분할하는 것이 좋습니다."
+  },
+  "advice_public_network": {
+    "zh": "建议配置静态路由和防火墙规则",
+    "en": "It is recommended to configure static routes and firewall rules",
+    "ja": "静的ルートとファイアウォールルールを設定することを推奨",
+    "zh_tw": "建議設定靜態路由和防火牆規則",
+    "ko": "정적 라우팅 및 방화벽 규칙 권장"
+  },
+  "attribute": {
+    "zh": "属性",
+    "en": "Attribute",
+    "ja": "属性",
+    "zh_tw": "屬性",
+    "ko": "등록정보"
+  },
+  "email": {
+    "zh": "邮箱",
+    "zh_tw": "郵箱",
+    "en": "Email",
+    "ja": "メール",
+    "ko": "우편함"
+  },
+  "app_description": {
+    "zh": "专业的子网规划工具",
+    "zh_tw": "專業的子網規劃工具",
+    "en": "Professional Subnet Planning Tool",
+    "ja": "プロフェッショナルな子网計画師",
+    "ko": "전문 서브넷 계획 도구"
+  },
+  "success": {
+    "zh": "成功",
+    "en": "Success",
+    "ja": "成功",
+    "zh_tw": "成功",
+    "ko": "성공"
+  },
+  "successfully_imported": {
+    "zh": "成功导入",
+    "en": "Successfully imported",
+    "ja": "正常に取込されました",
+    "zh_tw": "成功匯入",
+    "ko": "성공적으로 가져왔습니다"
+  },
+  "records_to": {
+    "zh": "条记录到",
+    "en": "records to",
+    "ja": "件の記録を",
+    "zh_tw": "條記錄到",
+    "ko": "레코드 대상:"
+  },
+  "template_saved_to": {
+    "zh": "模板已保存到: {file_path}",
+    "en": "Template saved to: {file_path}",
+    "ja": "テンプレートが保存されました：{file_path}",
+    "zh_tw": "範本已儲存到：{file_path}",
+    "ko": "템플릿 저장 위치: {file_path}"
+  },
+  "subnet_requirement_import_template": {
+    "zh": "子网需求导入模板",
+    "zh_tw": "子網需求匯入範本",
+    "en": "Subnet Requirement Import Template",
+    "ja": "サブネット要件取込テンプレート",
+    "ko": "서브넷 요구 사항 가져오기 템플릿"
+  },
+  "office": {
+    "zh": "办公室",
+    "zh_tw": "辦公室",
+    "en": "Office",
+    "ja": "オフィス",
+    "ko": "사무실"
+  },
+  "hr_department": {
+    "zh": "人事部",
+    "zh_tw": "人事部",
+    "en": "HR Department",
+    "ja": "人事部",
+    "ko": "인사"
+  },
+  "finance_department": {
+    "zh": "财务部",
+    "zh_tw": "財務部",
+    "en": "Finance Department",
+    "ja": "財務部",
+    "ko": "재무팀"
+  },
+  "planning_department": {
+    "zh": "规划部",
+    "zh_tw": "規劃部",
+    "en": "Planning Department",
+    "ja": "計画部",
+    "ko": "기획부"
+  },
+  "it_department": {
+    "zh": "信息部",
+    "zh_tw": "資訊部",
+    "en": "IT Department",
+    "ja": "IT部",
+    "ko": "정보부"
+  },
+  "copied_to_clipboard": {
+    "zh": "已复制到剪贴板",
+    "en": "Copied to clipboard",
+    "ja": "クリップボードにコピーされました",
+    "zh_tw": "已複製到剪貼板",
+    "ko": "클립보드에 복사 완료"
+  },
+  "successfully_restored": {
+    "zh": "成功恢复了",
+    "en": "Successfully restored",
+    "ja": "正常に復元されました",
+    "zh_tw": "成功恢復了",
+    "ko": "성공적으로 복원됨"
+  },
+  "successfully_undone": {
+    "zh": "成功撤销",
+    "en": "Successfully undone",
+    "ja": "正常に元に戻されました",
+    "zh_tw": "成功撤銷",
+    "ko": "취소 성공"
+  },
+  "records": {
+    "zh": "条记录",
+    "en": "records",
+    "ja": "件の記録",
+    "zh_tw": "條記錄",
+    "ko": "기록"
+  },
+  "invalid_ip_address_format": {
+    "zh": "无效的IP地址格式",
+    "en": "Invalid IP address format",
+    "ja": "無効なIPアドレス形式",
+    "zh_tw": "無效的IP位址格式",
+    "ko": "유효하지 않은 IP 주소 형식"
+  },
+  "is_not_a_subnet_of": {
+    "zh": "{split_cidr} 不是 {parent_cidr} 的子网",
+    "en": "{split_cidr} is not a subnet of {parent_cidr}",
+    "ja": "{split_cidr} は {parent_cidr} のサブネットではありません",
+    "zh_tw": "{split_cidr} 不是 {parent_cidr} 的子網",
+    "ko": "{split_cidr} 은 (는) {parent_cidr} 의 서브넷이 아닙니다"
+  },
+  "is_not_ipv4_mapped_ipv6_address": {
+    "zh": "不是IPv4映射的IPv6地址，该功能仅支持IPv4映射格式(如::ffff:192.168.1.1)",
+    "en": "is not an IPv4-mapped IPv6 address, this feature only supports IPv4-mapped format (e.g., ::ffff:192.168.1.1)",
+    "ja": "IPv4マップIPv6アドレスではありません、この機能はIPv4マップ形式のみをサポートします（例：：：ffff：192。168。1。1）",
+    "zh_tw": "不是IPv4映射的IPv6位址，該功能僅支援IPv4映射格式（如::ffff:192.168.1.1）",
+    "ko": "IPv4 매핑 IPv6 주소가 아닌 이 기능은 IPv4 매핑 형식만 지원합니다 (예:: ffff: 192.168.1.1)."
+  },
+  "cannot_create_subnet_for": {
+    "zh": "无法为 {name} 创建前缀为 {prefix} 的子网",
+    "en": "Cannot create subnet for {name} with prefix {prefix}",
+    "ja": "{name} のプレフィックス {prefix} のサブネットを作成できません",
+    "zh_tw": "無法為 {name} 建立前置碼為 {prefix} 的子網",
+    "ko": "{name} 의 접두사 {prefix} 로 서브넷을 만들 수 없습니다"
+  },
+  "failed_to_create_subnet": {
+    "zh": "创建子网失败",
+    "en": "Failed to create subnet",
+    "ja": "サブネットの作成に失敗しました",
+    "zh_tw": "建立子網失敗",
+    "ko": "서브넷을 생성하지 못했습니다"
+  },
+  "cannot_allocate_sufficiently_large_subnet_for": {
+    "zh": "无法为 {name} 分配足够大的子网",
+    "en": "Cannot allocate sufficiently large subnet for {name}",
+    "ja": "{name} の十分な大きさのサブネットを割り当てることができません",
+    "zh_tw": "無法為 {name} 分配足夠大的子網",
+    "ko": "{name} 에 충분히 큰 서브넷을 할당할 수 없습니다"
+  },
+  "subnet_list_cannot_be_empty": {
+    "zh": "子网列表不能为空",
+    "en": "Subnet list cannot be empty",
+    "ja": "サブネットリストは空にできません",
+    "zh_tw": "子網列表不能為空",
+    "ko": "서브넷 목록은 비워둘 수 없습니다"
+  },
+  "start_ip_must_be_less_than_or_equal_to_end_ip": {
+    "zh": "起始IP地址必须小于或等于结束IP地址",
+    "en": "Start IP address must be less than or equal to end IP address",
+    "ja": "開始IPアドレスは終了IPアドレス以下でなければなりません",
+    "zh_tw": "起始IP位址必須小於或等於結束IP位址",
+    "ko": "시작 IP 주소는 종료 IP 주소보다 작거나 같아야 합니다"
+  },
+  "at_least_two_subnets_needed_to_check_overlap": {
+    "zh": "至少需要两个子网来检查重叠",
+    "en": "At least two subnets needed to check overlap",
+    "ja": "重複をチェックするには少なくとも2つのサブネットが必要です",
+    "zh_tw": "至少需要兩個子網來檢查重疊",
+    "ko": "겹침을 확인하려면 적어도 두 개의 서브넷이 필요합니다"
+  },
+  "copyright": {
+    "zh": "© 2025-2026 {app_name} 版权所有",
+    "zh_tw": "© 2025-2026 {app_name} 版權所有",
+    "en": "Copyright © 2025-2026 {app_name}",
+    "ja": "© 2025-2026 {app_name} 著作権所有",
+    "ko": "© 2025-2026 {app_name} 판권 소유"
+  },
+  "db_language": {
+    "zh": "简体中文",
+    "zh_tw": "繁體中文",
+    "en": "双字节字符",
+    "ja": "日本語",
+    "ko": "한국어"
+  },
+  "host_count_must_be_integer": {
+    "zh": "主机数量必须是整数",
+    "en": "Host count must be an integer",
+    "ja": "ホスト数は整数でなければなりません",
+    "zh_tw": "主機數量必須是整數",
+    "ko": "호스트 수는 정수여야 합니다."
+  },
+  "invalid_ip_format": {
+    "zh": "无效的IP格式",
+    "zh_tw": "無效的IP格式",
+    "en": "Invalid IP format",
+    "ja": "無効なIP形式",
+    "ko": "잘못된 IP 형식"
+  },
+  "ipv4_mapped_address": {
+    "zh": "IPv4映射地址",
+    "en": "IPv4 Mapped Address",
+    "ja": "IPv4マップアドレス",
+    "zh_tw": "IPv4映射位址",
+    "ko": "IPv4 매핑된 주소"
+  },
+  "value_representation": {
+    "zh": "值表示",
+    "en": "Value Representation",
+    "ja": "値表現",
+    "zh_tw": "值表示",
+    "ko": "값 표현"
+  },
+  "released": {
+    "zh": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "zh_tw": "已释放",
+    "ko": "해제됨"
+  },
+  "please_enter_description": {
+    "zh": "请输入描述",
+    "en": "Please enter description",
+    "ja": "説明を入力してください",
+    "zh_tw": "請輸入描述",
+    "ko": "설명을 입력하세요"
+  },
+  "ipv6_lab": {
+    "zh": "IPv6实验室",
+    "en": "IPv6 Lab",
+    "ja": "IPv6ラボ",
+    "zh_tw": "IPv6實驗室",
+    "ko": "IPv6 랩"
+  },
+  "ipv6_infrastructure": {
+    "zh": "IPv6基础设施",
+    "en": "IPv6 Infrastructure",
+    "ja": "IPv6インフラストラクチャ",
+    "zh_tw": "IPv6基礎設施",
+    "ko": "IPv6 인프라"
+  },
+  "ip_address_list": {
+    "zh": "IP地址列表",
+    "en": "IP Address List",
+    "ja": "IPアドレスリスト",
+    "zh_tw": "IP位址列表",
+    "ko": "IP 주소 목록"
+  },
+  "mac_address": {
+    "zh": "MAC地址",
+    "zh_tw": "MAC位址",
+    "en": "MAC",
+    "ja": "MAC",
+    "ko": "MAC 주소"
+  },
+  "invalid_mac_address": {
+    "zh": "MAC地址格式不正确，支持格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "zh_tw": "MAC位址格式不正確，支援格式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "en": "Invalid MAC address format. Supported formats: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX, XXXX-XXXX-XXXX",
+    "ja": "MACアドレス形式が無効です。サポートされている形式：XX:XX:XX:XX:XX:XX、XX-XX-XX-XX-XX-XX、XXXX-XXXX-XXXX",
+    "ko": "MAC 주소 형식이 잘못되었습니다. 지원 형식: XX:XX:XX:XX:XX:XX, XX-XX-XX-XX-XX-XX,  XXXX-XXXX-XXXX"
+  },
+  "stats_total_networks": {
+    "zh": "网段总数:",
+    "zh_tw": "網段總數:",
+    "en": "Total Networks:",
+    "ja": "ネットワーク総数:",
+    "ko": "네트워크 총 수:"
+  },
+  "stats_total_ips": {
+    "zh": "在库IP数:",
+    "zh_tw": "在庫IP數:",
+    "en": "Total IPs:",
+    "ja": "IP総数:",
+    "ko": "총 IP 수:"
+  },
+  "stats_ipv4_networks": {
+    "zh": "IPv4网段:",
+    "zh_tw": "IPv4網段:",
+    "en": "IPv4 Networks:",
+    "ja": "IPv4ネットワーク:",
+    "ko": "IPv4 네트워크:"
+  },
+  "stats_ipv4_ips": {
+    "zh": "IPv4地址数:",
+    "zh_tw": "IPv4位址數:",
+    "en": "IPv4 Addresses:",
+    "ja": "IPv4アドレス数:",
+    "ko": "IPv4 주소 수:"
+  },
+  "stats_ipv6_networks": {
+    "zh": "IPv6网段:",
+    "zh_tw": "IPv6網段:",
+    "en": "IPv6 Networks:",
+    "ja": "IPv6ネットワーク:",
+    "ko": "IPv6 네트워크:"
+  },
+  "stats_ipv6_ips": {
+    "zh": "IPv6地址数:",
+    "zh_tw": "IPv6位址數:",
+    "en": "IPv6 Addresses:",
+    "ja": "IPv6アドレス数:",
+    "ko": "IPv6 주소 수:"
+  },
+  "stats_allocated_ips": {
+    "zh": "已分配IP:",
+    "zh_tw": "已分配IP:",
+    "en": "Allocated IPs:",
+    "ja": "割り当て済IP:",
+    "ko": "할당된 IP:"
+  },
+  "stats_reserved_ips": {
+    "zh": "已保留IP:",
+    "zh_tw": "已保留IP:",
+    "en": "Reserved IPs:",
+    "ja": "予約IP:",
+    "ko": "예약 IP:"
+  },
+  "stats_released_ips": {
+    "zh": "已释放IP:",
+    "zh_tw": "已释放IP:",
+    "en": "Released IPs:",
+    "ja": "解放済みIP:",
+    "ko": "해제된 IP:"
+  },
+  "stats_expired_ips": {
+    "zh": "过期IP:",
+    "zh_tw": "過期IP:",
+    "en": "Expired IPs:",
+    "ja": "期限切れIP:",
+    "ko": "만료된 IP:"
+  },
+  "stats_expiring_ips": {
+    "zh": "即将过期:",
+    "zh_tw": "即將過期:",
+    "en": "Expiring Soon:",
+    "ja": "期限切れ間近:",
+    "ko": "곧 만료:"
+  },
+  "stats_named_ips": {
+    "zh": "已命名IP:",
+    "zh_tw": "已命名IP:",
+    "en": "Named IPs:",
+    "ja": "名前付きIP:",
+    "ko": "이름이 지정된 IP:"
+  },
+  "stats_vlan_count": {
+    "zh": "VLAN数量:",
+    "zh_tw": "VLAN數量:",
+    "en": "VLAN Count:",
+    "ja": "VLAN数:",
+    "ko": "VLAN 수:"
+  },
+  "stats_utilization_rate": {
+    "zh": "利用率:",
+    "zh_tw": "利用率:",
+    "en": "Utilization:",
+    "ja": "利用率:",
+    "ko": "이용률:"
+  },
+  "stats_total_ip": {
+    "zh": "总IP",
+    "zh_tw": "總IP",
+    "en": "Total IP",
+    "ja": "総IP",
+    "ko": "총 IP"
+  },
+  "stats_allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済",
+    "ko": "할당됨"
+  },
+  "stats_reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約",
+    "ko": "예약됨"
+  },
+  "stats_released": {
+    "zh": "已释放",
+    "zh_tw": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
+  },
+  "batch_reserve": {
+    "zh": "批量保留",
+    "zh_tw": "批量保留",
+    "en": "Batch Reserve",
+    "ja": "一括予約",
+    "ko": "일괄 예약"
+  },
+  "batch_generate": {
+    "zh": "批量生成",
+    "zh_tw": "批量生成",
+    "en": "Batch Generate",
+    "ja": "一括生成",
+    "ko": "일괄 생성"
+  },
+  "invalid_quantity": {
+    "zh": "请输入有效的数量",
+    "zh_tw": "請輸入有效的數量",
+    "en": "Please enter a valid quantity",
+    "ja": "有効な数量を入力してください",
+    "ko": "유효한 수량을 입력してください"
+  },
+  "insufficient_available_ips": {
+    "zh": "可用IP数量不足，当前可用: {available}",
+    "zh_tw": "可用IP數量不足，當前可用: {available}",
+    "en": "Insufficient available IPs, current available: {available}",
+    "ja": "利用可能なIP数が不足しています。現在利用可能: {available}",
+    "ko": "사용 가능한 IP 수가 부족합니다. 현재 사용 가능: {available}"
+  },
+  "batch_generate_success": {
+    "zh": "成功批量生成 {count} 个IP地址",
+    "zh_tw": "成功批量生成 {count} 個IP地址",
+    "en": "Successfully batch generated {count} IP addresses",
+    "ja": "{count} 件のIPアドレスを一括生成しました",
+    "ko": "{count}개의 IP 주소를 일괄 생성했습니다"
+  },
+  "batch_generate_failed": {
+    "zh": "批量生成失败",
+    "zh_tw": "批量生成失敗",
+    "en": "Batch generation failed",
+    "ja": "一括生成に失敗しました",
+    "ko": "일괄 생성 실패"
+  },
+  "invalid_ip_address": {
+    "zh": "无效的IP地址",
+    "zh_tw": "無效的IP位址",
+    "en": "Invalid IP address",
+    "ja": "無効なIPアドレス",
+    "ko": "유효하지 않은 IP 주소"
+  },
+  "export_selected_networks": {
+    "zh": "导出选中",
+    "zh_tw": "匯出選中",
+    "en": "Export Selected",
+    "ja": "選択をエクスポート",
+    "ko": "선택 내보내기"
+  },
+  "export_all_networks": {
+    "zh": "导出全部",
+    "zh_tw": "匯出全部",
+    "en": "Export All",
+    "ja": "すべてをエクスポート",
+    "ko": "전체 내보내기"
+  },
+  "export_options": {
+    "zh": "导出选项",
+    "zh_tw": "匯出選項",
+    "en": "Export Options",
+    "ja": "エクスポートオプション",
+    "ko": "내보내기 옵션"
+  },
+  "import_options": {
+    "zh": "导入选项",
+    "zh_tw": "匯入選項",
+    "en": "Import Options",
+    "ja": "インポートオプション",
+    "ko": "가져오기 옵션"
+  },
+  "sync_export_ips": {
+    "zh": "同步导出IP地址",
+    "zh_tw": "同步匯出IP位址",
+    "en": "Sync Export IP Addresses",
+    "ja": "IPアドレスを同時エクスポート",
+    "ko": "IP 주소 동시 내보내기"
+  },
+  "include_network_template": {
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Networks",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
+  },
+  "include_ip_template": {
+    "zh": "IP地址",
+    "zh_tw": "IP位址",
+    "en": "IP Addresses",
+    "ja": "IPアドレス",
+    "ko": "IP 주소"
+  },
+  "download": {
+    "zh": "下载",
+    "zh_tw": "下載",
+    "en": "Download",
+    "ja": "ダウンロード",
+    "ko": "다운로드"
+  },
+  "network_data_summary": {
+    "zh": "网段数据统计",
+    "zh_tw": "網段資料統計",
+    "en": "Network Data Summary",
+    "ja": "ネットワークデータ統計",
+    "ko": "네트워크 데이터 요약"
+  },
+  "ip_data_summary": {
+    "zh": "IP地址数据统计",
+    "zh_tw": "IP位址資料統計",
+    "en": "IP Address Data Summary",
+    "ja": "IPアドレスデータ統計",
+    "ko": "IP 주소 데이터 요약"
+  },
+  "new_count": {
+    "zh": "新增",
+    "zh_tw": "新增",
+    "en": "New",
+    "ja": "新規",
+    "ko": "신규"
+  },
+  "existing_count": {
+    "zh": "已存在",
+    "zh_tw": "已存在",
+    "en": "Existing",
+    "ja": "既存",
+    "ko": "기존"
+  },
+  "invalid_count": {
+    "zh": "无效",
+    "zh_tw": "無效",
+    "en": "Invalid",
+    "ja": "無効",
+    "ko": "무효"
+  },
+  "network_sheet_name": {
+    "zh": "网段表",
+    "zh_tw": "網段表",
+    "en": "Networks",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
+  },
+  "ip_sheet_name": {
+    "zh": "地址表",
+    "zh_tw": "位址表",
+    "en": "Address Table",
+    "ja": "アドレステーブル",
+    "ko": "주소 테이블"
+  },
+  "col_network": {
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Network",
+    "ja": "ネットワーク",
+    "ko": "네트워크"
+  },
+  "col_description": {
+    "zh": "描述",
+    "zh_tw": "描述",
+    "en": "Description",
+    "ja": "説明",
+    "ko": "설명"
+  },
+  "col_created_at": {
+    "zh": "创建时间",
+    "zh_tw": "建立時間",
+    "en": "Created At",
+    "ja": "作成日時",
+    "ko": "생성 시간"
+  },
+  "col_ip_address": {
+    "zh": "IP地址",
+    "zh_tw": "IP位址",
+    "en": "IP Address",
+    "ja": "IPアドレス",
+    "ko": "IP 주소"
+  },
+  "col_status": {
+    "zh": "状态",
+    "zh_tw": "狀態",
+    "en": "Status",
+    "ja": "ステータス",
+    "ko": "상태"
+  },
+  "col_hostname": {
+    "zh": "主机名",
+    "zh_tw": "主機名稱",
+    "en": "Hostname",
+    "ja": "ホスト名",
+    "ko": "호스트명"
+  },
+  "col_mac_address": {
+    "zh": "MAC地址",
+    "zh_tw": "MAC位址",
+    "en": "MAC Address",
+    "ja": "MACアドレス",
+    "ko": "MAC 주소"
+  },
+  "col_expiry_date": {
+    "zh": "过期日期",
+    "zh_tw": "過期日期",
+    "en": "Expiry Date",
+    "ja": "有効期限",
+    "ko": "만료일"
+  },
+  "col_compare_status": {
+    "zh": "比对状态",
+    "zh_tw": "比對狀態",
+    "en": "Compare Status",
+    "ja": "比較ステータス",
+    "ko": "비교 상태"
+  },
+  "status_new": {
+    "zh": "新增",
+    "zh_tw": "新增",
+    "en": "New",
+    "ja": "新規",
+    "ko": "신규"
+  },
+  "status_existing": {
+    "zh": "已存在",
+    "zh_tw": "已存在",
+    "en": "Existing",
+    "ja": "既存",
+    "ko": "기존"
+  },
+  "status_invalid": {
+    "zh": "无效",
+    "zh_tw": "無效",
+    "en": "Invalid",
+    "ja": "無効",
+    "ko": "무효"
+  },
+  "import_network_data": {
+    "zh": "导入网段数据",
+    "zh_tw": "匯入網段資料",
+    "en": "Import Network Data",
+    "ja": "ネットワークデータをインポート",
+    "ko": "네트워크 데이터 가져오기"
+  },
+  "import_ip_data": {
+    "zh": "导入IP地址数据",
+    "zh_tw": "匯入IP位址資料",
+    "en": "Import IP Address Data",
+    "ja": "IPアドレスデータをインポート",
+    "ko": "IP 주소 데이터 가져오기"
+  },
+  "overwrite_existing": {
+    "zh": "覆盖已存在数据",
+    "zh_tw": "覆蓋已存在資料",
+    "en": "Overwrite Existing",
+    "ja": "既存データを上書き",
+    "ko": "기존 데이터 덮어쓰기"
+  },
+  "please_select_import_data": {
+    "zh": "请至少选择一项要导入的数据",
+    "zh_tw": "請至少選擇一項要匯入的資料",
+    "en": "Please select at least one data type to import",
+    "ja": "インポートするデータを少なくとも1つ選択してください",
+    "ko": "가져올 데이터를 최소 하나 선택하세요"
+  },
+  "please_select_template": {
+    "zh": "请至少选择一个模板类型",
+    "zh_tw": "請至少選擇一個範本類型",
+    "en": "Please select at least one template type",
+    "ja": "テンプレートタイプを少なくとも1つ選択してください",
+    "ko": "템플릿 유형을 최소 하나 선택하세요"
+  },
+  "export_success": {
+    "zh": "数据导出成功",
+    "zh_tw": "資料匯出成功",
+    "en": "Data exported successfully",
+    "ja": "データのエクスポートに成功しました",
+    "ko": "데이터 내보내기 성공"
+  },
+  "import_success": {
+    "zh": "数据导入成功",
+    "zh_tw": "資料匯入成功",
+    "en": "Data imported successfully",
+    "ja": "データのインポートに成功しました",
+    "ko": "데이터 가져오기 성공"
+  },
+  "import_failed": {
+    "zh": "数据导入失败",
+    "zh_tw": "資料匯入失敗",
+    "en": "Data import failed",
+    "ja": "データのインポートに失敗しました",
+    "ko": "데이터 가져오기 실패"
+  },
+  "no_data_imported": {
+    "zh": "没有数据被导入",
+    "zh_tw": "沒有資料被匯入",
+    "en": "No data was imported",
+    "ja": "インポートされたデータはありません",
+    "ko": "가져온 데이터가 없습니다"
+  },
+  "networks_added": {
+    "zh": "新增网段",
+    "zh_tw": "新增網段",
+    "en": "Networks Added",
+    "ja": "追加ネットワーク",
+    "ko": "추가된 네트워크"
+  },
+  "networks_updated": {
+    "zh": "更新网段",
+    "zh_tw": "更新網段",
+    "en": "Networks Updated",
+    "ja": "更新ネットワーク",
+    "ko": "업데이트된 네트워크"
+  },
+  "ips_added": {
+    "zh": "新增IP",
+    "zh_tw": "新增IP",
+    "en": "IPs Added",
+    "ja": "追加IP",
+    "ko": "추가된 IP"
+  },
+  "ips_updated": {
+    "zh": "更新IP",
+    "zh_tw": "更新IP",
+    "en": "IPs Updated",
+    "ja": "更新IP",
+    "ko": "업데이트된 IP"
+  },
+  "invalid_status_value": {
+    "zh": "无效的状态值",
+    "zh_tw": "無效的狀態值",
+    "en": "Invalid status value",
+    "ja": "無効なステータス値",
+    "ko": "잘못된 상태 값"
+  },
+  "template_network_desc1": {
+    "zh": "示例网段1",
+    "zh_tw": "示例網段1",
+    "en": "Example Network 1",
+    "ja": "サンプルネットワーク1",
+    "ko": "예시 네트워크 1"
+  },
+  "template_network_desc2": {
+    "zh": "示例网段2",
+    "zh_tw": "示例網段2",
+    "en": "Example Network 2",
+    "ja": "サンプルネットワーク2",
+    "ko": "예시 네트워크 2"
+  },
+  "status_allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "ko": "할당됨"
+  },
+  "status_reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済み",
+    "ko": "예약됨"
+  },
+  "status_released": {
+    "zh": "已释放",
+    "zh_tw": "已释放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
+  },
+  "status_conflict": {
+    "zh": "冲突",
+    "zh_tw": "衝突",
+    "en": "Conflict",
+    "ja": "競合",
+    "ko": "충돌"
+  },
+  "template_ip_desc1": {
+    "zh": "Web服务器",
+    "zh_tw": "Web伺服器",
+    "en": "Web Server",
+    "ja": "Webサーバー",
+    "ko": "웹 서버"
+  },
+  "template_ip_desc2": {
+    "zh": "预留用于备份",
+    "zh_tw": "預留用於備份",
+    "en": "Reserved for backup",
+    "ja": "バックアップ用予約",
+    "ko": "백업용 예약"
+  },
+  "backup_success": {
+    "zh": "数据备份成功",
+    "zh_tw": "數據備份成功",
+    "en": "Backup successful",
+    "ja": "バックアップ成功",
+    "ko": "백업 성공"
+  },
+  "backup_failed": {
+    "zh": "数据备份失败",
+    "zh_tw": "數據備份失敗",
+    "en": "Backup failed",
+    "ja": "バックアップ失敗",
+    "ko": "백업 실패"
+  },
+  "cleanup_address": {
+    "zh": "清理地址",
+    "zh_tw": "清理地址",
+    "en": "Cleanup Address",
+    "ja": "アドレスをクリーンアップ",
+    "ko": "주소 정리"
+  },
+  "data_migration_success": {
+    "zh": "数据迁移成功",
+    "zh_tw": "數據遷移成功",
+    "en": "Data migration successful",
+    "ja": "データ移行に成功しました",
+    "ko": "데이터 마이그레이션 성공"
+  },
+  "data_migration_failed": {
+    "zh": "数据迁移失败",
+    "zh_tw": "數據遷移失敗",
+    "en": "Data migration failed",
+    "ja": "データ移行に失敗しました",
+    "ko": "데이터 마이그레이션 실패"
+  },
+  "network_address_cannot_be_empty": {
+    "zh": "网络地址不能为空",
+    "zh_tw": "網路位址不能為空",
+    "en": "Network address cannot be empty",
+    "ja": "ネットワークアドレスは空にすることはできません",
+    "ko": "네트워크 주소는 비워둘 수 없습니다"
+  },
+  "network_already_exists": {
+    "zh": "网络已存在",
+    "zh_tw": "網路已存在",
+    "en": "Network already exists",
+    "ja": "ネットワークは既に存在します",
+    "ko": "네트워크가 이미 존재합니다"
+  },
+  "add_network_failed": {
+    "zh": "添加网络失败",
+    "zh_tw": "添加網路失敗",
+    "en": "Failed to add network",
+    "ja": "ネットワークの追加に失敗しました",
+    "ko": "네트워크 추가 실패"
+  },
+  "network_not_exists": {
+    "zh": "网络不存在",
+    "zh_tw": "網路不存在",
+    "en": "Network does not exist",
+    "ja": "ネットワークが存在しません",
+    "ko": "네트워크가 존재하지 않습니다"
+  },
+  "network_description_updated_successfully": {
+    "zh": "网络描述更新成功",
+    "zh_tw": "網路描述更新成功",
+    "en": "Network description updated successfully",
+    "ja": "ネットワークの説明が正常に更新されました",
+    "ko": "네트워크 설명 업데이트 성공"
+  },
+  "update_network_description_failed": {
+    "zh": "更新网络描述失败",
+    "zh_tw": "更新網路描述失敗",
+    "en": "Failed to update network description",
+    "ja": "ネットワークの説明の更新に失敗しました",
+    "ko": "네트워크 설명 업데이트 실패"
+  },
+  "network_vlan_updated_successfully": {
+    "zh": "网络VLAN更新成功",
+    "zh_tw": "網路VLAN更新成功",
+    "en": "Network VLAN updated successfully",
+    "ja": "ネットワークVLANが正常に更新されました",
+    "ko": "네트워크 VLAN 업데이트 성공"
+  },
+  "update_network_vlan_failed": {
+    "zh": "更新网络VLAN失败",
+    "zh_tw": "更新網路VLAN失敗",
+    "en": "Failed to update network VLAN",
+    "ja": "ネットワークVLANの更新に失敗しました",
+    "ko": "네트워크 VLAN 업데이트 실패"
+  },
+  "network_address_updated_successfully": {
+    "zh": "网络地址更新成功",
+    "zh_tw": "網路位址更新成功",
+    "en": "Network address updated successfully",
+    "ja": "ネットワークアドレスが正常に更新されました",
+    "ko": "네트워크 주소 업데이트 성공"
+  },
+  "update_network_address_failed": {
+    "zh": "更新网络地址失败",
+    "zh_tw": "更新網路位址失敗",
+    "en": "Failed to update network address",
+    "ja": "ネットワークアドレスの更新に失敗しました",
+    "ko": "네트워크 주소 업데이트 실패"
+  },
+  "old_network_not_exists": {
+    "zh": "旧网络不存在",
+    "zh_tw": "舊網路不存在",
+    "en": "Old network does not exist",
+    "ja": "古いネットワークが存在しません",
+    "ko": "이전 네트워크가 존재하지 않습니다"
+  },
+  "new_network_already_exists": {
+    "zh": "新网络地址已存在",
+    "zh_tw": "新網路位址已存在",
+    "en": "New network address already exists",
+    "ja": "新しいネットワークアドレスは既に存在します",
+    "ko": "새 네트워크 주소가 이미 존재합니다"
+  },
+  "remove_network_failed": {
+    "zh": "移除网络失败",
+    "zh_tw": "移除網路失敗",
+    "en": "Failed to remove network",
+    "ja": "ネットワークの削除に失敗しました",
+    "ko": "네트워크 제거 실패"
+  },
+  "network_has_ips_error": {
+    "zh": "网络中存在 {count} 个IP地址，请先删除这些IP地址",
+    "zh_tw": "網路中存在 {count} 個IP位址，請先刪除這些IP位址",
+    "en": "There are {count} IP addresses in the network, please remove them first",
+    "ja": "ネットワークに {count} 個のIPアドレスが存在します。これらを削除してください",
+    "ko": "네트워크에 {count}개의 IP 주소가 있습니다. 먼저 삭제해주세요"
+  },
+  "ip_address_cannot_be_empty": {
+    "zh": "IP地址不能为空",
+    "zh_tw": "IP位址不能為空",
+    "en": "IP address cannot be empty",
+    "ja": "IPアドレスは空にすることはできません",
+    "ko": "IP 주소는 비워둘 수 없습니다"
+  },
+  "ip_address_format_error": {
+    "zh": "IP地址格式错误",
+    "zh_tw": "IP位址格式錯誤",
+    "en": "IP address format error",
+    "ja": "IPアドレス形式エラー",
+    "ko": "IP 주소 형식 오류"
+  },
+  "ip_record_not_exists": {
+    "zh": "IP地址记录不存在",
+    "zh_tw": "IP位址記錄不存在",
+    "en": "IP address record does not exist",
+    "ja": "IPアドレスレコードが存在しません",
+    "ko": "IP 주소 기록이 존재하지 않습니다"
+  },
+  "ip_migrated_successfully": {
+    "zh": "IP地址迁移成功",
+    "zh_tw": "IP位址遷移成功",
+    "en": "IP address migrated successfully",
+    "ja": "IPアドレスの移行に成功しました",
+    "ko": "IP 주소 이동 성공"
+  },
+  "migrate_ip_failed": {
+    "zh": "迁移IP地址失败",
+    "zh_tw": "遷移IP位址失敗",
+    "en": "Failed to migrate IP address",
+    "ja": "IPアドレスの移行に失敗しました",
+    "ko": "IP 주소 이동 실패"
+  },
+  "target_network_address_cannot_be_empty": {
+    "zh": "目标网络地址不能为空",
+    "zh_tw": "目標網路位址不能為空",
+    "en": "Target network address cannot be empty",
+    "ja": "ターゲットネットワークアドレスは空にすることはできません",
+    "ko": "대상 네트워크 주소는 비워둘 수 없습니다"
+  },
+  "target_network_not_exists": {
+    "zh": "目标网络不存在",
+    "zh_tw": "目標網路不存在",
+    "en": "Target network does not exist",
+    "ja": "ターゲットネットワークが存在しません",
+    "ko": "대상 네트워크가 존재하지 않습니다"
+  },
+  "ip_not_in_target_network": {
+    "zh": "IP地址不在目标网络范围内",
+    "zh_tw": "IP位址不在目標網路範圍內",
+    "en": "IP address is not within the target network range",
+    "ja": "IPアドレスがターゲットネットワークの範囲外です",
+    "ko": "IP 주소가 대상 네트워크 범위에 없습니다"
+  },
+  "validation_failed": {
+    "zh": "验证失败",
+    "zh_tw": "驗證失敗",
+    "en": "Validation failed",
+    "ja": "検証に失敗しました",
+    "ko": "검증 실패"
+  },
+  "expiry_date_format_error": {
+    "zh": "过期日期格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式",
+    "zh_tw": "過期日期格式錯誤，請使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS 格式",
+    "en": "Invalid expiry date format, please use YYYY-MM-DD or YYYY-MM-DD HH:MM:SS format",
+    "ja": "有効期限の形式が無効です。YYYY-MM-DD または YYYY-MM-DD HH:MM:SS 形式を使用してください",
+    "ko": "만료 날짜 형식이 잘못되었습니다. YYYY-MM-DD 또는 YYYY-MM-DD HH:MM:SS 형식을 사용하십시오"
+  },
+  "record_not_exists": {
+    "zh": "记录不存在",
+    "zh_tw": "記錄不存在",
+    "en": "Record does not exist",
+    "ja": "レコードが存在しません",
+    "ko": "기록이 존재하지 않습니다"
+  },
+  "record_not_exists_or_not_updated": {
+    "zh": "记录不存在或未更新",
+    "zh_tw": "記錄不存在或未更新",
+    "en": "Record does not exist or not updated",
+    "ja": "レコードが存在しないか更新されていません",
+    "ko": "기록이 존재하지 않거나 업데이트되지 않았습니다"
+  },
+  "record_updated_successfully": {
+    "zh": "记录更新成功",
+    "zh_tw": "記錄更新成功",
+    "en": "Record updated successfully",
+    "ja": "レコードの更新に成功しました",
+    "ko": "기록 업데이트 성공"
+  },
+  "update_record_failed": {
+    "zh": "更新记录失败",
+    "zh_tw": "更新記錄失敗",
+    "en": "Failed to update record",
+    "ja": "レコードの更新に失敗しました",
+    "ko": "기록 업데이트 실패"
+  },
+  "specified_record_not_exists": {
+    "zh": "指定的记录不存在",
+    "zh_tw": "指定的記錄不存在",
+    "en": "Specified record does not exist",
+    "ja": "指定されたレコードが存在しません",
+    "ko": "지정된 기록이 존재하지 않습니다"
+  },
+  "no_available_ips_to_clean": {
+    "zh": "没有可用状态的IP地址需要清理",
+    "zh_tw": "沒有可用狀態的IP位址需要清理",
+    "en": "No available IP addresses to clean",
+    "ja": "クリーンアップする利用可能なIPアドレスはありません",
+    "ko": "정리할 사용 가능한 IP 주소가 없습니다"
+  },
+  "cleanup_ips_success": {
+    "zh": "成功清理 {count} 个可用状态的IP地址",
+    "zh_tw": "成功清理 {count} 個可用狀態的IP位址",
+    "en": "Successfully cleaned {count} available IP addresses",
+    "ja": "{count} 個の利用可能なIPアドレスを正常にクリーンアップしました",
+    "ko": "{count}개의 사용 가능한 IP 주소 정리 성공"
+  },
+  "cleanup_ips_failed": {
+    "zh": "清理可用IP地址失败",
+    "zh_tw": "清理可用IP位址失敗",
+    "en": "Failed to clean up available IP addresses",
+    "ja": "利用可能なIPアドレスのクリーンアップに失敗しました",
+    "ko": "사용 가능한 IP 주소 정리 실패"
+  },
+  "release_expired_ips_success": {
+    "zh": "成功释放 {count} 个过期IP地址",
+    "zh_tw": "成功釋放 {count} 個過期IP位址",
+    "en": "Successfully released {count} expired IP addresses",
+    "ja": "{count} 個の期限切れIPアドレスを正常に解放しました",
+    "ko": "{count}개의 만료된 IP 주소 해제 성공"
+  },
+  "no_expired_ips_to_release": {
+    "zh": "没有过期IP地址需要释放",
+    "zh_tw": "沒有過期IP位址需要釋放",
+    "en": "No expired IP addresses to release",
+    "ja": "解放する期限切れIPアドレスはありません",
+    "ko": "해제할 만료된 IP 주소가 없습니다"
+  },
+  "auto_release_expired_ips_failed": {
+    "zh": "自动释放过期IP地址失败",
+    "zh_tw": "自動釋放過期IP位址失敗",
+    "en": "Failed to auto-release expired IP addresses",
+    "ja": "期限切れIPアドレスの自動解放に失敗しました",
+    "ko": "만료된 IP 주소 자동 해제 실패"
+  },
+  "reserve_ip_failed": {
+    "zh": "保留IP地址失败",
+    "zh_tw": "保留IP位址失敗",
+    "en": "Failed to reserve IP address",
+    "ja": "IPアドレスの予約に失敗しました",
+    "ko": "IP 주소 예약 실패"
+  },
+  "no_conflicts_to_resolve": {
+    "zh": "没有冲突需要解决",
+    "zh_tw": "沒有衝突需要解決",
+    "en": "No conflicts to resolve",
+    "ja": "解決する競合はありません",
+    "ko": "해결할 충돌이 없습니다"
+  },
+  "conflict_resolved_successfully": {
+    "zh": "成功解决冲突，保留了1个记录，删除了{deleted_count}个记录",
+    "zh_tw": "成功解決衝突，保留了1個記錄，刪除了{deleted_count}個記錄",
+    "en": "Successfully resolved conflict, kept 1 record, deleted {deleted_count} records",
+    "ja": "競合を正常に解決しました。1つのレコードを保持し、{deleted_count}個のレコードを削除しました",
+    "ko": "충돌 해결 성공. 1개의 기록 유지, {deleted_count}개의 기록 삭제"
+  },
+  "no_ips_to_migrate": {
+    "zh": "没有要迁移的IP地址",
+    "zh_tw": "沒有要遷移的IP位址",
+    "en": "No IP addresses to migrate",
+    "ja": "移行するIPアドレスはありません",
+    "ko": "이동할 IP 주소가 없습니다"
+  },
+  "batch_migrate_success": {
+    "zh": "成功迁移 {count} 个IP地址",
+    "zh_tw": "成功遷移 {count} 個IP位址",
+    "en": "Successfully migrated {count} IP addresses",
+    "ja": "{count} 個のIPアドレスを正常に移行しました",
+    "ko": "{count}개의 IP 주소 이동 성공"
+  },
+  "migrate_ip_failed_log": {
+    "zh": "迁移IP",
+    "zh_tw": "遷移IP",
+    "en": "Migrate IP",
+    "ja": "IPアドレスの移行",
+    "ko": "IP 주소 이동"
+  },
+  "migrate_exception": {
+    "zh": "迁移异常",
+    "zh_tw": "遷移異常",
+    "en": "Migration exception",
+    "ja": "移行例外",
+    "ko": "이동 예외"
+  },
+  "failed_to_generate_any_plan": {
+    "zh": "无法生成任何子网规划方案",
+    "zh_tw": "無法生成任何子網規劃方案",
+    "en": "Failed to generate any plan",
+    "ja": "サブネットプランを生成できません",
+    "ko": "서브넷 계획을 생성할 수 없습니다"
+  },
+  "port_preset": {
+    "zh": "端口预设",
+    "zh_tw": "連接埠預設",
+    "en": "Port Preset",
+    "ja": "ポートプリセット",
+    "ko": "포트 프리셋"
+  },
+  "fast": {
+    "zh": "快速",
+    "zh_tw": "快速",
+    "en": "Fast",
+    "ja": "高速",
+    "ko": "빠른"
+  },
+  "standard": {
+    "zh": "标准",
+    "zh_tw": "標準",
+    "en": "Standard",
+    "ja": "標準",
+    "ko": "표준"
+  },
+  "complete": {
+    "zh": "完整",
+    "zh_tw": "完整",
+    "en": "Complete",
+    "ja": "完全",
+    "ko": "완전"
+  },
+  "custom_ports": {
+    "zh": "自定义端口",
+    "zh_tw": "自訂連接埠",
+    "en": "Custom Ports",
+    "ja": "カスタムポート",
+    "ko": "사용자 정의 포트"
+  },
+  "procurement": {
+    "zh": "采购部",
+    "zh_tw": "採購部",
+    "en": "Procurement Department",
+    "ja": "調達部",
+    "ko": "구매팀"
+  },
+  "transportation": {
+    "zh": "运输部",
+    "zh_tw": "運輸部",
+    "en": "Transportation Department",
+    "ja": "輸送部",
+    "ko": "운송팀"
+  },
+  "legal": {
+    "zh": "法务部",
+    "zh_tw": "法務部",
+    "en": "Legal Department",
+    "ja": "法務部",
+    "ko": "법무팀"
+  },
+  "rd": {
+    "zh": "研发部",
+    "zh_tw": "研發部",
+    "en": "R&D Department",
+    "ja": "研究開発部",
+    "ko": "연구개발팀"
+  },
+  "discipline": {
+    "zh": "纪检部",
+    "zh_tw": "紀檢部",
+    "en": "Discipline Inspection Department",
+    "ja": "紀律検査部",
+    "ko": "기율검사부"
+  },
+  "party": {
+    "zh": "党群部",
+    "zh_tw": "黨群部",
+    "en": "Party Affairs Department",
+    "ja": "党務部",
+    "ko": "당사부"
+  },
+  "engineering": {
+    "zh": "工程部",
+    "zh_tw": "工程部",
+    "en": "Engineering Department",
+    "ja": "エンジニアリング部",
+    "ko": "엔지니어링팀"
+  },
+  "production": {
+    "zh": "生产部",
+    "zh_tw": "生產部",
+    "en": "Production Department",
+    "ja": "生産部",
+    "ko": "생산팀"
+  },
+  "sales": {
+    "zh": "销售部",
+    "zh_tw": "銷售部",
+    "en": "Sales Department",
+    "ja": "営業部",
+    "ko": "영업팀"
+  },
+  "security": {
+    "zh": "安全部",
+    "zh_tw": "安全部",
+    "en": "Security Department",
+    "ja": "セキュリティ部",
+    "ko": "보안팀"
+  },
+  "segment": {
+    "zh": "网段",
+    "zh_tw": "網段",
+    "en": "Segment",
+    "ja": "セグメント",
+    "ko": "세그먼트"
+  },
+  "IPv4结果": {
+    "zh": "IPv4结果",
+    "zh_tw": "IPv4結果",
+    "en": "IPv4 Result",
+    "ja": "IPv4結果",
+    "ko": "IPv4 결과"
+  },
+  "IPv6结果": {
+    "zh": "IPv6结果",
+    "zh_tw": "IPv6結果",
+    "en": "IPv6 Result",
+    "ja": "IPv6結果",
+    "ko": "IPv6 결과"
+  },
+  "available_addresses": {
+    "zh": "可用地址",
+    "zh_tw": "可用位址",
+    "en": "Available Addresses",
+    "ja": "利用可能なアドレス",
+    "ko": "사용 가능한 주소"
+  },
+  "cryptography_not_available": {
+    "zh": "加密库不可用",
+    "zh_tw": "加密庫不可用",
+    "en": "Cryptography library not available",
+    "ja": "暗号化ライブラリが利用できません",
+    "ko": "암호화 라이브러리를 사용할 수 없습니다"
+  },
+  "ctypes_not_available": {
+    "zh": "ctypes模块不可用",
+    "zh_tw": "ctypes模組不可用",
+    "en": "ctypes module not available",
+    "ja": "ctypesモジュールが利用できません",
+    "ko": "ctypes 모듈을 사용할 수 없습니다"
+  },
+  "non_windows_platform": {
+    "zh": "非Windows平台",
+    "zh_tw": "非Windows平台",
+    "en": "Non-Windows platform",
+    "ja": "Windows以外のプラットフォーム",
+    "ko": "Windows가 아닌 플랫폼"
+  },
+  "encryption_failed": {
+    "zh": "加密失败",
+    "zh_tw": "加密失敗",
+    "en": "Encryption failed",
+    "ja": "暗号化に失敗しました",
+    "ko": "암호화 실패"
+  },
+  "decryption_failed": {
+    "zh": "解密失败",
+    "zh_tw": "解密失敗",
+    "en": "Decryption failed",
+    "ja": "復号化に失敗しました",
+    "ko": "복호화 실패"
+  },
+  "fernet_encryption_failed": {
+    "zh": "Fernet加密失败",
+    "zh_tw": "Fernet加密失敗",
+    "en": "Fernet encryption failed",
+    "ja": "Fernet暗号化に失敗しました",
+    "ko": "Fernet 암호화 실패"
+  },
+  "fernet_decryption_failed": {
+    "zh": "Fernet解密失败",
+    "zh_tw": "Fernet解密失敗",
+    "en": "Fernet decryption failed",
+    "ja": "Fernet復号化に失敗しました",
+    "ko": "Fernet 복호화 실패"
+  },
+  "loading_resources": {
+    "zh": "加载资源",
+    "zh_tw": "載入資源",
+    "en": "Loading resources",
+    "ja": "リソースを読み込んでいます",
+    "ko": "리소스를 로드하는 중"
+  },
+  "initializing_components": {
+    "zh": "初始化组件",
+    "zh_tw": "初始化組件",
+    "en": "Initializing components",
+    "ja": "コンポーネントを初期化しています",
+    "ko": "컴포넌트 초기화 중"
+  },
+  "loading_database": {
+    "zh": "加载数据库",
+    "zh_tw": "載入資料庫",
+    "en": "Loading database",
+    "ja": "データベースを読み込んでいます",
+    "ko": "데이터베이스 로드 중"
+  },
+  "setting_up_ui": {
+    "zh": "设置用户界面",
+    "zh_tw": "設定使用者介面",
+    "en": "Setting up UI",
+    "ja": "ユーザーインターフェースを設定しています",
+    "ko": "UI 설정 중"
+  },
+  "loading_plugins": {
+    "zh": "加载插件",
+    "zh_tw": "載入外掛",
+    "en": "Loading plugins",
+    "ja": "プラグインを読み込んでいます",
+    "ko": "플러그인 로드 중"
+  },
+  "checking_updates": {
+    "zh": "检查更新",
+    "zh_tw": "檢查更新",
+    "en": "Checking updates",
+    "ja": "更新を確認しています",
+    "ko": "업데이트 확인 중"
+  },
+  "finalizing_setup": {
+    "zh": "完成设置",
+    "zh_tw": "完成設定",
+    "en": "Finalizing setup",
+    "ja": "設定を完了しています",
+    "ko": "설정 완료 중"
+  },
+  "config": {
+    "zh": "配置",
+    "zh_tw": "配置",
+    "en": "Config",
+    "ja": "設定",
+    "ko": "구성"
+  },
+  "internationalization": {
+    "zh": "国际化",
+    "zh_tw": "國際化",
+    "en": "Internationalization",
+    "ja": "国際化",
+    "ko": "국제화"
+  },
+  "database": {
+    "zh": "数据库",
+    "zh_tw": "資料庫",
+    "en": "Database",
+    "ja": "データベース",
+    "ko": "데이터베이스"
+  },
+  "ui_components": {
+    "zh": "UI组件",
+    "zh_tw": "UI組件",
+    "en": "UI Components",
+    "ja": "UIコンポーネント",
+    "ko": "UI 구성 요소"
+  },
+  "network_services": {
+    "zh": "网络服务",
+    "zh_tw": "網路服務",
+    "en": "Network Services",
+    "ja": "ネットワークサービス",
+    "ko": "네트워크 서비스"
+  },
+  "plugins": {
+    "zh": "插件",
+    "zh_tw": "外掛",
+    "en": "Plugins",
+    "ja": "プラグイン",
+    "ko": "플러그인"
+  },
+  "styles": {
+    "zh": "样式",
+    "zh_tw": "樣式",
+    "en": "Styles",
+    "ja": "スタイル",
+    "ko": "스타일"
+  },
+  "history": {
+    "zh": "历史记录",
+    "zh_tw": "歷史記錄",
+    "en": "History",
+    "ja": "履歴",
+    "ko": "히스토리"
+  },
+  "settings": {
+    "zh": "设置",
+    "zh_tw": "設定",
+    "en": "Settings",
+    "ja": "設定",
+    "ko": "설정"
+  },
+  "completion": {
+    "zh": "完成",
+    "zh_tw": "完成",
+    "en": "Completion",
+    "ja": "完了",
+    "ko": "완료"
+  },
+  "chart_drawing_failed": {
+    "zh": "图表绘制失败",
+    "zh_tw": "圖表繪製失敗",
+    "en": "Chart drawing failed",
+    "ja": "チャートの描画に失敗しました",
+    "ko": "차트 그리기 실패"
+  },
+  "description_too_long": {
+    "zh": "描述过长",
+    "zh_tw": "描述過長",
+    "en": "Description too long",
+    "ja": "説明が長すぎます",
+    "ko": "설명이 너무 깁니다"
+  },
+  "export_time": {
+    "zh": "导出时间",
+    "zh_tw": "匯出時間",
+    "en": "Export Time",
+    "ja": "エクスポート時間",
+    "ko": "내보내기 시간"
+  },
+  "host_address_range": {
+    "zh": "主机地址范围",
+    "zh_tw": "主機位址範圍",
+    "en": "Host Address Range",
+    "ja": "ホストアドレス範囲",
+    "ko": "호스트 주소 범위"
+  },
+  "host_count_must_be_positive": {
+    "zh": "主机数量必须为正数",
+    "zh_tw": "主機數量必須為正數",
+    "en": "Host count must be positive",
+    "ja": "ホスト数は正の数でなければなりません",
+    "ko": "호스트 수는 양수여야 합니다"
+  },
+  "hostname_too_long": {
+    "zh": "主机名过长",
+    "zh_tw": "主機名過長",
+    "en": "Hostname too long",
+    "ja": "ホスト名が長すぎます",
+    "ko": "호스트 이름이 너무 깁니다"
+  },
+  "info": {
+    "zh": "信息",
+    "zh_tw": "資訊",
+    "en": "Info",
+    "ja": "情報",
+    "ko": "정보"
+  },
+  "invalid_date_format": {
+    "zh": "日期格式无效",
+    "zh_tw": "日期格式無效",
+    "en": "Invalid date format",
+    "ja": "無効な日付形式",
+    "ko": "잘못된 날짜 형식"
+  },
+  "invalid_host_count": {
+    "zh": "无效的主机数量",
+    "zh_tw": "無效的主機數量",
+    "en": "Invalid host count",
+    "ja": "無効なホスト数",
+    "ko": "잘못된 호스트 수"
+  },
+  "invalid_number": {
+    "zh": "无效的数字",
+    "zh_tw": "無效的數字",
+    "en": "Invalid number",
+    "ja": "無効な数値",
+    "ko": "잘못된 번호"
+  },
+  "invalid_status": {
+    "zh": "无效的状态",
+    "zh_tw": "無效的狀態",
+    "en": "Invalid status",
+    "ja": "無効なステータス",
+    "ko": "잘못된 상태"
+  },
+  "ip_not_in_network": {
+    "zh": "IP地址不在网络中",
+    "zh_tw": "IP位址不在網路中",
+    "en": "IP not in network",
+    "ja": "IPがネットワーク内にありません",
+    "ko": "IP가 네트워크에 없습니다"
+  },
+  "ip_version_change_failed": {
+    "zh": "IP版本更改失败",
+    "zh_tw": "IP版本更改失敗",
+    "en": "IP version change failed",
+    "ja": "IPバージョンの変更に失敗しました",
+    "ko": "IP 버전 변경 실패"
+  },
+  "ip_version_mismatch": {
+    "zh": "IP版本不匹配",
+    "zh_tw": "IP版本不匹配",
+    "en": "IP version mismatch",
+    "ja": "IPバージョンが一致しません",
+    "ko": "IP 버전이 일치하지 않습니다"
+  },
+  "ipv4": {
+    "zh": "IPv4",
+    "zh_tw": "IPv4",
+    "en": "IPv4",
+    "ja": "IPv4",
+    "ko": "IPv4"
+  },
+  "ipv6": {
+    "zh": "IPv6",
+    "zh_tw": "IPv6",
+    "en": "IPv6",
+    "ja": "IPv6",
+    "ko": "IPv6"
+  },
+  "key": {
+    "zh": "键",
+    "zh_tw": "鍵",
+    "en": "Key",
+    "ja": "キー",
+    "ko": "키"
+  },
+  "legend": {
+    "zh": "图例",
+    "zh_tw": "圖例",
+    "en": "Legend",
+    "ja": "凡例",
+    "ko": "범례"
+  },
+  "no_planning_data_found": {
+    "zh": "未找到规划数据",
+    "zh_tw": "未找到規劃數據",
+    "en": "No planning data found",
+    "ja": "計画データが見つかりません",
+    "ko": "계획 데이터를 찾을 수 없습니다"
+  },
+  "no_segment_data": {
+    "zh": "无网段数据",
+    "zh_tw": "無網段數據",
+    "en": "No segment data",
+    "ja": "セグメントデータなし",
+    "ko": "세그먼트 데이터 없음"
+  },
+  "no_split_data_found": {
+    "zh": "未找到切分数据",
+    "zh_tw": "未找到切分數據",
+    "en": "No split data found",
+    "ja": "分割データが見つかりません",
+    "ko": "분할 데이터를 찾을 수 없습니다"
+  },
+  "parent_cidr": {
+    "zh": "父CIDR",
+    "zh_tw": "父CIDR",
+    "en": "Parent CIDR",
+    "ja": "親CIDR",
+    "ko": "상위 CIDR"
+  },
+  "parent_network_info": {
+    "zh": "父网络信息",
+    "zh_tw": "父網路資訊",
+    "en": "Parent Network Info",
+    "ja": "親ネットワーク情報",
+    "ko": "상위 네트워크 정보"
+  },
+  "pieces": {
+    "zh": "块",
+    "zh_tw": "塊",
+    "en": "Pieces",
+    "ja": "ピース",
+    "ko": "조각"
+  },
+  "please_enter_ip_range": {
+    "zh": "请输入IP范围",
+    "zh_tw": "請輸入IP範圍",
+    "en": "Please enter IP range",
+    "ja": "IP範囲を入力してください",
+    "ko": "IP 범위를 입력하세요"
+  },
+  "please_enter_split_segment": {
+    "zh": "请输入切分段",
+    "zh_tw": "請輸入切分段",
+    "en": "Please enter split segment",
+    "ja": "分割セグメントを入力してください",
+    "ko": "분할 세그먼트를 입력하세요"
+  },
+  "please_enter_subnets_to_check": {
+    "zh": "请输入要检查的子网",
+    "zh_tw": "請輸入要檢查的子網",
+    "en": "Please enter subnets to check",
+    "ja": "チェックするサブネットを入力してください",
+    "ko": "확인할 서브넷을 입력하세요"
+  },
+  "please_enter_subnets_to_merge": {
+    "zh": "请输入要合并的子网",
+    "zh_tw": "請輸入要合併的子網",
+    "en": "Please enter subnets to merge",
+    "ja": "統合するサブネットを入力してください",
+    "ko": "병합할 서브넷을 입력하세요"
+  },
+  "port_invalid": {
+    "zh": "端口无效",
+    "zh_tw": "端口無效",
+    "en": "Invalid port",
+    "ja": "無効なポート",
+    "ko": "잘못된 포트"
+  },
+  "port_list_empty": {
+    "zh": "端口列表为空",
+    "zh_tw": "端口列表為空",
+    "en": "Port list empty",
+    "ja": "ポートリストが空です",
+    "ko": "포트 목록이 비어 있습니다"
+  },
+  "port_range_error": {
+    "zh": "端口范围错误",
+    "zh_tw": "端口範圍錯誤",
+    "en": "Port range error",
+    "ja": "ポート範囲エラー",
+    "ko": "포트 범위 오류"
+  },
+  "selected_ips": {
+    "zh": "选中的IP",
+    "zh_tw": "選中的IP",
+    "en": "Selected IPs",
+    "ja": "選択されたIP",
+    "ko": "선택한 IP"
+  },
+  "separator": {
+    "zh": "分隔符",
+    "zh_tw": "分隔符",
+    "en": "Separator",
+    "ja": "セパレータ",
+    "ko": "구분 기호"
+  },
+  "split_line": {
+    "zh": "分割线",
+    "zh_tw": "分割線",
+    "en": "Split Line",
+    "ja": "分割線",
+    "ko": "분할 선"
+  },
+  "global_unicast_prefix": {
+    "zh": "全球单播前缀",
+    "zh_tw": "全球單播前綴",
+    "en": "Global Unicast Prefix",
+    "ja": "グローバルユニキャストプレフィックス",
+    "ko": "전역 유니캐스트 접두사"
+  },
+  "global_unicast_prefix_generic": {
+    "zh": "全球单播前缀",
+    "zh_tw": "全球單播前綴",
+    "en": "Global Unicast Prefix",
+    "ja": "グローバルユニキャストプレフィックス",
+    "ko": "전역 유니캐스트 접두사"
+  },
+  "first_host": {
+    "zh": "第一个主机",
+    "zh_tw": "第一個主機",
+    "en": "First Host",
+    "ja": "最初のホスト",
+    "ko": "첫 번째 호스트"
+  },
+  "last_host": {
+    "zh": "最后一个主机",
+    "zh_tw": "最後一個主機",
+    "en": "Last Host",
+    "ja": "最後のホスト",
+    "ko": "마지막 호스트"
+  },
+  "donate_tip": {
+    "zh": "如果您觉得这个工具对您有帮助，欢迎捐助支持开发",
+    "zh_tw": "如果您覺得這個工具對您有幫助，歡迎捐助支持開發",
+    "en": "If you find this tool helpful, please consider donating to support development",
+    "ja": "このツールが役に立ったと感じたら、開発をサポートするために寄付を検討してください",
+    "ko": "이 도구가 도움이 되었다면 개발을 지원하기 위해 기부를 고려해 주세요"
+  },
+  "hide_info_bar": {
+    "zh": "隐藏信息栏",
+    "zh_tw": "隱藏資訊欄",
+    "en": "Hide Info Bar",
+    "ja": "情報バーを非表示",
+    "ko": "정보 바 숨기기"
+  },
+  "invalid_ipv4,unexpected_slash": {
+    "zh": "无效的IPv4地址，意外的斜杠",
+    "zh_tw": "無效的IPv4地址，意外的斜杠",
+    "en": "Invalid IPv4 address, unexpected slash",
+    "ja": "無効なIPv4アドレス、予期しないスラッシュ",
+    "ko": "유효하지 않은 IPv4 주소, 예기치 않은 슬래시"
+  },
+  "cannot_convert_cross_class_network": {
+    "zh": "无法转换跨主类网络的IP范围，请确保IP属于同一主类（A类、B类或C类）",
+    "zh_tw": "無法轉換跨主類網路的IP範圍，請確保IP屬於同一主類（A類、B類或C類）",
+    "en": "Cannot convert IP range across major network classes. Please ensure IPs belong to the same class (Class A, B, or C)",
+    "ja": "メインネットワーククラスを跨るIP範囲は変換できません。IPが同じクラス（Aクラス、Bクラス、またはCクラス）に属することを確認してください",
+    "ko": "주요 네트워크 클래스를 가로지르는 IP 범위는 변환할 수 없습니다. IP가 동일한 클래스(A클래스, B클래스 또는 C클래스)에 속하는지 확인하십시오"
+  },
+  "hidden_info_management": {
+    "zh": "隐藏信息管理",
+    "zh_tw": "隱藏資訊管理",
+    "en": "Hidden Info Management",
+    "ja": "隠し情報管理",
+    "ko": "숨겨진 정보 관리"
+  },
+  "hidden_info_for_ip": {
+    "zh": "IP地址隐藏信息 - {ip}",
+    "zh_tw": "IP地址隱藏資訊 - {ip}",
+    "en": "Hidden Info for IP - {ip}",
+    "ja": "IPアドレス隠し情報 - {ip}",
+    "ko": "IP 주소 숨겨진 정보 - {ip}"
+  },
+  "access_url": {
+    "zh": "访问链接",
+    "zh_tw": "訪問連結",
+    "en": "Access URL",
+    "ja": "アクセスURL",
+    "ko": "액세스 URL"
+  },
+  "username": {
+    "zh": "用户名",
+    "zh_tw": "使用者名稱",
+    "en": "Username",
+    "ja": "ユーザー名",
+    "ko": "사용자 이름"
+  },
+  "password": {
+    "zh": "密码",
+    "zh_tw": "密碼",
+    "en": "Password",
+    "ja": "パスワード",
+    "ko": "비밀번호"
+  },
+  "notes": {
+    "zh": "备注",
+    "zh_tw": "備註",
+    "en": "Notes",
+    "ja": "メモ",
+    "ko": "메모"
+  },
+  "add_record": {
+    "zh": "添加记录",
+    "zh_tw": "新增記錄",
+    "en": "Add Record",
+    "ja": "レコード追加",
+    "ko": "레코드 추가"
+  },
+  "edit_record": {
+    "zh": "编辑记录",
+    "zh_tw": "編輯記錄",
+    "en": "Edit Record",
+    "ja": "レコード編集",
+    "ko": "레코드 편집"
+  },
+  "delete_record": {
+    "zh": "删除记录",
+    "zh_tw": "刪除記錄",
+    "en": "Delete Record",
+    "ja": "レコード削除",
+    "ko": "레코드 삭제"
+  },
+  "show_password": {
+    "zh": "显示密码",
+    "zh_tw": "顯示密碼",
+    "en": "Show Password",
+    "ja": "パスワード表示",
+    "ko": "비밀번호 표시"
+  },
+  "hide_password": {
+    "zh": "隐藏密码",
+    "zh_tw": "隱藏密碼",
+    "en": "Hide Password",
+    "ja": "パスワード非表示",
+    "ko": "비밀번호 숨기기"
+  },
+  "please_select_ip_first": {
+    "zh": "请先在IP地址列表中选择一个IP地址",
+    "zh_tw": "請先在IP地址列表中選擇一個IP地址",
+    "en": "Please select an IP address from the list first",
+    "ja": "先にIPアドレスリストからIPアドレスを選択してください",
+    "ko": "먼저 IP 주소 목록에서 IP 주소를 선택하십시오"
+  },
+  "confirm_delete_hidden_record": {
+    "zh": "确定要删除这条隐藏信息记录吗？",
+    "zh_tw": "確定要刪除這條隱藏資訊記錄嗎？",
+    "en": "Are you sure you want to delete this hidden info record?",
+    "ja": "この隠し情報レコードを削除してもよろしいですか？",
+    "ko": "이 숨겨진 정보 레코드를 삭제하시겠습니까?"
+  },
+  "confirm_delete_hidden_records": {
+    "zh": "确定要删除这 {count} 条隐藏信息记录吗？",
+    "zh_tw": "確定要刪除這 {count} 條隱藏資訊記錄嗎？",
+    "en": "Are you sure you want to delete these {count} hidden info records?",
+    "ja": "これら {count} 件の隠し情報レコードを削除してもよろしいですか？",
+    "ko": "이 {count} 개의 숨겨진 정보 레코드를 삭제하시겠습니까?"
+  },
+  "partial_delete_success": {
+    "zh": "已成功删除 {success}/{total} 条记录",
+    "zh_tw": "已成功刪除 {success}/{total} 條記錄",
+    "en": "Successfully deleted {success}/{total} records",
+    "ja": "{success}/{total} 件のレコードを正常に削除しました",
+    "ko": "{success}/{total} 개의 레코드를 성공적으로 삭제했습니다"
+  },
+  "cannot_access_hidden_info": {
+    "zh": "无法访问隐藏信息，请选择一条有效的IP记录",
+    "zh_tw": "無法存取隱藏資訊，請選擇一條有效的IP記錄",
+    "en": "Cannot access hidden info, please select a valid IP record",
+    "ja": "隠し情報にアクセスできません。有効なIPレコードを選択してください",
+    "ko": "숨겨진 정보에 액세스할 수 없습니다. 유효한 IP 레코드를 선택하십시오"
+  },
+  "hidden_record_added": {
+    "zh": "隐藏信息记录已添加",
+    "zh_tw": "隱藏資訊記錄已新增",
+    "en": "Hidden info record added",
+    "ja": "隠し情報レコードが追加されました",
+    "ko": "숨겨진 정보 레코드가 추가되었습니다"
+  },
+  "hidden_record_updated": {
+    "zh": "隐藏信息记录已更新",
+    "zh_tw": "隱藏資訊記錄已更新",
+    "en": "Hidden info record updated",
+    "ja": "隠し情報レコードが更新されました",
+    "ko": "숨겨진 정보 레코드가 업데이트되었습니다"
+  },
+  "hidden_record_deleted": {
+    "zh": "隐藏信息记录已删除",
+    "zh_tw": "隱藏資訊記錄已刪除",
+    "en": "Hidden info record deleted",
+    "ja": "隠し情報レコードが削除されました",
+    "ko": "숨겨진 정보 레코드가 삭제되었습니다"
+  },
+  "no_hidden_info": {
+    "zh": "暂无隐藏信息",
+    "zh_tw": "暫無隱藏資訊",
+    "en": "No hidden info",
+    "ja": "隠し情報なし",
+    "ko": "숨겨진 정보 없음"
+  },
+  "please_select_record": {
+    "zh": "请先选择一条记录",
+    "zh_tw": "請先選擇一條記錄",
+    "en": "Please select a record first",
+    "ja": "先にレコードを選択してください",
+    "ko": "먼저 레코드를 선택하십시오"
+  },
+  "save": {
+    "zh": "保存",
+    "zh_tw": "儲存",
+    "en": "Save",
+    "ja": "保存",
+    "ko": "저장"
+  },
+  "splash_loading": {
+    "zh": "加载中",
+    "zh_tw": "載入中",
+    "en": "Loading",
+    "ja": "読み込み中",
+    "ko": "로딩 중"
+  },
+  "splash_loading_module": {
+    "zh": "正在加载: {module_name}",
+    "zh_tw": "正在載入: {module_name}",
+    "en": "Loading: {module_name}",
+    "ja": "読み込み中: {module_name}",
+    "ko": "로딩 중: {module_name}"
+  },
+  "font_cleared_pdf": {
+    "zh": "🧹 已清除 ReportLab PDF 字体注册",
+    "zh_tw": "🧹 已清除 ReportLab PDF 字體註冊",
+    "en": "🧹 Cleared ReportLab PDF font registration",
+    "ja": "🧹 ReportLab PDF フォント登録をクリアしました",
+    "ko": "🧹 ReportLab PDF 글꼴 등록을 삭제했습니다"
+  },
+  "font_clear_warning": {
+    "zh": "⚠️ 清除 PDF 字体注册时出现警告: {e}",
+    "zh_tw": "⚠️ 清除 PDF 字體註冊時出現警告: {e}",
+    "en": "⚠️ Warning when clearing PDF font registration: {e}",
+    "ja": "⚠️ PDF フォント登録のクリア中に警告が発生しました: {e}",
+    "ko": "⚠️ PDF 글꼴 등록 삭제 중 경고 발생: {e}"
+  },
+  "font_cache_cleared": {
+    "zh": "🧹 已清除字体缓存",
+    "zh_tw": "🧹 已清除字體快取",
+    "en": "🧹 Font cache cleared",
+    "ja": "🧹 フォントキャッシュをクリアしました",
+    "ko": "🧹 글꼴 캐시를 삭제했습니다"
+  },
+  "font_using_cached": {
+    "zh": "🔍 [init] 使用已注册的字体缓存 (语言: {current_lang})",
+    "zh_tw": "🔍 [init] 使用已註冊的字體快取 (語言: {current_lang})",
+    "en": "🔍 [init] Using registered font cache (language: {current_lang})",
+    "ja": "🔍 [init] 登録済みのフォントキャッシュを使用しています (言語: {current_lang})",
+    "ko": "🔍 [init] 등록된 글꼴 캐시를 사용합니다 (언어: {current_lang})"
+  },
+  "font_will_register": {
+    "zh": "[init] 字体将在导出PDF时注册 (语言: {current_lang})",
+    "zh_tw": "[init] 字體將在匯出PDF時註冊 (語言: {current_lang})",
+    "en": "[init] Font will be registered when exporting PDF (language: {current_lang})",
+    "ja": "[init] フォントはPDF出力時に登録されます (言語: {current_lang})",
+    "ko": "[init] 글꼴은 PDF 내보내기 시 등록됩니다 (언어: {current_lang})"
+  },
+  "font_pdf_current_lang": {
+    "zh": "🔍 导出PDF时当前语言: {current_lang}",
+    "zh_tw": "🔍 匯出PDF時目前語言: {current_lang}",
+    "en": "🔍 Current language when exporting PDF: {current_lang}",
+    "ja": "🔍 PDF出力時の現在の言語: {current_lang}",
+    "ko": "🔍 PDF 내보내기 시 현재 언어: {current_lang}"
+  },
+  "font_using_cached_pdf": {
+    "zh": "🔍 使用已注册的PDF字体缓存 (语言: {current_lang})",
+    "zh_tw": "🔍 使用已註冊的PDF字體快取 (語言: {current_lang})",
+    "en": "🔍 Using registered PDF font cache (language: {current_lang})",
+    "ja": "🔍 登録済みのPDFフォントキャッシュを使用しています (言語: {current_lang})",
+    "ko": "🔍 등록된 PDF 글꼴 캐시를 사용합니다 (언어: {current_lang})"
+  },
+  "font_need_reregister": {
+    "zh": "🔍 语言已切换或无缓存，需要重新注册字体 (旧语言: {old_lang}, 新语言: {new_lang})",
+    "zh_tw": "🔍 語言已切換或無快取，需要重新註冊字體 (舊語言: {old_lang}, 新語言: {new_lang})",
+    "en": "🔍 Language changed or no cache, need to re-register font (old language: {old_lang}, new language: {new_lang})",
+    "ja": "🔍 言語が切り替わったかキャッシュがないため、フォントを再登録する必要があります (旧言語: {old_lang}, 新言語: {new_lang})",
+    "ko": "🔍 언어가 변경되었거나 캐시가 없어 글꼴을 다시 등록해야 합니다 (이전 언어: {old_lang}, 새 언어: {new_lang})"
+  },
+  "font_found": {
+    "zh": "🔍 找到可用字体: {font_file} 在 {font_path}",
+    "zh_tw": "🔍 找到可用字體: {font_file} 在 {font_path}",
+    "en": "🔍 Found available font: {font_file} at {font_path}",
+    "ja": "🔍 使用可能なフォントを見つけました: {font_file} at {font_path}",
+    "ko": "🔍 사용 가능한 글꼴을 찾았습니다: {font_file} at {font_path}"
+  },
+  "font_not_found": {
+    "zh": "⚠️ 字体文件不存在: {potential_path}",
+    "zh_tw": "⚠️ 字體檔案不存在: {potential_path}",
+    "en": "⚠️ Font file does not exist: {potential_path}",
+    "ja": "⚠️ フォントファイルが存在しません: {potential_path}",
+    "ko": "⚠️ 글꼴 파일이 존재하지 않습니다: {potential_path}"
+  },
+  "font_try_register": {
+    "zh": "🔍 尝试注册字体: {font_path}",
+    "zh_tw": "🔍 嘗試註冊字體: {font_path}",
+    "en": "🔍 Trying to register font: {font_path}",
+    "ja": "🔍 フォントの登録を試みています: {font_path}",
+    "ko": "🔍 글꼴 등록을 시도합니다: {font_path}"
+  },
+  "font_current_registered": {
+    "zh": "🔍 当前已注册字体: {font_names}",
+    "zh_tw": "🔍 目前已註冊字體: {font_names}",
+    "en": "🔍 Currently registered fonts: {font_names}",
+    "ja": "🔍 現在登録されているフォント: {font_names}",
+    "ko": "🔍 현재 등록된 글꼴: {font_names}"
+  },
+  "font_already_registered": {
+    "zh": "🔍 字体 '{font_name}' 已注册,先删除再重新注册",
+    "zh_tw": "🔍 字體 '{font_name}' 已註冊,先刪除再重新註冊",
+    "en": "🔍 Font '{font_name}' is already registered, deleting first then re-registering",
+    "ja": "🔍 フォント '{font_name}' はすでに登録されています。削除してから再登録します",
+    "ko": "🔍 글꼴 '{font_name}'이 이미 등록되어 있습니다. 먼저 삭제한 후 다시 등록합니다"
+  },
+  "font_old_deleted": {
+    "zh": "🔍 已删除旧的字体注册",
+    "zh_tw": "🔍 已刪除舊的字體註冊",
+    "en": "🔍 Deleted old font registration",
+    "ja": "🔍 古いフォント登録を削除しました",
+    "ko": "🔍 이전 글꼴 등록을 삭제했습니다"
+  },
+  "font_delete_warning": {
+    "zh": "⚠️ 删除旧字体时出现警告: {del_error}",
+    "zh_tw": "⚠️ 刪除舊字體時出現警告: {del_error}",
+    "en": "⚠️ Warning when deleting old font: {del_error}",
+    "ja": "⚠️ 古いフォントの削除中に警告が発生しました: {del_error}",
+    "ko": "⚠️ 이전 글꼴 삭제 중 경고 발생: {del_error}"
+  },
+  "font_registered_success": {
+    "zh": "✅ 成功注册字体: {font_file} 作为 {font_name}",
+    "zh_tw": "✅ 成功註冊字體: {font_file} 作為 {font_name}",
+    "en": "✅ Successfully registered font: {font_file} as {font_name}",
+    "ja": "✅ フォントの登録に成功しました: {font_file} を {font_name} として",
+    "ko": "✅ 글꼴 등록 성공: {font_file}을 {font_name}으로 등록했습니다"
+  },
+  "font_registered_after": {
+    "zh": "🔍 注册后已注册字体: {font_names}",
+    "zh_tw": "🔍 註冊後已註冊字體: {font_names}",
+    "en": "🔍 Registered fonts after registration: {font_names}",
+    "ja": "🔍 登録後の登録済みフォント: {font_names}",
+    "ko": "🔍 등록 후 등록된 글꼴: {font_names}"
+  },
+  "font_test_passed": {
+    "zh": "✅ 字体测试通过: '{test_text}' 宽度={width}",
+    "zh_tw": "✅ 字體測試通過: '{test_text}' 寬度={width}",
+    "en": "✅ Font test passed: '{test_text}' width={width}",
+    "ja": "✅ フォントテストに合格しました: '{test_text}' 幅={width}",
+    "ko": "✅ 글꼴 테스트 통과: '{test_text}' 너비={width}"
+  },
+  "font_test_failed": {
+    "zh": "⚠️ 字体测试失败: {test_error}",
+    "zh_tw": "⚠️ 字體測試失敗: {test_error}",
+    "en": "⚠️ Font test failed: {test_error}",
+    "ja": "⚠️ フォントテストに失敗しました: {test_error}",
+    "ko": "⚠️ 글꼴 테스트 실패: {test_error}"
+  },
+  "font_register_failed": {
+    "zh": "❌ 注册字体失败: {e}",
+    "zh_tw": "❌ 註冊字體失敗: {e}",
+    "en": "❌ Failed to register font: {e}",
+    "ja": "❌ フォントの登録に失敗しました: {e}",
+    "ko": "❌ 글꼴 등록 실패: {e}"
+  },
+  "font_exception_type": {
+    "zh": "❌ 异常类型: {exception_type}",
+    "zh_tw": "❌ 異常類型: {exception_type}",
+    "en": "❌ Exception type: {exception_type}",
+    "ja": "❌ 例外タイプ: {exception_type}",
+    "ko": "❌ 예외 유형: {exception_type}"
+  },
+  "font_use_previous": {
+    "zh": "🔍 使用之前注册的 ChineseFont 字体(可能不支持当前语言)",
+    "zh_tw": "🔍 使用之前註冊的 ChineseFont 字體(可能不支援目前語言)",
+    "en": "🔍 Using previously registered ChineseFont (may not support current language)",
+    "ja": "🔍 以前に登録された ChineseFont を使用しています (現在の言語をサポートしていない可能性があります)",
+    "ko": "🔍 이전에 등록된 ChineseFont를 사용합니다 (현재 언어를 지원하지 않을 수 있습니다)"
+  },
+  "font_use_default": {
+    "zh": "🔍 无可用字体,将使用默认字体(Helvetica)",
+    "zh_tw": "🔍 無可用字體,將使用預設字體(Helvetica)",
+    "en": "🔍 No available font, will use default font (Helvetica)",
+    "ja": "🔍 使用可能なフォントがないため、デフォルトのフォント (Helvetica) を使用します",
+    "ko": "🔍 사용 가능한 글꼴이 없어 기본 글꼴(Helvetica)을 사용합니다"
+  },
+  "font_no_suitable": {
+    "zh": "🔍 未找到合适字体，将使用默认字体",
+    "zh_tw": "🔍 未找到合適字體，將使用預設字體",
+    "en": "🔍 No suitable font found, will use default font",
+    "ja": "🔍 適切なフォントが見つからなかったため、デフォルトのフォントを使用します",
+    "ko": "🔍 적합한 글꼴을 찾을 수 없어 기본 글꼴을 사용합니다"
+  },
+  "font_using_main": {
+    "zh": "🔍 使用的主要字体: ChineseFont, has_asian_font={has_asian_font}",
+    "zh_tw": "🔍 使用的主要字體: ChineseFont, has_asian_font={has_asian_font}",
+    "en": "🔍 Main font used: ChineseFont, has_asian_font={has_asian_font}",
+    "ja": "🔍 使用されているメインフォント: ChineseFont, has_asian_font={has_asian_font}",
+    "ko": "🔍 사용되는 주 글꼴: ChineseFont, has_asian_font={has_asian_font}"
+  },
+  "font_using_cached_system": {
+    "zh": "使用缓存的字体 (size={font_size}, bold_offset={bold_offset})",
+    "zh_tw": "使用快取的字體 (size={font_size}, bold_offset={bold_offset})",
+    "en": "Using cached font (size={font_size}, bold_offset={bold_offset})",
+    "ja": "キャッシュされたフォントを使用しています (size={font_size}, bold_offset={bold_offset})",
+    "ko": "캐시된 글꼴을 사용합니다 (size={font_size}, bold_offset={bold_offset})"
+  },
+  "font_loaded_success": {
+    "zh": "成功加载{font_name}字体: {font_path}",
+    "zh_tw": "成功載入{font_name}字體: {font_path}",
+    "en": "Successfully loaded {font_name} font: {font_path}",
+    "ja": "{font_name}フォントのロードに成功しました: {font_path}",
+    "ko": "{font_name} 글꼴 로드 성공: {font_path}"
+  },
+  "font_load_failed": {
+    "zh": "尝试加载{font_name}失败: {e}",
+    "zh_tw": "嘗試載入{font_name}失敗: {e}",
+    "en": "Failed to load {font_name}: {e}",
+    "ja": "{font_name}のロードに失敗しました: {e}",
+    "ko": "{font_name} 로드 실패: {e}"
+  },
+  "font_use_default_system": {
+    "zh": "使用默认字体",
+    "zh_tw": "使用預設字體",
+    "en": "Using default font",
+    "ja": "デフォルトのフォントを使用しています",
+    "ko": "기본 글꼴을 사용합니다"
+  },
+  "font_load_system_failed": {
+    "zh": "加载系统字体失败: {e}",
+    "zh_tw": "載入系統字體失敗: {e}",
+    "en": "Failed to load system font: {e}",
+    "ja": "システムフォントのロードに失敗しました: {e}",
+    "ko": "시스템 글꼴 로드 실패: {e}"
+  },
+  "network_topology_fullscreen": {
+    "zh": "网络拓扑图 - 全屏模式",
+    "zh_tw": "網路拓撲圖 - 全螢幕模式",
+    "en": "Network Topology - Full Screen Mode",
+    "ja": "ネットワークトポロジー - フルスクリーンモード",
+    "ko": "네트워크 토폴로지 - 전체 화면 모드"
+  },
+  "refresh_data_failed": {
+    "zh": "刷新数据失败: {e}",
+    "zh_tw": "刷新數據失敗: {e}",
+    "en": "Failed to refresh data: {e}",
+    "ja": "データの更新に失敗しました: {e}",
+    "ko": "데이터 새로고침 실패: {e}"
+  },
+  "allocated": {
+    "zh": "已分配",
+    "zh_tw": "已分配",
+    "en": "Allocated",
+    "ja": "割り当て済み",
+    "ko": "할당됨"
+  },
+  "reserved": {
+    "zh": "已保留",
+    "zh_tw": "已保留",
+    "en": "Reserved",
+    "ja": "予約済み",
+    "ko": "예약됨"
+  },
+  "released": {
+    "zh": "已释放",
+    "zh_tw": "已釋放",
+    "en": "Released",
+    "ja": "解放済み",
+    "ko": "해제됨"
+  },
+  "remaining_ip": {
+    "zh": "剩余IP",
+    "zh_tw": "剩餘IP",
+    "en": "Remaining IP",
+    "ja": "残りのIP",
+    "ko": "남은 IP"
+  },
+  "total_ip": {
+    "zh": "总IP",
+    "zh_tw": "總IP",
+    "en": "Total IP",
+    "ja": "総IP",
+    "ko": "총 IP"
+  },
+  "canvas_size_warning": {
+    "zh": "警告: 无法获取画布尺寸，重试次数: {retry_count}",
+    "zh_tw": "警告: 無法獲取畫布尺寸，重試次數: {retry_count}",
+    "en": "Warning: Failed to get canvas size, retry count: {retry_count}",
+    "ja": "警告: キャンバスサイズの取得に失敗しました、リトライ回数: {retry_count}",
+    "ko": "경고: 캔버스 크기를 가져올 수 없습니다, 재시도 횟수: {retry_count}"
+  },
+  "show_splash": {
+    "zh": "显示启动画面",
+    "zh_tw": "顯示啟動畫面",
+    "en": "Show Splash Screen",
+    "ja": "スプラッシュ画面を表示",
+    "ko": "스플래시 화면 표시"
+  },
+  "sample_networks": {
+    "zh": [
+      ["10.0.0.0/8", "集团网段"],
+      ["192.168.0.0/16", "办公网段"],
+      ["10.0.0.0/16", "总部网段"],
+      ["192.168.1.0/24", "办公室网段"],
+      ["10.0.0.0/24", "服务器网段"],
+      ["10.0.1.0/24", "人事部网段"],
+      ["10.0.2.0/24", "员工无线网段"],
+      ["2001:db8::/32", "集团IPv6网段"],
+      ["fd00::/16", "内部IPv6网段"],
+      ["2001:db8:1::/48", "总部IPv6网段"],
+      ["fd00:1::/48", "办公IPv6网段"],
+      ["2001:db8:1:1::/64", "服务器IPv6网段"],
+      ["2001:db8:1:2::/64", "人事部IPv6网段"],
+      ["fd00:1:1::/64", "员工无线IPv6网段"]
+    ],
+    "zh_tw": [
+      ["10.0.0.0/8", "集團網段"],
+      ["192.168.0.0/16", "辦公網段"],
+      ["10.0.0.0/16", "總部網段"],
+      ["192.168.1.0/24", "辦公室網段"],
+      ["10.0.0.0/24", "伺服器網段"],
+      ["10.0.1.0/24", "人事部網段"],
+      ["10.0.2.0/24", "員工無線網段"],
+      ["2001:db8::/32", "集團IPv6網段"],
+      ["fd00::/16", "內部IPv6網段"],
+      ["2001:db8:1::/48", "總部IPv6網段"],
+      ["fd00:1::/48", "辦公IPv6網段"],
+      ["2001:db8:1:1::/64", "伺服器IPv6網段"],
+      ["2001:db8:1:2::/64", "人事部IPv6網段"],
+      ["fd00:1:1::/64", "員工無線IPv6網段"]
+    ],
+    "en": [
+      ["10.0.0.0/8", "Corporate Network"],
+      ["192.168.0.0/16", "Office Network"],
+      ["10.0.0.0/16", "Headquarters Network"],
+      ["192.168.1.0/24", "Office Room Network"],
+      ["10.0.0.0/24", "Server Network"],
+      ["10.0.1.0/24", "HR Department Network"],
+      ["10.0.2.0/24", "Employee Wireless Network"],
+      ["2001:db8::/32", "Corporate IPv6 Network"],
+      ["fd00::/16", "Internal IPv6 Network"],
+      ["2001:db8:1::/48", "Headquarters IPv6 Network"],
+      ["fd00:1::/48", "Office IPv6 Network"],
+      ["2001:db8:1:1::/64", "Server IPv6 Network"],
+      ["2001:db8:1:2::/64", "HR Department IPv6 Network"],
+      ["fd00:1:1::/64", "Employee Wireless IPv6 Network"]
+    ],
+    "ja": [
+      ["10.0.0.0/8", "企業ネットワーク"],
+      ["192.168.0.0/16", "事務所ネットワーク"],
+      ["10.0.0.0/16", "本社ネットワーク"],
+      ["192.168.1.0/24", "オフィスネットワーク"],
+      ["10.0.0.0/24", "サーバーネットワーク"],
+      ["10.0.1.0/24", "人事部ネットワーク"],
+      ["10.0.2.0/24", "従業員無線ネットワーク"],
+      ["2001:db8::/32", "企業IPv6ネットワーク"],
+      ["fd00::/16", "内部IPv6ネットワーク"],
+      ["2001:db8:1::/48", "本社IPv6ネットワーク"],
+      ["fd00:1::/48", "事務所IPv6ネットワーク"],
+      ["2001:db8:1:1::/64", "サーバーIPv6ネットワーク"],
+      ["2001:db8:1:2::/64", "人事部IPv6ネットワーク"],
+      ["fd00:1:1::/64", "従業員無線IPv6ネットワーク"]
+    ],
+    "ko": [
+      ["10.0.0.0/8", "기업 네트워크"],
+      ["192.168.0.0/16", "사무실 네트워크"],
+      ["10.0.0.0/16", "본사 네트워크"],
+      ["192.168.1.0/24", "오피스 네트워크"],
+      ["10.0.0.0/24", "서버 네트워크"],
+      ["10.0.1.0/24", "인사부 네트워크"],
+      ["10.0.2.0/24", "직원 무선 네트워크"],
+      ["2001:db8::/32", "기업 IPv6 네트워크"],
+      ["fd00::/16", "내부 IPv6 네트워크"],
+      ["2001:db8:1::/48", "본사 IPv6 네트워크"],
+      ["fd00:1::/48", "사무실 IPv6 네트워크"],
+      ["2001:db8:1:1::/64", "서버 IPv6 네트워크"],
+      ["2001:db8:1:2::/64", "인사부 IPv6 네트워크"],
+      ["fd00:1:1::/64", "직원 무선 IPv6 네트워크"]
+    ]
+  },
+  "sample_ips": {
+    "zh": [
+      ["192.168.1.0/24", "192.168.1.10", "PC-001", "总经理办公室"],
+      ["192.168.1.0/24", "192.168.1.11", "PC-002", "技术部经理"],
+      ["192.168.1.0/24", "192.168.1.20", "PC-003", "技术部员工"],
+      ["192.168.1.0/24", "192.168.1.21", "PC-004", "技术部员工"],
+      ["192.168.1.0/24", "192.168.1.1", "路由器", ""],
+      ["192.168.1.0/24", "192.168.1.254", "网关", ""],
+      ["10.0.0.0/24", "10.0.0.10", "Server-001", "文件服务器"],
+      ["10.0.0.0/24", "10.0.0.11", "Server-002", "数据库服务器"],
+      ["10.0.0.0/24", "10.0.0.12", "Server-003", "Web服务器"],
+      ["10.0.0.0/24", "10.0.0.1", "路由器", ""],
+      ["10.0.0.0/24", "10.0.0.254", "网关", ""],
+      ["10.0.1.0/24", "10.0.1.10", "HR-001", "人事主管"],
+      ["10.0.1.0/24", "10.0.1.11", "HR-002", "人事专员"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::10", "Server-IPv6-001", "文件服务器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::11", "Server-IPv6-002", "数据库服务器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::12", "Server-IPv6-003", "Web服务器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::1", "路由器", ""],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::ffff", "网关", ""],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::10", "HR-IPv6-001", "人事主管"],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::11", "HR-IPv6-002", "人事专员"],
+      ["fd00:1:1::/64", "fd00:1:1::10", "WiFi-001", "无线终端1"],
+      ["fd00:1:1::/64", "fd00:1:1::11", "WiFi-002", "无线终端2"],
+      ["fd00:1:1::/64", "fd00:1:1::1", "无线路由器", ""]
+    ],
+    "zh_tw": [
+      ["192.168.1.0/24", "192.168.1.10", "PC-001", "總經理辦公室"],
+      ["192.168.1.0/24", "192.168.1.11", "PC-002", "技術部經理"],
+      ["192.168.1.0/24", "192.168.1.20", "PC-003", "技術部員工"],
+      ["192.168.1.0/24", "192.168.1.21", "PC-004", "技術部員工"],
+      ["192.168.1.0/24", "192.168.1.1", "路由器", ""],
+      ["192.168.1.0/24", "192.168.1.254", "閘道", ""],
+      ["10.0.0.0/24", "10.0.0.10", "Server-001", "檔案伺服器"],
+      ["10.0.0.0/24", "10.0.0.11", "Server-002", "資料庫伺服器"],
+      ["10.0.0.0/24", "10.0.0.12", "Server-003", "Web伺服器"],
+      ["10.0.0.0/24", "10.0.0.1", "路由器", ""],
+      ["10.0.0.0/24", "10.0.0.254", "閘道", ""],
+      ["10.0.1.0/24", "10.0.1.10", "HR-001", "人事主管"],
+      ["10.0.1.0/24", "10.0.1.11", "HR-002", "人事專員"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::10", "Server-IPv6-001", "檔案伺服器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::11", "Server-IPv6-002", "資料庫伺服器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::12", "Server-IPv6-003", "Web伺服器"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::1", "路由器", ""],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::ffff", "閘道", ""],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::10", "HR-IPv6-001", "人事主管"],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::11", "HR-IPv6-002", "人事專員"],
+      ["fd00:1:1::/64", "fd00:1:1::10", "WiFi-001", "無線終端1"],
+      ["fd00:1:1::/64", "fd00:1:1::11", "WiFi-002", "無線終端2"],
+      ["fd00:1:1::/64", "fd00:1:1::1", "無線路由器", ""]
+    ],
+    "en": [
+      ["192.168.1.0/24", "192.168.1.10", "PC-001", "General Manager Office"],
+      ["192.168.1.0/24", "192.168.1.11", "PC-002", "Technical Department Manager"],
+      ["192.168.1.0/24", "192.168.1.20", "PC-003", "Technical Department Employee"],
+      ["192.168.1.0/24", "192.168.1.21", "PC-004", "Technical Department Employee"],
+      ["192.168.1.0/24", "192.168.1.1", "Router", ""],
+      ["192.168.1.0/24", "192.168.1.254", "Gateway", ""],
+      ["10.0.0.0/24", "10.0.0.10", "Server-001", "File Server"],
+      ["10.0.0.0/24", "10.0.0.11", "Server-002", "Database Server"],
+      ["10.0.0.0/24", "10.0.0.12", "Server-003", "Web Server"],
+      ["10.0.0.0/24", "10.0.0.1", "Router", ""],
+      ["10.0.0.0/24", "10.0.0.254", "Gateway", ""],
+      ["10.0.1.0/24", "10.0.1.10", "HR-001", "HR Manager"],
+      ["10.0.1.0/24", "10.0.1.11", "HR-002", "HR Staff"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::10", "Server-IPv6-001", "File Server"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::11", "Server-IPv6-002", "Database Server"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::12", "Server-IPv6-003", "Web Server"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::1", "Router", ""],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::ffff", "Gateway", ""],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::10", "HR-IPv6-001", "HR Manager"],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::11", "HR-IPv6-002", "HR Staff"],
+      ["fd00:1:1::/64", "fd00:1:1::10", "WiFi-001", "Wireless Terminal 1"],
+      ["fd00:1:1::/64", "fd00:1:1::11", "WiFi-002", "Wireless Terminal 2"],
+      ["fd00:1:1::/64", "fd00:1:1::1", "Wireless Router", ""]
+    ],
+    "ja": [
+      ["192.168.1.0/24", "192.168.1.10", "PC-001", "社長室"],
+      ["192.168.1.0/24", "192.168.1.11", "PC-002", "技術部長"],
+      ["192.168.1.0/24", "192.168.1.20", "PC-003", "技術部社員"],
+      ["192.168.1.0/24", "192.168.1.21", "PC-004", "技術部社員"],
+      ["192.168.1.0/24", "192.168.1.1", "ルーター", ""],
+      ["192.168.1.0/24", "192.168.1.254", "ゲートウェイ", ""],
+      ["10.0.0.0/24", "10.0.0.10", "Server-001", "ファイルサーバー"],
+      ["10.0.0.0/24", "10.0.0.11", "Server-002", "データベースサーバー"],
+      ["10.0.0.0/24", "10.0.0.12", "Server-003", "Webサーバー"],
+      ["10.0.0.0/24", "10.0.0.1", "ルーター", ""],
+      ["10.0.0.0/24", "10.0.0.254", "ゲートウェイ", ""],
+      ["10.0.1.0/24", "10.0.1.10", "HR-001", "人事責任者"],
+      ["10.0.1.0/24", "10.0.1.11", "HR-002", "人事スタッフ"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::10", "Server-IPv6-001", "ファイルサーバー"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::11", "Server-IPv6-002", "データベースサーバー"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::12", "Server-IPv6-003", "Webサーバー"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::1", "ルーター", ""],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::ffff", "ゲートウェイ", ""],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::10", "HR-IPv6-001", "人事責任者"],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::11", "HR-IPv6-002", "人事スタッフ"],
+      ["fd00:1:1::/64", "fd00:1:1::10", "WiFi-001", "無線端末1"],
+      ["fd00:1:1::/64", "fd00:1:1::11", "WiFi-002", "無線端末2"],
+      ["fd00:1:1::/64", "fd00:1:1::1", "無線ルーター", ""]
+    ],
+    "ko": [
+      ["192.168.1.0/24", "192.168.1.10", "PC-001", "총무실"],
+      ["192.168.1.0/24", "192.168.1.11", "PC-002", "기술부장"],
+      ["192.168.1.0/24", "192.168.1.20", "PC-003", "기술부 직원"],
+      ["192.168.1.0/24", "192.168.1.21", "PC-004", "기술부 직원"],
+      ["192.168.1.0/24", "192.168.1.1", "라우터", ""],
+      ["192.168.1.0/24", "192.168.1.254", "게이트웨이", ""],
+      ["10.0.0.0/24", "10.0.0.10", "Server-001", "파일 서버"],
+      ["10.0.0.0/24", "10.0.0.11", "Server-002", "데이터베이스 서버"],
+      ["10.0.0.0/24", "10.0.0.12", "Server-003", "웹 서버"],
+      ["10.0.0.0/24", "10.0.0.1", "라우터", ""],
+      ["10.0.0.0/24", "10.0.0.254", "게이트웨이", ""],
+      ["10.0.1.0/24", "10.0.1.10", "HR-001", "인사 관리자"],
+      ["10.0.1.0/24", "10.0.1.11", "HR-002", "인사 직원"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::10", "Server-IPv6-001", "파일 서버"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::11", "Server-IPv6-002", "데이터베이스 서버"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::12", "Server-IPv6-003", "웹 서버"],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::1", "라우터", ""],
+      ["2001:db8:1:1::/64", "2001:db8:1:1::ffff", "게이트웨이", ""],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::10", "HR-IPv6-001", "인사 관리자"],
+      ["2001:db8:1:2::/64", "2001:db8:1:2::11", "HR-IPv6-002", "인사 직원"],
+      ["fd00:1:1::/64", "fd00:1:1::10", "WiFi-001", "무선 단말기 1"],
+      ["fd00:1:1::/64", "fd00:1:1::11", "WiFi-002", "무선 단말기 2"],
+      ["fd00:1:1::/64", "fd00:1:1::1", "무선 라우터", ""]
+    ]
+  },
+  "config_file": {
+    "zh": "配置文件",
+    "zh_tw": "配置文件",
+    "en": "Config File",
+    "ja": "設定ファイル",
+    "ko": "구성 파일"
+  },
+  "i18n_resources": {
+    "zh": "国际化资源",
+    "zh_tw": "國際化資源",
+    "en": "i18n Resources",
+    "ja": "国際化リソース",
+    "ko": "국제화 리소스"
+  },
+  "database_init": {
+    "zh": "数据库初始化",
+    "zh_tw": "資料庫初始化",
+    "en": "Database Initialization",
+    "ja": "データベース初期化",
+    "ko": "데이터베이스 초기화"
+  },
+  "plugin_system": {
+    "zh": "插件系统",
+    "zh_tw": "外掛系統",
+    "en": "Plugin System",
+    "ja": "プラグインシステム",
+    "ko": "플러그인 시스템"
+  },
+  "style_system": {
+    "zh": "样式系统",
+    "zh_tw": "樣式系統",
+    "en": "Style System",
+    "ja": "スタイルシステム",
+    "ko": "스타일 시스템"
+  },
+  "user_settings": {
+    "zh": "用户设置",
+    "zh_tw": "使用者設定",
+    "en": "User Settings",
+    "ja": "ユーザー設定",
+    "ko": "사용자 설정"
+  },
+  "app_instance": {
+    "zh": "应用实例",
+    "zh_tw": "應用實例",
+    "en": "App Instance",
+    "ja": "アプリインスタンス",
+    "ko": "앱 인스턴스"
+  },
+  "loading_complete": {
+    "zh": "加载完成",
+    "zh_tw": "載入完成",
+    "en": "Loading Complete",
+    "ja": "読み込み完了",
+    "ko": "로딩 완료"
+  },
+  "start_loading": {
+    "zh": "开始加载应用",
+    "zh_tw": "開始載入應用",
+    "en": "Starting Application Loading",
+    "ja": "アプリの読み込みを開始",
+    "ko": "애플리케이션 로딩 시작"
+  },
+  "config_loaded": {
+    "zh": "配置加载完成",
+    "zh_tw": "配置載入完成",
+    "en": "Config Loaded",
+    "ja": "設定の読み込み完了",
+    "ko": "구성 로드 완료"
+  },
+  "loading_module": {
+    "zh": "加载模块：{module}",
+    "zh_tw": "載入模組：{module}",
+    "en": "Loading Module: {module}",
+    "ja": "モジュールを読み込み中：{module}",
+    "ko": "모듈 로딩 중：{module}"
+  },
+  "loading_process_complete": {
+    "zh": "加载过程完成",
+    "zh_tw": "載入過程完成",
+    "en": "Loading Process Complete",
+    "ja": "読み込みプロセス完了",
+    "ko": "로딩 프로세스 완료"
+  },
+  "quantity": {
+    "zh": "数量:",
+    "zh_tw": "數量:",
+    "en": "Quantity:",
+    "ja": "数量:",
+    "ko": "수량:"
+  },
+  "sequential": {
+    "zh": "连续",
+    "zh_tw": "連續",
+    "en": "Sequential",
+    "ja": "連続",
+    "ko": "연속"
+  },
+  "random": {
+    "zh": "随机",
+    "zh_tw": "隨機",
+    "en": "Random",
+    "ja": "ランダム",
+    "ko": "랜덤"
+  },
+  "batch": {
+    "zh": "批量",
+    "zh_tw": "批次",
+    "en": "Batch",
+    "ja": "バッチ",
+    "ko": "배치"
+  },
+  "auto": {
+    "zh": "自动",
+    "zh_tw": "自動",
+    "en": "Auto",
+    "ja": "自動",
+    "ko": "자동"
+  },
+  "date_format": {
+    "zh": "格式：YYYY-MM-DD",
+    "zh_tw": "格式：YYYY-MM-DD",
+    "en": "Format: YYYY-MM-DD",
+    "ja": "形式：YYYY-MM-DD",
+    "ko": "형식：YYYY-MM-DD"
+  },
+  "ip_statistics_error": {
+    "zh": "获取IP统计信息时出错：{e}",
+    "zh_tw": "獲取IP統計資訊時出錯：{e}",
+    "en": "Error getting IP statistics: {e}",
+    "ja": "IP統計情報の取得エラー：{e}",
+    "ko": "IP 통계 정보 가져오기 오류：{e}"
+  },
+  "subnet_error": {
+    "zh": "获取子网时出错：{e}",
+    "zh_tw": "獲取子網時出錯：{e}",
+    "en": "Error getting subnet: {e}",
+    "ja": "サブネットの取得エラー：{e}",
+    "ko": "서브넷 가져오기 오류：{e}"
+  },
+  "network_type_keywords": {
+    "zh": {
+      "server": ["服务器", "server"],
+      "management": ["管理", "management", "mgmt", "监控", "monitor"],
+      "wireless": ["无线", "wifi", "wireless"],
+      "client": ["客户", "client"],
+      "office": ["办公", "office"],
+      "production": ["生产", "prod", "production"],
+      "test": ["测试", "test", "dev"],
+      "dmz": ["安全", "security", "dmz"],
+      "storage": ["存储", "storage", "nas"],
+      "backup": ["备份", "backup"],
+      "iot": ["物联网", "iot", "物联"],
+      "voip": ["语音", "voip", "电话", "语音电话"],
+      "network": ["网络设备", "network", "网络", "交换机", "路由器", "switch", "router"]
+    },
+    "zh_tw": {
+      "server": ["伺服器", "server"],
+      "management": ["管理", "management", "mgmt", "監控", "monitor"],
+      "wireless": ["無線", "wifi", "wireless"],
+      "client": ["客戶", "client"],
+      "office": ["辦公", "office"],
+      "production": ["生產", "prod", "production"],
+      "test": ["測試", "test", "dev"],
+      "dmz": ["安全", "security", "dmz"],
+      "storage": ["儲存", "storage", "nas"],
+      "backup": ["備份", "backup"],
+      "iot": ["物聯網", "iot", "物聯"],
+      "voip": ["語音", "voip", "電話", "語音電話"],
+      "network": ["網路設備", "network", "網路", "交換機", "路由器", "switch", "router"]
+    },
+    "en": {
+      "server": ["server"],
+      "management": ["management", "mgmt", "monitor"],
+      "wireless": ["wifi", "wireless"],
+      "client": ["client"],
+      "office": ["office"],
+      "production": ["prod", "production"],
+      "test": ["test", "dev"],
+      "dmz": ["security", "dmz"],
+      "storage": ["storage", "nas"],
+      "backup": ["backup"],
+      "iot": ["iot", "internet of things"],
+      "voip": ["voip", "voice", "phone", "telephony"],
+      "network": ["network", "switch", "router", "network device", "network equipment"]
+    },
+    "ja": {
+      "server": ["サーバー", "server"],
+      "management": ["管理", "management", "mgmt", "監視", "monitor"],
+      "wireless": ["無線", "wifi", "wireless"],
+      "client": ["クライアント", "client"],
+      "office": ["オフィス", "office"],
+      "production": ["本番", "prod", "production"],
+      "test": ["テスト", "test", "dev"],
+      "dmz": ["セキュリティ", "security", "dmz"],
+      "storage": ["ストレージ", "storage", "nas"],
+      "backup": ["バックアップ", "backup"],
+      "iot": ["iot", "モノのインターネット"],
+      "voip": ["voip", "音声", "電話", "テレフォニー"],
+      "network": ["network", "ネットワーク", "スイッチ", "ルーター", "ネットワーク機器"]
+    },
+    "ko": {
+      "server": ["서버", "server"],
+      "management": ["관리", "management", "mgmt", "모니터", "monitor"],
+      "wireless": ["무선", "wifi", "wireless"],
+      "client": ["클라이언트", "client"],
+      "office": ["사무실", "office"],
+      "production": ["생산", "prod", "production"],
+      "test": ["테스트", "test", "dev"],
+      "dmz": ["보안", "security", "dmz"],
+      "storage": ["저장", "storage", "nas"],
+      "backup": ["백업", "backup"],
+      "iot": ["iot", "사물인터넷"],
+      "voip": ["voip", "음성", "전화", "통신"],
+      "network": ["network", "네트워크", "스위치", "라우터", "네트워크 장비"]
+    }
+  },
+  "load_history_failed": {
+    "zh": "从数据库加载历史数据失败：{error}",
+    "zh_tw": "從資料庫載入歷史資料失敗：{error}",
+    "en": "Failed to load history data from database: {error}",
+    "ja": "データベースから履歴データの読み込みに失敗しました：{error}",
+    "ko": "데이터베이스에서 히스토리 데이터 로드 실패：{error}"
+  },
+  "loaded_split_history": {
+    "zh": "从数据库加载了 {count} 条切分历史记录",
+    "zh_tw": "從資料庫載入了 {count} 條切分歷史記錄",
+    "en": "Loaded {count} split history records from database",
+    "ja": "データベースから {count} 件の分割履歴レコードを読み込みました",
+    "ko": "데이터베이스에서 {count}개의 분할 히스토리 레코드 로드"
+  },
+  "persist_combo_history_failed": {
+    "zh": "持久化下拉表历史失败：{error}",
+    "zh_tw": "持久化下拉表歷史失敗：{error}",
+    "en": "Failed to persist combo history: {error}",
+    "ja": "コンボ履歴の永続化に失敗しました：{error}",
+    "ko": "콤보 히스토리 지속 실패：{error}"
+  },
+  "save_combo_history_failed": {
+    "zh": "保存下拉表历史失败 [{category}]：{error}",
+    "zh_tw": "保存下拉表歷史失敗 [{category}]：{error}",
+    "en": "Failed to save combo history [{category}]: {error}",
+    "ja": "コンボ履歴の保存に失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 저장 실패 [{category}]: {error}"
+  },
+  "persist_split_history_failed": {
+    "zh": "持久化切分历史记录失败：{error}",
+    "zh_tw": "持久化切分歷史記錄失敗：{error}",
+    "en": "Failed to persist split history record: {error}",
+    "ja": "分割履歴レコードの永続化に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 지속 실패：{error}"
+  },
+  "delete_split_history_failed": {
+    "zh": "删除切分历史记录失败：{error}",
+    "zh_tw": "刪除切分歷史記錄失敗：{error}",
+    "en": "Failed to delete split history record: {error}",
+    "ja": "分割履歴レコードの削除に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 삭제 실패：{error}"
+  },
+  "clear_split_history_failed": {
+    "zh": "清空切分历史记录失败：{error}",
+    "zh_tw": "清空切分歷史記錄失敗：{error}",
+    "en": "Failed to clear split history records: {error}",
+    "ja": "分割履歴レコードのクリアに失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 지우기 실패：{error}"
+  },
+  "load_requirements_failed": {
+    "zh": "加载需求数据失败 [{table_type}]：{error}",
+    "zh_tw": "載入需求資料失敗 [{table_type}]：{error}",
+    "en": "Failed to load requirements data [{table_type}]: {error}",
+    "ja": "要件データの読み込みに失敗しました [{table_type}]：{error}",
+    "ko": "요구사항 데이터 로드 실패 [{table_type}]: {error}"
+  },
+  "save_requirements_failed": {
+    "zh": "保存需求数据失败 [{table_type}]：{error}",
+    "zh_tw": "保存需求資料失敗 [{table_type}]：{error}",
+    "en": "Failed to save requirements data [{table_type}]: {error}",
+    "ja": "要件データの保存に失敗しました [{table_type}]：{error}",
+    "ko": "요구사항 데이터 저장 실패 [{table_type}]: {error}"
+  },
+  "load_text_data_failed": {
+    "zh": "加载文本数据失败 [{category}]：{error}",
+    "zh_tw": "載入文本資料失敗 [{category}]：{error}",
+    "en": "Failed to load text data [{category}]: {error}",
+    "ja": "テキストデータの読み込みに失敗しました [{category}]：{error}",
+    "ko": "텍스트 데이터 로드 실패 [{category}]: {error}"
+  },
+  "save_text_data_failed": {
+    "zh": "保存文本数据失败 [{category}]：{error}",
+    "zh_tw": "保存文本資料失敗 [{category}]：{error}",
+    "en": "Failed to save text data [{category}]: {error}",
+    "ja": "テキストデータの保存に失敗しました [{category}]：{error}",
+    "ko": "텍스트 데이터 저장 실패 [{category}]: {error}"
+  },
+  "history_db_init_failed": {
+    "zh": "历史数据库初始化失败，持久化功能将不可用：{error}",
+    "zh_tw": "歷史資料庫初始化失敗，持久化功能將不可用：{error}",
+    "en": "History database initialization failed, persistence will be unavailable: {error}",
+    "ja": "履歴データベースの初期化に失敗しました。永続化機能は使用できません：{error}",
+    "ko": "히스토리 데이터베이스 초기화 실패, 지속 기능 사용 불가：{error}"
+  },
+  "history_db_init_failed_general": {
+    "zh": "历史数据库初始化失败：{error}",
+    "zh_tw": "歷史資料庫初始化失敗：{error}",
+    "en": "History database initialization failed: {error}",
+    "ja": "履歴データベースの初期化に失敗しました：{error}",
+    "ko": "히스토리 데이터베이스 초기화 실패：{error}"
+  },
+  "load_combo_history_failed": {
+    "zh": "加载下拉表历史失败 [{category}]：{error}",
+    "zh_tw": "載入下拉表歷史失敗 [{category}]：{error}",
+    "en": "Failed to load combo history [{category}]: {error}",
+    "ja": "コンボ履歴の読み込みに失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 로드 실패 [{category}]: {error}"
+  },
+  "save_combo_history_item_failed": {
+    "zh": "添加下拉表历史记录失败 [{category}]：{error}",
+    "zh_tw": "添加下拉表歷史記錄失敗 [{category}]：{error}",
+    "en": "Failed to add combo history record [{category}]: {error}",
+    "ja": "コンボ履歴レコードの追加に失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 레코드 추가 실패 [{category}]: {error}"
+  },
+  "add_split_history_failed": {
+    "zh": "添加切分历史记录失败：{error}",
+    "zh_tw": "添加切分歷史記錄失敗：{error}",
+    "en": "Failed to add split history record: {error}",
+    "ja": "分割履歴レコードの追加に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 추가 실패：{error}"
+  },
+  "config_parse_error": {
+    "zh": "配置文件解析错误：{error}，使用默认配置",
+    "zh_tw": "配置文件解析錯誤：{error}，使用默認配置",
+    "en": "Config file parse error: {error}, using default config",
+    "ja": "設定ファイルの解析エラー：{error}、デフォルト設定を使用します",
+    "ko": "구성 파일 구문 분석 오류：{error}, 기본 구성 사용"
+  },
+  "config_load_failed": {
+    "zh": "加载配置文件失败：{error}，使用默认配置",
+    "zh_tw": "載入配置文件失敗：{error}，使用默認配置",
+    "en": "Failed to load config file: {error}, using default config",
+    "ja": "設定ファイルの読み込みに失敗しました：{error}、デフォルト設定を使用します",
+    "ko": "구성 파일 로드 실패：{error}, 기본 구성 사용"
+  },
+  "config_validation_failed": {
+    "zh": "配置验证失败：{error}",
+    "zh_tw": "配置驗證失敗：{error}",
+    "en": "Config validation failed: {error}",
+    "ja": "設定の検証に失敗しました：{error}",
+    "ko": "구성 검증 실패：{error}"
+  },
+  "config_validation_failed_save": {
+    "zh": "配置验证失败，无法保存",
+    "zh_tw": "配置驗證失敗，無法保存",
+    "en": "Config validation failed, cannot save",
+    "ja": "設定の検証に失敗しました。保存できません",
+    "ko": "구성 검증 실패, 저장 불가"
+  },
+  "config_save_failed": {
+    "zh": "保存配置文件失败：{error}",
+    "zh_tw": "保存配置文件失敗：{error}",
+    "en": "Failed to save config file: {error}",
+    "ja": "設定ファイルの保存に失敗しました：{error}",
+    "ko": "구성 파일 저장 실패：{error}"
+  },
+  "config_get_failed": {
+    "zh": "获取配置项失败 '{key}': {error}",
+    "zh_tw": "獲取配置項失敗 '{key}': {error}",
+    "en": "Failed to get config item '{key}': {error}",
+    "ja": "設定項目の取得に失敗しました '{key}': {error}",
+    "ko": "구성 항목 가져오기 실패 '{key}': {error}"
+  },
+  "config_path_conflict": {
+    "zh": "配置路径冲突 '{key}'",
+    "zh_tw": "配置路徑衝突 '{key}'",
+    "en": "Config path conflict '{key}'",
+    "ja": "設定パスの競合 '{key}'",
+    "ko": "구성 경로 충돌 '{key}'"
+  },
+  "config_set_failed": {
+    "zh": "设置配置项失败 '{key}': {error}",
+    "zh_tw": "設置配置項失敗 '{key}': {error}",
+    "en": "Failed to set config item '{key}': {error}",
+    "ja": "設定項目の設定に失敗しました '{key}': {error}",
+    "ko": "구성 항목 설정 실패 '{key}': {error}"
+  },
+  "unsupported_language": {
+    "zh": "不支持的语言：{lang}",
+    "zh_tw": "不支持的語言：{lang}",
+    "en": "Unsupported language: {lang}",
+    "ja": "サポートされていない言語：{lang}",
+    "ko": "지원되지 않는 언어：{lang}"
+  },
+  "window_size_too_small": {
+    "zh": "窗口大小不能小于 800x600",
+    "zh_tw": "窗口大小不能小於 800x600",
+    "en": "Window size cannot be smaller than 800x600",
+    "ja": "ウィンドウサイズは 800x600 未満にできません",
+    "ko": "창 크기는 800x600보다 작을 수 없습니다"
+  },
+  "unsupported_backup_frequency": {
+    "zh": "不支持的备份频率：{frequency}",
+    "zh_tw": "不支持的備份頻率：{frequency}",
+    "en": "Unsupported backup frequency: {frequency}",
+    "ja": "サポートされていないバックアップ頻度：{frequency}",
+    "ko": "지원되지 않는 백업 빈도：{frequency}"
+  },
+  "font_size_range": {
+    "zh": "字体大小必须在 8-32 之间",
+    "zh_tw": "字體大小必須在 8-32 之間",
+    "en": "Font size must be between 8-32",
+    "ja": "フォントサイズは 8-32 の間でなければなりません",
+    "ko": "글꼴 크기는 8-32 사이여야 합니다"
+  },
+  "tab_order_must_be_list": {
+    "zh": "标签次序必须是列表",
+    "zh_tw": "標籤次序必須是列表",
+    "en": "Tab order must be a list",
+    "ja": "タブ順序はリストでなければなりません",
+    "ko": "탭 순서는 목록이어야 합니다"
+  },
+  "tab_name_must_be_string": {
+    "zh": "标签名称必须是字符串",
+    "zh_tw": "標籤名稱必須是字符串",
+    "en": "Tab name must be a string",
+    "ja": "タブ名は文字列でなければなりません",
+    "ko": "탭 이름은 문자열이어야 합니다"
+  },
+  "export_config_failed": {
+    "zh": "导出配置失败：{error}",
+    "zh_tw": "導出配置失敗：{error}",
+    "en": "Failed to export config: {error}",
+    "ja": "設定のエクスポートに失敗しました：{error}",
+    "ko": "구성 내보내기 실패：{error}"
+  },
+  "import_config_failed": {
+    "zh": "导入配置失败：{error}",
+    "zh_tw": "導入配置失敗：{error}",
+    "en": "Failed to import config: {error}",
+    "ja": "設定のインポートに失敗しました：{error}",
+    "ko": "구성 가져오기 실패：{error}"
+  },
+  "window_settings": {
+    "zh": "窗口设置: {width}x{height}, 位置: ({x}, {y})",
+    "zh_tw": "窗口設置: {width}x{height}, 位置: ({x}, {y})",
+    "en": "Window settings: {width}x{height}, position: ({x}, {y})",
+    "ja": "ウィンドウ設定：{width}x{height}、位置：({x}, {y})",
+    "ko": "창 설정: {width}x{height}, 위치: ({x}, {y})"
+  }
+}

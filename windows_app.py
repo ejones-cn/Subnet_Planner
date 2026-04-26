@@ -12,6 +12,7 @@ import base64
 import csv
 import datetime
 from datetime import timedelta
+import io
 import math
 import os
 import json
@@ -1830,26 +1831,28 @@ class SubnetPlannerApp:
         self.root.title(f"{_("app_name")} v{self.app_version}")
         # 设置应用图标
         try:
-            # 使用PIL加载高分辨率图标
-            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Subnet_Planner.ico")
-            if os.path.exists(icon_path):
-                # 打开图标文件
-                icon_image = Image.open(icon_path)
-                # 转换为PhotoImage对象
-                photo = ImageTk.PhotoImage(icon_image)
-                # 设置应用图标
-                self.root.iconphoto(True, photo)
-                # 保存引用，防止被GC回收
-                self._icon_photo = photo
-        except Exception as e:
-            print(f"设置图标失败: {e}")
-            # 降级方案：使用传统iconbitmap方法
+            # 优先使用嵌入的 base64 图标数据（无需外部 ICO 文件）
+            from icon_data import ICON_PNG_B64
+            import base64
+            icon_bytes = base64.b64decode(ICON_PNG_B64)
+            icon_image = Image.open(io.BytesIO(icon_bytes))
+            photo = ImageTk.PhotoImage(icon_image)
+            self.root.iconphoto(True, photo)
+            self._icon_photo = photo
+        except Exception:
+            # 降级：从外部 ICO 文件加载
             try:
-                icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Subnet_Planner.ico")
+                if getattr(sys, 'frozen', False):
+                    icon_path = os.path.join(os.path.dirname(sys.executable), "icon.ico")
+                else:
+                    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
                 if os.path.exists(icon_path):
-                    self.root.iconbitmap(icon_path)
-            except Exception as fallback_e:
-                print(f"降级方案也失败: {fallback_e}")
+                    icon_image = Image.open(icon_path)
+                    photo = ImageTk.PhotoImage(icon_image)
+                    self.root.iconphoto(True, photo)
+                    self._icon_photo = photo
+            except Exception:
+                pass
         # 所有窗口大小、位置和限制设置都由主程序入口统一管理
         # 这里只设置窗口标题
 
@@ -18700,12 +18703,24 @@ if __name__ == "__main__":
     root.title(f"子网规划师 v{version}")
     
     # 设置窗口图标
-    icon_path = os.path.join(os.path.dirname(__file__), "Subnet_Planner.ico")
-    if os.path.exists(icon_path):
+    try:
+        from icon_data import ICON_PNG_B64
+        icon_bytes = base64.b64decode(ICON_PNG_B64)
+        icon_image = Image.open(io.BytesIO(icon_bytes))
+        photo = ImageTk.PhotoImage(icon_image)
+        root.iconphoto(True, photo)
+        # 保持引用防止 GC
+        _root_icon_photo = photo
+    except Exception:
         try:
-            root.iconbitmap(icon_path)
-        except Exception as e:
-            print(f"Error setting icon: {str(e)}")
+            if getattr(sys, 'frozen', False):
+                icon_path = os.path.join(os.path.dirname(sys.executable), "icon.ico")
+            else:
+                icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            if os.path.exists(icon_path):
+                root.iconbitmap(icon_path)
+        except Exception:
+            pass
     
     # 显示启动画面
     splash = SplashScreen()
