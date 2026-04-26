@@ -45,31 +45,32 @@ class HistoryRepository:
     def _load_combo_histories(self):
         """从数据库加载所有下拉表历史"""
         # 直接使用数据库中的排序，最新的记录已经排在前面（sort_order ASC）
+        # 使用与数据库一致的历史记录数量上限
         self.planning_parent_networks = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_PLANNING_PARENT_V4),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
         self.planning_parent_networks_v4 = self.planning_parent_networks
         self.planning_parent_networks_v6 = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_PLANNING_PARENT_V6),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
 
         self.split_parent_networks_v4 = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_SPLIT_PARENT_V4),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
         self.split_parent_networks_v6 = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_SPLIT_PARENT_V6),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
         self.split_networks_v4 = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_SPLIT_NETWORK_V4),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
         self.split_networks_v6 = deque(
             self.db.load_combo_history(HistorySQLite.CATEGORY_SPLIT_NETWORK_V6),
-            maxlen=100
+            maxlen=self.db.MAX_COMBO_HISTORY_ITEMS
         )
 
         self.split_parent_networks = self.split_parent_networks_v4

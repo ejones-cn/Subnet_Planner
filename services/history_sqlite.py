@@ -1,7 +1,12 @@
 import sqlite3
 import os
+import sys
 import logging
 from datetime import datetime
+
+# 添加项目根目录到 Python 搜索路径
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from i18n import translate as _
 from window_utils import get_app_directory
 

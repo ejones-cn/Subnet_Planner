@@ -2113,7 +2113,7 @@ class SubnetPlannerApp:
         split = history_record['split']
 
         # 调用统一的切分方法
-        self.perform_split(parent, split, from_history=False, auto_switch_version=True, fill_inputs=True)
+        self.perform_split(parent, split, from_history=True, auto_switch_version=True, fill_inputs=True)
 
     def save_current_state(self, action_type):
         """保存当前状态到操作记录中
