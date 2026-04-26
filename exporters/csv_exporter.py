@@ -1,6 +1,7 @@
 import csv
 from exporters.base import DataExporter
 from exporters.data_preparer import DataPreparer
+from i18n import _ as translate
 
 
 class CSVExporter(DataExporter):
@@ -10,6 +11,11 @@ class CSVExporter(DataExporter):
 
         with open(file_path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
+
+            parent_cidr = self._get_parent_cidr(data_source)
+            if parent_cidr:
+                writer.writerow([translate("parent_network"), parent_cidr])
+                writer.writerow([])
 
             writer.writerow(main_headers)
             for values in main_data:
@@ -26,6 +32,12 @@ class CSVExporter(DataExporter):
             for item in mock_tree.get_children():
                 values = mock_tree.item(item, "values")
                 writer.writerow(values)
+
+    def _get_parent_cidr(self, data_source):
+        chart_data = data_source.get("chart_data")
+        if chart_data and "parent" in chart_data:
+            return chart_data["parent"].get("name", "")
+        return ""
 
     def get_file_extension(self) -> str:
         return ".csv"

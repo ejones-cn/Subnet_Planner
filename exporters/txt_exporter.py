@@ -1,10 +1,16 @@
 from exporters.base import DataExporter
 from exporters.data_preparer import DataPreparer
+from i18n import _ as translate
 
 
 class TXTExporter(DataExporter):
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         with open(file_path, "w", encoding="utf-8") as f:
+            parent_cidr = self._get_parent_cidr(data_source)
+            if parent_cidr:
+                f.write(f"{translate('parent_network')}: {parent_cidr}\n")
+                f.write("=" * 80 + "\n\n")
+
             f.write(f"{data_source['main_name']}\n")
             f.write("=" * 80 + "\n")
 
@@ -20,6 +26,12 @@ class TXTExporter(DataExporter):
                 self._write_remaining_data(f, remaining_data, remaining_headers)
             else:
                 self._write_remaining_from_tree(f, data_source)
+
+    def _get_parent_cidr(self, data_source):
+        chart_data = data_source.get("chart_data")
+        if chart_data and "parent" in chart_data:
+            return chart_data["parent"].get("name", "")
+        return ""
 
     def _write_k2v_data(self, f, main_data):
         max_key_colon_width = 0
