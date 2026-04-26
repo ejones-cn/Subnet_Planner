@@ -519,7 +519,7 @@ class ConfigManager:
             return [item for item in result if isinstance(item, str)]
         return []
     
-    def set_ui_tab_order(self, tab_order: object) -> bool:
+    def set_ui_tab_order(self, tab_order: list[str]) -> bool:
         """设置标签页次序
         
         Args:
