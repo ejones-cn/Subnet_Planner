@@ -1335,11 +1335,11 @@ class ColoredNotebook(ttk.Frame):
         """
         return [tab['label'] for tab in self.tabs]
     
-    def get_tab_ids(self):
+    def get_tab_ids(self) -> list[str]:
         """获取所有标签的唯一标识符列表
         
         Returns:
-            list: 标签唯一标识符列表
+            标签唯一标识符列表
         """
         return [tab['tab_id'] for tab in self.tabs]
 
