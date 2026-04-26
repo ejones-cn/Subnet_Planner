@@ -58,6 +58,7 @@ from chart_utils import draw_text_with_stroke, draw_distribution_chart
 from ipam_sqlite import IPAMSQLite
 from services.table_column_manager import TableColumnManager
 from services.history_repository import HistoryRepository
+from services.history_sqlite import HistorySQLite
 from services.ipam_repository import IPAMRepository
 from services.subnet_split_service import SubnetSplitService
 from services.subnet_planning_service import SubnetPlanningService
@@ -1706,7 +1707,7 @@ class SubnetPlannerApp:
         self.history_repo = HistoryRepository()
         self.deleted_history = self.history_repo.deleted_history
 
-        # 高级工具历史记录列表 - 委托给HistoryRepository
+        # 高级工具历史记录列表 - 委托给HistoryRepository（从数据库加载）
         self.ipv4_history = self.history_repo.ipv4_history
         self.ipv6_history = self.history_repo.ipv6_history
 
@@ -1721,9 +1722,9 @@ class SubnetPlannerApp:
         self.range_start_history = self.history_repo.range_start_history
         self.range_end_history = self.history_repo.range_end_history
 
-        # 切分子网相关属性 - 使用deque优化历史记录管理
-        self.split_parent_networks = deque(maxlen=100)
-        self.split_networks = deque(maxlen=100)
+        # 切分子网相关属性 - 从数据库加载历史记录
+        self.split_parent_networks = self.history_repo.split_parent_networks
+        self.split_networks = self.history_repo.split_networks
         self.parent_entry = None
         self.split_entry = None
         self.execute_btn = None
@@ -1742,8 +1743,8 @@ class SubnetPlannerApp:
         self.remaining_scroll_v = None
         self.chart_data = None
 
-        # 网段规划相关属性 - 使用deque优化历史记录管理
-        self.planning_parent_networks = deque(maxlen=100)
+        # 网段规划相关属性 - 从数据库加载历史记录
+        self.planning_parent_networks = self.history_repo.planning_parent_networks
         self.planning_parent_entry = None
         self.pool_tree = None
         self.pool_scrollbar = None
@@ -2111,24 +2112,8 @@ class SubnetPlannerApp:
         parent = history_record['parent']
         split = history_record['split']
 
-        # 检测IP版本并自动切换
-        detected_version = self.validation_service.detect_ip_version(parent)
-        if not detected_version:
-            # 如果父网段检测失败，尝试检测切分段
-            detected_version = self.validation_service.detect_ip_version(split)
-        
-        if detected_version and detected_version != self.split_ip_version_var.get():
-            self.split_ip_version_var.set(detected_version)
-            self.on_split_ip_version_change()
-
-        # 填充到输入框
-        self.parent_entry.delete(0, tk.END)
-        self.parent_entry.insert(0, parent)
-        self.split_entry.delete(0, tk.END)
-        self.split_entry.insert(0, split)
-
-        # 执行切分，设置from_history=True，不记入历史
-        self.execute_split(from_history=True)
+        # 调用统一的切分方法
+        self.perform_split(parent, split, from_history=False, auto_switch_version=True, fill_inputs=True)
 
     def save_current_state(self, action_type):
         """保存当前状态到操作记录中
@@ -2189,6 +2174,9 @@ class SubnetPlannerApp:
         self.history_states.append(history_record)
         self.planning_history_records.append(history_record)
         self.current_history_index += 1
+
+        # 持久化子网需求和需求池数据到数据库
+        self._persist_requirements_data()
 
     def _move_records_between_trees(self, source_tree, target_tree, selected_items, move_from, move_to):
         """通用方法：在两个树之间移动记录（支持多条记录，移动后保持选中）
@@ -2512,11 +2500,11 @@ class SubnetPlannerApp:
             row=1, column=0, sticky=tk.W + tk.N + tk.S, pady=4, padx=(10, 0)
         )
         # 初始化IP版本相关数据
-        # 为每个IP版本维护独立的历史记录列表
-        self.split_parent_networks_v4 = deque(["10.0.0.0/8", "172.16.0.0/12"], maxlen=100)  # IPv4父网段历史记录
-        self.split_parent_networks_v6 = deque(["2001:0db8::/32", "fe80::/10"], maxlen=100)  # IPv6父网段历史记录
-        self.split_networks_v4 = deque(["10.21.50.0/23", "172.20.180.0/24"], maxlen=100)  # IPv4切分段历史记录
-        self.split_networks_v6 = deque(["2001:0db8::/64", "fe80::1/128"], maxlen=100)  # IPv6切分段历史记录
+        # 从数据库加载每个IP版本的历史记录列表
+        self.split_parent_networks_v4 = self.history_repo.split_parent_networks_v4
+        self.split_parent_networks_v6 = self.history_repo.split_parent_networks_v6
+        self.split_networks_v4 = self.history_repo.split_networks_v4
+        self.split_networks_v6 = self.history_repo.split_networks_v6
         
         # 根据IP版本选择对应的历史记录列表
         ip_version = self.split_ip_version_var.get()
@@ -2524,14 +2512,14 @@ class SubnetPlannerApp:
             # 使用IPv4历史记录
             self.split_parent_networks = self.split_parent_networks_v4
             self.split_networks = self.split_networks_v4
-            default_parent = "10.0.0.0/8"
-            default_split = "10.21.50.0/23"
+            default_parent = self.split_parent_networks_v4[0] if self.split_parent_networks_v4 else "10.0.0.0/8"
+            default_split = self.split_networks_v4[0] if self.split_networks_v4 else "10.21.50.0/23"
         else:
             # 使用IPv6历史记录
             self.split_parent_networks = self.split_parent_networks_v6
             self.split_networks = self.split_networks_v6
-            default_parent = "2001:0db8::/32"
-            default_split = "2001:0db8::/64"
+            default_parent = self.split_parent_networks_v6[0] if self.split_parent_networks_v6 else "2001:0db8::/32"
+            default_split = self.split_networks_v6[0] if self.split_networks_v6 else "2001:0db8::/64"
 
         # 父网段 - 使用Combobox，支持下拉选择和即时验证
         def validate_split_parent(p):
@@ -2599,6 +2587,12 @@ class SubnetPlannerApp:
 
         # 绑定右键菜单
         self.bind_listbox_right_click(self.history_listbox)
+
+        # 初始化历史记录 - 确保在更新列表框之前赋值
+        self.history_records = self.history_repo.history_records
+
+        # 初始化历史记录列表（从数据库加载已有记录）
+        self.update_history_listbox()
 
         # 创建重新切分按钮 - 与执行切分按钮样式一致
         self.reexecute_btn = ttk.Button(
@@ -2991,10 +2985,10 @@ class SubnetPlannerApp:
         # 初始化IP版本变量
         self.ip_version_var = tk.StringVar(value="IPv4")
         
-        # 初始化父网段列表 - 为每个IP版本维护独立的历史记录列表
-        self.planning_parent_networks_v4 = deque(["10.21.48.0/20", "192.168.0.0/16"], maxlen=100)  # IPv4历史记录
-        self.planning_parent_networks_v6 = deque(["2001:0db8::/32", "fe80::/10"], maxlen=100)  # IPv6历史记录
-        self.planning_parent_networks = self.planning_parent_networks_v4  # 当前使用的历史记录列表
+        # 初始化父网段列表 - 从数据库加载每个IP版本的历史记录
+        self.planning_parent_networks_v4 = self.history_repo.planning_parent_networks_v4
+        self.planning_parent_networks_v6 = self.history_repo.planning_parent_networks_v6
+        self.planning_parent_networks = self.planning_parent_networks_v4
 
         # 创建父网段输入区域框架，用于水平排列IP选项和输入框
         parent_input_frame = ttk.Frame(parent_frame)
@@ -3022,7 +3016,8 @@ class SubnetPlannerApp:
             validatecommand=vcmd,
         )
         self.planning_parent_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        default_parent = "10.21.48.0/20"  # 默认值
+        # 使用历史记录的第一个元素作为默认值，如果没有则使用默认值
+        default_parent = self.planning_parent_networks[0] if self.planning_parent_networks else "10.21.48.0/20"
         self.planning_parent_entry.insert(0, default_parent)  # 默认值
         self.planning_parent_entry.config(state="normal")  # 允许手动输入
         # 添加IPv6自动补全功能
@@ -3154,34 +3149,35 @@ class SubnetPlannerApp:
         import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
 
 
-        # 添加示例数据 - 带斑马条纹标签
-        requirements_data = [
-            ("office", "20"),
-            ("hr_department", "10"),
-            ("finance_department", "10"),
-            ("planning_department", "30"),
-            ("legal", "10"),
-            ("procurement", "10"),
-            ("security", "10"),
-            ("party", "20"),
-            ("discipline", "10"),
-            ("it_department", "20"),
-        ]
-        for index, (name_key, hosts) in enumerate(requirements_data, 1):
-            tag = "even" if index % 2 == 0 else "odd"
-            self.requirements_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
+        # 从数据库加载子网需求和需求池数据
+        requirements_data = self.history_repo.load_requirements_data(HistorySQLite.TABLE_REQUIREMENTS)
+        if requirements_data:
+            for index, (name, hosts) in enumerate(requirements_data, 1):
+                tag = "even" if index % 2 == 0 else "odd"
+                self.requirements_tree.insert("", tk.END, values=("", name, str(hosts)), tags=(tag,))
+        else:
+            sample_requirements = [
+                ("office", "20"), ("hr_department", "10"), ("finance_department", "10"),
+                ("planning_department", "30"), ("legal", "10"), ("procurement", "10"),
+                ("security", "10"), ("party", "20"), ("discipline", "10"), ("it_department", "20"),
+            ]
+            for index, (name_key, hosts) in enumerate(sample_requirements, 1):
+                tag = "even" if index % 2 == 0 else "odd"
+                self.requirements_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
 
-        # 需求池示例数据 - 最后5条
-        pool_data = [
-            ("engineering", "20"),
-            ("sales", "20"),
-            ("rd", "15"),
-            ("production", "100"),
-            ("transportation", "20"),
-        ]
-        for index, (name_key, hosts) in enumerate(pool_data, 1):
-            tag = "even" if index % 2 == 0 else "odd"
-            self.pool_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
+        pool_data = self.history_repo.load_requirements_data(HistorySQLite.TABLE_POOL)
+        if pool_data:
+            for index, (name, hosts) in enumerate(pool_data, 1):
+                tag = "even" if index % 2 == 0 else "odd"
+                self.pool_tree.insert("", tk.END, values=("", name, str(hosts)), tags=(tag,))
+        else:
+            sample_pool = [
+                ("engineering", "20"), ("sales", "20"), ("rd", "15"),
+                ("production", "100"), ("transportation", "20"),
+            ]
+            for index, (name_key, hosts) in enumerate(sample_pool, 1):
+                tag = "even" if index % 2 == 0 else "odd"
+                self.pool_tree.insert("", tk.END, values=("", _(name_key), hosts), tags=(tag,))
 
         # 调用方法更新序号和斑马条纹
         self.update_planning_tables_zebra_stripes()
@@ -3562,6 +3558,36 @@ class SubnetPlannerApp:
         """更新需求池的斑马条纹"""
         if hasattr(self, 'pool_tree'):
             self.update_table_zebra_stripes(self.pool_tree, update_index=True)
+
+    def _persist_requirements_data(self):
+        """将当前子网需求表和需求池的数据持久化到数据库"""
+        try:
+            requirements = []
+            for item in self.requirements_tree.get_children():
+                values = self.requirements_tree.item(item, "values")
+                requirements.append((values[1], int(values[2])))
+            self.history_repo.save_requirements_data(HistorySQLite.TABLE_REQUIREMENTS, requirements)
+
+            pool = []
+            for item in self.pool_tree.get_children():
+                values = self.pool_tree.item(item, "values")
+                pool.append((values[1], int(values[2])))
+            self.history_repo.save_requirements_data(HistorySQLite.TABLE_POOL, pool)
+        except Exception:
+            pass
+
+    def _persist_text_data(self, category, text_widget):
+        """将文本控件的内容持久化到数据库
+
+        Args:
+            category: 数据类别标识
+            text_widget: tk.Text 控件
+        """
+        try:
+            content = text_widget.get(1.0, tk.END).strip()
+            self.history_repo.save_text_data(category, content)
+        except Exception:
+            pass
 
     def update_planning_tables_zebra_stripes(self):
         """批量更新子网需求表和需求池的斑马条纹
@@ -5020,33 +5046,43 @@ class SubnetPlannerApp:
             del self.edit_entry
         self.edit_entry = None
 
-    def execute_subnet_planning(self, from_history=False):
-        """执行子网规划
+    def perform_planning(self, parent=None, subnet_requirements=None, from_history=False, update_history=True, save_state=True, generate_chart=True):
+        """执行子网规划操作
 
         Args:
-            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+            parent: 父网段，如果为None则从输入框获取
+            subnet_requirements: 子网需求列表，如果为None则从表格获取
+            from_history: 是否从历史记录重新执行
+            update_history: 是否更新下拉表历史
+            save_state: 是否保存当前状态到操作记录
+            generate_chart: 是否生成网段分布图
+
+        Returns:
+            dict: 规划结果，如果失败则返回None
         """
         # 获取父网段
-        parent = self.planning_parent_entry.get().strip()
+        if parent is None:
+            parent = self.planning_parent_entry.get().strip()
 
         # 验证输入
         validation_result = self._validate_planning_input(parent)
         if not validation_result['valid']:
             self.show_error(_("error"), validation_result['error'])
-            return
+            return None
         
         # 重新获取修正后的父网段
         parent = self.planning_parent_entry.get().strip()
 
         # 获取子网需求
-        subnet_requirements = []
-        for item in self.requirements_tree.get_children():
-            values = self.requirements_tree.item(item, "values")
-            subnet_requirements.append((values[1], int(values[2])))
+        if subnet_requirements is None:
+            subnet_requirements = []
+            for item in self.requirements_tree.get_children():
+                values = self.requirements_tree.item(item, "values")
+                subnet_requirements.append((values[1], int(values[2])))
 
         if not subnet_requirements:
             self.show_error(_("error"), _("please_add_at_least_one_requirement"))
-            return
+            return None
 
         try:
             # 只验证IP地址格式，不自动修正格式，保留用户输入的原始格式
@@ -5062,7 +5098,7 @@ class SubnetPlannerApp:
             # 检查是否有错误
             if 'error' in plan_result:
                 self.show_error(_("error"), f"{_("subnet_planning_failed")}: {plan_result['error']}")
-                return
+                return None
 
             # 直接使用第一个规划方案
             selected_plan = plan_result['plans'][0]
@@ -5131,25 +5167,31 @@ class SubnetPlannerApp:
 
             # 子网规划完成，不显示对话框提示
 
-            # 如果不是从历史记录执行，将操作记录保存到历史
-            if not from_history:
+            # 如果需要更新历史记录
+            if update_history and not from_history:
                 # 使用通用方法更新父网段历史记录
                 current_parent = self.planning_parent_entry.get().strip()
                 self._update_history_entry(current_parent, self.planning_parent_networks, self.planning_parent_entry)
 
+            # 如果需要保存状态
+            if save_state and not from_history:
                 # 保存当前状态到操作记录
                 self.save_current_state("执行规划")
 
-            # 生成网段分布图数据并绘制
-            # 构建兼容的plan_result结构
-            compatible_plan_result = {
-                "parent_cidr": plan_result["parent_cidr"],
-                "allocated_subnets": selected_plan["allocated_subnets"],
-                "remaining_subnets": selected_plan["remaining_subnets"],
-                "remaining_subnets_info": selected_plan["remaining_subnets_info"],
-                "ip_version": plan_result["ip_version"]
-            }
-            self.generate_planning_chart_data(compatible_plan_result)
+            # 如果需要生成图表
+            if generate_chart:
+                # 生成网段分布图数据并绘制
+                # 构建兼容的plan_result结构
+                compatible_plan_result = {
+                    "parent_cidr": plan_result["parent_cidr"],
+                    "allocated_subnets": selected_plan["allocated_subnets"],
+                    "remaining_subnets": selected_plan["remaining_subnets"],
+                    "remaining_subnets_info": selected_plan["remaining_subnets_info"],
+                    "ip_version": plan_result["ip_version"]
+                }
+                self.generate_planning_chart_data(compatible_plan_result)
+
+            return plan_result
 
         except ValueError as e:
             # 导入handle_ip_subnet_error函数
@@ -5157,8 +5199,18 @@ class SubnetPlannerApp:
             # 使用通用错误处理函数处理IP相关错误
             error_dict = handle_ip_subnet_error(e)
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {error_dict.get('error', str(e))}")
+            return None
         except (tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_("error"), f"{_("subnet_planning_failed")}: {_("unknown_error_occurred")} - {str(e)}")
+            return None
+
+    def execute_subnet_planning(self, from_history=False):
+        """执行子网规划
+
+        Args:
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+        """
+        self.perform_planning(from_history=from_history)
 
     def sync_allocated_to_ipam(self):
         """将已分配子网表中的数据同步到地址管理的网段表"""
@@ -5366,11 +5418,11 @@ class SubnetPlannerApp:
             if ip_version == "IPv4":
                 # 使用IPv4历史记录
                 self.planning_parent_networks = self.planning_parent_networks_v4
-                default_parent = "10.21.48.0/20"
+                default_parent = self.planning_parent_networks_v4[0] if self.planning_parent_networks_v4 else "10.21.48.0/20"
             else:
                 # 使用IPv6历史记录
                 self.planning_parent_networks = self.planning_parent_networks_v6
-                default_parent = "2001:0db8::/32"
+                default_parent = self.planning_parent_networks_v6[0] if self.planning_parent_networks_v6 else "2001:0db8::/32"
             
             # 更新输入框默认值和下拉列表
             self.planning_parent_entry.insert(0, default_parent)
@@ -5396,14 +5448,14 @@ class SubnetPlannerApp:
                 # 使用IPv4历史记录
                 self.split_parent_networks = self.split_parent_networks_v4
                 self.split_networks = self.split_networks_v4
-                default_parent = "10.0.0.0/8"
-                default_split = "10.21.50.0/23"
+                default_parent = self.split_parent_networks_v4[0] if self.split_parent_networks_v4 else "10.0.0.0/8"
+                default_split = self.split_networks_v4[0] if self.split_networks_v4 else "10.21.50.0/23"
             else:
                 # 使用IPv6历史记录
                 self.split_parent_networks = self.split_parent_networks_v6
                 self.split_networks = self.split_networks_v6
-                default_parent = "2001:0db8::/32"
-                default_split = "2001:0db8::/64"
+                default_parent = self.split_parent_networks_v6[0] if self.split_parent_networks_v6 else "2001:0db8::/32"
+                default_split = self.split_networks_v6[0] if self.split_networks_v6 else "2001:0db8::/64"
             
             # 更新输入框默认值和下拉列表
             self.parent_entry.insert(0, default_parent)
@@ -5533,15 +5585,16 @@ class SubnetPlannerApp:
             foreground=[("active", "white"), ("!active", "white"), ("pressed", "white")],
         )
 
-    def execute_split(self, from_history=False):
-        """执行切分操作
+    def _perform_split_operation(self, parent, split):
+        """执行核心切分操作
 
         Args:
-            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
-        """
-        parent = self.parent_entry.get().strip()
-        split = self.split_entry.get().strip()
+            parent: 父网段
+            split: 切分段
 
+        Returns:
+            bool: 切分是否成功
+        """
         # 验证输入
         validation_result = self._validate_split_input(parent, split)
         if not validation_result['valid']:
@@ -5549,7 +5602,7 @@ class SubnetPlannerApp:
             self.clear_result()
             self.clear_tree_items(self.split_tree)
             self.show_error(_("input_error"), validation_result['error'])
-            return
+            return False
         
         # 重新获取修正后的父网段和切分段
         parent = self.parent_entry.get().strip()
@@ -5570,7 +5623,7 @@ class SubnetPlannerApp:
             if "error" in result:
                 # 显示错误信息
                 self.show_error(_("error"), result["error"])
-                return
+                return False
 
             # 添加切分段信息，同时设置斑马条纹标签
             row_index = 0
@@ -5667,34 +5720,89 @@ class SubnetPlannerApp:
             # 绘制图表
             self.draw_distribution_chart()
 
-            # 如果不是从历史记录重新执行，则将操作记录到历史列表
-            if not from_history:
-                # 使用通用方法更新父网段历史记录
-                self._update_history_entry(parent, self.split_parent_networks, self.parent_entry)
-                # 使用通用方法更新切分段历史记录
-                self._update_history_entry(split, self.split_networks, self.split_entry)
-
-                # 检查是否已存在相同的记录
-                duplicate_exists = any(
-                    record['parent'] == parent and record['split'] == split for record in self.history_records
-                )
-
-                # 如果不存在相同记录，则添加到历史记录
-                if not duplicate_exists:
-                    split_record = {'parent': parent, 'split': split}
-                    self.history_records.append(split_record)
-
-                    # 更新历史记录列表
-                    self.update_history_listbox()
+            return True
 
         except ValueError as e:
             error_result = handle_ip_subnet_error(e)
             message = error_result.get('error', str(e))
             self.clear_result()
             self.split_tree.insert("", tk.END, values=(_("error"), message), tags=("error",))
+            return False
         except (tk.TclError, AttributeError, TypeError) as e:
             self.clear_result()
             self.split_tree.insert("", tk.END, values=(_("error"), f"{_("unknown_error_occurred")}: {str(e)}"), tags=("error",))
+            return False
+
+    def perform_split(self, parent, split, from_history=False, auto_switch_version=False, fill_inputs=False, update_history=True):
+        """执行切分操作
+
+        Args:
+            parent: 父网段
+            split: 切分段
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+            auto_switch_version: 是否自动切换IP版本
+            fill_inputs: 是否填充到输入框
+            update_history: 是否更新历史记录
+
+        Returns:
+            bool: 切分是否成功
+        """
+        # 检测IP版本并自动切换
+        detected_version = self.validation_service.detect_ip_version(parent)
+        if not detected_version:
+            # 如果父网段检测失败，尝试检测切分段
+            detected_version = self.validation_service.detect_ip_version(split)
+        
+        if auto_switch_version and detected_version and detected_version != self.split_ip_version_var.get():
+            self.split_ip_version_var.set(detected_version)
+            self.on_split_ip_version_change()
+
+        # 填充到输入框
+        if fill_inputs:
+            self.parent_entry.delete(0, tk.END)
+            self.parent_entry.insert(0, parent)
+            self.split_entry.delete(0, tk.END)
+            self.split_entry.insert(0, split)
+
+        # 执行核心切分操作
+        success = self._perform_split_operation(parent, split)
+
+        # 如果需要更新历史记录，且切分成功
+        if success and update_history:
+            # 重新获取修正后的父网段和切分段
+            parent = self.parent_entry.get().strip()
+            split = self.split_entry.get().strip()
+
+            # 根据IP版本选择对应的历史容器
+            if detected_version == 'IPv4':
+                parent_history = self.split_parent_networks
+                split_history = self.split_networks
+            else:
+                parent_history = self.split_parent_networks_v6
+                split_history = self.split_networks_v6
+
+            # 更新父网段历史（排到最前面）
+            self._update_history_entry(parent, parent_history, self.parent_entry)
+            # 更新切分段历史（排到最前面）
+            self._update_history_entry(split, split_history, self.split_entry)
+
+            # 添加到历史记录（通过history_repo自动处理重复记录并更新时间戳）
+            self.history_repo.add_split_record(parent, split)
+
+            # 更新历史记录列表
+            self.update_history_listbox()
+
+        return success
+
+    def execute_split(self, from_history=False):
+        """执行切分操作
+
+        Args:
+            from_history: 是否从历史记录重新执行，True表示不将操作记入历史
+        """
+        parent = self.parent_entry.get().strip()
+        split = self.split_entry.get().strip()
+        self.perform_split(parent, split, from_history=from_history, update_history=not from_history)
 
     def clear_tree_items(self, tree):
         """清空表格中的所有项
@@ -6312,10 +6420,12 @@ class SubnetPlannerApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IPv6地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text=_("ipv6_address")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_('ipv6_address')).pack(side=tk.LEFT, padx=(0, 5))
         self.ipv6_info_entry = ttk.Combobox(input_frame, values=self.ipv6_history, width=48, font=(font_family, font_size))
         self.ipv6_info_entry.pack(side=tk.LEFT, padx=(0, 10))
-        self.ipv6_info_entry.insert(0, "2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+        # 使用历史记录的第一个元素作为默认值，如果没有则使用默认值
+        default_ipv6 = self.ipv6_history[0] if self.ipv6_history else "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        self.ipv6_info_entry.insert(0, default_ipv6)
         self.ipv6_info_entry.config(state="normal")  # 允许手动输入
 
         # IPv6地址验证函数 - 使用统一的UI层验证方法
@@ -6400,7 +6510,11 @@ class SubnetPlannerApp:
                                         bd=0, relief="flat", highlightthickness=0)
 
         subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
-        self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
+        subnet_merge_content = self.history_repo.load_text_data(HistorySQLite.CATEGORY_SUBNET_MERGE)
+        if subnet_merge_content:
+            self.subnet_merge_text.insert(tk.END, subnet_merge_content)
+        else:
+            self.subnet_merge_text.insert(tk.END, "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n10.21.19.128/26\n10.21.19.192/26\n2001:0db8::/127\n2001:0db8::2/127\n2001:0db8::4/127\n2001:0db8::6/127\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:3::/64")
         
         # 为文本框添加边框，与其他文本框风格一致
         self.subnet_merge_text.config(highlightbackground="#a9a9a9", 
@@ -6448,12 +6562,14 @@ class SubnetPlannerApp:
         start_frame = ttk.Frame(range_frame)
         start_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(start_frame, text=_("start")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(start_frame, text=_('start')).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_start_entry = ttk.Combobox(
             start_frame, values=self.range_start_history, width=13, font=(font_family, font_size)
         )
         self.range_start_entry.pack(side=tk.RIGHT, pady=(0, 5))
-        self.range_start_entry.insert(0, "192.168.0.1")
+        # 使用历史记录的第一个元素作为默认值，如果没有则使用默认值
+        default_start = self.range_start_history[0] if self.range_start_history else "192.168.0.1"
+        self.range_start_entry.insert(0, default_start)
         self.range_start_entry.config(state="normal")  # 允许手动输入
 
         # IP范围地址验证函数 - 使用统一的UI层验证方法
@@ -6472,10 +6588,12 @@ class SubnetPlannerApp:
         end_frame = ttk.Frame(range_frame)
         end_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Label(end_frame, text=_("end")).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
+        ttk.Label(end_frame, text=_('end')).pack(side=tk.LEFT, padx=(0, 5), pady=(0, 5))
         self.range_end_entry = ttk.Combobox(end_frame, values=self.range_end_history, width=13, font=(font_family, font_size))
         self.range_end_entry.pack(side=tk.RIGHT, pady=(0, 5))
-        self.range_end_entry.insert(0, "192.168.30.254")
+        # 使用历史记录的第一个元素作为默认值，如果没有则使用默认值
+        default_end = self.range_end_history[0] if self.range_end_history else "192.168.30.254"
+        self.range_end_entry.insert(0, default_end)
         self.range_end_entry.config(state="normal")  # 允许手动输入
 
         # 为结束IP添加验证
@@ -6849,10 +6967,12 @@ class SubnetPlannerApp:
         input_frame.pack(fill=tk.X, pady=(0, 10))
 
         # IP地址输入 - 使用Combobox，支持下拉选择和记忆功能
-        ttk.Label(input_frame, text=_("ipv4_address")).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(input_frame, text=_('ipv4_address')).pack(side=tk.LEFT, padx=(0, 5))
         self.ip_info_entry = ttk.Combobox(input_frame, values=self.ipv4_history, width=21, font=(font_family, font_size))
         self.ip_info_entry.pack(side=tk.LEFT, padx=(0, 10))
-        self.ip_info_entry.insert(0, "192.168.1.1")
+        # 使用历史记录的第一个元素作为默认值，如果没有则使用默认值
+        default_ipv4 = self.ipv4_history[0] if self.ipv4_history else "192.168.1.1"
+        self.ip_info_entry.insert(0, default_ipv4)
         self.ip_info_entry.config(state="normal")  # 允许手动输入
 
         # IPv4地址验证函数 - 使用统一的UI层验证方法
@@ -7003,7 +7123,11 @@ class SubnetPlannerApp:
         self.overlap_text = tk.Text(text_frame, height=10, width=17, font=(font_family, font_size - 1), 
                                     bd=0, relief="flat", highlightthickness=1, 
                                     highlightbackground="#a9a9a9", highlightcolor="#a9a9a9")
-        self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
+        overlap_content = self.history_repo.load_text_data(HistorySQLite.CATEGORY_OVERLAP_DETECTION)
+        if overlap_content:
+            self.overlap_text.insert(tk.END, overlap_content)
+        else:
+            self.overlap_text.insert(tk.END, "192.168.0.0/24\n192.168.0.128/25\n10.0.0.0/16\n10.0.0.128/25\n10.0.10.0/20\n10.10.0.0/23\n2001:0db8::/64\n2001:0db8::1000/120\n2001:0db8:1::/64\n2001:0db8:2::/64\n2001:0db8:1:0::/66\n2001:0db8:1:1000::/66")
         
         # 实时验证子网格式
         def validate_overlap_text(event=None):
@@ -7250,6 +7374,9 @@ class SubnetPlannerApp:
             # 操作成功完成，添加到历史记录
             self.update_range_start_history()
             self.update_range_end_history()
+
+            # 持久化子网合并列表文本到数据库
+            self._persist_text_data(HistorySQLite.CATEGORY_SUBNET_MERGE, self.subnet_merge_text)
 
         except ValueError as e:
             # 在结果表格中显示错误信息
@@ -8279,6 +8406,9 @@ class SubnetPlannerApp:
             self.auto_resize_columns(self.overlap_result_tree)
             # 更新斑马条纹，确保错误行同时显示红色和斑马条纹效果
             self.update_table_zebra_stripes(self.overlap_result_tree)
+
+            # 持久化重叠检测列表文本到数据库
+            self._persist_text_data(HistorySQLite.CATEGORY_OVERLAP_DETECTION, self.overlap_text)
 
         except (ValueError, tk.TclError, AttributeError, TypeError) as e:
             self.show_error(_('error'), f'{_('execute_subnet_overlap_detection_failed')}: {str(e)}')
@@ -9658,11 +9788,17 @@ class SubnetPlannerApp:
     def one_click_export(self):
         """一键导出功能：自动执行规划和切分，然后导出所有格式的结果"""
         try:
-            # 1. 自动执行规划
-            self.execute_subnet_planning(from_history=True)
+            # 1. 自动执行规划（不更新历史记录）
+            plan_result = self.perform_planning(from_history=True, update_history=False, save_state=False)
+            if plan_result is None:
+                return
             
-            # 2. 自动执行切分
-            self.execute_split(from_history=True)
+            # 2. 自动执行切分（不更新历史记录）
+            parent = self.parent_entry.get().strip()
+            split = self.split_entry.get().strip()
+            success = self.perform_split(parent, split, from_history=True, update_history=False)
+            if not success:
+                return
             
             # 3. 让用户选择导出目录
             export_dir = filedialog.askdirectory(title=_("select_export_directory"))
@@ -9680,11 +9816,17 @@ class SubnetPlannerApp:
     def one_click_pdf(self):
         """一键PDF功能：自动执行规划和切分，然后只导出PDF格式的结果"""
         try:
-            # 1. 自动执行规划
-            self.execute_subnet_planning(from_history=True)
+            # 1. 自动执行规划（不更新历史记录）
+            plan_result = self.perform_planning(from_history=True, update_history=False, save_state=False)
+            if plan_result is None:
+                return
             
-            # 2. 自动执行切分
-            self.execute_split(from_history=True)
+            # 2. 自动执行切分（不更新历史记录）
+            parent = self.parent_entry.get().strip()
+            split = self.split_entry.get().strip()
+            success = self.perform_split(parent, split, from_history=True, update_history=False)
+            if not success:
+                return
             
             # 3. 让用户选择导出目录
             export_dir = filedialog.askdirectory(title=_("select_export_directory"))
@@ -10186,7 +10328,8 @@ class SubnetPlannerApp:
         self.chart_data = None
         
         # 重新初始化历史记录 - 语言切换不应保留撤销历史
-        self.history_records = []
+        self.history_repo.clear_split_history()
+        self.history_records = self.history_repo.history_records
         self.history_states = deque(maxlen=20)
         self.current_history_index = -1
         self.deleted_history = []
@@ -10196,7 +10339,7 @@ class SubnetPlannerApp:
     
     def initialize_component_properties(self):
         """重新初始化所有必要的组件属性"""
-        self.planning_parent_networks = deque(maxlen=100)
+        self.planning_parent_networks = self.history_repo.planning_parent_networks
         self.planning_parent_entry = None
         self.pool_tree = None
         self.pool_scrollbar = None
