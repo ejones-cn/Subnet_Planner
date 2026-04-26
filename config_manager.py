@@ -13,6 +13,15 @@ from typing import cast
 
 from window_utils import get_app_directory
 
+def _translate(key, **kwargs):
+    """延迟导入翻译函数，避免循环导入"""
+    try:
+        from i18n import translate
+        return translate(key, **kwargs)
+    except (ImportError, Exception):
+        # 如果翻译导入失败，返回键名作为回退
+        return key
+
 
 class ConfigManager:
     """配置管理器类"""
@@ -78,10 +87,10 @@ class ConfigManager:
             return self._migrate_config(config)
         
         except json.JSONDecodeError as e:
-            print(f"配置文件解析错误: {str(e)}，使用默认配置")
+            print(_translate("config_parse_error", error=str(e)))
             return self._create_default_config()
         except Exception as e:
-            print(f"加载配置文件失败: {str(e)}，使用默认配置")
+            print(_translate("config_load_failed", error=str(e)))
             return self._create_default_config()
     
     def _create_default_config(self) -> dict[str, object]:
@@ -223,7 +232,7 @@ class ConfigManager:
             
             return True
         except Exception as e:
-            print(f"配置验证失败: {str(e)}")
+            print(_translate("config_validation_failed", error=str(e)))
             return False
     
     def _save_config(self) -> bool:
@@ -235,7 +244,7 @@ class ConfigManager:
         try:
             # 验证配置
             if not self._validate_config(self._config):
-                print("配置验证失败，无法保存")
+                print(_translate("config_validation_failed_save"))
                 return False
             
             # 确保目录存在
@@ -248,7 +257,7 @@ class ConfigManager:
             
             return True
         except Exception as e:
-            print(f"保存配置文件失败: {str(e)}")
+            print(_translate("config_save_failed", error=str(e)))
             return False
     
     def get(self, key: str, default: object = None) -> object:
@@ -271,7 +280,7 @@ class ConfigManager:
                     return default
             return value
         except Exception as e:
-            print(f"获取配置项失败 '{key}': {str(e)}")
+            print(_translate("config_get_failed", key=key, error=str(e)))
             return default
     
     def set(self, key: str, value: object) -> bool:
@@ -293,7 +302,7 @@ class ConfigManager:
                     if k not in config:
                         config[k] = {}
                     elif not isinstance(config[k], dict):
-                        print(f"配置路径冲突 '{'.'.join(keys[:i + 1])}'")
+                        print(_translate("config_path_conflict", key='.'.join(keys[:i + 1])))
                         return False
                     config = config[k]
             
@@ -303,7 +312,7 @@ class ConfigManager:
             
             return self._save_config()
         except Exception as e:
-            print(f"设置配置项失败 '{key}': {str(e)}")
+            print(_translate("config_set_failed", key=key, error=str(e)))
             return False
     
     def get_language(self) -> str:
@@ -325,7 +334,7 @@ class ConfigManager:
             是否设置成功
         """
         if lang not in self.SUPPORTED_LANGUAGES:
-            print(f"不支持的语言: {lang}")
+            print(_translate("unsupported_language", lang=lang))
             return False
         return self.set('language', lang)
     
@@ -352,7 +361,7 @@ class ConfigManager:
             是否设置成功
         """
         if width < 800 or height < 600:
-            print("窗口大小不能小于 800x600")
+            print(_translate("window_size_too_small"))
             return False
         
         success1 = self.set('window.width', width)
@@ -444,7 +453,7 @@ class ConfigManager:
             是否设置成功
         """
         if frequency not in self.SUPPORTED_BACKUP_FREQUENCIES:
-            print(f"不支持的备份频率: {frequency}")
+            print(_translate("unsupported_backup_frequency", frequency=frequency))
             return False
         return self.set('auto_backup.frequency', frequency)
     
@@ -491,7 +500,7 @@ class ConfigManager:
             是否设置成功
         """
         if font_size < 8 or font_size > 32:
-            print("字体大小必须在 8-32 之间")
+            print(_translate("font_size_range"))
             return False
         return self.set('ui.font_size', font_size)
     
@@ -516,12 +525,12 @@ class ConfigManager:
             是否设置成功
         """
         if not isinstance(tab_order, list):
-            print("标签次序必须是列表")
+            print(_translate("tab_order_must_be_list"))
             return False
         # 验证列表中所有元素都是字符串
         for item in tab_order:
             if not isinstance(item, str):
-                print("标签名称必须是字符串")
+                print(_translate("tab_name_must_be_string"))
                 return False
         return self.set('ui.tab_order', tab_order)
     
@@ -634,7 +643,7 @@ class ConfigManager:
                 json.dump(self._config, f, ensure_ascii=False, indent=2)
             return True
         except Exception as e:
-            print(f"导出配置失败: {str(e)}")
+            print(_translate("export_config_failed", error=str(e)))
             return False
     
     def import_config(self, import_path: str) -> bool:
@@ -655,7 +664,7 @@ class ConfigManager:
             
             return self._save_config()
         except Exception as e:
-            print(f"导入配置失败: {str(e)}")
+            print(_translate("import_config_failed", error=str(e)))
             return False
 
 

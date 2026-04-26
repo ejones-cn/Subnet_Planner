@@ -11,6 +11,15 @@ import sys
 import tkinter as tk
 
 
+def _translate(key, **kwargs):
+    """延迟导入翻译函数，避免循环导入"""
+    try:
+        from i18n import translate
+        return translate(key, **kwargs)
+    except (ImportError, Exception):
+        return key
+
+
 def get_app_directory() -> str:
     """获取应用程序所在目录
     
@@ -56,7 +65,7 @@ def get_app_directory() -> str:
     return app_dir
 
 
-def setup_window_settings(root: tk.Tk, width: int = 1050, height: int = 950, lock_width: bool = True, min_width: int = 1050, min_height: int = 950, max_width: int = 10000, max_height: int = 10000, position: tuple[int, int] | None = None) -> None:
+def setup_window_settings(root, width=1050, height=950, lock_width=True, min_width=1050, min_height=950, max_width=10000, max_height=10000, position=None):
     """设置窗口初始大小和位置
     
     Args:
@@ -86,4 +95,4 @@ def setup_window_settings(root: tk.Tk, width: int = 1050, height: int = 950, loc
     
     root.resizable(not lock_width, True)
     
-    print(f"窗口设置: {width}x{height}, 位置: ({window_x}, {window_y})")
+    print(_translate("window_settings", width=width, height=height, x=window_x, y=window_y))

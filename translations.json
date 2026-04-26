@@ -5759,5 +5759,236 @@
       "voip": ["voip", "음성", "전화", "통신"],
       "network": ["network", "네트워크", "스위치", "라우터", "네트워크 장비"]
     }
+  },
+  "load_history_failed": {
+    "zh": "从数据库加载历史数据失败：{error}",
+    "zh_tw": "從資料庫載入歷史資料失敗：{error}",
+    "en": "Failed to load history data from database: {error}",
+    "ja": "データベースから履歴データの読み込みに失敗しました：{error}",
+    "ko": "데이터베이스에서 히스토리 데이터 로드 실패：{error}"
+  },
+  "loaded_split_history": {
+    "zh": "从数据库加载了 {count} 条切分历史记录",
+    "zh_tw": "從資料庫載入了 {count} 條切分歷史記錄",
+    "en": "Loaded {count} split history records from database",
+    "ja": "データベースから {count} 件の分割履歴レコードを読み込みました",
+    "ko": "데이터베이스에서 {count}개의 분할 히스토리 레코드 로드"
+  },
+  "persist_combo_history_failed": {
+    "zh": "持久化下拉表历史失败：{error}",
+    "zh_tw": "持久化下拉表歷史失敗：{error}",
+    "en": "Failed to persist combo history: {error}",
+    "ja": "コンボ履歴の永続化に失敗しました：{error}",
+    "ko": "콤보 히스토리 지속 실패：{error}"
+  },
+  "save_combo_history_failed": {
+    "zh": "保存下拉表历史失败 [{category}]：{error}",
+    "zh_tw": "保存下拉表歷史失敗 [{category}]：{error}",
+    "en": "Failed to save combo history [{category}]: {error}",
+    "ja": "コンボ履歴の保存に失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 저장 실패 [{category}]: {error}"
+  },
+  "persist_split_history_failed": {
+    "zh": "持久化切分历史记录失败：{error}",
+    "zh_tw": "持久化切分歷史記錄失敗：{error}",
+    "en": "Failed to persist split history record: {error}",
+    "ja": "分割履歴レコードの永続化に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 지속 실패：{error}"
+  },
+  "delete_split_history_failed": {
+    "zh": "删除切分历史记录失败：{error}",
+    "zh_tw": "刪除切分歷史記錄失敗：{error}",
+    "en": "Failed to delete split history record: {error}",
+    "ja": "分割履歴レコードの削除に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 삭제 실패：{error}"
+  },
+  "clear_split_history_failed": {
+    "zh": "清空切分历史记录失败：{error}",
+    "zh_tw": "清空切分歷史記錄失敗：{error}",
+    "en": "Failed to clear split history records: {error}",
+    "ja": "分割履歴レコードのクリアに失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 지우기 실패：{error}"
+  },
+  "load_requirements_failed": {
+    "zh": "加载需求数据失败 [{table_type}]：{error}",
+    "zh_tw": "載入需求資料失敗 [{table_type}]：{error}",
+    "en": "Failed to load requirements data [{table_type}]: {error}",
+    "ja": "要件データの読み込みに失敗しました [{table_type}]：{error}",
+    "ko": "요구사항 데이터 로드 실패 [{table_type}]: {error}"
+  },
+  "save_requirements_failed": {
+    "zh": "保存需求数据失败 [{table_type}]：{error}",
+    "zh_tw": "保存需求資料失敗 [{table_type}]：{error}",
+    "en": "Failed to save requirements data [{table_type}]: {error}",
+    "ja": "要件データの保存に失敗しました [{table_type}]：{error}",
+    "ko": "요구사항 데이터 저장 실패 [{table_type}]: {error}"
+  },
+  "load_text_data_failed": {
+    "zh": "加载文本数据失败 [{category}]：{error}",
+    "zh_tw": "載入文本資料失敗 [{category}]：{error}",
+    "en": "Failed to load text data [{category}]: {error}",
+    "ja": "テキストデータの読み込みに失敗しました [{category}]：{error}",
+    "ko": "텍스트 데이터 로드 실패 [{category}]: {error}"
+  },
+  "save_text_data_failed": {
+    "zh": "保存文本数据失败 [{category}]：{error}",
+    "zh_tw": "保存文本資料失敗 [{category}]：{error}",
+    "en": "Failed to save text data [{category}]: {error}",
+    "ja": "テキストデータの保存に失敗しました [{category}]：{error}",
+    "ko": "텍스트 데이터 저장 실패 [{category}]: {error}"
+  },
+  "history_db_init_failed": {
+    "zh": "历史数据库初始化失败，持久化功能将不可用：{error}",
+    "zh_tw": "歷史資料庫初始化失敗，持久化功能將不可用：{error}",
+    "en": "History database initialization failed, persistence will be unavailable: {error}",
+    "ja": "履歴データベースの初期化に失敗しました。永続化機能は使用できません：{error}",
+    "ko": "히스토리 데이터베이스 초기화 실패, 지속 기능 사용 불가：{error}"
+  },
+  "history_db_init_failed_general": {
+    "zh": "历史数据库初始化失败：{error}",
+    "zh_tw": "歷史資料庫初始化失敗：{error}",
+    "en": "History database initialization failed: {error}",
+    "ja": "履歴データベースの初期化に失敗しました：{error}",
+    "ko": "히스토리 데이터베이스 초기화 실패：{error}"
+  },
+  "load_combo_history_failed": {
+    "zh": "加载下拉表历史失败 [{category}]：{error}",
+    "zh_tw": "載入下拉表歷史失敗 [{category}]：{error}",
+    "en": "Failed to load combo history [{category}]: {error}",
+    "ja": "コンボ履歴の読み込みに失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 로드 실패 [{category}]: {error}"
+  },
+  "save_combo_history_item_failed": {
+    "zh": "添加下拉表历史记录失败 [{category}]：{error}",
+    "zh_tw": "添加下拉表歷史記錄失敗 [{category}]：{error}",
+    "en": "Failed to add combo history record [{category}]: {error}",
+    "ja": "コンボ履歴レコードの追加に失敗しました [{category}]：{error}",
+    "ko": "콤보 히스토리 레코드 추가 실패 [{category}]: {error}"
+  },
+  "add_split_history_failed": {
+    "zh": "添加切分历史记录失败：{error}",
+    "zh_tw": "添加切分歷史記錄失敗：{error}",
+    "en": "Failed to add split history record: {error}",
+    "ja": "分割履歴レコードの追加に失敗しました：{error}",
+    "ko": "분할 히스토리 레코드 추가 실패：{error}"
+  },
+  "config_parse_error": {
+    "zh": "配置文件解析错误：{error}，使用默认配置",
+    "zh_tw": "配置文件解析錯誤：{error}，使用默認配置",
+    "en": "Config file parse error: {error}, using default config",
+    "ja": "設定ファイルの解析エラー：{error}、デフォルト設定を使用します",
+    "ko": "구성 파일 구문 분석 오류：{error}, 기본 구성 사용"
+  },
+  "config_load_failed": {
+    "zh": "加载配置文件失败：{error}，使用默认配置",
+    "zh_tw": "載入配置文件失敗：{error}，使用默認配置",
+    "en": "Failed to load config file: {error}, using default config",
+    "ja": "設定ファイルの読み込みに失敗しました：{error}、デフォルト設定を使用します",
+    "ko": "구성 파일 로드 실패：{error}, 기본 구성 사용"
+  },
+  "config_validation_failed": {
+    "zh": "配置验证失败：{error}",
+    "zh_tw": "配置驗證失敗：{error}",
+    "en": "Config validation failed: {error}",
+    "ja": "設定の検証に失敗しました：{error}",
+    "ko": "구성 검증 실패：{error}"
+  },
+  "config_validation_failed_save": {
+    "zh": "配置验证失败，无法保存",
+    "zh_tw": "配置驗證失敗，無法保存",
+    "en": "Config validation failed, cannot save",
+    "ja": "設定の検証に失敗しました。保存できません",
+    "ko": "구성 검증 실패, 저장 불가"
+  },
+  "config_save_failed": {
+    "zh": "保存配置文件失败：{error}",
+    "zh_tw": "保存配置文件失敗：{error}",
+    "en": "Failed to save config file: {error}",
+    "ja": "設定ファイルの保存に失敗しました：{error}",
+    "ko": "구성 파일 저장 실패：{error}"
+  },
+  "config_get_failed": {
+    "zh": "获取配置项失败 '{key}': {error}",
+    "zh_tw": "獲取配置項失敗 '{key}': {error}",
+    "en": "Failed to get config item '{key}': {error}",
+    "ja": "設定項目の取得に失敗しました '{key}': {error}",
+    "ko": "구성 항목 가져오기 실패 '{key}': {error}"
+  },
+  "config_path_conflict": {
+    "zh": "配置路径冲突 '{key}'",
+    "zh_tw": "配置路徑衝突 '{key}'",
+    "en": "Config path conflict '{key}'",
+    "ja": "設定パスの競合 '{key}'",
+    "ko": "구성 경로 충돌 '{key}'"
+  },
+  "config_set_failed": {
+    "zh": "设置配置项失败 '{key}': {error}",
+    "zh_tw": "設置配置項失敗 '{key}': {error}",
+    "en": "Failed to set config item '{key}': {error}",
+    "ja": "設定項目の設定に失敗しました '{key}': {error}",
+    "ko": "구성 항목 설정 실패 '{key}': {error}"
+  },
+  "unsupported_language": {
+    "zh": "不支持的语言：{lang}",
+    "zh_tw": "不支持的語言：{lang}",
+    "en": "Unsupported language: {lang}",
+    "ja": "サポートされていない言語：{lang}",
+    "ko": "지원되지 않는 언어：{lang}"
+  },
+  "window_size_too_small": {
+    "zh": "窗口大小不能小于 800x600",
+    "zh_tw": "窗口大小不能小於 800x600",
+    "en": "Window size cannot be smaller than 800x600",
+    "ja": "ウィンドウサイズは 800x600 未満にできません",
+    "ko": "창 크기는 800x600보다 작을 수 없습니다"
+  },
+  "unsupported_backup_frequency": {
+    "zh": "不支持的备份频率：{frequency}",
+    "zh_tw": "不支持的備份頻率：{frequency}",
+    "en": "Unsupported backup frequency: {frequency}",
+    "ja": "サポートされていないバックアップ頻度：{frequency}",
+    "ko": "지원되지 않는 백업 빈도：{frequency}"
+  },
+  "font_size_range": {
+    "zh": "字体大小必须在 8-32 之间",
+    "zh_tw": "字體大小必須在 8-32 之間",
+    "en": "Font size must be between 8-32",
+    "ja": "フォントサイズは 8-32 の間でなければなりません",
+    "ko": "글꼴 크기는 8-32 사이여야 합니다"
+  },
+  "tab_order_must_be_list": {
+    "zh": "标签次序必须是列表",
+    "zh_tw": "標籤次序必須是列表",
+    "en": "Tab order must be a list",
+    "ja": "タブ順序はリストでなければなりません",
+    "ko": "탭 순서는 목록이어야 합니다"
+  },
+  "tab_name_must_be_string": {
+    "zh": "标签名称必须是字符串",
+    "zh_tw": "標籤名稱必須是字符串",
+    "en": "Tab name must be a string",
+    "ja": "タブ名は文字列でなければなりません",
+    "ko": "탭 이름은 문자열이어야 합니다"
+  },
+  "export_config_failed": {
+    "zh": "导出配置失败：{error}",
+    "zh_tw": "導出配置失敗：{error}",
+    "en": "Failed to export config: {error}",
+    "ja": "設定のエクスポートに失敗しました：{error}",
+    "ko": "구성 내보내기 실패：{error}"
+  },
+  "import_config_failed": {
+    "zh": "导入配置失败：{error}",
+    "zh_tw": "導入配置失敗：{error}",
+    "en": "Failed to import config: {error}",
+    "ja": "設定のインポートに失敗しました：{error}",
+    "ko": "구성 가져오기 실패：{error}"
+  },
+  "window_settings": {
+    "zh": "窗口设置: {width}x{height}, 位置: ({x}, {y})",
+    "zh_tw": "窗口設置: {width}x{height}, 位置: ({x}, {y})",
+    "en": "Window settings: {width}x{height}, position: ({x}, {y})",
+    "ja": "ウィンドウ設定：{width}x{height}、位置：({x}, {y})",
+    "ko": "창 설정: {width}x{height}, 위치: ({x}, {y})"
   }
 }

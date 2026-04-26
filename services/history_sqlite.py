@@ -97,7 +97,7 @@ class HistorySQLite:
             self.init_db()
         except Exception as e:
             self._db_available = False
-            logger.error(f"历史数据库初始化失败，持久化功能将不可用: {e}")
+            logger.error(_("history_db_init_failed", error=str(e)))
 
     def _get_connection(self):
         """获取数据库连接
@@ -121,7 +121,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"历史数据库初始化失败: {e}")
+            logger.error(_("history_db_init_failed_general", error=str(e)))
             raise
         finally:
             conn.close()
@@ -218,7 +218,7 @@ class HistorySQLite:
             )
             return [row[0] for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"加载下拉表历史失败 [{category}]: {e}")
+            logger.error(_("load_combo_history_failed", category=category, error=str(e)))
             return []
         finally:
             conn.close()
@@ -245,7 +245,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"保存下拉表历史失败 [{category}]: {e}")
+            logger.error(_("save_combo_history_failed", category=category, error=str(e)))
         finally:
             conn.close()
 
@@ -281,7 +281,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"添加下拉表历史记录失败 [{category}]: {e}")
+            logger.error(_("save_combo_history_item_failed", category=category, error=str(e)))
         finally:
             conn.close()
 
@@ -326,7 +326,7 @@ class HistorySQLite:
             )
             return [(row[0], row[1]) for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"加载需求数据失败 [{table_type}]: {e}")
+            logger.error(_("load_requirements_failed", table_type=table_type, error=str(e)))
             return []
         finally:
             conn.close()
@@ -352,7 +352,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"保存需求数据失败 [{table_type}]: {e}")
+            logger.error(_("save_requirements_failed", table_type=table_type, error=str(e)))
         finally:
             conn.close()
 
@@ -372,7 +372,7 @@ class HistorySQLite:
             )
             return [{"parent": row[0], "split": row[1]} for row in cursor.fetchall()]
         except Exception as e:
-            logger.error(f"加载切分历史记录失败: {e}")
+            logger.error(_("load_history_failed", error=str(e)))
             return []
         finally:
             conn.close()
@@ -409,7 +409,7 @@ class HistorySQLite:
             return True
         except Exception as e:
             conn.rollback()
-            logger.error(f"添加切分历史记录失败: {e}")
+            logger.error(_("add_split_history_failed", error=str(e)))
             return False
         finally:
             conn.close()
@@ -433,7 +433,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"删除切分历史记录失败: {e}")
+            logger.error(_("delete_split_history_failed", error=str(e)))
         finally:
             conn.close()
 
@@ -448,7 +448,7 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"清空切分历史记录失败: {e}")
+            logger.error(_("clear_split_history_failed", error=str(e)))
         finally:
             conn.close()
 
@@ -489,7 +489,7 @@ class HistorySQLite:
             row = cursor.fetchone()
             return row[0] if row else ""
         except Exception as e:
-            logger.error(f"加载文本数据失败 [{category}]: {e}")
+            logger.error(_("load_text_data_failed", category=category, error=str(e)))
             return ""
         finally:
             conn.close()
@@ -515,6 +515,6 @@ class HistorySQLite:
             conn.commit()
         except Exception as e:
             conn.rollback()
-            logger.error(f"保存文本数据失败 [{category}]: {e}")
+            logger.error(_("save_text_data_failed", category=category, error=str(e)))
         finally:
             conn.close()

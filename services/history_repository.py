@@ -7,6 +7,7 @@ from collections import deque
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from services.history_sqlite import HistorySQLite
+from i18n import translate as _
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class HistoryRepository:
             self._load_combo_histories()
             self._load_split_history()
         except Exception as e:
-            logger.error(f"从数据库加载历史数据失败: {e}")
+            logger.error(_("load_history_failed").format(error=str(e)))
 
     def _load_combo_histories(self):
         """从数据库加载所有下拉表历史"""
@@ -84,7 +85,7 @@ class HistoryRepository:
     def _load_split_history(self):
         """从数据库加载切分历史记录"""
         loaded = self.db.load_split_history()
-        logger.info(f"从数据库加载了 {len(loaded)} 条切分历史记录")
+        logger.info(_("loaded_split_history", count=len(loaded)))
         self.history_records.clear()
         self.history_records.extend(loaded)
 
@@ -168,7 +169,7 @@ class HistoryRepository:
             if category:
                 self.db.save_combo_history(category, list(history_container))
         except Exception as e:
-            logger.error(f"持久化下拉表历史失败: {e}")
+            logger.error(_("persist_combo_history_failed", error=str(e)))
 
     def _identify_category(self, history_container):
         """根据容器对象识别其对应的数据库类别
@@ -207,7 +208,7 @@ class HistoryRepository:
             try:
                 self.db.save_combo_history(category, values)
             except Exception as e:
-                logger.error(f"保存下拉表历史失败 [{category}]: {e}")
+                logger.error(_("save_combo_history_failed", category=category, error=str(e)))
 
     def add_split_record(self, parent, split):
         """添加切分历史记录
@@ -238,7 +239,7 @@ class HistoryRepository:
                     self.history_records.insert(0, split_record)
                     return True
             except Exception as e:
-                logger.error(f"持久化切分历史记录失败: {e}")
+                logger.error(_("persist_split_history_failed", error=str(e)))
         return False
 
     def delete_split_record(self, parent, split):
@@ -258,7 +259,7 @@ class HistoryRepository:
                     if not (r['parent'] == parent and r['split'] == split)
                 ]
             except Exception as e:
-                logger.error(f"删除切分历史记录失败: {e}")
+                logger.error(_("delete_split_history_failed", error=str(e)))
 
     def clear_split_history(self):
         """清空所有切分历史记录"""
@@ -269,7 +270,7 @@ class HistoryRepository:
                 # 数据库操作成功后，再从内存清空
                 self.history_records.clear()
             except Exception as e:
-                logger.error(f"清空切分历史记录失败: {e}")
+                logger.error(_("clear_split_history_failed", error=str(e)))
 
     def add_deleted_record(self, record):
         """添加已删除记录到撤销栈"""
@@ -293,7 +294,7 @@ class HistoryRepository:
         try:
             return self.db.load_requirements_data(table_type)
         except Exception as e:
-            logger.error(f"加载需求数据失败 [{table_type}]: {e}")
+            logger.error(_("load_requirements_failed", table_type=table_type, error=str(e)))
             return []
 
     def save_requirements_data(self, table_type, data_list):
@@ -307,7 +308,7 @@ class HistoryRepository:
             try:
                 self.db.save_requirements_data(table_type, data_list)
             except Exception as e:
-                logger.error(f"保存需求数据失败 [{table_type}]: {e}")
+                logger.error(_("save_requirements_failed", table_type=table_type, error=str(e)))
 
     def load_text_data(self, category):
         """从数据库加载文本数据
@@ -321,7 +322,7 @@ class HistoryRepository:
         try:
             return self.db.load_text_data(category)
         except Exception as e:
-            logger.error(f"加载文本数据失败 [{category}]: {e}")
+            logger.error(_("load_text_data_failed", category=category, error=str(e)))
             return ""
 
     def save_text_data(self, category, content):
@@ -335,4 +336,4 @@ class HistoryRepository:
             try:
                 self.db.save_text_data(category, content)
             except Exception as e:
-                logger.error(f"保存文本数据失败 [{category}]: {e}")
+                logger.error(_("save_text_data_failed", category=category, error=str(e)))
