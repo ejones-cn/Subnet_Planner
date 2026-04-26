@@ -481,20 +481,44 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             moved_path = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
             print(f"⏳ 临时移动备份目录: {original_backup_dir} -> {moved_path}")
     
+    # 禁用 clcache 避免预处理器错误
+    os.environ['CLCACHE_DISABLE'] = '1'
+    print("📝 已禁用 clcache 缓存")
+    
     try:
+        # Nuitka 2.x 使用 --mode 参数：standalone=目录模式，onefile=单文件模式
+        if onefile:
+            mode_arg = "--mode=onefile"
+        else:
+            mode_arg = "--mode=standalone"
+        
         cmd: list[str] = [
             sys.executable, "-m", "nuitka",
-            "--onefile" if onefile else "",
+            mode_arg,
+            "--follow-imports",  # 自动包含所有导入的模块
+            "--include-module=splash_screen",
+            "--include-module=font_config",
+            "--include-module=style_manager",
+            "--include-module=chart_utils",
+            "--include-module=visualization",
             "--windows-icon-from-ico=Subnet_Planner.ico",
             "--include-data-file=translations.json=translations.json",
             "--include-data-file=Subnet_Planner.ico=Subnet_Planner.ico",
             "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
             "--include-data-dir=Picture=Picture",
             "--enable-plugin=tk-inter",
-            "--windows-console-mode=disable",
-            "--noinclude-default-mode=error",
+            "--windows-console-mode=attach",
             "--assume-yes-for-downloads",
             "--enable-plugin=anti-bloat",
+            # 排除不必要的包，减小体积
+            "--nofollow-import-to=babel",
+            "--nofollow-import-to=tzdata",
+            "--nofollow-import-to=setuptools",
+            "--nofollow-import-to=pip",
+            "--nofollow-import-to=charset_normalizer",
+            "--nofollow-import-to=urllib3",
+            "--nofollow-import-to=certifi",
+            "--nofollow-import-to=requests",
             f"--product-name={version_resource['product_name']}",
             f"--product-version={version}",
             f"--file-version={version}",
@@ -512,19 +536,50 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         print("✅ Nuitka 编译成功!")
         
         if onefile:
-            output_file = os.path.join(os.getcwd(), output_filename)
-        else:
+            # 单文件模式：查找 exe
             output_file = os.path.join(os.getcwd(), output_filename)
             if not os.path.exists(output_file):
-                for root, _, files in os.walk(os.getcwd()):
-                    for file in files:
-                        if file.endswith('.exe') and 'SubnetPlanner' in file:
-                            output_file = os.path.join(root, file)
-                            break
-                    if os.path.exists(output_file):
+                for item in os.listdir(os.getcwd()):
+                    if item.endswith('.exe') and 'SubnetPlanner' in item:
+                        output_file = os.path.join(os.getcwd(), item)
                         break
-        
-        return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path)
+            return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path)
+        else:
+            # standalone 模式：Nuitka 生成 windows_app.dist 目录
+            dist_dir = os.path.join(os.getcwd(), "windows_app.dist")
+            if not os.path.exists(dist_dir):
+                # 尝试查找其他 .dist 目录
+                for item in os.listdir(os.getcwd()):
+                    if item.endswith('.dist'):
+                        dist_dir = os.path.join(os.getcwd(), item)
+                        break
+            
+            if not os.path.exists(dist_dir):
+                print("❌ 未找到编译输出目录 (.dist)")
+                return False
+            
+            # 重命名为目标目录名
+            dest_dir = os.path.join(output_dir, f"{output_filename.rsplit('.', 1)[0]}_Nuitka.dist")
+            if os.path.exists(dest_dir):
+                shutil.rmtree(dest_dir)
+            shutil.copytree(dist_dir, dest_dir)
+            
+            # 重命名目录中的 exe
+            old_exe = os.path.join(dest_dir, "windows_app.exe")
+            new_exe = os.path.join(dest_dir, output_filename)
+            if os.path.exists(old_exe) and old_exe != new_exe:
+                os.rename(old_exe, new_exe)
+            
+            # 对 exe 进行签名
+            if os.path.exists(new_exe):
+                sign_executable(new_exe, pfx_password, signtool_path)
+            
+            # 计算总大小
+            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir) for f in fn)
+            size_mb = total_size / (1024 * 1024)
+            print(f"📦 输出目录: {dest_dir}")
+            print(f"📏 目录总大小: {size_mb:.2f} MB")
+            return True
         
     except subprocess.CalledProcessError as e:
         print(f"❌ Nuitka 编译失败: {e}")
@@ -568,8 +623,29 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
         dist_dir = os.path.join(os.getcwd(), "dist")
         output_file = os.path.join(dist_dir, output_filename)
         
-        dest_filename = f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.exe"
-        return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path, dest_filename)
+        # 目录模式下，output_file 是目录
+        if onefile:
+            dest_filename = f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.exe"
+            return process_output_file(output_file, output_filename, output_dir, pfx_password, signtool_path, dest_filename)
+        else:
+            # 目录模式：复制整个目录
+            import shutil
+            dest_dir = os.path.join(output_dir, f"{output_filename.rsplit('.', 1)[0]}_PyInstaller.dist")
+            if os.path.exists(dest_dir):
+                shutil.rmtree(dest_dir)
+            shutil.copytree(output_file, dest_dir)
+            
+            # 对目录中的 exe 进行签名
+            exe_path = os.path.join(dest_dir, output_filename)
+            if os.path.exists(exe_path):
+                sign_executable(exe_path, pfx_password, signtool_path)
+            
+            # 计算总大小
+            total_size = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(dest_dir) for f in fn)
+            size_mb = total_size / (1024 * 1024)
+            print(f"📦 输出目录: {dest_dir}")
+            print(f"📏 目录总大小: {size_mb:.2f} MB")
+            return True
         
     except subprocess.CalledProcessError as e:
         print(f"❌ PyInstaller 编译失败: {e}")
@@ -620,13 +696,13 @@ def main() -> None:
     
     parser = argparse.ArgumentParser(description="Subnet Planner 编译脚本")
     _ = parser.add_argument("--type", "-t", choices=["nuitka", "pyinstaller", "both"], 
-                       default="nuitka", help="编译方式")
+                       default="nuitka", help="编译方式（默认：nuitka，目录模式）")
     _ = parser.add_argument("--output", "-o", default=".", help="输出目录")
     _ = parser.add_argument("--clean", action="store_true", help="清理构建文件")
     _ = parser.add_argument("--install-deps", action="store_true", help="仅安装依赖")
     _ = parser.add_argument("--pfx-password", "-p", help="PFX证书密码，不指定则交互式输入")
     _ = parser.add_argument("--signtool-path", "-s", help="signtool.exe工具路径，不指定则自动检测")
-    _ = parser.add_argument("--onefile", action="store_true", default=True, help="使用单文件编译模式（默认：是）")
+    _ = parser.add_argument("--onefile", action="store_true", default=False, help="使用单文件编译模式（默认：否，使用Nuitka目录模式）")
     _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
     args = parser.parse_args()
     
@@ -641,8 +717,7 @@ def main() -> None:
     
     if args.clean:
         clean_build_files()
-        if not args.install_deps and args.type == CompileType.NUITKA:
-            sys.exit(0)
+        sys.exit(0)
     
     if args.install_deps:
         check_and_install_dependencies(args.type)
@@ -655,17 +730,13 @@ def main() -> None:
     
     success = True
     
+    # 优先使用 Nuitka（真正的二进制编译）
     if args.type == CompileType.NUITKA or args.type == CompileType.BOTH:
         success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile)
     
-    if args.type == CompileType.PYINSTALLER or (args.type == CompileType.BOTH and success):
+    # 如果需要才使用 PyInstaller
+    if args.type == CompileType.PYINSTALLER:
         success = compile_with_pyinstaller(args.output, args.pfx_password, args.signtool_path, args.onefile)
-    
-    if args.clean and success:
-        for item in ["windows_app.build", "windows_app.dist", "windows_app.onefile-build"]:
-            if os.path.exists(item):
-                shutil.rmtree(item)
-                print(f"🗑️ 清理临时目录: {item}")
     
     print("\n" + "=" * 50)
     if success:
