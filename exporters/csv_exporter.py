@@ -35,8 +35,11 @@ class CSVExporter(DataExporter):
 
     def _get_parent_cidr(self, data_source):
         chart_data = data_source.get("chart_data")
-        if chart_data and "parent" in chart_data:
-            return chart_data["parent"].get("name", "")
+        if not chart_data:
+            return ""
+        parent_info = chart_data.get("parent", {})
+        if isinstance(parent_info, dict):
+            return parent_info.get("name", "")
         return ""
 
     def get_file_extension(self) -> str:

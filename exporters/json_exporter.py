@@ -12,7 +12,10 @@ class JSONExporter(DataExporter):
             export_data[translate("parent_network")] = parent_cidr
 
         if data_source["main_name"] == translate("split_segment_info"):
-            export_data[translate("split_segment_info")] = dict(main_data)
+            if isinstance(main_data, dict):
+                export_data[translate("split_segment_info")] = main_data
+            else:
+                export_data[translate("split_segment_info")] = dict(main_data)
             export_data[translate("remaining_subnets")] = remaining_data
         else:
             export_data[f"{data_source['main_name']}"] = [dict(zip(main_headers, item)) for item in main_data]
@@ -23,8 +26,11 @@ class JSONExporter(DataExporter):
 
     def _get_parent_cidr(self, data_source):
         chart_data = data_source.get("chart_data")
-        if chart_data and "parent" in chart_data:
-            return chart_data["parent"].get("name", "")
+        if not chart_data:
+            return ""
+        parent_info = chart_data.get("parent", {})
+        if isinstance(parent_info, dict):
+            return parent_info.get("name", "")
         return ""
 
     def get_file_extension(self) -> str:
