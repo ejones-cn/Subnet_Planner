@@ -245,13 +245,6 @@
     "ja": "閉じる",
     "ko": "닫기"
   },
-  "history": {
-    "zh": "历史记录",
-    "zh_tw": "歷史記錄",
-    "en": "History",
-    "ja": "履歴",
-    "ko": "히스토리"
-  },
   "parent_network": {
     "zh": "父网段",
     "zh_tw": "父網段",
@@ -2338,20 +2331,6 @@
     "ja": "正規表現",
     "ko": "정규 표현식"
   },
-  "allocated": {
-    "zh": "已分配",
-    "zh_tw": "已分配",
-    "en": "Allocated",
-    "ja": "割当済",
-    "ko": "할당됨"
-  },
-  "reserved": {
-    "zh": "已保留",
-    "zh_tw": "已保留",
-    "en": "Reserved",
-    "ja": "予約済",
-    "ko": "예약됨"
-  },
   "allocated_time": {
     "zh": "分配时间",
     "zh_tw": "分配時間",
@@ -3394,13 +3373,6 @@
     "ja": "値表現",
     "zh_tw": "值表示",
     "ko": "값 표현"
-  },
-  "released": {
-    "zh": "已释放",
-    "en": "Released",
-    "ja": "解放済み",
-    "zh_tw": "已释放",
-    "ko": "해제됨"
   },
   "please_enter_description": {
     "zh": "请输入描述",

@@ -47,7 +47,7 @@ exclude = .git,__pycache__,build,dist,.venv,
 # F821: undefined name
 # F841: local variable is assigned to but never used
 # F811: redefinition of unused
-ignore = E501,F401,W503,E303,W293,W291,E122,E128,F821,F841,F811
+ignore = E501,F401,W503,E303,W293,W291,E122,E128,F821,F841,F811,W391
 
 # 启用扩展	extend-ignore = D100,D101,D102,D103,D104,D105,D106,D107
 

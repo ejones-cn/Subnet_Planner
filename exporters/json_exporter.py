@@ -1,9 +1,12 @@
 import json
+from typing import override
+
 from exporters.base import DataExporter
 from i18n import _ as translate
 
 
 class JSONExporter(DataExporter):
+    @override
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         export_data = {}
 
@@ -33,5 +36,6 @@ class JSONExporter(DataExporter):
             return parent_info.get("name", "")
         return ""
 
+    @override
     def get_file_extension(self) -> str:
         return ".json"

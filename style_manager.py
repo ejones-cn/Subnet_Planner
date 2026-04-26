@@ -334,6 +334,3 @@ def get_canvas_font_settings():
     """
     current_language = get_language()
     return FontConfig.get_canvas_font_settings(current_language)
-
-
-

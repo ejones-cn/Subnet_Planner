@@ -1,10 +1,13 @@
 import csv
+from typing import override
+
 from exporters.base import DataExporter
 from exporters.data_preparer import DataPreparer
 from i18n import _ as translate
 
 
 class CSVExporter(DataExporter):
+    @override
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         remaining_data_list = DataPreparer.convert_remaining_data(remaining_data, remaining_headers)
         mock_tree = DataPreparer.create_mock_tree(remaining_headers, remaining_data_list)
@@ -31,7 +34,8 @@ class CSVExporter(DataExporter):
 
             for item in mock_tree.get_children():
                 values = mock_tree.item(item, "values")
-                writer.writerow(values)
+                if values is not None:
+                    writer.writerow(values)
 
     def _get_parent_cidr(self, data_source):
         chart_data = data_source.get("chart_data")
@@ -42,5 +46,6 @@ class CSVExporter(DataExporter):
             return parent_info.get("name", "")
         return ""
 
+    @override
     def get_file_extension(self) -> str:
         return ".csv"

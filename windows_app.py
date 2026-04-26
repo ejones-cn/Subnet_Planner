@@ -8829,9 +8829,9 @@ class SubnetPlannerApp:
             try:
                 if splash.splash:
                     splash.splash.destroy()
-            except:
+            except Exception:
                 pass
-        
+
         # 绑定点击事件到启动画面窗口
         if splash.splash:
             splash.splash.bind('<Button-1>', close_splash_on_click)
@@ -12104,7 +12104,7 @@ class SubnetPlannerApp:
                       font=(font_family, font_size, 'bold')).pack(anchor='w', pady=(0, 10))
         
         # 操作选项框架
-        action_frame = ttk.LabelFrame(main_frame, text=_('select_action'), padding=(25,10))
+        action_frame = ttk.LabelFrame(main_frame, text=_('select_action'), padding=(25, 10))
         action_frame.pack(fill=tk.X, pady=(0, 0))
         
         # 操作选项

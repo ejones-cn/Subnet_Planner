@@ -16,8 +16,8 @@ from enum import Enum
 
 # Windows 终端默认 GBK 编码无法输出 emoji，强制使用 UTF-8
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # pyright: ignore[reportAttributeAccessIssue]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class CompileType(Enum):
@@ -484,7 +484,7 @@ def _upx_compress_dist(dist_dir: str) -> None:
         print("      安装 UPX 可进一步减小 50-70% 体积: https://upx.github.io/")
         return
     
-    print(f"   🗜️  使用 UPX 压缩 DLL/PYD 文件...")
+    print("   🗜️  使用 UPX 压缩 DLL/PYD 文件...")
     
     # 收集目标文件
     targets = []

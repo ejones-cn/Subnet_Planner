@@ -4,11 +4,10 @@ import sys
 import logging
 from datetime import datetime
 
-# 添加项目根目录到 Python 搜索路径
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from i18n import translate as _
 from window_utils import get_app_directory
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 logger = logging.getLogger(__name__)
 
@@ -18,28 +17,27 @@ class HistorySQLite:
 
     # 历史记录数量上限设定
     # 下拉表历史记录数量上限（数据库和内存）
-    MAX_COMBO_HISTORY_ITEMS = 10
-    # 切分历史记录数量上限（数据库）
-    MAX_SPLIT_HISTORY_ITEMS = 20
+    MAX_COMBO_HISTORY_ITEMS: int = 10
+    MAX_SPLIT_HISTORY_ITEMS: int = 20
 
-    CATEGORY_PLANNING_PARENT_V4 = "planning_parent_v4"
-    CATEGORY_PLANNING_PARENT_V6 = "planning_parent_v6"
-    CATEGORY_SPLIT_PARENT_V4 = "split_parent_v4"
-    CATEGORY_SPLIT_PARENT_V6 = "split_parent_v6"
-    CATEGORY_SPLIT_NETWORK_V4 = "split_network_v4"
-    CATEGORY_SPLIT_NETWORK_V6 = "split_network_v6"
-    CATEGORY_IPV4_QUERY = "ipv4_query"
-    CATEGORY_IPV6_QUERY = "ipv6_query"
-    CATEGORY_RANGE_START = "range_start"
-    CATEGORY_RANGE_END = "range_end"
+    CATEGORY_PLANNING_PARENT_V4: str = "planning_parent_v4"
+    CATEGORY_PLANNING_PARENT_V6: str = "planning_parent_v6"
+    CATEGORY_SPLIT_PARENT_V4: str = "split_parent_v4"
+    CATEGORY_SPLIT_PARENT_V6: str = "split_parent_v6"
+    CATEGORY_SPLIT_NETWORK_V4: str = "split_network_v4"
+    CATEGORY_SPLIT_NETWORK_V6: str = "split_network_v6"
+    CATEGORY_IPV4_QUERY: str = "ipv4_query"
+    CATEGORY_IPV6_QUERY: str = "ipv6_query"
+    CATEGORY_RANGE_START: str = "range_start"
+    CATEGORY_RANGE_END: str = "range_end"
 
-    CATEGORY_SUBNET_MERGE = "subnet_merge"
-    CATEGORY_OVERLAP_DETECTION = "overlap_detection"
+    CATEGORY_SUBNET_MERGE: str = "subnet_merge"
+    CATEGORY_OVERLAP_DETECTION: str = "overlap_detection"
 
-    TABLE_REQUIREMENTS = "requirements"
-    TABLE_POOL = "pool"
+    TABLE_REQUIREMENTS: str = "requirements"
+    TABLE_POOL: str = "pool"
 
-    SAMPLE_COMBO_HISTORY = {
+    SAMPLE_COMBO_HISTORY: dict[str, list[str]] = {
         CATEGORY_PLANNING_PARENT_V4: ["10.21.48.0/20", "192.168.0.0/16"],
         CATEGORY_PLANNING_PARENT_V6: ["2001:0db8::/32", "fe80::/10"],
         CATEGORY_SPLIT_PARENT_V4: ["10.0.0.0/8", "172.16.0.0/12"],
@@ -52,7 +50,7 @@ class HistorySQLite:
         CATEGORY_RANGE_END: ["192.168.30.254", "10.0.0.254", "2001:db8::100", "fe80::100"],
     }
 
-    SAMPLE_REQUIREMENTS_DATA = {
+    SAMPLE_REQUIREMENTS_DATA: dict[str, list[tuple[str, int]]] = {
         TABLE_REQUIREMENTS: [
             ("office", 20), ("hr_department", 10), ("finance_department", 10),
             ("planning_department", 30), ("legal", 10), ("procurement", 10),
@@ -64,7 +62,7 @@ class HistorySQLite:
         ],
     }
 
-    SAMPLE_TEXT_DATA = {
+    SAMPLE_TEXT_DATA: dict[str, str] = {
         CATEGORY_SUBNET_MERGE: (
             "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n"
             "10.21.16.0/24\n10.21.17.0/24\n10.21.18.0/24\n"

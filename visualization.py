@@ -38,7 +38,7 @@ import ipaddress
 import tkinter as tk
 from tkinter import Canvas
 from typing import Callable, Any
-from style_manager import get_current_font_settings, get_canvas_font_settings
+from style_manager import get_canvas_font_settings
 from i18n import _
 
 # 模块版本
@@ -1624,7 +1624,7 @@ class NetworkTopologyVisualizer:
                 return
             else:
                 # 多次重试后仍无法获取尺寸，记录日志并返回
-                print(_("canvas_size_warning", retry_count=retry_count))
+                print(_("canvas_size_warning", retry_count=str(retry_count)))
                 return
         
         # 计算所有节点的边界框

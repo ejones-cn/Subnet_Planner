@@ -3,16 +3,16 @@ import os
 import sys
 from collections import deque
 
-# 添加项目根目录到 Python 搜索路径
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from services.history_sqlite import HistorySQLite
 from i18n import translate as _
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 logger = logging.getLogger(__name__)
 
 
 class HistoryRepository:
+
     def __init__(self):
         self.db = HistorySQLite()
 
@@ -32,6 +32,13 @@ class HistoryRepository:
 
         self.history_records = []
         self.deleted_history = []
+
+        self.planning_parent_networks_v4: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
+        self.planning_parent_networks_v6: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
+        self.split_parent_networks_v4: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
+        self.split_parent_networks_v6: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
+        self.split_networks_v4: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
+        self.split_networks_v6: deque[str] = deque(maxlen=self.db.MAX_COMBO_HISTORY_ITEMS)
 
         self._load_from_db()
 
@@ -85,7 +92,7 @@ class HistoryRepository:
     def _load_split_history(self):
         """从数据库加载切分历史记录"""
         loaded = self.db.load_split_history()
-        logger.info(_("loaded_split_history", count=len(loaded)))
+        logger.info(_("loaded_split_history", count=str(len(loaded))))
         self.history_records.clear()
         self.history_records.extend(loaded)
 

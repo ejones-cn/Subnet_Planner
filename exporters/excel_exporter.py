@@ -1,9 +1,12 @@
+from typing import override
+
 from exporters.base import DataExporter
 from exporters.data_preparer import DataPreparer
 from i18n import _ as translate
 
 
 class ExcelExporter(DataExporter):
+    @override
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         from openpyxl import Workbook
         from openpyxl.styles import Font, Alignment
@@ -17,24 +20,27 @@ class ExcelExporter(DataExporter):
 
         main_sheet = wb.active
         main_title = translate("split_segment_info") if data_source["main_name"] == translate("split_segment_info") else translate("subnet_requirements")
-        main_sheet.title = str(main_title) if main_title else "Sheet"
+        if main_sheet is not None:
+            main_sheet.title = str(main_title) if main_title else "Sheet"
 
         if parent_cidr:
-            main_sheet.cell(row=1, column=1, value=translate("parent_network"))
-            main_sheet.cell(row=1, column=2, value=parent_cidr)
+            if main_sheet is not None:
+                main_sheet.cell(row=1, column=1, value=translate("parent_network"))
+                main_sheet.cell(row=1, column=2, value=parent_cidr)
             data_start_row = 3
         else:
             data_start_row = 1
 
-        for col_idx, header in enumerate(main_headers, 1):
-            cell = main_sheet.cell(row=data_start_row, column=col_idx, value=header)
-            if cell:
-                cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal="center")
+        if main_sheet is not None:
+            for col_idx, header in enumerate(main_headers, 1):
+                cell = main_sheet.cell(row=data_start_row, column=col_idx, value=header)
+                if cell:
+                    cell.font = Font(bold=True)
+                    cell.alignment = Alignment(horizontal="center")
 
-        for row_idx, values in enumerate(main_data, data_start_row + 1):
-            for col_idx, value in enumerate(values, 1):
-                main_sheet.cell(row=row_idx, column=col_idx, value=value)
+            for row_idx, values in enumerate(main_data, data_start_row + 1):
+                for col_idx, value in enumerate(values, 1):
+                    main_sheet.cell(row=row_idx, column=col_idx, value=value)
 
         remaining_sheet = wb.create_sheet(title=str(translate("remaining_subnets")) if translate("remaining_subnets") else "Remaining")
 
@@ -53,8 +59,9 @@ class ExcelExporter(DataExporter):
 
         for row_idx, item in enumerate(mock_tree.get_children(), remaining_data_start_row + 1):
             values = mock_tree.item(item, "values")
-            for col_idx, value in enumerate(values, 1):
-                remaining_sheet.cell(row=row_idx, column=col_idx, value=value)
+            if values is not None:
+                for col_idx, value in enumerate(values, 1):
+                    remaining_sheet.cell(row=row_idx, column=col_idx, value=value)
 
         wb.save(file_path)
 
@@ -67,5 +74,6 @@ class ExcelExporter(DataExporter):
             return parent_info.get("name", "")
         return ""
 
+    @override
     def get_file_extension(self) -> str:
         return ".xlsx"

@@ -8,7 +8,6 @@ IP地址管理（IPAM）模块 - SQLite版本
 import sqlite3
 import json
 import os
-import sys
 import logging
 from datetime import datetime, timedelta
 from typing import Any
@@ -3246,8 +3245,8 @@ class IPAMSQLite:
                         ip_mapping.append(f"{old_ip_address} -> {new_ip_address}")
                         migrated_count += 1
                     except Exception as e:
-                        logging.error(f"{_("migrate_ip_failed_log")} {record.get('ip_address')}: {str(e)}")
-                        skipped_ips.append(f"{record.get('ip_address', _("unknown"))} ({_("migrate_exception")}: {str(e)})")
+                        logging.error(f"{_("migrate_ip_failed_log")} {record['ip_address'] if isinstance(record, dict) else ''}: {str(e)}")
+                        skipped_ips.append(f"{record.get('ip_address', _("unknown")) if isinstance(record, dict) else _("unknown")} ({_("migrate_exception")}: {str(e)})")
                         continue
                 
                 conn.commit()

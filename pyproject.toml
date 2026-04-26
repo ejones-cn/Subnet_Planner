@@ -26,6 +26,10 @@ reportUnknownParameterType = false
 reportMissingParameterType = false
 reportMissingTypeArgument = false
 reportUnusedCallResult = false
+reportImportCycles = false
+reportUnnecessaryIsinstance = false
+reportDeclarationShadowing = false
+reportUnannotatedClassAttribute = false
 ignore = [
     "windows_app.py",
     "export_utils.py",

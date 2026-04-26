@@ -8,10 +8,7 @@
 
 import json
 import os
-import sys
 from typing import cast
-
-from window_utils import get_app_directory
 
 
 class ConfigManager:
@@ -56,17 +53,18 @@ class ConfigManager:
             config_file: 配置文件路径，默认为 SubnetPlanner_config.json
         """
         if config_file is None:
+            from window_utils import get_app_directory
             self._config_file: str = os.path.join(get_app_directory(), 'SubnetPlanner_config.json')
         else:
             self._config_file = config_file
         
         self._config: dict[str, object] = self._load_config()
     
-    def _translate(self, key: str, **kwargs: str) -> str:
+    def _translate(self, translation_key: str, **kwargs: str) -> str:
         """延迟导入翻译函数，避免循环导入
         
         Args:
-            key: 翻译键名
+            translation_key: 翻译键名
             **kwargs: 格式化参数
             
         Returns:
@@ -74,9 +72,9 @@ class ConfigManager:
         """
         try:
             from i18n import translate
-            return translate(key, **kwargs)
+            return translate(translation_key, **kwargs)
         except (ImportError, Exception):
-            return key
+            return translation_key
     
     def _load_config(self) -> dict[str, object]:
         """加载配置文件
@@ -482,8 +480,7 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        # 接受任何非空字符串作为主题名
-        if not theme or not isinstance(theme, str):
+        if not theme:
             print(f"无效的主题名称: {theme}")
             return False
         return self.set('ui.theme', theme)
@@ -531,14 +528,6 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(tab_order, list):
-            print(self._translate("tab_order_must_be_list"))
-            return False
-        # 验证列表中所有元素都是字符串
-        for item in tab_order:
-            if not isinstance(item, str):
-                print(self._translate("tab_name_must_be_string"))
-                return False
         return self.set('ui.tab_order', tab_order)
     
     def get_recent_files(self) -> list[str]:

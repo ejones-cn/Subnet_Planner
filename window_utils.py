@@ -8,7 +8,6 @@
 
 import os
 import sys
-import tkinter as tk
 
 
 def _translate(key, **kwargs):

@@ -1,9 +1,12 @@
+from typing import override
+
 from exporters.base import DataExporter
 from exporters.data_preparer import DataPreparer
 from i18n import _ as translate
 
 
 class TXTExporter(DataExporter):
+    @override
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         with open(file_path, "w", encoding="utf-8") as f:
             parent_cidr = self._get_parent_cidr(data_source)
@@ -111,5 +114,6 @@ class TXTExporter(DataExporter):
 
         self._write_table_data(f, all_remaining_rows, remaining_headers)
 
+    @override
     def get_file_extension(self) -> str:
         return ".txt"

@@ -79,7 +79,7 @@ class FontManager:
         if font_path:
             try:
                 print(_("font_try_register", font_path=font_path))
-                print(_("font_current_registered", font_names=pdfmetrics.getRegisteredFontNames()))
+                print(_("font_current_registered", font_names=str(pdfmetrics.getRegisteredFontNames())))
 
                 font_name = "ChineseFont"
                 if font_name in pdfmetrics.getRegisteredFontNames():
@@ -98,13 +98,13 @@ class FontManager:
                 FontManager._font_path_lang = current_lang
 
                 print(_("font_registered_success", font_file=os.path.basename(font_path), font_name=font_name))
-                print(_("font_registered_after", font_names=pdfmetrics.getRegisteredFontNames()))
+                print(_("font_registered_after", font_names=str(pdfmetrics.getRegisteredFontNames())))
 
                 test_text = FontConfig.get_font_test_text(current_lang)
                 try:
                     from reportlab.pdfbase.pdfmetrics import stringWidth
                     width = stringWidth(test_text, font_name, 10)
-                    print(_("font_test_passed", test_text=test_text, width=width))
+                    print(_("font_test_passed", test_text=test_text, width=str(width)))
                 except Exception as test_error:
                     print(_("font_test_failed", test_error=str(test_error)))
 
@@ -123,7 +123,7 @@ class FontManager:
             print(_("font_no_suitable"))
             self.has_asian_font = False
 
-        print(_("font_using_main", has_asian_font=self.has_asian_font))
+        print(_("font_using_main", has_asian_font=str(self.has_asian_font)))
         return self.has_asian_font
 
     def load_system_font(self, font_size=36, bold_offset=4, verbose=False):
@@ -131,7 +131,7 @@ class FontManager:
 
         if cache_key in FontManager._font_cache:
             if verbose:
-                print(_("font_using_cached_system", font_size=font_size, bold_offset=bold_offset))
+                print(_("font_using_cached_system", font_size=str(font_size), bold_offset=str(bold_offset)))
             return FontManager._font_cache[cache_key]
 
         font = None

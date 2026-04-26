@@ -4,6 +4,7 @@ from version import __version__
 from i18n import _
 from font_config import get_splash_font_size, get_splash_font_family
 
+
 class SplashScreen:
     def __init__(self, parent=None):
         self.parent = parent
@@ -84,7 +85,7 @@ class SplashScreen:
         self.canvas = tk.Canvas(self.right_frame, width=canvas_size, height=canvas_size, bg='#0F172A', highlightthickness=0)
         self.canvas.pack(fill=tk.NONE, expand=False, padx=10, pady=10)  # 不填充，保持原大小
         
-        for _ in range(self.star_count):
+        for _i in range(self.star_count):
             x = random.randint(20, 473)  # 适应493宽度
             y = random.randint(20, 430)   # 适应450高度
             self.stars.append((x, y))
@@ -99,7 +100,7 @@ class SplashScreen:
             self.mouse_x = event.x
             self.mouse_y = event.y
 
-        def on_mouse_leave(event):
+        def on_mouse_leave(_event):
             # 鼠标离开画布，不再吸引星星
             self.mouse_x = -1000
             self.mouse_y = -1000
@@ -131,12 +132,12 @@ class SplashScreen:
         index_25 = int(total_stars * 0.25)
         
         self.ip_labels = [
-            ('10.0.0.0/8', star_densities[-1][0]),         # IPv4最密集区域
-            ('172.16.0.0/12', star_densities[index_85][0]), # IPv4较密集区域
-            ('192.168.0.0/16', star_densities[index_70][0]),# IPv4中等密度区域
-            ('100.64.0.0/10', star_densities[index_55][0]), # IPv4较松散区域
-            ('2001:db8:85a3::/64', star_densities[index_40][0]), # IPv6全球单播地址
-            ('2001:db8::/32', star_densities[index_25][0]), # IPv6文档示例地址
+            ('10.0.0.0/8', star_densities[-1][0]),          # IPv4最密集区域
+            ('172.16.0.0/12', star_densities[index_85][0]),  # IPv4较密集区域
+            ('192.168.0.0/16', star_densities[index_70][0]),  # IPv4中等密度区域
+            ('100.64.0.0/10', star_densities[index_55][0]),  # IPv4较松散区域
+            ('2001:db8:85a3::/64', star_densities[index_40][0]),  # IPv6全球单播地址
+            ('2001:db8::/32', star_densities[index_25][0]),  # IPv6文档示例地址
         ]
     
     def _start_animations(self):
@@ -542,7 +543,7 @@ class SplashScreen:
                 if self.splash:
                     try:
                         self.splash.update()
-                    except:
+                    except Exception:
                         pass
         except Exception as e:
             print(f"Error processing update queue: {str(e)}")
