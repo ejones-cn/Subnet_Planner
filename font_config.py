@@ -239,10 +239,70 @@ class FontConfig:
         candidates = cls.LANGUAGE_FONT_MAP.get(language, cls.LANGUAGE_FONT_MAP.get("en", []))
         return [font[1] for font in candidates]
 
+    _available_font_cache = {}
+
+    @classmethod
+    def _detect_available_fonts(cls) -> set:
+        """检测系统中可用的字体（只执行一次，使用缓存）"""
+        if not hasattr(cls, '_detected_fonts'):
+            try:
+                import tkinter as tk
+                from tkinter import font
+                
+                root = tk.Tk()
+                root.withdraw()
+                cls._detected_fonts = set(font.families())
+                root.destroy()
+            except Exception:
+                cls._detected_fonts = set()
+        
+        return cls._detected_fonts
+
+    @classmethod
+    def _get_available_font(cls, font_candidates: list[str]) -> str:
+        """从字体候选列表中获取第一个系统可用的字体（带缓存）
+        
+        Args:
+            font_candidates: 字体名称列表，按优先级排序
+            
+        Returns:
+            第一个可用的字体名称
+        """
+        cache_key = tuple(font_candidates)
+        
+        if cache_key in cls._available_font_cache:
+            return cls._available_font_cache[cache_key]
+        
+        available_fonts = cls._detect_available_fonts()
+        
+        for font_name in font_candidates:
+            if font_name in available_fonts:
+                cls._available_font_cache[cache_key] = font_name
+                return font_name
+        
+        # 如果都不可用，返回第一个候选字体（让系统处理回退）
+        result = font_candidates[0] if font_candidates else "Segoe UI"
+        cls._available_font_cache[cache_key] = result
+        return result
+
     @classmethod
     def get_ui_font_settings(cls, language: str) -> tuple[str, int]:
-        """获取UI字体设置"""
-        return cls.UI_FONT_SETTINGS.get(language, cls.UI_FONT_SETTINGS["default"])
+        """获取UI字体设置，包含字体回退机制"""
+        default_settings = cls.UI_FONT_SETTINGS["default"]
+        
+        if language == "ja":
+            # 日语字体回退链：Meiryo -> MS Gothic -> Segoe UI -> 微软雅黑 -> Arial
+            font_candidates = [
+                "Meiryo",
+                "MS Gothic",
+                "Segoe UI",
+                "微软雅黑",
+                "Arial"
+            ]
+            available_font = cls._get_available_font(font_candidates)
+            return (available_font, 10)
+        
+        return cls.UI_FONT_SETTINGS.get(language, default_settings)
 
     @classmethod
     def get_canvas_font_settings(cls, language: str) -> tuple[str, int]:

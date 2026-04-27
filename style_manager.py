@@ -22,7 +22,7 @@ class StyleManager:
     TAB_WIDTH_SETTINGS = {
         "zh": 10,
         "zh_tw": 10,
-        "ja": 16,
+        "ja": 14,
         "ko": 16,
         "default": 18
     }
@@ -40,7 +40,7 @@ class StyleManager:
     TAB_PADDING_SETTINGS = {
         "zh": (15, 3),
         "zh_tw": (15, 3),
-        "ja": (15, 3),
+        "ja": (15, 1),
         "ko": (15, 3),
         "default": (15, 3)
     }
@@ -49,7 +49,7 @@ class StyleManager:
     TAB_VERTICAL_PADDING_SETTINGS = {
         "zh": 2,
         "zh_tw": 2,
-        "ja": 1,
+        "ja": 2,
         "ko": 4,
         "default": 4
     }
@@ -210,24 +210,95 @@ class StyleManager:
         # 创建功能按钮的样式配置，使用独立的字体大小
         function_button_font_style = {"font": (font_family, function_button_font_size)}
 
-        print(f"[StyleManager] 更新样式, 当前语言: {current_language}, 字体: {font_family}, 大小: {font_size}")
+        print(translate("style_update").format(
+            lang=current_language,
+            font=font_family,
+            size=font_size
+        ))
 
         # 基本控件样式
         self.style.configure("TLabel", **base_font_style)
         self.style.configure("TEntry", **base_font_style)
         self.style.configure("TFrame")
-        self.style.configure("Error.TLabel", **base_font_style, foreground="#ff6b6b")
-        self.style.configure("Success.TLabel", **base_font_style, foreground="#4ecdc4")
+        
+        # 信息栏标签样式 - 使用信息栏专用字体大小
+        from font_config import get_info_bar_font_size
+        info_bar_font_size = get_info_bar_font_size()
+        info_label_style = {"font": (font_family, info_bar_font_size), "borderwidth": 0, "relief": "flat"}
+        self.style.configure("Error.TLabel", foreground="#c62828", **info_label_style)
+        self.style.configure("Success.TLabel", foreground="#1e3a5f", **info_label_style)
+        self.style.configure("Info.TLabel", foreground="#1e3a5f", **info_label_style)
 
-        # 按钮样式 - 默认按钮
+        # 按钮样式配置（统一移除焦点虚线框）
         button_padding = self._get_setting(self.BUTTON_PADDING_SETTINGS, current_language)
-        self.style.configure("TButton", **base_font_style, padding=button_padding)
+        
+        # 定义按钮焦点样式（统一移除焦点虚线框）
+        button_focus_style = {
+            "focuscolor": '',
+            "focusthickness": 0,
+            "highlightthickness": 0
+        }
+        
+        # 默认按钮
+        self.style.configure("TButton", **base_font_style, padding=button_padding, **button_focus_style)
+        self.style.map("TButton", 
+            focuscolor=[('focus', '')],
+            highlightcolor=[('focus', '')],
+            highlightbackground=[('focus', '')]
+        )
+        
         # 功能按钮样式 - 添加、删除、撤销、移动、导入等
-        self.style.configure("Function.TButton", **function_button_font_style, padding=button_padding)
+        self.style.configure("Function.TButton", **function_button_font_style, padding=button_padding, **button_focus_style)
+        self.style.map("Function.TButton", 
+            focuscolor=[('focus', '')],
+            highlightcolor=[('focus', '')],
+            highlightbackground=[('focus', '')]
+        )
+        
         # 移动按钮样式 - 使用独立的字体配置，大小继承自功能按钮
         move_button_font = get_move_button_font()
         move_button_style = {"font": (move_button_font, function_button_font_size)}
-        self.style.configure("Move.TButton", **move_button_style, padding=button_padding)  # type: ignore
+        self.style.configure("Move.TButton", **move_button_style, padding=button_padding, **button_focus_style)  # type: ignore
+        self.style.map("Move.TButton", 
+            focuscolor=[('focus', '')],
+            highlightcolor=[('focus', '')],
+            highlightbackground=[('focus', '')]
+        )
+        
+        # 图标按钮样式（如重置按钮）
+        self.style.configure("Icon.TButton", **base_font_style, padding=button_padding, **button_focus_style)
+        self.style.map("Icon.TButton", 
+            focuscolor=[('focus', '')],
+            highlightcolor=[('focus', '')],
+            highlightbackground=[('focus', '')]
+        )
+        
+        # 获取当前主题的按钮布局并移除焦点元素
+        try:
+            tbutton_layout = self.style.layout("TButton")
+            new_layout = []
+            for element in tbutton_layout:
+                element_name = element[0]
+                if element_name not in ['focus', 'focusframe', 'highlight']:
+                    new_layout.append(element)
+            self.style.layout("TButton", new_layout)
+            self.style.layout("Function.TButton", new_layout)
+            self.style.layout("Move.TButton", new_layout)
+            self.style.layout("Icon.TButton", new_layout)
+        except Exception:
+            pass
+        
+        # 重新定义按钮布局，完全移除焦点元素
+        try:
+            self.style.layout("TButton", [
+                ('Button.button', {'sticky': 'nswe', 'children': [
+                    ('Button.padding', {'sticky': 'nswe', 'children': [
+                        ('Button.label', {'sticky': 'nswe'})
+                    ]})
+                ]})
+            ])
+        except Exception:
+            pass
 
         # 滚动条样式
         scrollbar_style = {"width": 1}

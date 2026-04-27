@@ -118,7 +118,7 @@ class IPAMSQLite:
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ip_addresses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ip_address TEXT UNIQUE NOT NULL,
+                ip_address TEXT NOT NULL,
                 status TEXT NOT NULL,
                 hostname TEXT,
                 description TEXT,
@@ -135,6 +135,42 @@ class IPAMSQLite:
         conn.execute('BEGIN TRANSACTION')
         try:
             cursor.execute('UPDATE ip_addresses SET status = ? WHERE status = ?', ('released', 'available'))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+        
+        # 迁移：移除 ip_address 字段的 UNIQUE 约束（允许同一IP有多条记录）
+        conn.execute('BEGIN TRANSACTION')
+        try:
+            # 检查是否存在 UNIQUE 约束
+            cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='ip_addresses'")
+            result = cursor.fetchone()
+            if result and 'UNIQUE' in result[0] and 'ip_address' in result[0]:
+                # 存在 UNIQUE 约束，需要重建表
+                cursor.execute('ALTER TABLE ip_addresses RENAME TO ip_addresses_unique_old')
+                cursor.execute('''
+                CREATE TABLE ip_addresses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ip_address TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    hostname TEXT,
+                    description TEXT,
+                    allocated_at TEXT,
+                    allocated_by TEXT,
+                    expiry_date TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    mac_address TEXT
+                )
+                ''')
+                cursor.execute('''
+                INSERT INTO ip_addresses (id, ip_address, status, hostname, description, 
+                allocated_at, allocated_by, expiry_date, created_at, updated_at, mac_address)
+                SELECT id, ip_address, status, hostname, description, 
+                allocated_at, allocated_by, expiry_date, created_at, updated_at, 
+                COALESCE(mac_address, '') FROM ip_addresses_unique_old
+                ''')
+                cursor.execute('DROP TABLE ip_addresses_unique_old')
             conn.commit()
         except Exception as e:
             conn.rollback()
@@ -579,24 +615,13 @@ class IPAMSQLite:
                             ''', (ip_address, 'allocated', hostname, description, 
                                   now, 'admin', expiry_date, now, now))
                     else:
-                        # 过滤出可用或保留状态的记录
-                        available_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) in ['released', 'reserved']]
-                        
-                        # 检查是否已有其他记录处于已分配状态
+                        # 检查是否已有记录处于已分配状态
                         allocated_rows = [row for row in ip_rows if isinstance(row, tuple) and len(row) >= 2 and str(row[1]) == 'allocated']
                         if allocated_rows:
                             # IP地址已被分配
                             success_result = (False, "IP地址已被分配")
-                        elif available_rows:
-                            # 使用第一条可用记录
-                            ip_id = int(available_rows[0][0])
-                            cursor.execute('''
-                            UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, 
-                            allocated_at = ?, allocated_by = ?, expiry_date = ?, updated_at = ?
-                            WHERE id = ?
-                            ''', ('allocated', hostname, description, now, 'admin', expiry_date, now, ip_id))
                         else:
-                            # 新的IP地址，插入记录
+                            # 创建新的分配记录
                             cursor.execute('''
                             INSERT INTO ip_addresses (ip_address, status, hostname, description, 
                             allocated_at, allocated_by, expiry_date, created_at, updated_at)
@@ -2064,7 +2089,7 @@ class IPAMSQLite:
             cursor.execute('''
             SELECT id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, mac_address 
             FROM ip_addresses 
-            WHERE expiry_date < ? AND status IN ('allocated', 'reserved')
+            WHERE expiry_date IS NOT NULL AND expiry_date != '' AND expiry_date < ? AND status IN ('allocated', 'reserved')
             ''', (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
             
             expired_ips: list[dict[str, str | int | None]] = []
@@ -2189,51 +2214,43 @@ class IPAMSQLite:
             else:
                 _network_id = int(most_specific_network['id'])
             
-            conn = sqlite3.connect(self.db_file)
-            cursor = conn.cursor()
-            
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
-            if record_id:
-                # 使用指定的数据库记录ID，更新该记录为保留状态
-                cursor.execute('SELECT id, status FROM ip_addresses WHERE id = ? AND ip_address = ?', (record_id, ip_address))
-                specific_row = cursor.fetchone()
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
                 
-                if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2:
-                    # 找到了指定记录，更新为保留状态
-                    ip_id = int(specific_row[0])
-                    # 获取当前记录的原有值
-                    cursor.execute('SELECT hostname, description FROM ip_addresses WHERE id = ?', (ip_id,))
-                    current_values = cursor.fetchone()
-                    current_hostname = current_values[0] if current_values else ''
-                    current_description = current_values[1] if current_values else ''
-                    # 使用传入的值，如果为空则使用原有值
-                    update_hostname = hostname if hostname else current_hostname
-                    update_description = description if description else current_description
-                    # 更新记录
-                    cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
-                                 ('reserved', update_hostname, update_description, now, ip_id))
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                if record_id:
+                    cursor.execute('SELECT id, status FROM ip_addresses WHERE id = ? AND ip_address = ?', (record_id, ip_address))
+                    specific_row = cursor.fetchone()
+                    
+                    if specific_row and isinstance(specific_row, tuple) and len(specific_row) >= 2:
+                        ip_id = int(specific_row[0])
+                        cursor.execute('SELECT hostname, description FROM ip_addresses WHERE id = ?', (ip_id,))
+                        current_values = cursor.fetchone()
+                        current_hostname = current_values[0] if current_values else ''
+                        current_description = current_values[1] if current_values else ''
+                        update_hostname = hostname if hostname else current_hostname
+                        update_description = description if description else current_description
+                        cursor.execute('UPDATE ip_addresses SET status = ?, hostname = ?, description = ?, updated_at = ? WHERE id = ?', 
+                                     ('reserved', update_hostname, update_description, now, ip_id))
+                    else:
+                        cursor.execute('''
+                        INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (ip_address, 'reserved', hostname, description, now, now))
                 else:
-                    # 指定记录不存在，创建新的保留记录
                     cursor.execute('''
                     INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?)
                     ''', (ip_address, 'reserved', hostname, description, now, now))
-            else:
-                # 没有指定记录ID，创建新的保留记录
+                
                 cursor.execute('''
-                INSERT INTO ip_addresses (ip_address, status, hostname, description, created_at, updated_at)
+                INSERT INTO allocation_history (ip_address, action, hostname, description, performed_by, performed_at)
                 VALUES (?, ?, ?, ?, ?, ?)
-                ''', (ip_address, 'reserved', hostname, description, now, now))
+                ''', (ip_address, 'reserve', hostname, description, 'admin', now))
+                
+                conn.commit()
             
-            # 记录保留历史
-            cursor.execute('''
-            INSERT INTO allocation_history (ip_address, action, hostname, description, performed_by, performed_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (ip_address, 'reserve', hostname, description, 'admin', now))
-            
-            conn.commit()
-            conn.close()
             return True, "IP地址保留成功"
         except Exception as e:
             return False, f"{_("reserve_ip_failed")}: {str(e)}"

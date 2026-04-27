@@ -37,6 +37,13 @@ from openpyxl.styles import Font, Alignment  # type: ignore
 from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
 
+# Monkey patching: 自动为所有ttk.Button设置takefocus=False，移除焦点虚线框
+original_button_init = ttk.Button.__init__
+def patched_button_init(self, master=None, **kw):
+    kw.setdefault('takefocus', False)
+    original_button_init(self, master, **kw)
+ttk.Button.__init__ = patched_button_init
+
 # 本地模块
 from version import get_version
 from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
@@ -875,7 +882,12 @@ if sys.platform == 'win32':
         SCALE_FACTOR = dpi_x / 96.0  # type: ignore
         # 只在直接运行应用程序时打印DPI信息，不在模块导入时打印
         if __name__ == "__main__":
-            print(f"[OK] Windows DPI设置: {dpi_x}x{dpi_y} DPI, 缩放因子: {SCALE_FACTOR:.2f}, 模式: {DPI_MODE}")
+            from i18n import _
+            print(_("dpi_setting").format(
+                dpi=f"{dpi_x}x{dpi_y}",
+                scale=f"{SCALE_FACTOR:.2f}",
+                mode=DPI_MODE
+            ))
 
     except Exception as e:
         # 只在直接运行应用程序时打印错误信息，不在模块导入时打印
@@ -1999,14 +2011,13 @@ class SubnetPlannerApp:
         
         bg_color = self.style.lookup("TFrame", "background")
 
-        # 使用Label组件替代Text，以简化实现
-        self.info_label = tk.Label(
+        # 使用ttk.Label组件，便于通过样式管理颜色
+        self.info_label = ttk.Label(
             self.info_bar_frame,
-            padx=0, pady=0,  # 增加内边距以避免被边框遮挡，使用单一值而非元组
-            font=(font_family, info_bar_font_size),  # 使用信息栏独立的字体大小配置
+            style="Info.TLabel",
+            padding=(0, 0),  # 增加内边距以避免被边框遮挡
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
-            background=bg_color,  # 设置背景色跟随主题
             anchor="nw",  # 文本左上对齐，支持多行文本左对齐
             justify="left",  # 多行文本时左对齐
         )
@@ -6297,12 +6308,7 @@ class SubnetPlannerApp:
             self.root.focus_set()
             
             self.info_label.config(text=final_text)
-            
-            # 根据消息类型设置文本颜色
-            if "Error" in self._info_label_style:
-                self.info_label.configure(fg="#c62828")  # 错误信息显示红色
-            else:
-                self.info_label.configure(fg="#424242")  # 正确信息显示灰色
+            self.info_label.config(style=self._info_label_style)
             
             # 强制将焦点从Text组件移开，避免渲染问题
             # 使用after延迟确保焦点转移在禁用状态之后生效
@@ -6344,12 +6350,7 @@ class SubnetPlannerApp:
             self.root.focus_set()
             
             self.info_label.config(text=self._info_icon + truncated_text)
-            
-            # 根据消息类型设置文本颜色
-            if "Error" in self._info_label_style:
-                self.info_label.configure(fg="#c62828")  # 错误信息显示红色
-            else:
-                self.info_label.configure(fg="#424242")  # 正确信息显示灰色
+            self.info_label.config(style=self._info_label_style)
             
             # 恢复单行显示
             # 对于Label组件，高度由内容决定，不需要特别设置
@@ -6508,11 +6509,15 @@ class SubnetPlannerApp:
         left_frame.grid_rowconfigure(1, weight=0)  # IP地址范围面板固定高度
         left_frame.grid_columnconfigure(0, weight=1)  # 第一列占满宽度
 
+        # 创建文本框框架（嵌套层）
+        text_frame = ttk.Frame(subnet_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
         # 子网合并列表输入文本框
-        self.subnet_merge_text = tk.Text(subnet_frame, height=8, width=17, font=(font_family, font_size - 1), 
+        self.subnet_merge_text = tk.Text(text_frame, height=8, width=17, font=(font_family, font_size - 1), 
                                         bd=0, relief="flat", highlightthickness=0)
 
-        subnet_merge_scrollbar = ttk.Scrollbar(subnet_frame, orient=tk.VERTICAL)
+        subnet_merge_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
         subnet_merge_content = self.history_repo.load_text_data(HistorySQLite.CATEGORY_SUBNET_MERGE)
         if subnet_merge_content:
             self.subnet_merge_text.insert(tk.END, subnet_merge_content)
@@ -6544,18 +6549,12 @@ class SubnetPlannerApp:
         self.subnet_merge_text.bind('<KeyRelease>', validate_subnet_merge_text)
         self.subnet_merge_text.bind('<FocusOut>', validate_subnet_merge_text)
 
-        # 配置子网合并列表面板的grid布局
-        subnet_frame.grid_columnconfigure(0, weight=1)  # 文本框列
-        subnet_frame.grid_columnconfigure(1, weight=0)  # 滚动条列
-        subnet_frame.grid_rowconfigure(0, weight=1)  # 文本框行
-        subnet_frame.grid_rowconfigure(1, weight=0)  # 按钮行
-
         # 使用通用方法创建带自动隐藏滚动条的Text组件
-        self.create_scrollable_text(subnet_frame, self.subnet_merge_text, subnet_merge_scrollbar)
+        self.create_scrollable_text(text_frame, self.subnet_merge_text, subnet_merge_scrollbar)
 
-        # 子网合并按钮 - 固定在右下角
+        # 子网合并按钮 - 使用pack布局，拉伸填充
         self.merge_btn = ttk.Button(subnet_frame, text=_("merge_subnet"), command=self.execute_merge_subnets)
-        self.merge_btn.grid(row=1, column=0, columnspan=1, sticky="w", pady=(5, 0), padx=(0, 10))
+        self.merge_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10), fill=tk.X, expand=True)
 
         # 左侧下方：IP地址范围 - 使用grid布局
         range_frame = ttk.LabelFrame(left_frame, text=_("ip_address_range"), padding="10")
@@ -6606,9 +6605,9 @@ class SubnetPlannerApp:
 
         validate_end_ip(self.range_end_entry.get())
 
-        # 范围转CIDR按钮 - 靠左放置
+        # 范围转CIDR按钮 - 拉伸填充
         self.range_to_cidr_btn = ttk.Button(range_frame, text=_("convert_to_cidr"), command=self.execute_range_to_cidr)
-        self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0))
+        self.range_to_cidr_btn.pack(side=tk.LEFT, pady=(5, 0), fill=tk.X, expand=True)
 
         # 右侧：直接放置IPv4和IPv6结果，去掉总框架
         # 创建IPv4结果框，右侧内边距为0，和其他框架保持一致
@@ -7157,9 +7156,9 @@ class SubnetPlannerApp:
 
         self.create_scrollable_text(text_frame, self.overlap_text, overlap_text_scrollbar)
 
-        # 检测重叠按钮 - 靠左放置
+        # 检测重叠按钮 - 拉伸填充
         self.overlap_btn = ttk.Button(input_frame, text=_("check_overlap"), command=self.execute_check_overlap)
-        self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10))
+        self.overlap_btn.pack(side=tk.LEFT, pady=(5, 0), padx=(0, 10), fill=tk.X, expand=True)
 
         # 右侧：检测结果
         result_frame = ttk.LabelFrame(right_frame, text=_('detection_result'), padding=(10, 10, 0, 10))
@@ -8639,9 +8638,9 @@ class SubnetPlannerApp:
                 # 重新配置信息栏标签样式，确保错误信息颜色正确
                 info_bar_font_size = get_info_bar_font_size()
                 base_info_label_style = {"borderwidth": 0, "font": (font_family, info_bar_font_size), "relief": "flat"}
-                self.style.configure("Success.TLabel", foreground="#424242", **base_info_label_style)
+                self.style.configure("Success.TLabel", foreground="#1e3a5f", **base_info_label_style)
                 self.style.configure("Error.TLabel", foreground="#c62828", **base_info_label_style)
-                self.style.configure("Info.TLabel", foreground="#424242", **base_info_label_style)
+                self.style.configure("Info.TLabel", foreground="#1e3a5f", **base_info_label_style)
 
                 # 重新配置信息栏框架样式 - 所有信息栏框架使用相同的基础样式
                 info_bar_frame_style = {"borderwidth": 0, "relief": "flat"}
@@ -9325,16 +9324,8 @@ class SubnetPlannerApp:
         self._info_currently_expanded = False
         
         # 显示截断文本（带有图标）
-        # 使用Label组件的方法设置文本
         self.info_label.config(text=icon + truncated_text)
-        # Text组件不支持style参数，通过直接设置样式属性来实现
-        # self.info_label.configure(bg="#f0f0f0")  # 设置背景色
-        
-        # 根据消息类型设置文本颜色
-        if error:
-            self.info_label.configure(fg="#c62828")  # 错误信息显示红色
-        else:
-            self.info_label.configure(fg="#424242")  # 正确信息显示灰色
+        self.info_label.config(style=label_style)
         self.info_bar_frame.configure(style=frame_style)
         
         # 确保双击事件能够正常触发展开/折叠功能
@@ -10311,16 +10302,13 @@ class SubnetPlannerApp:
         )
         self.info_close_btn.grid(row=0, column=1, padx=(0, 0), pady=(0, 4), sticky="se")
         
-        # 重新创建信息标签（使用Label组件替代Text，以简化实现）
-        # 获取背景色
-        bg_color = self.style.lookup("TFrame", "background")
-        self.info_label = tk.Label(
+        # 重新创建信息标签（使用ttk.Label组件，便于通过样式管理颜色）
+        self.info_label = ttk.Label(
             self.info_bar_frame,
-            padx=0, pady=0,  # 使用内边距控制间距，使用单一值而非元组
-            font=(font_family, info_bar_font_size),  # 使用信息栏独立的字体大小配置
+            style="Info.TLabel",
+            padding=(0, 0),  # 使用内边距控制间距
             takefocus=False,  # 不接受焦点
             cursor="arrow",  # 显示普通箭头光标
-            background=bg_color,  # 设置背景色跟随主题
             anchor="w",  # 文本左对齐
             justify="left",  # 多行文本时左对齐，与第一次创建保持一致
         )
@@ -11031,8 +11019,28 @@ class SubnetPlannerApp:
         self.ipam_expiry_filter.set(_('all'))
         self.ipam_expiry_filter.grid(row=0, column=9, sticky="ew", padx=5, pady=0)
         
-        # 重置按钮（小方块图标）
-        reset_button = ttk.Button(search_frame, text="↺", command=self.reset_search, width=3)
+        # 重置按钮（使用固定字体，避免语言切换时图标变小）
+        from font_config import get_pin_button_font_family, get_pin_button_font_size
+        reset_font_family = get_pin_button_font_family()
+        reset_font_size = get_pin_button_font_size() + 1
+        
+        # 创建自定义样式（焦点样式由样式管理器统一配置）
+        style = ttk.Style()
+        style.configure(
+            "Icon.TButton",
+            font=(reset_font_family, reset_font_size),
+            padding=(0, 0, 0, 2)  # 四元组: (左, 上, 右, 下)
+        )
+        
+        # 创建方形按钮，不接收焦点
+        reset_button = ttk.Button(
+            search_frame, 
+            text="↺", 
+            command=self.reset_search, 
+            width=3,           # 调整宽度为方形
+            style="Icon.TButton",
+            takefocus=False    # 不接收焦点
+        )
         reset_button.grid(row=0, column=10, padx=(5, 10), pady=0)
         
         # 添加实时搜索和自动过滤事件监听器
@@ -12127,8 +12135,8 @@ class SubnetPlannerApp:
             action = action_var.get()
 
             if action == 'keep':
-                # 保留选中记录，删除该IP的其他冲突记录
-                self.keep_selected_record_and_delete_others(ip_id, ip_address)
+                # 保留所有选中的记录，删除该IP的其他冲突记录
+                self.keep_selected_records_and_delete_others([int(r['id']) for r in selected_records], ip_address)
             elif action == 'delete':
                 # 删除所有选中的记录
                 deleted_count = 0
@@ -12141,12 +12149,16 @@ class SubnetPlannerApp:
                 else:
                     self.show_error(_('error'), "删除记录失败")
             elif action == 'release':
-                # 释放IP地址
-                success, message = self.ipam.release_ip(ip_address)
-                if success:
-                    self.show_info(_('success'), message)
+                # 释放所有选中的记录
+                released_count = 0
+                for record in selected_records:
+                    success, message = self.ipam.release_ip_by_id(int(record['id']))
+                    if success:
+                        released_count += 1
+                if released_count > 0:
+                    self.show_info(_('success'), f"已释放 {released_count} 条记录")
                 else:
-                    self.show_error(_('error'), message)
+                    self.show_error(_('error'), "释放记录失败")
 
             dialog.destroy()
             # 刷新冲突列表 - 重新检查冲突
@@ -12177,19 +12189,21 @@ class SubnetPlannerApp:
         # 显示对话框
         dialog.show()
     
-    def keep_selected_record_and_delete_others(self, keep_id, ip_address):
+    def keep_selected_records_and_delete_others(self, keep_ids, ip_address):
         """保留选中的记录，删除该IP的其他冲突记录
         
         Args:
-            keep_id: 要保留的记录ID
+            keep_ids: 要保留的记录ID列表
             ip_address: IP地址
         """
         try:
             # 获取该IP的所有记录
             conn = sqlite3.connect(self.ipam.db_file)
             cursor = conn.cursor()
-            cursor.execute('SELECT id FROM ip_addresses WHERE ip_address = ? AND id != ?', 
-                          (ip_address, keep_id))
+            # 创建占位符，用于SQL查询
+            placeholders = ','.join('?' * len(keep_ids))
+            cursor.execute(f'SELECT id FROM ip_addresses WHERE ip_address = ? AND id NOT IN ({placeholders})', 
+                          (ip_address,) + tuple(keep_ids))
             other_records = cursor.fetchall()
             conn.close()
             
@@ -17140,15 +17154,15 @@ class SubnetPlannerApp:
                                    command=lambda: self.release_selected_expired_ips(tree, dialog, expired_ips))
         release_button.pack(side=tk.LEFT, padx=5)
         
-        # 创建延期按钮
-        extend_button = ttk.Button(dialog.button_frame, text=_('extend_expiry'), 
-                                  command=lambda: self.extend_selected_expired_ips(tree, dialog, expired_ips))
-        extend_button.pack(side=tk.LEFT, padx=5)
-        
         # 创建全部释放按钮
         release_all_button = ttk.Button(dialog.button_frame, text=_('release_all'), 
                                       command=lambda: self.release_all_expired_ips(dialog, expired_ips))
         release_all_button.pack(side=tk.LEFT, padx=5)
+        
+        # 创建延期按钮
+        extend_button = ttk.Button(dialog.button_frame, text=_('extend_expiry'), 
+                                  command=lambda: self.extend_selected_expired_ips(tree, dialog, expired_ips))
+        extend_button.pack(side=tk.LEFT, padx=5)
         
         # 右侧关闭按钮
         cancel_button = ttk.Button(dialog.button_frame, text=_('close'), command=dialog.destroy)
@@ -17323,7 +17337,7 @@ class SubnetPlannerApp:
         font_family, font_size = get_current_font_settings()
         
         # 创建主框架
-        main_frame = ttk.Frame(dialog.content_frame, padding=20)
+        main_frame = ttk.Frame(dialog.content_frame, padding=(50, 0))
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # 创建标题
@@ -17333,7 +17347,7 @@ class SubnetPlannerApp:
             font=(font_family, font_size + 2, 'bold'),
             foreground='#333333'
         )
-        title_label.pack(pady=(0, 20))
+        title_label.pack(pady=(0, 10))
         
         # 延期时间选项
         extend_options = [
@@ -17355,13 +17369,13 @@ class SubnetPlannerApp:
         
         # 创建三列布局
         left_frame = ttk.Frame(option_frame)
-        left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=5)
         
         middle_frame = ttk.Frame(option_frame)
-        middle_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        middle_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=5)
         
         right_frame = ttk.Frame(option_frame)
-        right_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=10)
+        right_frame.pack(side=tk.LEFT, fill=tk.Y, expand=True, padx=5)
         
         # 分配选项到三列
         for i, (text, days) in enumerate(extend_options):
@@ -17420,11 +17434,11 @@ class SubnetPlannerApp:
                 # 关闭对话框
                 dialog.destroy()
         
-        # 添加确定按钮
-        dialog.add_button(_('confirm'), on_confirm, column=2)
-        
         # 添加取消按钮
         dialog.add_button(_('cancel'), dialog.destroy, column=1)
+        
+        # 添加确定按钮
+        dialog.add_button(_('confirm'), on_confirm, column=2)
         
         # 显示对话框
         dialog.show()
@@ -17674,11 +17688,10 @@ class SubnetPlannerApp:
             
             dialog.destroy()
         
-        # 添加按钮
-        dialog.add_button(_('confirm'), confirm, column=1)
+        # 添加按钮（注意：使用 side=tk.RIGHT，按钮从右向左添加）
         dialog.add_button(_('clear_expiry_date'), clear_expiry, column=2)
+        dialog.add_button(_('confirm'), confirm, column=1)
         
-        # 显示对话框
         dialog.show()
 
     def show_ip_address_dialog(self, title, action_type, ip_address=None, network=None, record_id=None, original_hostname='', original_description=''):
@@ -17821,6 +17834,8 @@ class SubnetPlannerApp:
                                                 ip_entry.delete(0, tk.END)
                                                 ip_entry.insert(0, ip_str)
                                                 ip_entry.config(state='readonly')
+                                                # 验证IP地址并更新颜色
+                                                self.validate_cidr(ip_str, ip_entry, require_prefix=False)
                                                 break
                                 else:
                                     # 对于小型网络，逐个检查
@@ -17831,6 +17846,8 @@ class SubnetPlannerApp:
                                             ip_entry.delete(0, tk.END)
                                             ip_entry.insert(0, ip_str)
                                             ip_entry.config(state='readonly')
+                                            # 验证IP地址并更新颜色
+                                            self.validate_cidr(ip_str, ip_entry, require_prefix=False)
                                             break
                             except Exception:
                                 pass
@@ -17880,6 +17897,8 @@ class SubnetPlannerApp:
                             except Exception:
                                 # 如果网段解析失败，不填充前缀
                                 pass
+                        # 验证当前输入内容并更新颜色
+                        self.validate_cidr(ip_entry.get(), ip_entry, require_prefix=False)
             
             # 如果提供了IP地址，填充对话框
             if ip_address:
@@ -18081,11 +18100,8 @@ class SubnetPlannerApp:
             """生成IP地址占位符"""
             try:
                 net_obj = ipaddress.ip_network(target_network)
-                ip_parts = str(net_obj.network_address).split('.')
-                # 对于IPv4，显示前两位，后两位用*表示
-                if len(ip_parts) == 4:
-                    return f"{ip_parts[0]}.{ip_parts[1]}.*.*"
-                return target_network
+                # 显示目标网络的CIDR格式
+                return str(net_obj)
             except Exception:
                 return target_network
         
@@ -18107,12 +18123,13 @@ class SubnetPlannerApp:
                 target_network_obj = ipaddress.ip_network(target_network, strict=False)
                 
                 ips = self.ipam.get_network_ips(target_network)
-                allocated_ips = {ip['ip_address'] for ip in ips}
+                # 排除已分配和已保留状态的IP，只有释放状态的IP和新IP可以被分配
+                excluded_ips = {ip['ip_address'] for ip in ips if ip.get('status') in ['allocated', 'reserved']}
                 
                 available_ips = []
                 for ip in target_network_obj.hosts():
                     ip_str = str(ip)
-                    if ip_str not in allocated_ips:
+                    if ip_str not in excluded_ips:
                         available_ips.append(ip_str)
                 
                 if len(available_ips) < quantity:
@@ -18172,7 +18189,58 @@ class SubnetPlannerApp:
             description = description_entry.get().strip()
             expiry_date = expiry_entry.get().strip()
             
-            # 验证IP地址格式（必须不带前缀）
+            # 检查是否为自动分配模式（通过检查IP输入框是否为只读状态来判断）
+            is_auto_allocate = False
+            if ip_entry:
+                try:
+                    # 如果IP输入框是只读状态，说明是自动分配模式
+                    state = ip_entry.cget('state')
+                    is_auto_allocate = (state == 'readonly')
+                    print(f"DEBUG: ip_entry state = {state}, is_auto_allocate = {is_auto_allocate}, ip = '{ip}'")
+                except Exception as e:
+                    print(f"DEBUG: Error checking ip_entry state: {e}")
+            else:
+                print("DEBUG: ip_entry is None")
+            
+            # 自动分配模式不需要输入IP地址
+            if is_auto_allocate:
+                # 自动分配模式下，IP地址已经自动生成在输入框中
+                if not ip:
+                    self.show_error(_('error'), _('auto_allocate_failed'))
+                    return False
+                
+                # 使用统一验证规则：主机名和描述不能同时为空
+                is_valid, error_msg = IPAMValidator.validate_allocation_params(hostname, description)
+                if not is_valid:
+                    self.show_error(_('error'), error_msg or _('please_enter_description'))
+                    return False
+                
+                # 验证MAC地址格式
+                if mac_address and not validate_mac_address(mac_address):
+                    self.show_error(_('error'), _('invalid_mac_address'))
+                    return False
+                
+                # 格式化MAC地址
+                if mac_address:
+                    mac_address = self._format_mac_address(mac_address)
+                
+                # 执行相应操作
+                if action == 'allocate':
+                    success, message = self.ipam.allocate_ip(network, ip, hostname, description, expiry_date)
+                else:
+                    success, message = self.ipam.reserve_ip(network, ip, hostname, description, expiry_date)
+                
+                if success:
+                    self.show_info(_('success'), message)
+                    dialog.result = None  # 设置为None，让show_ip_address_dialog返回None
+                    dialog.destroy()
+                    self.refresh_ipam_with_selection()
+                    return True
+                else:
+                    self.show_error(_('error'), message)
+                    return False
+            
+            # 手动输入模式：验证IP地址格式
             if not ip:
                 self.show_error(_('error'), _('please_enter_ip_address'))
                 return False
@@ -18198,21 +18266,35 @@ class SubnetPlannerApp:
             # 验证IP地址是否在所选网络范围内
             if ip and network:
                 try:
-                    # 解析网络和IP地址
                     ip_network = ipaddress.ip_network(network, strict=False)
                     ip_address_obj = ipaddress.ip_address(ip)
                     
-                    # 检查IP地址是否在网络范围内
                     if ip_address_obj not in ip_network:
-                        # 显示错误提示
                         self.show_error(_('error'), _('ip_not_in_network'))
                         return False
                 except Exception as e:
-                    # IP地址格式错误或网络解析失败
                     self.show_error(_('error'), _('invalid_ip_address_format'))
                     return False
             
-            # 保存输入值
+            # 对于分配/保留对话框，直接执行操作
+            if action_type == 'allocate_reserve':
+                if action == 'allocate':
+                    success, message = self.ipam.allocate_ip(network, ip, hostname, description, expiry_date)
+                else:
+                    success, message = self.ipam.reserve_ip(network, ip, hostname, description, expiry_date)
+                
+                if success:
+                    self.show_info(_('success'), message)
+                    dialog.result = None  # 设置为None，让show_ip_address_dialog返回None，避免allocate_reserve_ip重复执行
+                    dialog.destroy()
+                    self.refresh_ipam_with_selection()
+                    return True
+                else:
+                    # 失败时不关闭对话框，只显示错误
+                    self.show_error(_('error'), message)
+                    return False
+            
+            # 其他操作类型：保存输入值
             dialog.ip = ip
             dialog.hostname = hostname
             dialog.mac_address = mac_address
@@ -18276,6 +18358,8 @@ class SubnetPlannerApp:
                 ip_entry.delete(0, tk.END)
                 ip_entry.insert(0, placeholder)
                 ip_entry.config(state='readonly')
+                # 批量模式的占位符是CIDR格式，直接设置为黑色即可
+                ip_entry.config(foreground='black')
                 # 更改按钮文本
                 if allocate_btn:
                     allocate_btn.config(text=_('batch_allocate'))
@@ -18336,6 +18420,8 @@ class SubnetPlannerApp:
                         except Exception:
                             # 如果网段解析失败，不填充前缀
                             pass
+                    # 验证当前输入内容并更新颜色
+                    self.validate_cidr(ip_entry.get(), ip_entry, require_prefix=False)
                 hostname_entry.config(state='normal')
                 mac_entry.config(state='normal')
                 description_entry.config(state='normal')

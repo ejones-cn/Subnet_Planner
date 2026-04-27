@@ -5027,11 +5027,11 @@
     "ko": "로딩 중"
   },
   "splash_loading_module": {
-    "zh": "正在加载: {module_name}",
-    "zh_tw": "正在載入: {module_name}",
+    "zh": "正在加载：{module_name}",
+    "zh_tw": "正在載入：{module_name}",
     "en": "Loading: {module_name}",
-    "ja": "読み込み中: {module_name}",
-    "ko": "로딩 중: {module_name}"
+    "ja": "読み込み中：{module_name}",
+    "ko": "로딩 중：{module_name}"
   },
   "font_cleared_pdf": {
     "zh": "🧹 已清除 ReportLab PDF 字体注册",
@@ -5067,6 +5067,20 @@
     "en": "[init] Font will be registered when exporting PDF (language: {current_lang})",
     "ja": "[init] フォントはPDF出力時に登録されます (言語: {current_lang})",
     "ko": "[init] 글꼴은 PDF 내보내기 시 등록됩니다 (언어: {current_lang})"
+  },
+  "dpi_setting": {
+    "zh": "[OK] Windows DPI设置: {dpi} DPI, 缩放因子: {scale}, 模式: {mode}",
+    "zh_tw": "[OK] Windows DPI設定: {dpi} DPI, 縮放因子: {scale}, 模式: {mode}",
+    "en": "[OK] Windows DPI Settings: {dpi} DPI, Scale Factor: {scale}, Mode: {mode}",
+    "ja": "[OK] Windows DPI設定: {dpi} DPI, スケール係数: {scale}, モード: {mode}",
+    "ko": "[OK] Windows DPI 설정: {dpi} DPI, 스케일 계수: {scale}, 모드: {mode}"
+  },
+  "style_update": {
+    "zh": "[StyleManager] 更新样式, 当前语言: {lang}, 字体: {font}, 大小: {size}",
+    "zh_tw": "[StyleManager] 更新樣式, 目前語言: {lang}, 字體: {font}, 大小: {size}",
+    "en": "[StyleManager] Updating styles, Current language: {lang}, Font: {font}, Size: {size}",
+    "ja": "[StyleManager] スタイルを更新しています, 現在の言語: {lang}, フォント: {font}, サイズ: {size}",
+    "ko": "[StyleManager] 스타일을 업데이트하고 있습니다, 현재 언어: {lang}, 글꼴: {font}, 크기: {size}"
   },
   "font_pdf_current_lang": {
     "zh": "🔍 导出PDF时当前语言: {current_lang}",

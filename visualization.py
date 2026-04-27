@@ -1325,23 +1325,39 @@ class NetworkTopologyVisualizer:
     
     def _auto_scale_canvas(self):
         """画布初始化后延迟执行自适应缩放"""
+        # 检查画布是否已被销毁（应用关闭时的安全检查）
+        try:
+            if not self.canvas.winfo_exists():
+                return
+        except Exception:
+            return
+        
         # 检查是否已经缩放过（避免重复缩放）
         if getattr(self, '_scaled', False):
             return
         
-        self.canvas.update_idletasks()
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
+        try:
+            self.canvas.update_idletasks()
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+        except Exception:
+            return
         
         if canvas_width <= 1 or canvas_height <= 1:
-            parent = self.canvas.nametowidget(self.canvas.winfo_parent())
-            if parent:
-                parent.update_idletasks()
-                canvas_width = parent.winfo_width()
-                canvas_height = parent.winfo_height()
+            try:
+                parent = self.canvas.nametowidget(self.canvas.winfo_parent())
+                if parent:
+                    parent.update_idletasks()
+                    canvas_width = parent.winfo_width()
+                    canvas_height = parent.winfo_height()
+            except Exception:
+                return
         
         if canvas_width <= 1 or canvas_height <= 1:
-            self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
+            try:
+                self._auto_scale_timer = self.canvas.after(200, self._auto_scale_canvas)
+            except Exception:
+                return
             return
         
         bbox = self.canvas.bbox(tk.ALL)
