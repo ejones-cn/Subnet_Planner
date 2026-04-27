@@ -17351,9 +17351,9 @@ class SubnetPlannerApp:
         
         # 延期时间选项
         extend_options = [
-            (_('1_month'), 30),
-            (_('3_months'), 90),
-            (_('6_months'), 180),
+            (_('1_month'), 31),
+            (_('3_months'), 91),
+            (_('6_months'), 182),
             (_('1_year'), 365),
             (_('3_years'), 1095),
             (_('5_years'), 1825)
