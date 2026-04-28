@@ -48,8 +48,8 @@ class CryptoService:
         """初始化加密服务，检测DPAPI可用性"""
         if sys.platform == 'win32':
             try:
-                import ctypes  # noqa: F401
-                import ctypes.wintypes  # noqa: F401
+                import ctypes  # noqa: F401  # pyright: ignore[reportUnusedImport]
+                import ctypes.wintypes  # noqa: F401  # pyright: ignore[reportUnusedImport]
                 self._dpapi_available = True
             except ImportError:
                 self._dpapi_available = False

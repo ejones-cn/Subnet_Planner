@@ -528,13 +528,6 @@ class ConfigManager:
         Returns:
             是否设置成功
         """
-        if not isinstance(tab_order, list):
-            print(self._translate("tab_order_must_be_list"))
-            return False
-        for item in tab_order:
-            if not isinstance(item, str):
-                print(self._translate("tab_name_must_be_string"))
-                return False
         return self.set('ui.tab_order', tab_order)
     
     def get_recent_files(self) -> list[str]:

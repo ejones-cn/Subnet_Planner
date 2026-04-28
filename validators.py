@@ -6,6 +6,7 @@ class IPAMValidator:
         if not hostname and not description:
             return False, "主机名和描述不能同时为空"
         return True, None
+
     
     @staticmethod
     def validate_inline_edit(column_name, value):

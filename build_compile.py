@@ -10,6 +10,7 @@ import json
 import subprocess
 import argparse
 import shutil
+import time
 from datetime import datetime
 from typing import NamedTuple, cast
 from enum import Enum
@@ -612,7 +613,7 @@ VERSION_STRING = '{version}'
 block_cipher = None
 
 a = Analysis(['windows_app.py'],
-             pathex=['{os.getcwd()}'],
+             pathex=[r'{os.getcwd()}'],
              binaries=[],
              datas=[{datas_str}],
              hiddenimports=[],
@@ -721,6 +722,32 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
         "http://timestamp.sectigo.com"
     ]
     
+    def is_file_locked(file_path: str) -> bool:
+        """检查文件是否被其他进程锁定"""
+        try:
+            with open(file_path, 'r+b'):
+                return False
+        except PermissionError:
+            return True
+        except Exception:
+            return False
+    
+    def wait_for_file_release(file_path: str, max_wait_seconds: int = 30) -> bool:
+        """等待文件被释放"""
+        print(f"⏳ 等待文件释放，最多等待 {max_wait_seconds} 秒...")
+        for i in range(max_wait_seconds):
+            if not is_file_locked(file_path):
+                print(f"✅ 文件已释放，等待了 {i} 秒")
+                return True
+            time.sleep(1)
+            if (i + 1) % 5 == 0:
+                print(f"   等待中 ({i + 1}s)...")
+        print(f"❌ 文件在 {max_wait_seconds} 秒内仍未释放")
+        return False
+    
+    max_retries = 3
+    retry_delay = 5
+    
     for ts_server in timestamp_servers:
         print(f"\n🔄 尝试使用时间戳服务器: {ts_server}")
         
@@ -734,19 +761,42 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
             executable_path
         ]
         
-        try:
-            print(f"📝 签名命令: {' '.join(sign_cmd[:-2])} [密码隐藏] {executable_path}")
-            _ = subprocess.run(sign_cmd, check=True, cwd=os.getcwd(), capture_output=True, text=True)
-            print("✅ 代码签名成功!")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"❌ 使用 {ts_server} 签名失败: {getattr(e, 'stderr', str(e))}")
-            print("🔄 尝试下一个时间戳服务器...")
-            continue
-        except Exception as e:
-            print(f"❌ 签名过程中发生错误: {e}")
-            print("🔄 尝试下一个时间戳服务器...")
-            continue
+        for retry in range(max_retries):
+            if retry > 0:
+                print(f"\n🔄 第 {retry + 1} 次重试签名...")
+            
+            if not wait_for_file_release(executable_path):
+                if retry < max_retries - 1:
+                    print(f"⏳ 等待 {retry_delay} 秒后重试...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print("❌ 文件持续被占用，跳过此时间戳服务器")
+                    break
+            
+            try:
+                print(f"📝 签名命令: {' '.join(sign_cmd[:-2])} [密码隐藏] {executable_path}")
+                _ = subprocess.run(sign_cmd, check=True, cwd=os.getcwd(), capture_output=True, text=True)
+                print("✅ 代码签名成功!")
+                return True
+            except subprocess.CalledProcessError as e:
+                stderr = getattr(e, 'stderr', str(e))
+                if "being used by another process" in stderr or "文件正在被另一个进程使用" in stderr:
+                    print(f"❌ 文件被占用: {stderr}")
+                    if retry < max_retries - 1:
+                        print(f"⏳ 等待 {retry_delay} 秒后重试...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        print(f"❌ 使用 {ts_server} 签名失败（文件被占用）")
+                else:
+                    print(f"❌ 使用 {ts_server} 签名失败: {stderr}")
+                break
+            except Exception as e:
+                print(f"❌ 签名过程中发生错误: {e}")
+                break
+        
+        print("🔄 尝试下一个时间戳服务器...")
     
     print("❌ 所有时间戳服务器均失败")
     print("⚠️  继续执行，但可执行文件未签名")
@@ -815,6 +865,12 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--nofollow-import-to=urllib3",
             "--nofollow-import-to=certifi",
             "--nofollow-import-to=requests",
+            # 排除大型科学计算库（未使用但可能被间接依赖）
+            "--nofollow-import-to=numpy",
+            "--nofollow-import-to=scipy",
+            "--nofollow-import-to=matplotlib",
+            "--nofollow-import-to=pandas",
+            "--nofollow-import-to=sklearn",
             f"--product-name={version_resource['product_name']}",
             f"--product-version={version}",
             f"--file-version={version}",
