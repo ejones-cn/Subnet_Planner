@@ -848,6 +848,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--include-module=style_manager",
             "--include-module=chart_utils",
             "--include-module=visualization",
+            "--include-module=tkcalendar",  # 显式包含日历组件（通过try-except导入）
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
             "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
