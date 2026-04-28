@@ -84,8 +84,8 @@ class IPAMRepository:
     def batch_release_ips(self, ip_ids):
         return self.ipam.batch_release_ips(ip_ids)
 
-    def check_ip_conflicts(self, ip_address):
-        return self.ipam.check_ip_conflicts(ip_address)
+    def check_ip_conflict(self, ip_address):
+        return self.ipam.check_ip_conflict(ip_address)
 
     def get_available_ips(self):
         return self.ipam.get_available_ips()

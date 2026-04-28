@@ -2399,12 +2399,12 @@ class IPAMSQLite:
         except Exception as e:
             return False, f"{_("update_network_address_failed")}: {str(e)}"
 
-    def check_ip_conflicts(self, ip_address: str) -> list[dict[str, str | int | None]]:
+    def check_ip_conflict(self, ip_address: str) -> list[dict[str, str | int | None]]:
         """检测IP地址冲突
-        
+
         Args:
             ip_address: 要检测的IP地址
-        
+
         Returns:
             list[dict]: 冲突的IP地址记录列表
         """
@@ -2457,7 +2457,7 @@ class IPAMSQLite:
         """
         try:
             # 检查是否存在冲突
-            conflicts = self.check_ip_conflicts(ip_address)
+            conflicts = self.check_ip_conflict(ip_address)
             if not conflicts:
                 return True, _("no_conflicts_to_resolve")
             
