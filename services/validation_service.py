@@ -179,7 +179,7 @@ class ValidationService:
             bool: 是否为有效的IPv4地址
         """
         result = self.validate_ip_address(ip_address, ip_version="IPv4")
-        return result['valid']
+        return bool(result['valid'])
 
     def is_valid_ipv6(self, ip_address: str) -> bool:
         """验证是否为有效的IPv6地址
@@ -191,7 +191,7 @@ class ValidationService:
             bool: 是否为有效的IPv6地址
         """
         result = self.validate_ip_address(ip_address, ip_version="IPv6")
-        return result['valid']
+        return bool(result['valid'])
 
     def is_ip_in_network(self, ip_address: str, network: str) -> bool:
         """检查IP地址是否在指定的网络范围内

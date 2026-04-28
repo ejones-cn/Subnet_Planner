@@ -1,12 +1,9 @@
-import ipaddress
-
 from i18n import _
 from ip_subnet_calculator import (
     get_ip_info,
     merge_subnets,
     range_to_cidr,
     check_subnet_overlap,
-    format_large_number,
     handle_ip_subnet_error,
 )
 

@@ -9,23 +9,18 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import sys
 
-# 添加当前目录到路径，确保能导入i18n模块
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from i18n import _
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # noqa: E402
+from i18n import _  # noqa: E402
 
 
 def create_splash_image():
     """创建子网规划师启动画面"""
-    width, height = 500, 450  # 调整为程序显示的尺寸，避免变形
+    width, height = 500, 450
 
     img = Image.new('RGB', (width, height), color='#0F172A')
     draw = ImageDraw.Draw(img)
 
-    primary = '#1E293B'
-    secondary = '#334155'
     accent = '#22C55E'
-    text_color = '#F8FAFC'
-    muted = '#94A3B8'
 
     draw.rectangle([0, 0, width, height], fill='#0F172A')
 
@@ -37,7 +32,7 @@ def create_splash_image():
     center_x, center_y = width // 2, height // 2
 
     for layer in range(3, 0, -1):
-        radius = 40 + layer * 35  # 调整半径以适应新尺寸
+        radius = 40 + layer * 35
         alpha = 40 - layer * 10
         color = f'#{alpha:02x}{alpha:02x}{alpha:02x}'
         draw.ellipse(
@@ -76,7 +71,7 @@ def create_splash_image():
 
     for i, (x, y) in enumerate(nodes):
         node_color = accent if i == 0 else '#475569'
-        node_size = 12 if i == 0 else 8  # 调整节点大小
+        node_size = 12 if i == 0 else 8
         draw.ellipse(
             [x - node_size, y - node_size,
              x + node_size, y + node_size],
@@ -90,41 +85,35 @@ def create_splash_image():
         ('172.16.0.0/12', center_x + 110, center_y - 60),
     ]
 
-    try:
-        # 尝试使用支持中文的字体，优先使用黑体
-        font_candidates = ["simhei.ttf", "msyh.ttf", "simsun.ttc", "arial.ttf"]
-        font = None
-        for font_name in font_candidates:
-            try:
-                font = ImageFont.truetype(font_name, 14)
-                break
-            except:
-                continue
-        if not font:
-            font = ImageFont.load_default()
-        
-        font_large = None
-        for font_name in font_candidates:
-            try:
-                font_large = ImageFont.truetype(font_name, 28)
-                break
-            except:
-                continue
-        if not font_large:
-            font_large = font
-        
-        font_title = None
-        for font_name in font_candidates:
-            try:
-                font_title = ImageFont.truetype(font_name, 42)
-                break
-            except:
-                continue
-        if not font_title:
-            font_title = font
-    except:
+    font_candidates = ["simhei.ttf", "msyh.ttf", "simsun.ttc", "arial.ttf"]
+    font = None
+    for font_name in font_candidates:
+        try:
+            font = ImageFont.truetype(font_name, 14)
+            break
+        except (OSError, IOError):
+            continue
+    if not font:
         font = ImageFont.load_default()
+
+    font_large = None
+    for font_name in font_candidates:
+        try:
+            font_large = ImageFont.truetype(font_name, 28)
+            break
+        except (OSError, IOError):
+            continue
+    if not font_large:
         font_large = font
+
+    font_title = None
+    for font_name in font_candidates:
+        try:
+            font_title = ImageFont.truetype(font_name, 42)
+            break
+        except (OSError, IOError):
+            continue
+    if not font_title:
         font_title = font
 
     for text, x, y in ip_labels:
@@ -143,22 +132,15 @@ def create_splash_image():
             font=font
         )
 
-    try:
-        font_subtitle = None
-        for font_name in font_candidates:
-            try:
-                font_subtitle = ImageFont.truetype(font_name, 20)
-                break
-            except:
-                continue
-        if not font_subtitle:
-            font_subtitle = font
-    except:
+    font_subtitle = None
+    for font_name in font_candidates:
+        try:
+            font_subtitle = ImageFont.truetype(font_name, 20)
+            break
+        except (OSError, IOError):
+            continue
+    if not font_subtitle:
         font_subtitle = font_title
-
-    # 移除标题和进度条，只保留网络拓扑图
-    # 不需要标题文字，因为启动画面已经有标题
-    # 不需要进度条，因为加载过程很快
 
     output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'splash_image.png')
     img.save(output_path, 'PNG', quality=95)

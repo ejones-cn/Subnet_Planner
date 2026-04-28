@@ -1,6 +1,6 @@
 import traceback
 from reportlab.platypus import TableStyle, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle
 
 
 MAIN_TABLE_COLORS = {

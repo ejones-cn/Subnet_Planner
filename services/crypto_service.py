@@ -24,7 +24,11 @@ try:
     from cryptography.hazmat.backends import default_backend
     _CRYPTOGRAPHY_AVAILABLE = True
 except ImportError:
-    _CRYPTOGRAPHY_AVAILABLE = False
+    Fernet = None  # type: ignore[assignment,misc]
+    hashes = None  # type: ignore[assignment]
+    PBKDF2HMAC = None  # pyright: ignore[reportConstantRedefinition]
+    default_backend = None  # type: ignore[assignment]
+    _CRYPTOGRAPHY_AVAILABLE = False  # pyright: ignore[reportConstantRedefinition]
     logging.warning(_("cryptography_not_available"))
 
 
@@ -44,8 +48,8 @@ class CryptoService:
         """初始化加密服务，检测DPAPI可用性"""
         if sys.platform == 'win32':
             try:
-                import ctypes
-                import ctypes.wintypes
+                import ctypes  # noqa: F401
+                import ctypes.wintypes  # noqa: F401
                 self._dpapi_available = True
             except ImportError:
                 self._dpapi_available = False
@@ -249,7 +253,7 @@ class CryptoService:
         """
         try:
             fernet_key = self._derive_fernet_key()
-            f = Fernet(fernet_key)
+            f = Fernet(fernet_key)  # pyright: ignore[reportOptionalCall]
             encrypted_bytes = f.encrypt(plaintext.encode('utf-8'))
             return encrypted_bytes.decode('ascii')
         except Exception as e:
@@ -267,7 +271,7 @@ class CryptoService:
         """
         try:
             fernet_key = self._derive_fernet_key()
-            f = Fernet(fernet_key)
+            f = Fernet(fernet_key)  # pyright: ignore[reportOptionalCall]
             decrypted_bytes = f.decrypt(ciphertext.encode('utf-8'))
             return decrypted_bytes.decode('utf-8')
         except Exception as e:
@@ -319,12 +323,12 @@ class CryptoService:
         salt = b'SubnetPlanner_Salt_2024'
         password = self._get_machine_identifier().encode('utf-8')
         
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
+        kdf = PBKDF2HMAC(  # pyright: ignore[reportOptionalCall]
+            algorithm=hashes.SHA256(),  # pyright: ignore[reportOptionalMemberAccess]
             length=32,
             salt=salt,
             iterations=100000,
-            backend=default_backend()
+            backend=default_backend()  # pyright: ignore[reportOptionalCall]
         )
         key = base64.urlsafe_b64encode(kdf.derive(password))
         return key

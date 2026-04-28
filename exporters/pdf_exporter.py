@@ -1,9 +1,10 @@
-import os
 import time
 import traceback
 import math
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+
+from typing import override
 
 from exporters.base import DataExporter
 from exporters.font_manager import FontManager
@@ -34,6 +35,7 @@ class PDFExporter(DataExporter):
     def __init__(self, font_manager: FontManager):
         self.font_manager = font_manager
 
+    @override
     def export(self, file_path, data_source, main_data, main_headers, remaining_data, remaining_headers):
         self.font_manager.register_pdf_fonts()
         has_asian_font = self.font_manager.has_asian_font
@@ -250,7 +252,7 @@ class PDFExporter(DataExporter):
 
     def _add_main_data_section(self, elements, data_source, main_data, main_headers, heading2_style, normal_style, table_text_style, has_asian_font, page_width, margins):
         main_heading = Paragraph(data_source["main_name"], heading2_style)
-        keep_together_main = [main_heading]
+        keep_together_main: list = [main_heading]
 
         is_ipv6 = False
         for values in main_data:
@@ -359,7 +361,7 @@ class PDFExporter(DataExporter):
 
     def _add_remaining_data_section(self, elements, data_source, remaining_data, remaining_headers, heading2_style, normal_style, table_text_style, has_asian_font, page_width, margins):
         remaining_heading = Paragraph(str(data_source["remaining_name"]), heading2_style)
-        keep_together_remaining = [remaining_heading]
+        keep_together_remaining: list = [remaining_heading]
 
         remaining_table_data = [[Paragraph(str(h), table_text_style) for h in remaining_headers]]
 
@@ -450,7 +452,7 @@ class PDFExporter(DataExporter):
 
         title_font_size = 76
         _, title_font, _ = self.font_manager.load_system_font(title_font_size, verbose=False)
-        font, bold_font, _ = self.font_manager.load_system_font(font_size=36, verbose=False)
+        self.font_manager.load_system_font(font_size=36, verbose=False)
         text_font_size = 50
         text_font, bold_text_font, _ = self.font_manager.load_system_font(font_size=text_font_size, bold_offset=6, verbose=False)
 
@@ -661,6 +663,8 @@ class PDFExporter(DataExporter):
         parent_label_width = parent_label_bbox[2] - parent_label_bbox[0]
         split_x = parent_x + parent_block_size + 25 + parent_label_width + 80
         split_text_font = text_font
+        legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
+        split_block_gap = 15
 
         if chart_type == "split":
             split_color = "#4a7eb4"
@@ -676,9 +680,7 @@ class PDFExporter(DataExporter):
             draw_text_with_stroke(draw, (split_x + split_block_size + 15, split_label_y), split_label, split_text_font, "#ffffff")
         else:
             split_label = f"{translate('allocated_subnets')}"
-            legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
             split_block_size = 30
-            split_block_gap = 15
 
             split_block_y = legend_container_y + (legend_container_height - split_block_size) // 2
             split_label_bbox = draw.textbbox((0, 0), split_label, font=split_text_font)
@@ -706,7 +708,6 @@ class PDFExporter(DataExporter):
             split_label_width = draw.textbbox((0, 0), split_label_text, font=split_text_font)[2] - draw.textbbox((0, 0), split_label_text, font=split_text_font)[0]
             remaining_x = split_x + len(legend_colors) * (split_block_size + split_block_gap) + 15 + split_label_width + 80
         remaining_label = f"{translate('remaining_subnets')}"
-        legend_colors = ["#5e9c6a", "#db6679", "#f0ab55", "#8b6cb8"]
         remaining_block_size = 30
         remaining_block_gap = 15
         remaining_text_font = text_font
@@ -759,5 +760,6 @@ class PDFExporter(DataExporter):
         from ip_subnet_calculator import format_large_number
         return format_large_number(num, use_scientific)
 
+    @override
     def get_file_extension(self) -> str:
         return ".pdf"

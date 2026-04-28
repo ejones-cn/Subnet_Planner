@@ -88,25 +88,29 @@ class SubnetSplitService:
                 return
 
             row_index = 0
-            app.split_tree.insert("", 'end', values=(_("parent_network"), result["parent_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
+
+            def _tag(idx):
+                return "odd" if idx % 2 == 0 else "even"
+
+            app.split_tree.insert("", 'end', values=(_("parent_network"), result["parent_info"]["cidr"]), tags=(_tag(row_index),))
             row_index += 1
 
-            app.split_tree.insert("", 'end', values=(_("split_segment"), result["split_info"]["cidr"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            app.split_tree.insert("", 'end', values=(_("split_segment"), result["split_info"]["cidr"]), tags=(_tag(row_index),))
             row_index += 1
-            app.split_tree.insert("", 'end', values=("-" * 10, "-" * 20), tags=("odd" if row_index % 2 == 0 else "even",))
+            app.split_tree.insert("", 'end', values=("-" * 10, "-" * 20), tags=(_tag(row_index),))
             row_index += 1
 
             split_info = result["split_info"]
-            app.split_tree.insert("", 'end', values=(_("network_address"), split_info["network"]), tags=("odd" if row_index % 2 == 0 else "even",))
+            app.split_tree.insert("", 'end', values=(_("network_address"), split_info["network"]), tags=(_tag(row_index),))
             row_index += 1
 
             is_ipv6 = TableColumnManager.is_ipv6_network(parent)
             if not is_ipv6:
-                app.split_tree.insert("", 'end', values=(_("subnet_mask"), split_info["netmask"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                app.split_tree.insert("", 'end', values=(_("subnet_mask"), split_info["netmask"]), tags=(_tag(row_index),))
                 row_index += 1
-                app.split_tree.insert("", 'end', values=(_("wildcard_mask"), split_info["wildcard"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                app.split_tree.insert("", 'end', values=(_("wildcard_mask"), split_info["wildcard"]), tags=(_tag(row_index),))
                 row_index += 1
-                app.split_tree.insert("", 'end', values=(_("broadcast_address"), split_info["broadcast"]), tags=("odd" if row_index % 2 == 0 else "even",))
+                app.split_tree.insert("", 'end', values=(_("broadcast_address"), split_info["broadcast"]), tags=(_tag(row_index),))
                 row_index += 1
 
             app.split_tree.insert("", 'end', values=(_("start_address"), split_info["host_range_start"]), tags=("odd" if row_index % 2 == 0 else "even",))

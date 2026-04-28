@@ -9,13 +9,10 @@
 import os
 import sys
 import shutil
-import subprocess
-from datetime import datetime
 
-# 添加项目根目录到路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # noqa: E402
 
-from build_compile import (
+from build_compile import (  # noqa: E402
     check_python_version,
     check_and_install_dependencies,
     compile_with_nuitka,
@@ -190,7 +187,7 @@ def copy_dist_to_package(package_dir: str) -> bool:
                        'dist', 'build', 'SubnetPlanner_data.db'}:
                 continue
             if item.endswith(('.py', '.pyc', '.md', '.txt', '.spec', '.log', '.json')) \
-                           and item not in CONFIG_FILES:
+                    and item not in CONFIG_FILES:
                 continue
             
             dest_path = os.path.join(package_dir, item)
@@ -281,7 +278,7 @@ def create_readme(package_dir: str, version: str) -> None:
     readme_path = os.path.join(package_dir, "README.txt")
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(readme_content)
-    print(f"   ✅ README.txt")
+    print("   ✅ README.txt")
 
 
 def parse_args():
@@ -382,13 +379,13 @@ def main():
                 ]
                 result = sign_subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
-                    print(f"   ✅ 代码签名成功")
+                    print("   ✅ 代码签名成功")
                 else:
                     print(f"   ⚠️  代码签名失败: {result.stderr}")
             except Exception as e:
                 print(f"   ⚠️  代码签名出错: {e}")
         else:
-            print(f"   ⚠️  exe 文件不存在，跳过签名")
+            print("   ⚠️  exe 文件不存在，跳过签名")
     
     # 9. 清理临时文件
     print("\n🧹 清理临时文件...")
@@ -400,7 +397,7 @@ def main():
     
     # 10. 完成
     print("\n" + "=" * 60)
-    print(f"🎉 打包完成！")
+    print("🎉 打包完成！")
     print(f"📂 输出目录: {os.path.abspath(package_dir)}")
     print("=" * 60)
     

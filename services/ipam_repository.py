@@ -24,10 +24,10 @@ class IPAMRepository:
         return self.ipam.update_network(network_address, description)
 
     def delete_network(self, network_address):
-        return self.ipam.delete_network(network_address)
+        return self.ipam.remove_network(network_address)
 
     def get_ips_in_network(self, network_address):
-        return self.ipam.get_ips_in_network(network_address)
+        return self.ipam.get_network_ips(network_address)
 
     def add_ip(self, network_address, ip_address, status="available", description=""):
         return self.ipam.add_ip(network_address, ip_address, status, description)
@@ -41,14 +41,14 @@ class IPAMRepository:
     def get_last_backup_time(self):
         return self.ipam.get_last_backup_time()
 
-    def backup_data(self, backup_type='manual', frequency=None):
+    def backup_data(self, backup_type='manual', frequency='manual'):
         return self.ipam.backup_data(backup_type=backup_type, frequency=frequency)
 
     def restore_data(self, backup_file):
         return self.ipam.restore_data(backup_file)
 
     def get_all_backups(self):
-        return self.ipam.get_all_backups()
+        return self.ipam.list_backups()
 
     def search_ips(self, keyword, search_mode="contains"):
         return self.ipam.search_ips(keyword, search_mode)
@@ -78,22 +78,28 @@ class IPAMRepository:
         return self.ipam.update_ip_expiry_by_id(ip_id, expiry_date)
 
     def batch_allocate_ips(self, network_address, ip_addresses, description=""):
-        return self.ipam.batch_allocate_ips(network_address, ip_addresses, description)
+        ip_info_list = [{'ip_address': ip, 'hostname': '', 'description': description} for ip in ip_addresses]
+        return self.ipam.batch_allocate_ips(network_address, ip_info_list)
 
     def batch_release_ips(self, ip_ids):
         return self.ipam.batch_release_ips(ip_ids)
 
-    def check_ip_conflicts(self, network_address=None):
-        return self.ipam.check_ip_conflicts(network_address)
+    def check_ip_conflicts(self, ip_address):
+        return self.ipam.check_ip_conflicts(ip_address)
 
-    def get_available_ips(self, network_address):
-        return self.ipam.get_available_ips(network_address)
+    def get_available_ips(self):
+        return self.ipam.get_available_ips()
 
-    def cleanup_available_ips(self, network_address):
-        return self.ipam.cleanup_available_ips(network_address)
+    def cleanup_available_ips(self):
+        return self.ipam.cleanup_available_ips()
 
     def batch_migrate_ips(self, ip_ids, target_network):
-        return self.ipam.batch_migrate_ips(ip_ids, target_network)
+        ip_records = []
+        for ip_id in ip_ids:
+            record = self.ipam.get_ip_record_by_id(ip_id)
+            if record:
+                ip_records.append(record)
+        return self.ipam.batch_migrate_ips(ip_records, target_network)
 
     def batch_set_expiry_date(self, ip_ids, expiry_date):
         return self.ipam.batch_update_ip_expiry_by_ids(ip_ids, expiry_date)
@@ -123,7 +129,7 @@ class IPAMRepository:
         for record in records:
             encrypted_pwd = record.get('encrypted_password', '')
             if encrypted_pwd:
-                record['password'] = self.crypto.decrypt(encrypted_pwd)
+                record['password'] = self.crypto.decrypt(str(encrypted_pwd))
             else:
                 record['password'] = ''
         return records

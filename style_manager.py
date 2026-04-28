@@ -241,37 +241,37 @@ class StyleManager:
         
         # 默认按钮
         self.style.configure("TButton", **base_font_style, padding=button_padding, **button_focus_style)
-        self.style.map("TButton", 
-            focuscolor=[('focus', '')],
-            highlightcolor=[('focus', '')],
-            highlightbackground=[('focus', '')]
-        )
+        self.style.map("TButton",
+                       focuscolor=[('focus', '')],
+                       highlightcolor=[('focus', '')],
+                       highlightbackground=[('focus', '')]
+                       )
         
         # 功能按钮样式 - 添加、删除、撤销、移动、导入等
         self.style.configure("Function.TButton", **function_button_font_style, padding=button_padding, **button_focus_style)
-        self.style.map("Function.TButton", 
-            focuscolor=[('focus', '')],
-            highlightcolor=[('focus', '')],
-            highlightbackground=[('focus', '')]
-        )
+        self.style.map("Function.TButton",
+                       focuscolor=[('focus', '')],
+                       highlightcolor=[('focus', '')],
+                       highlightbackground=[('focus', '')]
+                       )
         
         # 移动按钮样式 - 使用独立的字体配置，大小继承自功能按钮
         move_button_font = get_move_button_font()
         move_button_style = {"font": (move_button_font, function_button_font_size)}
         self.style.configure("Move.TButton", **move_button_style, padding=button_padding, **button_focus_style)  # type: ignore
-        self.style.map("Move.TButton", 
-            focuscolor=[('focus', '')],
-            highlightcolor=[('focus', '')],
-            highlightbackground=[('focus', '')]
-        )
+        self.style.map("Move.TButton",
+                       focuscolor=[('focus', '')],
+                       highlightcolor=[('focus', '')],
+                       highlightbackground=[('focus', '')]
+                       )
         
         # 图标按钮样式（如重置按钮）
         self.style.configure("Icon.TButton", **base_font_style, padding=button_padding, **button_focus_style)
-        self.style.map("Icon.TButton", 
-            focuscolor=[('focus', '')],
-            highlightcolor=[('focus', '')],
-            highlightbackground=[('focus', '')]
-        )
+        self.style.map("Icon.TButton",
+                       focuscolor=[('focus', '')],
+                       highlightcolor=[('focus', '')],
+                       highlightbackground=[('focus', '')]
+                       )
         
         # 获取当前主题的按钮布局并移除焦点元素
         try:

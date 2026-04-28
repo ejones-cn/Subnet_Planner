@@ -3657,3 +3657,150 @@ class IPAMSQLite:
             return count > 0
         except Exception:
             return False
+
+    def get_network(self, network_address: str) -> dict[str, str | int] | None:
+        """根据网络地址获取网络信息
+
+        Args:
+            network_address: 网络地址（CIDR格式）
+
+        Returns:
+            dict[str, str | int] | None: 网络信息字典，不存在则返回None
+        """
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT id, network_address, description, vlan, created_at, updated_at FROM networks WHERE network_address = ?',
+                    (network_address,),
+                )
+                row = cursor.fetchone()
+                if row and isinstance(row, tuple) and len(row) >= 6:
+                    return {
+                        'id': int(row[0]),
+                        'network': str(row[1]),
+                        'description': str(row[2]).strip() if row[2] else '',
+                        'vlan': str(row[3]) if row[3] else '',
+                        'created_at': str(row[4]) if row[4] else '',
+                        'updated_at': str(row[5]) if row[5] else '',
+                        'ip_count': self.get_network_ip_count(str(row[1])),
+                    }
+                return None
+        except Exception:
+            return None
+
+    def add_ip(self, network_address: str, ip_address: str, status: str = "available", description: str = "") -> tuple[bool, str]:
+        """添加IP地址记录（支持任意状态）
+
+        Args:
+            network_address: 网络地址（CIDR格式）
+            ip_address: IP地址
+            status: IP状态（available/allocated/reserved/released）
+            description: 描述
+
+        Returns:
+            tuple[bool, str]: (是否成功, 错误信息)
+        """
+        if status == "allocated":
+            return self.allocate_ip(network_address, ip_address, '', description)
+        elif status == "reserved":
+            return self.reserve_ip(network_address, ip_address, '', description)
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cursor.execute(
+                    'INSERT INTO ip_addresses (ip_address, status, hostname, description, allocated_at, allocated_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    (ip_address, status, '', description, now, 'admin', now, now),
+                )
+                conn.commit()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def get_network_stats(self, network_address: str) -> dict[str, int]:
+        """获取指定网络的统计信息
+
+        Args:
+            network_address: 网络地址（CIDR格式）
+
+        Returns:
+            dict[str, int]: 统计信息
+        """
+        try:
+            ip_network = ipaddress.ip_network(network_address, strict=False)
+            total_hosts = max(ip_network.num_addresses - 2, 0)
+            ips = self.get_network_ips(network_address)
+            allocated = sum(1 for ip in ips if ip.get('status') == 'allocated')
+            reserved = sum(1 for ip in ips if ip.get('status') == 'reserved')
+            released = sum(1 for ip in ips if ip.get('status') == 'released')
+            return {
+                'total': total_hosts,
+                'allocated': allocated,
+                'reserved': reserved,
+                'available': max(total_hosts - allocated - reserved, 0),
+                'released': released,
+            }
+        except Exception:
+            return {'total': 0, 'allocated': 0, 'reserved': 0, 'available': 0, 'released': 0}
+
+    def get_expiring_ips(self, days_ahead: int = 7) -> list[dict[str, str | int | None]]:
+        """获取即将过期的IP地址
+
+        Args:
+            days_ahead: 提前天数（默认7天）
+
+        Returns:
+            list[dict[str, str | int | None]]: 即将过期的IP地址列表
+        """
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            now = datetime.now()
+            future = now + timedelta(days=days_ahead)
+            cursor.execute(
+                '''
+                SELECT id, ip_address, status, hostname, description, allocated_at, allocated_by, expiry_date, mac_address
+                FROM ip_addresses
+                WHERE expiry_date IS NOT NULL AND expiry_date != ''
+                AND expiry_date >= ? AND expiry_date <= ?
+                AND status IN ('allocated', 'reserved')
+                ''',
+                (now.strftime("%Y-%m-%d %H:%M:%S"), future.strftime("%Y-%m-%d %H:%M:%S")),
+            )
+            expiring_ips: list[dict[str, str | int | None]] = []
+            for row in cursor.fetchall():
+                if isinstance(row, tuple) and len(row) >= 9:
+                    expiring_ips.append({
+                        'id': int(row[0]),
+                        'ip_address': str(row[1]),
+                        'status': str(row[2]),
+                        'hostname': str(row[3]).strip() if row[3] else '',
+                        'description': str(row[4]).strip() if row[4] else '',
+                        'allocated_at': str(row[5]).strip() if row[5] else '',
+                        'allocated_by': str(row[6]).strip() if row[6] else '',
+                        'expiry_date': str(row[7]).strip() if row[7] else '',
+                        'mac_address': str(row[8]).strip() if row[8] else '',
+                    })
+            conn.close()
+            return expiring_ips
+        except Exception:
+            return []
+
+    def batch_release_ips(self, ip_ids: list[int]) -> tuple[bool, str, int]:
+        """批量释放IP地址
+
+        Args:
+            ip_ids: IP地址记录ID列表
+
+        Returns:
+            tuple[bool, str, int]: (是否成功, 错误信息, 成功释放数量)
+        """
+        success_count = 0
+        for ip_id in ip_ids:
+            result, _msg = self.release_ip_by_id(ip_id)
+            if result:
+                success_count += 1
+        if success_count == 0:
+            return False, _("no_ips_released"), 0
+        return True, _("batch_release_success").format(count=success_count), success_count

@@ -58,7 +58,7 @@ class SubnetPlanningService:
             return
 
         try:
-            parent_network = ipaddress.ip_network(parent, strict=False)
+            ipaddress.ip_network(parent, strict=False)
 
             formatted_requirements = [{'name': name, 'hosts': hosts} for name, hosts in subnet_requirements]
             plan_result = suggest_subnet_planning(parent, formatted_requirements)

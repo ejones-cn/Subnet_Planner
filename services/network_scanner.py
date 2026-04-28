@@ -13,7 +13,7 @@ import subprocess
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Optional
+from typing import Callable
 
 
 class NetworkScanner:
@@ -111,7 +111,7 @@ class NetworkScanner:
         return False
 
     @staticmethod
-    def tcp_check_host(ip_address: str, timeout_sec: float = 0.5, ports: Optional[list[int]] = None) -> bool:
+    def tcp_check_host(ip_address: str, timeout_sec: float = 0.5, ports: list[int] | None = None) -> bool:
         """使用TCP连接检测主机是否存活
 
         Args:
@@ -165,11 +165,11 @@ class NetworkScanner:
         thread_count: int = 10,
         timeout_ms: int = 500,
         scan_method: str = 'ping',
-        on_progress: Optional[Callable[[int, int, int, str], None]] = None,
-        on_ip_found: Optional[Callable[[dict], None]] = None,
-        on_complete: Optional[Callable[[list[dict]], None]] = None,
-        on_error: Optional[Callable[[str], None]] = None,
-        ports: Optional[list[int]] = None,
+        on_progress: Callable[[int, int, int, str], None] | None = None,
+        on_ip_found: Callable[[dict], None] | None = None,
+        on_complete: Callable[[list[dict]], None] | None = None,
+        on_error: Callable[[str], None] | None = None,
+        ports: list[int] | None = None,
     ):
         """扫描网络中的活动主机（在后台线程中执行）
 

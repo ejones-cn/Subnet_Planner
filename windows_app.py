@@ -39,17 +39,21 @@ from tkinter import ttk, filedialog
 
 # Monkey patching: 自动为所有ttk.Button设置takefocus=False，移除焦点虚线框
 original_button_init = ttk.Button.__init__
+
+
 def patched_button_init(self, master=None, **kw):
     kw.setdefault('takefocus', False)
     original_button_init(self, master, **kw)
+
+
 ttk.Button.__init__ = patched_button_init
 
-# 本地模块
-from version import get_version
-from i18n import _, set_language, get_language  # _ 是翻译函数，用于国际化
-from config_manager import get_config
-from ip_subnet_calculator import format_large_number
-from ip_subnet_calculator import (
+# 本地模块  # noqa: E402
+from version import get_version  # noqa: E402
+from i18n import _, set_language, get_language  # noqa: E402
+from config_manager import get_config  # noqa: E402
+from ip_subnet_calculator import format_large_number  # noqa: E402
+from ip_subnet_calculator import (  # noqa: E402
     split_subnet,
     ip_to_int,
     int_to_ip,
@@ -61,27 +65,27 @@ from ip_subnet_calculator import (
     check_subnet_overlap,
     handle_ip_subnet_error,
 )
-from export_utils import ExportUtils
-from chart_utils import draw_text_with_stroke, draw_distribution_chart
-from ipam_sqlite import IPAMSQLite
-from services.table_column_manager import TableColumnManager
-from services.history_repository import HistoryRepository
-from services.history_sqlite import HistorySQLite
-from services.ipam_repository import IPAMRepository
-from services.subnet_split_service import SubnetSplitService
-from services.subnet_planning_service import SubnetPlanningService
-from services.ip_query_service import IPQueryService
-from services.validation_service import ValidationService
-from services.crypto_service import get_crypto_service, CryptoService
-from validators import IPAMValidator
-from visualization import NetworkTopologyVisualizer
-from style_manager import (
+from export_utils import ExportUtils  # noqa: E402
+from chart_utils import draw_text_with_stroke, draw_distribution_chart  # noqa: E402
+from ipam_sqlite import IPAMSQLite  # noqa: E402
+from services.table_column_manager import TableColumnManager  # noqa: E402
+from services.history_repository import HistoryRepository  # noqa: E402
+from services.history_sqlite import HistorySQLite  # noqa: E402
+from services.ipam_repository import IPAMRepository  # noqa: E402
+from services.subnet_split_service import SubnetSplitService  # noqa: E402
+from services.subnet_planning_service import SubnetPlanningService  # noqa: E402
+from services.ip_query_service import IPQueryService  # noqa: E402
+from services.validation_service import ValidationService  # noqa: E402
+from services.crypto_service import get_crypto_service, CryptoService  # noqa: E402
+from validators import IPAMValidator  # noqa: E402
+from visualization import NetworkTopologyVisualizer  # noqa: E402
+from style_manager import (  # noqa: E402
     init_style_manager,
     update_styles,
     get_current_font_settings,
     get_style_manager,
 )
-from font_config import (
+from font_config import (  # noqa: E402
     get_pin_button_font_size,
     get_function_button_font_size,
     get_info_bar_font_size,
@@ -91,7 +95,7 @@ from font_config import (
 # 尝试导入DateEntry，如果失败则设置为None
 DateEntry = None
 try:
-    from tkcalendar import DateEntry
+    from tkcalendar import DateEntry  # noqa: E402
 except ImportError:
     print("Warning: tkcalendar module not found, date picker will be disabled")
 
@@ -17349,14 +17353,14 @@ class SubnetPlannerApp:
         )
         title_label.pack(pady=(0, 10))
         
-        # 延期时间选项
+        # 延期时间选项 (存储月份数，使用更精确的日历计算)
         extend_options = [
-            (_('1_month'), 31),
-            (_('3_months'), 91),
-            (_('6_months'), 182),
-            (_('1_year'), 365),
-            (_('3_years'), 1095),
-            (_('5_years'), 1825)
+            (_('1_month'), 1),
+            (_('3_months'), 3),
+            (_('6_months'), 6),
+            (_('1_year'), 12),
+            (_('3_years'), 36),
+            (_('5_years'), 60)
         ]
         
         # 变量
@@ -17396,15 +17400,15 @@ class SubnetPlannerApp:
         
         # 创建确定按钮
         def on_confirm():
-            # 获取选中的延期天数
+            # 获取选中的延期月份数
             selected_text = selected_option.get()
-            days = None
-            for text, d in extend_options:
+            months = None
+            for text, m in extend_options:
                 if text == selected_text:
-                    days = d
+                    months = m
                     break
             
-            if days is not None:
+            if months is not None:
                 # 执行延期操作
                 extended_count = 0
                 for ip in selected_ips:
@@ -17412,7 +17416,21 @@ class SubnetPlannerApp:
                     if current_expiry:
                         try:
                             # 计算新的过期日期，设置为当天的最后一秒 (23:59:59)
-                            new_expiry = datetime.datetime.now() + datetime.timedelta(days=days)
+                            now = datetime.datetime.now()
+                            # 使用月份数进行精确的日期计算
+                            new_month = now.month + months
+                            new_year = now.year + (new_month - 1) // 12
+                            new_month = ((new_month - 1) % 12) + 1
+                            new_expiry = now.replace(year=new_year, month=new_month, day=1)
+                            # 调整到目标月份的最后一天
+                            if new_month == 12:
+                                next_month = 1
+                                next_year = new_year + 1
+                            else:
+                                next_month = new_month + 1
+                                next_year = new_year
+                            last_day_of_month = (datetime.datetime(next_year, next_month, 1) - datetime.timedelta(days=1)).day
+                            new_expiry = new_expiry.replace(day=min(now.day, last_day_of_month))
                             new_expiry = new_expiry.replace(hour=23, minute=59, second=59)
                             new_expiry_str = new_expiry.strftime('%Y-%m-%d %H:%M:%S')
                             

@@ -47,7 +47,8 @@ def generate_package_list() -> PackageInfo:
         "exe_file": "SubnetPlannerV3.0.0.exe",
         "included_files": [],
         "excluded_files": [],
-        "directories": []
+        "directories": [],
+        "runtime_generated": []
     }
 
     included_data_files = [
