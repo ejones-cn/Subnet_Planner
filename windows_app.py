@@ -36,6 +36,7 @@ from openpyxl import Workbook, load_workbook  # type: ignore
 from openpyxl.styles import Font, Alignment  # type: ignore
 from PIL import Image, ImageTk
 from tkinter import ttk, filedialog
+import tkcalendar  # noqa: F401  # 显式导入让Nuitka检测到依赖
 
 # Monkey patching: 自动为所有ttk.Button设置takefocus=False，移除焦点虚线框
 original_button_init = ttk.Button.__init__
