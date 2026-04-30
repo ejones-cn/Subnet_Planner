@@ -1,0 +1,48 @@
+name: Build SubnetPlanner
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  release:
+    types:
+      - created
+  workflow_dispatch:
+
+jobs:
+  build-standalone:
+    name: Build Standalone EXE
+    runs-on: euleros-2.10.1
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: checkout-action@0.0.1
+
+      - name: Set up Python
+        uses: setup-python@0.0.1
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka==2.1.1 pillow ip_subnet_calculator tkcalendar --index-url https://pypi.tuna.tsinghua.edu.cn/simple --prefer-binary
+
+      - name: Build with Nuitka
+        run: |
+          python -m nuitka --standalone --follow-imports --include-module=splash_screen --include-module=font_config --include-module=style_manager --include-module=chart_utils --include-module=visualization --include-module=tkcalendar --include-module=tkcalendar.calendar_ --include-module=tkcalendar.dateentry --include-module=tkcalendar.tooltip --windows-icon-from-ico=icon.ico --include-data-file=translations.json=translations.json --include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json --include-data-dir=Picture=Picture --enable-plugin=tk-inter --windows-console-mode=attach --assume-yes-for-downloads --nofollow-import-to=babel --nofollow-import-to=tzdata --nofollow-import-to=setuptools --nofollow-import-to=pip --nofollow-import-to=charset_normalizer --nofollow-import-to=urllib3 --nofollow-import-to=certifi --nofollow-import-to=requests --nofollow-import-to=numpy --nofollow-import-to=scipy --nofollow-import-to=matplotlib --nofollow-import-to=pandas --nofollow-import-to=sklearn --output-filename=SubnetPlanner.exe windows_app.py
+
+      - name: Rename dist directory
+        run: |
+          if (Test-Path windows_app.dist) {
+            Rename-Item windows_app.dist SubnetPlanner_Nuitka.dist -Force
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SubnetPlanner-standalone
+          path: SubnetPlanner_Nuitka.dist/
+          retention-days: 30

@@ -848,7 +848,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--include-module=style_manager",
             "--include-module=chart_utils",
             "--include-module=visualization",
-            "--include-module=tkcalendar",  # 显式包含日历组件
+            "--include-package=tkcalendar",
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
             "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
@@ -856,7 +856,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--enable-plugin=tk-inter",
             "--windows-console-mode=attach",
             "--assume-yes-for-downloads",
-            "--enable-plugin=anti-bloat",
+            # "--enable-plugin=anti-bloat",  # 禁用anti-bloat以确保tkcalendar被正确打包
             # 排除不必要的包，减小体积
             "--nofollow-import-to=babel",
             "--nofollow-import-to=tzdata",

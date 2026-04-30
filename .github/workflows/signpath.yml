@@ -1,0 +1,91 @@
+name: SignPath Code Signing
+
+on:
+  workflow_run:
+    workflows: ["Build SubnetPlanner"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  sign-with-signpath:
+    name: Sign EXE with SignPath
+    runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    permissions:
+      actions: read
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download OneFile artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SubnetPlanner_OneFile
+          path: ./artifacts/onefile/
+          
+      - name: Download Standalone artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SubnetPlanner_Standalone
+          path: ./artifacts/standalone/
+          
+      - name: List artifacts
+        shell: bash
+        run: |
+          echo "OneFile directory:"
+          ls -la ./artifacts/onefile/
+          echo ""
+          echo "Standalone directory:"
+          ls -la ./artifacts/standalone/
+          
+      - name: Find EXE to sign
+        id: find_exe
+        shell: bash
+        run: |
+          EXE_PATH=""
+          for f in ./artifacts/onefile/*.exe; do
+            if [ -f "$f" ]; then
+              EXE_PATH="$f"
+              EXE_NAME=$(basename "$f")
+              echo "EXE_PATH=${EXE_PATH}" >> $GITHUB_ENV
+              echo "EXE_NAME=${EXE_NAME}" >> $GITHUB_ENV
+              break
+            fi
+          done
+          
+          if [ -z "${EXE_PATH}" ]; then
+            echo "::error::No EXE found to sign"
+            exit 1
+          fi
+          
+          echo "Found EXE: ${EXE_PATH}"
+          
+      - name: SignPath Integration (Placeholder)
+        shell: bash
+        run: |
+          echo "SignPath integration requires the following setup:"
+          echo ""
+          echo "1. Install SignPath GitHub App on your repository"
+          echo "2. Configure SignPath project and signing policy"
+          echo "3. Add SignPath credentials as GitHub Secrets"
+          echo ""
+          echo "See SIGNPATH_SETUP.md for detailed instructions"
+          
+          echo ""
+          echo "EXE to sign: ${EXE_NAME}"
+          echo "Path: ${EXE_PATH}"
+          echo ""
+          echo "For now, creating a signed marker file..."
+          touch ./artifacts/onefile/signed_marker.txt
+          
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SubnetPlanner_Signed
+          path: |
+            ./artifacts/onefile/*.exe
+            ./artifacts/onefile/signed_marker.txt
+          retention-days: 90
