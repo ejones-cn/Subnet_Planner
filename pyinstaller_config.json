@@ -61,7 +61,6 @@
   "datas": [
     ["translations.json", "."],
     ["icon.ico", "."],
-    ["Picture", "Picture"],
     ["SubnetPlanner_config.json", "."]
   ]
 }

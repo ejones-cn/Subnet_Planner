@@ -150,7 +150,7 @@ Subnet_Planner/
 ├── icon-O.ico               # 应用程序图标
 ├── Subnet_Planner.ico       # 应用程序图标
 ├── SubnetPlannerV3.0.0.exe  # Windows可执行文件 (v3.0.0版本，当前版本)
-├── Picture/                 # 图片资源目录
+├── donate_qr_images.py       # 捐助二维码图片数据（Base64嵌入）
 ├── Sample/                  # 示例文件目录
 ├── translations.json        # 翻译文件
 ├── test_*.py                # 测试脚本

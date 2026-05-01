@@ -10623,23 +10623,17 @@ class SubnetPlannerApp:
             # 加载并显示微信二维码
             try:
                 from PIL import Image, ImageTk
-                import os
+                from donate_qr_images import get_wechat_qr_image
                 
-                # 微信二维码图片路径（如果存在）
-                wechat_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "33144271b0126dc527a3697193132c8f.jpg")
-                
-                if os.path.exists(wechat_qr_path):
-                    # 加载图片
-                    wechat_img = Image.open(wechat_qr_path)
+                wechat_img = get_wechat_qr_image()
+                if wechat_img is not None:
                     wechat_img = wechat_img.resize((150, 150), Image.Resampling.LANCZOS)
                     wechat_photo = ImageTk.PhotoImage(wechat_img)
                     
-                    # 创建标签显示图片
                     wechat_qr_label = ttk.Label(wechat_frame, image=wechat_photo, style="About.TLabel")
-                    wechat_qr_label.image = wechat_photo  # 保存引用，防止被GC回收
+                    wechat_qr_label.image = wechat_photo
                     wechat_qr_label.pack(pady=(5, 5))
                 else:
-                    # 微信二维码占位符
                     wechat_qr_placeholder = ttk.Label(wechat_frame, 
                                                     text=_("wechat_qr"), 
                                                     font=(font_family, 10),
@@ -10647,7 +10641,6 @@ class SubnetPlannerApp:
                                                     foreground="#999999")
                     wechat_qr_placeholder.pack(pady=(5, 5))
             except Exception as e:
-                # 加载图片失败时显示占位符
                 print(f"加载微信二维码失败: {e}")
                 wechat_qr_placeholder = ttk.Label(wechat_frame, 
                                                 text=_("wechat_qr"), 
@@ -10669,23 +10662,17 @@ class SubnetPlannerApp:
             # 加载并显示支付宝二维码
             try:
                 from PIL import Image, ImageTk
-                import os
+                from donate_qr_images import get_alipay_qr_image
                 
-                # 支付宝二维码图片路径（如果存在）
-                alipay_qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Picture", "df981e51d905be6bfc2eda8666621d93.jpg")
-                
-                if os.path.exists(alipay_qr_path):
-                    # 加载图片
-                    alipay_img = Image.open(alipay_qr_path)
+                alipay_img = get_alipay_qr_image()
+                if alipay_img is not None:
                     alipay_img = alipay_img.resize((150, 150), Image.Resampling.LANCZOS)
                     alipay_photo = ImageTk.PhotoImage(alipay_img)
                     
-                    # 创建标签显示图片
                     alipay_qr_label = ttk.Label(alipay_frame, image=alipay_photo, style="About.TLabel")
-                    alipay_qr_label.image = alipay_photo  # 保存引用，防止被GC回收
+                    alipay_qr_label.image = alipay_photo
                     alipay_qr_label.pack(pady=(5, 5))
                 else:
-                    # 支付宝二维码占位符
                     alipay_qr_placeholder = ttk.Label(alipay_frame, 
                                                     text=_("alipay_qr"), 
                                                     font=(font_family, 10),
@@ -10693,7 +10680,6 @@ class SubnetPlannerApp:
                                                     foreground="#999999")
                     alipay_qr_placeholder.pack(pady=(5, 5))
             except Exception as e:
-                # 加载图片失败时显示占位符
                 print(f"加载支付宝二维码失败: {e}")
                 alipay_qr_placeholder = ttk.Label(alipay_frame, 
                                                 text=_("alipay_qr"), 

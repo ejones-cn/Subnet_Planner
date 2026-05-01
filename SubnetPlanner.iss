@@ -66,8 +66,7 @@ Source: "{#SourcePath}\*.pyd"; DestDir: "{app}"; Flags: ignoreversion skipifsour
 ; 配置文件
 Source: "{#SourcePath}\translations.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourcePath}\SubnetPlanner_config.json"; DestDir: "{app}"; Flags: ignoreversion
-; 图片资源
-Source: "{#SourcePath}\Picture\*"; DestDir: "{app}\Picture"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 图片资源已嵌入代码中
 ; 其他必要文件
 Source: "{#SourcePath}\*.ico"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 

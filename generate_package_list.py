@@ -56,9 +56,7 @@ def generate_package_list() -> PackageInfo:
         "Subnet_Planner.ico"
     ]
 
-    included_dirs = [
-        "Picture"
-    ]
+    included_dirs = []
 
     excluded_items = [
         "SubnetPlanner_data.db",
