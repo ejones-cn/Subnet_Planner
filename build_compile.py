@@ -667,6 +667,8 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
         return True
     
     print(f"\n🔐 正在签名可执行文件: {executable_path}")
+    print(f"   [DEBUG] pfx_password provided: {'Yes' if pfx_password else 'No'}")
+    print(f"   [DEBUG] pfx_password value: {pfx_password if pfx_password else 'None'}")
     
     if signtool_path and os.path.exists(signtool_path):
         print(f"✅ 使用参数指定的signtool路径: {signtool_path}")
