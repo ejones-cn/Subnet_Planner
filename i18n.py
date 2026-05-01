@@ -222,7 +222,7 @@ def get_tkcalendar_locale() -> str:
         "ja": "ja_JP",
         "ko": "ko_KR"
     }
-    return locale_map.get(translator.get_language(), "zh_CN")
+    return locale_map.get(translator.get_language(), "en_US")
 
 
 # 导出TRANSLATIONS常量，保持向后兼容

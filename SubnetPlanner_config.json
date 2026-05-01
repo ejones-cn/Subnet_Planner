@@ -10,17 +10,12 @@
   },
   "auto_backup": {
     "enabled": true,
-    "frequency": "daily"
+    "frequency": "weekly"
   },
   "ui": {
     "theme": "vista",
     "font_size": 11,
-    "tab_order": [
-      "ip_address_management",
-      "subnet_planning",
-      "subnet_split",
-      "advanced_tools"
-    ]
+    "tab_order": []
   },
   "recent_files": [],
   "last_used_network": null

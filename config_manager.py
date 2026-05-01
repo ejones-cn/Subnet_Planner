@@ -29,7 +29,7 @@ class ConfigManager:
         },
         "auto_backup": {
             "enabled": True,
-            "frequency": "daily"
+            "frequency": "weekly"
         },
         "ui": {
             "theme": "vista",
@@ -441,12 +441,13 @@ class ConfigManager:
     
     def get_auto_backup_frequency(self) -> str:
         """获取自动备份频率
-        
+
         Returns:
             备份频率
         """
-        result = self.get('auto_backup.frequency', 'daily')
-        return result if isinstance(result, str) else 'daily'
+        default_frequency = self.DEFAULT_CONFIG['auto_backup']['frequency']
+        result = self.get('auto_backup.frequency', default_frequency)
+        return result if isinstance(result, str) else default_frequency
     
     def set_auto_backup_frequency(self, frequency: str) -> bool:
         """设置自动备份频率

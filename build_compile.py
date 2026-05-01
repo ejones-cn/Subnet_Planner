@@ -625,7 +625,7 @@ def _generate_spec_content(version: str, output_filename: str, onefile: bool) ->
             "idlelib", "pydoc", "test", "lib2to3",
             "debug", "code", "codeop", "readline", "rlcompleter",
         ]
-        datas = [["translations.json", "."], ["Picture", "Picture"], ["SubnetPlanner_config.json", "."]]
+        datas = [["translations.json", "."], ["Picture", "Picture"]]
     
     excludes_str = ",\n                 ".join(f"'{module}'" for module in excludes)
     datas_str = ",\n             ".join(f"('{data[0]}', '{data[1]}')" for data in datas)
@@ -927,7 +927,6 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--include-package=babel",
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
-            "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
             "--include-data-dir=Picture=Picture",
             "--enable-plugin=tk-inter",
             "--windows-console-mode=disable",
@@ -1157,7 +1156,8 @@ def main() -> None:
     _ = parser.add_argument("--signtool-path", "-s", help="signtool.exe工具路径，不指定则自动检测")
     _ = parser.add_argument("--onefile", action="store_true", default=False, help="使用单文件编译模式（默认：否，使用Nuitka目录模式）")
     _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
-    _ = parser.add_argument("--upx", action="store_true", default=False, help="启用UPX压缩DLL/PYD（可减小体积但可能触发杀毒误报，默认禁用）")
+    _ = parser.add_argument("--upx", action="store_true", default=False,
+                           help="启用UPX压缩（默认禁用以减少杀毒误报）")
     args = parser.parse_args()
     
     compile_type_str = cast(str, args.type)

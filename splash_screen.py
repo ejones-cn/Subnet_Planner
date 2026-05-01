@@ -58,7 +58,7 @@ class SplashScreen:
         left_frame.pack_propagate(False)  # 禁止Frame根据内容自动调整大小
         
         font_family = get_splash_font_family()
-        title_label = tk.Label(left_frame, text=_('app_name'), font=(font_family, get_splash_font_size('title'), 'bold'), bg='#F1F5F9', fg='#1E293B')
+        title_label = tk.Label(left_frame, text=_('app_name'), font=(font_family, get_splash_font_size('title'), 'bold'), bg='#F1F5F9', fg='#041442')
         title_label.pack(pady=(0, 10))
 
         version_label = tk.Label(left_frame, text=f"v{__version__}", font=(font_family, get_splash_font_size('version')), bg='#F1F5F9', fg='#64748B')
@@ -70,7 +70,7 @@ class SplashScreen:
         self.status_text = tk.Label(status_frame, text=_('loading_resources'), font=(font_family, get_splash_font_size('status')), bg='#F1F5F9', fg='#475569')
         self.status_text.pack(anchor=tk.W, pady=(0, 5))
 
-        self.loading_text = tk.Label(status_frame, text=_('splash_loading'), font=(font_family, get_splash_font_size('loading')), bg='#F1F5F9', fg='#0EA5E9')
+        self.loading_text = tk.Label(status_frame, text=_('splash_loading'), font=(font_family, get_splash_font_size('loading')), bg='#F1F5F9', fg='#0c90cc')
         self.loading_text.pack(anchor=tk.W)
         
         self.right_frame = tk.Frame(main_frame, bg='#0F172A')
