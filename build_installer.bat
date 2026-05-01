@@ -93,16 +93,12 @@ if exist "%PFX_FILE%" (
         :: 检查环境变量中是否已设置密码，优先使用环境变量
         if defined PFX_PASSWORD (
             set "SIGN_PASSWORD=%PFX_PASSWORD%"
-        ) else (
-            echo [提示] PFX_PASSWORD 环境变量未设置，将尝试使用空密码签名
-            set "SIGN_PASSWORD="
-        )
-
-        if defined PFX_PASSWORD (
             echo [信息] 使用环境变量中的证书密码进行签名
             echo [提示] 如需更换密码，请先设置: set PFX_PASSWORD=your_password
         ) else (
+            echo [提示] PFX_PASSWORD 环境变量未设置，将尝试使用空密码签名
             echo [警告] 未检测到 PFX_PASSWORD 环境变量，将使用空密码
+            set "SIGN_PASSWORD="
         )
 
         echo.

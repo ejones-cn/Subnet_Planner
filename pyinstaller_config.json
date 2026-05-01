@@ -59,8 +59,6 @@
     "rlcompleter"
   ],
   "datas": [
-    ["translations.json", "."],
-    ["icon.ico", "."],
-    ["SubnetPlanner_config.json", "."]
+    ["translations.json", "."]
   ]
 }

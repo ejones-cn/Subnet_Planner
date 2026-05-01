@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-05-01 23:10:39",
+  "exe_file": "SubnetPlannerV3.0.0.exe",
+  "included_files": [
+    {
+      "name": "translations.json",
+      "size_bytes": 217804,
+      "size_human": "212.70 KB"
+    }
+  ],
+  "excluded_files": [
+    "SubnetPlanner_data.db",
+    "ipam_backups",
+    "*.db"
+  ],
+  "directories": [],
+  "runtime_generated": [
+    {
+      "name": "SubnetPlanner_data.db",
+      "description": "主数据库文件，运行时在程序所在目录创建"
+    },
+    {
+      "name": "ipam_backups/",
+      "description": "备份目录，运行时在程序所在目录创建"
+    }
+  ]
+}

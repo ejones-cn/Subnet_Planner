@@ -2095,10 +2095,10 @@ class SubnetPlannerApp:
             # 清空现有历史记录
             self.history_listbox.delete(0, tk.END)
 
-            # 重新插入所有历史记录
+            # 重新插入所有历史记录（添加缩进）
             for index, history_record in enumerate(self.history_records, 1):
-                # 格式化为: 1.  10.0.0.8/5 | 10.21.50.0/23
-                formatted_record = f"{index}. {history_record['parent']}  |  {history_record['split']}"
+                # 格式化为:  1.  10.0.0.8/5 | 10.21.50.0/23（前面加空格实现缩进）
+                formatted_record = f"  {index}. {history_record['parent']}  |  {history_record['split']}"
                 self.history_listbox.insert(tk.END, formatted_record)
 
             # 应用斑马条纹效果
@@ -2598,8 +2598,9 @@ class SubnetPlannerApp:
         # 添加垂直滚动条
         history_scroll = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
 
-        # 使用通用滚动条配置
-        self._setup_scrollbar(history_scroll, self.history_listbox, initial_hidden=True)
+        # 使用通用滚动条配置，滚动条隐藏时 Listbox 右侧留 10 像素外边距
+        self._setup_scrollbar(history_scroll, self.history_listbox, initial_hidden=True,
+                               widget_command=self.history_listbox.yview, padx_adjust=(0, 10))
 
         # 绑定右键菜单
         self.bind_listbox_right_click(self.history_listbox)
@@ -2614,7 +2615,7 @@ class SubnetPlannerApp:
         self.reexecute_btn = ttk.Button(
             history_frame, text=_("reexecute_split"), command=self.reexecute_split, width=10
         )
-        self.reexecute_btn.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(5, 0))
+        self.reexecute_btn.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=(0, 0))
 
     def adjust_remaining_tree_width(self):
         """调整剩余网段表表格的宽度，使其自适应窗口大小"""
@@ -3139,8 +3140,8 @@ class SubnetPlannerApp:
         button_frame.grid_rowconfigure(2, weight=0)  # 撤销按钮
         button_frame.grid_rowconfigure(3, weight=0)  # 互换按钮
         button_frame.grid_rowconfigure(4, weight=0)  # 导入按钮
-        button_frame.grid_rowconfigure(5, weight=1)  # 执行规划按钮 - 上半部分
-        button_frame.grid_rowconfigure(6, weight=0)  # 执行规划按钮 - 下半部分
+        button_frame.grid_rowconfigure(5, weight=1)  # 执行规划按钮区域
+        button_frame.grid_rowconfigure(6, weight=0)  # 执行规划按钮区域
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
@@ -3234,24 +3235,24 @@ class SubnetPlannerApp:
         # 按钮间距
         button_gap = 10
 
-        # 同步到地址管理按钮 - 位于最右边
-        sync_btn_width, __ = style_manager.get_button_size("sync_to_ipam") if style_manager else (12, 25)
-        self.sync_to_ipam_btn = ttk.Button(
-            result_frame, text=_("sync_to_ipam"), command=self.sync_allocated_to_ipam, width=sync_btn_width
-        )
-        # 先更新窗口，确保能获取到按钮的实际宽度
-        self.root.update_idletasks()
-        self.sync_to_ipam_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
-        sync_btn_width_actual = self.sync_to_ipam_btn.winfo_reqwidth()
-
-        # 导出规划按钮 - 位于同步按钮左边
+        # 导出规划按钮 - 位于最右边
         export_btn_width, __ = style_manager.get_button_size("export_planning") if style_manager else (10, 25)
         export_planning_btn = ttk.Button(
             result_frame, text=_('export_planning'), command=self.export_planning_result, width=export_btn_width
         )
-        export_btn_x = -sync_btn_width_actual - button_gap
-        export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=export_btn_x, y=-3)
+        # 先更新窗口，确保能获取到按钮的实际宽度
+        self.root.update_idletasks()
+        export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=0, y=-3)
         export_btn_width_actual = export_planning_btn.winfo_reqwidth()
+
+        # 同步到地址管理按钮 - 位于导出规划按钮左边
+        sync_btn_width, __ = style_manager.get_button_size("sync_to_ipam") if style_manager else (12, 25)
+        self.sync_to_ipam_btn = ttk.Button(
+            result_frame, text=_("sync_to_ipam"), command=self.sync_allocated_to_ipam, width=sync_btn_width
+        )
+        sync_btn_x = -export_btn_width_actual - button_gap
+        self.sync_to_ipam_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=sync_btn_x, y=-3)
+        sync_btn_width_actual = self.sync_to_ipam_btn.winfo_reqwidth()
 
 
 
@@ -5316,7 +5317,7 @@ class SubnetPlannerApp:
 
         Args:
             scrollbar: 滚动条组件
-            treeview: Treeview组件（可选），用于调整padx
+            treeview: Treeview组件（可选），用于调整padx和获取rowspan
             padx_adjust: 滚动条隐藏时Treeview的右边距调整量
 
         Returns:
@@ -5352,7 +5353,19 @@ class SubnetPlannerApp:
                     if scrollbar_orient == 'horizontal':
                         scrollbar.grid(row=1, column=0, sticky=tk.EW)
                     else:  # vertical
-                        scrollbar.grid(row=0, column=1, sticky=tk.NS)
+                        # 从关联的widget获取grid信息，保持rowspan一致
+                        grid_kwargs = {'row': 0, 'column': 1, 'sticky': tk.NS}
+                        if treeview:
+                            try:
+                                info = treeview.grid_info()
+                                if info:
+                                    grid_kwargs['row'] = int(info.get('row', 0))
+                                    rowspan = info.get('rowspan', '')
+                                    if rowspan:
+                                        grid_kwargs['rowspan'] = int(rowspan)
+                            except (tk.TclError, AttributeError):
+                                pass
+                        scrollbar.grid(**grid_kwargs)
                     if treeview and padx_adjust:
                         try:
                             treeview.grid_configure(padx=0)

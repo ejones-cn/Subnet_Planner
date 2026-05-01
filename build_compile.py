@@ -559,36 +559,6 @@ def _upx_compress_dist(dist_dir: str) -> None:
     print(f"   ✅ UPX 压缩完成: {compressed_count} 个文件，节省 {saved_mb:.1f} MB (压缩率 {ratio:.0f}%)")
 
 
-def _restore_database_and_backups(
-    temp_db_dir: str,
-    original_db: str,
-    original_backup_dir: str
-) -> None:
-    """恢复数据库和备份目录
-    
-    Args:
-        temp_db_dir: 临时目录路径
-        original_db: 原始数据库文件名
-        original_backup_dir: 原始备份目录名
-    """
-    temp_db = os.path.join(temp_db_dir, original_db)
-    temp_backup_dir = os.path.join(temp_db_dir, original_backup_dir)
-    
-    if os.path.exists(temp_db):
-        try:
-            moved_path = shutil.move(temp_db, original_db)
-            print(f"✅ 恢复数据库文件成功: {moved_path}")
-        except Exception as e:
-            print(f"❌ 恢复数据库文件失败: {original_db}, 错误: {e}")
-    
-    if os.path.exists(temp_backup_dir):
-        try:
-            moved_path = shutil.move(temp_backup_dir, original_backup_dir)
-            print(f"✅ 恢复备份目录成功: {moved_path}")
-        except Exception as e:
-            print(f"❌ 恢复备份目录失败: {original_backup_dir}, 错误: {e}")
-
-
 def _generate_spec_content(version: str, output_filename: str, onefile: bool) -> str:
     """生成PyInstaller spec文件内容
     
@@ -801,7 +771,7 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
                     break
             
             try:
-                print(f"📝 签名命令: {' '.join(sign_cmd[:-2])} [密码隐藏] {executable_path}")
+                print(f"📝 签名命令: {signtool_path} sign /fd SHA256 /f {pfx_file} /p [密码隐藏] /t {ts_server} {executable_path}")
                 _ = subprocess.run(sign_cmd, check=True, cwd=os.getcwd(), capture_output=True, text=True)
                 print("✅ 代码签名成功!")
                 return True
@@ -885,23 +855,6 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     
     version, version_resource = prepare_version_info()
     output_filename = f"SubnetPlannerV{version}.exe"
-    
-    temp_db_dir = os.path.join(os.path.expanduser("~"), ".subnet_planner_temp")
-    original_db = "SubnetPlanner_data.db"
-    original_backup_dir = "ipam_backups"
-    should_restore = False
-    
-    if os.path.exists(original_db) or os.path.exists(original_backup_dir):
-        os.makedirs(temp_db_dir, exist_ok=True)
-        should_restore = True
-        
-        if os.path.exists(original_db):
-            moved_path = shutil.move(original_db, os.path.join(temp_db_dir, original_db))
-            print(f"⏳ 临时移动数据库文件: {original_db} -> {moved_path}")
-        
-        if os.path.exists(original_backup_dir):
-            moved_path = shutil.move(original_backup_dir, os.path.join(temp_db_dir, original_backup_dir))
-            print(f"⏳ 临时移动备份目录: {original_backup_dir} -> {moved_path}")
     
     # 禁用 clcache 避免预处理器错误
     os.environ['CLCACHE_DISABLE'] = '1'
@@ -1038,9 +991,6 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     except Exception as e:
         print(f"❌ 编译过程中发生错误: {e}")
         return False
-    finally:
-        if should_restore:
-            _restore_database_and_backups(temp_db_dir, original_db, original_backup_dir)
 
 
 
