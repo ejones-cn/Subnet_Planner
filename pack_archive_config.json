@@ -8,14 +8,15 @@
         "__pycache__",
         "Picture.egg-info",
         ".idea",
-        ".trae",
         ".vs",
         ".vscode",
         "windows_app.build",
         "windows_app.dist",
         "windows_app.onefile-build",
         ".pytest_cache",
-        "dist"
+        "dist",
+        "ipam_backups",
+        "SubnetPlanner_Nuitka.dist"
     ],
     "version_file": "version.py",
     "timestamp_format": "yyyyMMddHHmmss",
