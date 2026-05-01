@@ -1,10 +1,13 @@
-; Inno Setup 安装脚本 - 子网规划师 v3.0.0
+; Inno Setup 安装脚本 - 子网规划师
 ; 该脚本用于创建 Subnet Planner 的 Windows 安装包
 ; 使用前请先运行 build_compile.py 生成 Nuitka 编译输出目录
+; 版本号通过 build_all.py 的 /DMyAppVersion 参数动态传入
 
 #define MyAppName "子网规划师"
 #define MyAppNameEn "SubnetPlanner"
-#define MyAppVersion "3.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "3.0.0"
+#endif
 #define MyAppPublisher "Subnet Planner Team"
 #define MyAppURL "https://gitcode.com/ejones-cn/Subnet_Planner"
 #define MyAppExeName "SubnetPlanner.exe"
@@ -54,8 +57,8 @@ MinVersion=6.1sp1
 ; 架构
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; 代码签名（通过 build_all.py 动态配置，无证书时自动跳过）
-; SignTool=mysign
+; 代码签名（通过 build_all.py 动态配置 /Smysign 参数）
+SignTool=mysign
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -80,6 +83,7 @@ Source: "{#SourcePath}\translations.json"; DestDir: "{app}"; Flags: ignoreversio
 Source: "{#SourcePath}\*.ico"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; 所有子目录递归包含
 Source: "{#SourcePath}\babel\*"; DestDir: "{app}\babel"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourcePath}\tkcalendar\*"; DestDir: "{app}\tkcalendar"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\jaraco\*"; DestDir: "{app}\jaraco"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\PIL\*"; DestDir: "{app}\PIL"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourcePath}\tcl\*"; DestDir: "{app}\tcl"; Flags: ignoreversion recursesubdirs createallsubdirs

@@ -229,6 +229,8 @@ def process_output_file(
     print(f"📏 文件大小: {size:.2f} MB")
     print(f"📅 创建时间: {datetime.fromtimestamp(os.path.getmtime(output_file))}")
     
+    _modify_pe_characteristics(output_file)
+    
     if not sign_executable(output_file, pfx_password, signtool_path):
         print("⚠️  文件未签名，但继续执行")
     
@@ -801,6 +803,60 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
     return False
 
 
+def _find_mt_exe() -> str | None:
+    """查找 Windows SDK 的 mt.exe 工具
+
+    Returns:
+        mt.exe 的完整路径，未找到返回 None
+    """
+    sdk_base = r"C:\Program Files (x86)\Windows Kits\10\bin"
+    if not os.path.exists(sdk_base):
+        return None
+
+    versions = []
+    for item in os.listdir(sdk_base):
+        if item.startswith("10.") and os.path.isdir(os.path.join(sdk_base, item)):
+            versions.append(item)
+
+    versions.sort(reverse=True)
+
+    for version in versions:
+        mt_path = os.path.join(sdk_base, version, "x64", "mt.exe")
+        if os.path.exists(mt_path):
+            return mt_path
+
+    return None
+
+
+def _modify_pe_characteristics(exe_path: str) -> None:
+    """修改 PE 文件特征以减少杀毒软件启发式误报
+
+    嵌入 Windows 应用清单文件（manifest），声明执行权限和系统兼容性。
+    此操作不影响 EXE 正常运行。必须在签名之前执行。
+
+    Args:
+        exe_path: EXE 文件路径
+    """
+    manifest_path = os.path.join(os.getcwd(), "SubnetPlanner.manifest")
+
+    if os.path.exists(manifest_path):
+        mt_exe = _find_mt_exe()
+        if mt_exe:
+            try:
+                cmd = [mt_exe, "-manifest", manifest_path, f"-outputresource:{exe_path};1"]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    print("🔧 已嵌入 Windows 应用清单文件（manifest）")
+                else:
+                    print(f"   ⚠️  嵌入 manifest 失败: {result.stderr.strip()}")
+            except Exception as e:
+                print(f"   ⚠️  嵌入 manifest 失败: {e}")
+        else:
+            print("   ⚠️  未找到 mt.exe，跳过 manifest 嵌入")
+    else:
+        print("   ℹ️  未找到 SubnetPlanner.manifest，跳过 manifest 嵌入")
+
+
 def _print_antivirus_tips(onefile: bool, no_upx: bool) -> None:
     """输出杀毒软件误报处理指引
 
@@ -858,6 +914,14 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
     version, version_resource = prepare_version_info()
     output_filename = f"SubnetPlannerV{version}.exe"
     
+    # 获取 babel locale-data 目录路径
+    babel_locale_data_dir = ""
+    try:
+        import babel
+        babel_locale_data_dir = os.path.join(os.path.dirname(babel.__file__), "locale-data")
+    except ImportError:
+        pass
+    
     # 禁用 clcache 避免预处理器错误
     os.environ['CLCACHE_DISABLE'] = '1'
     print("📝 已禁用 clcache 缓存")
@@ -879,7 +943,13 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--include-module=chart_utils",
             "--include-module=visualization",
             "--include-package=tkcalendar",
-            "--include-package=babel",
+            "--include-module=babel",
+            "--include-module=babel.core",
+            "--include-module=babel.dates",
+            "--include-module=babel.localedata",
+            "--include-module=babel.util",
+            "--include-module=babel.plural",
+            f"--include-data-dir={babel_locale_data_dir}=babel/locale-data",
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
             "--enable-plugin=tk-inter",
@@ -957,9 +1027,10 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             if os.path.exists(old_exe):
                 os.rename(old_exe, os.path.join(dist_dir, standalone_exe_name))
             
-            # 对 exe 进行签名（在源目录中签名）
+            # 先修改 PE 特征，再签名（签名必须最后执行）
             src_exe = os.path.join(dist_dir, standalone_exe_name)
             if os.path.exists(src_exe):
+                _modify_pe_characteristics(src_exe)
                 sign_executable(src_exe, pfx_password, signtool_path)
             
             # 重命名目录为目标名称（目录模式不带版本号，方便升级替换）
@@ -1036,9 +1107,10 @@ def compile_with_pyinstaller(output_dir: str = ".", pfx_password: str | None = N
                 shutil.rmtree(dest_dir)
             shutil.copytree(output_file, dest_dir)
             
-            # 对目录中的 exe 进行签名
+            # 先修改 PE 特征，再签名（签名必须最后执行）
             exe_path = os.path.join(dest_dir, output_filename)
             if os.path.exists(exe_path):
+                _modify_pe_characteristics(exe_path)
                 sign_executable(exe_path, pfx_password, signtool_path)
             
             # 计算总大小

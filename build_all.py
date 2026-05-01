@@ -159,16 +159,17 @@ def generate_installer(pfx_password=None):
 
     signtool_exe = find_signtool()
     if pfx_password and signtool_exe and os.path.exists("subnetplanner.pfx"):
-        sign_cmd = f'"{signtool_exe}" sign /f "subnetplanner.pfx" /p {pfx_password} /t http://timestamp.digicert.com /fd sha256 $f'
+        sign_cmd = f'"{signtool_exe}" sign /f "subnetplanner.pfx" /p "{pfx_password}" /t http://timestamp.digicert.com /fd sha256 $f'
         iscc_cmd.extend([f"/Smysign={sign_cmd}"])
         print("[INFO] SignTool configured for Inno Setup")
     else:
+        iscc_cmd.extend(["/Smysign=cmd /c echo >nul"])
         if not pfx_password:
-            print("[INFO] No PFX password, skipping Inno Setup SignTool")
+            print("[INFO] No PFX password, Inno Setup SignTool will skip signing")
         elif not signtool_exe:
-            print("[INFO] signtool.exe not found, skipping Inno Setup SignTool")
+            print("[INFO] signtool.exe not found, Inno Setup SignTool will skip signing")
         elif not os.path.exists("subnetplanner.pfx"):
-            print("[INFO] No PFX certificate, skipping Inno Setup SignTool")
+            print("[INFO] No PFX certificate, Inno Setup SignTool will skip signing")
 
     iscc_cmd.append("SubnetPlanner.iss")
     result = subprocess.run(iscc_cmd, cwd=os.getcwd())
