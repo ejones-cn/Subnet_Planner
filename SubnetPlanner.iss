@@ -32,7 +32,7 @@ VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Setup
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
-DefaultDirName={autopf}\{#MyAppNameEn}
+DefaultDirName={commonpf}\{#MyAppNameEn}
 DefaultGroupName="Subnet Planner"
 AllowNoIcons=yes
 ; 输出配置
@@ -47,8 +47,7 @@ LZMANumBlockThreads=4
 ; 安装选项
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog commandline
+PrivilegesRequired=admin
 ; 界面配置
 WizardStyle=modern
 WizardSizePercent=100
@@ -57,8 +56,7 @@ MinVersion=6.1sp1
 ; 架构
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; 代码签名（通过 build_all.py 动态配置 /Smysign 参数）
-SignTool=mysign
+; 代码签名由 build_all.py 在安装包生成后统一执行
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -82,13 +80,13 @@ Source: "{#SourcePath}\translations.json"; DestDir: "{app}"; Flags: ignoreversio
 ; 图标文件
 Source: "{#SourcePath}\*.ico"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; 所有子目录递归包含
-Source: "{#SourcePath}\babel\*"; DestDir: "{app}\babel"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\tkcalendar\*"; DestDir: "{app}\tkcalendar"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\jaraco\*"; DestDir: "{app}\jaraco"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\PIL\*"; DestDir: "{app}\PIL"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\tcl\*"; DestDir: "{app}\tcl"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\tcl8\*"; DestDir: "{app}\tcl8"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourcePath}\tk\*"; DestDir: "{app}\tk"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourcePath}\babel\*"; DestDir: "{app}\babel"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\tkcalendar\*"; DestDir: "{app}\tkcalendar"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\jaraco\*"; DestDir: "{app}\jaraco"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\PIL\*"; DestDir: "{app}\PIL"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\tcl\*"; DestDir: "{app}\tcl"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\tcl8\*"; DestDir: "{app}\tcl8"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+Source: "{#SourcePath}\tk\*"; DestDir: "{app}\tk"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -108,7 +106,13 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
 begin
+  if CurStep = ssPostInstall then
+  begin
+    Exec('icacls', ExpandConstant('"{app}" /grant Users:(OI)(CI)M'), '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
 end;
 
 function InitializeUninstall(): Boolean;

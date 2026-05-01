@@ -155,23 +155,7 @@ def generate_installer(pfx_password=None):
     version = _get_version()
     print(f"[INFO] Building installer for version {version}...")
 
-    iscc_cmd = [iscc, f"/DMyAppVersion={version}"]
-
-    signtool_exe = find_signtool()
-    if pfx_password and signtool_exe and os.path.exists("subnetplanner.pfx"):
-        sign_cmd = f'"{signtool_exe}" sign /f "subnetplanner.pfx" /p "{pfx_password}" /t http://timestamp.digicert.com /fd sha256 $f'
-        iscc_cmd.extend([f"/Smysign={sign_cmd}"])
-        print("[INFO] SignTool configured for Inno Setup")
-    else:
-        iscc_cmd.extend(["/Smysign=cmd /c echo >nul"])
-        if not pfx_password:
-            print("[INFO] No PFX password, Inno Setup SignTool will skip signing")
-        elif not signtool_exe:
-            print("[INFO] signtool.exe not found, Inno Setup SignTool will skip signing")
-        elif not os.path.exists("subnetplanner.pfx"):
-            print("[INFO] No PFX certificate, Inno Setup SignTool will skip signing")
-
-    iscc_cmd.append("SubnetPlanner.iss")
+    iscc_cmd = [iscc, f"/DMyAppVersion={version}", "SubnetPlanner.iss"]
     result = subprocess.run(iscc_cmd, cwd=os.getcwd())
 
     if result.returncode != 0:
@@ -275,47 +259,74 @@ def sign_installer(pfx_password):
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(description="Subnet Planner One-Click Build Script")
+    parser = argparse.ArgumentParser(
+        description="Subnet Planner One-Click Build Script",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""示例:
+  python build_all.py                    # 全部步骤（编译+安装包）
+  python build_all.py --step compile     # 只编译
+  python build_all.py --step installer   # 只生成安装包（需先编译）
+  python build_all.py -p tdxh2401        # 全部步骤+签名"""
+    )
     parser.add_argument("--pfx-password", "-p", help="PFX certificate password")
     parser.add_argument("--upx", action="store_true", default=False,
                         help="Enable UPX compression (may trigger antivirus false positives)")
     parser.add_argument("--signtool-path", "-s", help="Path to signtool.exe")
+    parser.add_argument("--step", "-t", choices=["all", "compile", "installer"],
+                        default="all",
+                        help="Build step: all=compile+installer, compile=compile only, installer=installer only (default: all)")
 
     args = parser.parse_args()
 
     check_python()
 
-    if not run_compile(args.pfx_password, args.upx, args.signtool_path):
-        print()
-        input("Press Enter to continue...")
-        sys.exit(1)
+    if args.step in ("all", "compile"):
+        if not run_compile(args.pfx_password, args.upx, args.signtool_path):
+            print()
+            input("Press Enter to continue...")
+            sys.exit(1)
 
-    if not check_compile_output():
-        print()
-        input("Press Enter to continue...")
-        sys.exit(1)
+    if args.step in ("all", "installer"):
+        if args.step == "installer":
+            print("[INFO] Skipping compilation, using existing build output")
 
-    if not generate_installer(args.pfx_password):
-        print()
-        input("Press Enter to continue...")
-        sys.exit(1)
+        if not check_compile_output():
+            print()
+            input("Press Enter to continue...")
+            sys.exit(1)
 
-    if os.path.exists("subnetplanner.pfx"):
-        sign_installer(args.pfx_password)
+        if not generate_installer(args.pfx_password):
+            print()
+            input("Press Enter to continue...")
+            sys.exit(1)
+
+        if os.path.exists("subnetplanner.pfx"):
+            sign_installer(args.pfx_password)
 
     version = _get_version()
     installer_path = f"installer\\SubnetPlannerV{version}_Setup.exe"
 
     print()
     print("=" * 50)
-    print(" Build All Completed!")
+    if args.step == "compile":
+        print(" Compile Completed!")
+    elif args.step == "installer":
+        print(" Installer Completed!")
+    else:
+        print(" Build All Completed!")
     print("=" * 50)
     print()
     print("Output:")
-    if os.path.exists(installer_path):
+    if args.step != "compile" and os.path.exists(installer_path):
         size_mb = os.path.getsize(installer_path) / (1024 * 1024)
         print(f"  Installer: {installer_path} ({size_mb:.1f} MB)")
-    print("  Build: SubnetPlanner_Nuitka.dist\\")
+    if os.path.exists("SubnetPlanner_Nuitka.dist"):
+        total_size = sum(
+            os.path.getsize(os.path.join(dp, f))
+            for dp, _, fn in os.walk("SubnetPlanner_Nuitka.dist", onerror=lambda e: None)
+            for f in fn
+        )
+        print(f"  Build: SubnetPlanner_Nuitka.dist\\ ({total_size / (1024 * 1024):.1f} MB)")
     print()
     input("Press Enter to continue...")
 
