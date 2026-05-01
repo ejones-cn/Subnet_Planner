@@ -32,6 +32,7 @@ build/
 *.egg-info/
 # dist/  # 临时取消注释以拉取dist目录
 dist_nuitka/
+SubnetPlanner_Nuitka.dist/
 
 # *.exe
 windows_app.dist/
