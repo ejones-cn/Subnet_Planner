@@ -51,7 +51,7 @@ ttk.Button.__init__ = patched_button_init
 
 # 本地模块  # noqa: E402
 from version import get_version  # noqa: E402
-from i18n import _, set_language, get_language  # noqa: E402
+from i18n import _, set_language, get_language, get_tkcalendar_locale  # noqa: E402
 from config_manager import get_config  # noqa: E402
 from ip_subnet_calculator import format_large_number  # noqa: E402
 from ip_subnet_calculator import (  # noqa: E402
@@ -15107,12 +15107,8 @@ class SubnetPlannerApp:
                     self.inline_edit_widget = DateEntry(
                         tree, 
                         width=width // 10 - 2, 
-                        background='white', 
-                        foreground='black', 
-                        borderwidth=1,
                         date_pattern='yyyy-MM-dd',
-                        showweeknumbers=False,
-                        showothermonthdays=False
+                        locale=get_tkcalendar_locale()
                     )
                     
                     # 设置初始日期
@@ -17650,7 +17646,11 @@ class SubnetPlannerApp:
         
         if DateEntry:
             # 直接创建DateEntry日期选择器
-            date_entry = DateEntry(dialog.content_frame, date_pattern='yyyy-MM-dd')
+            date_entry = DateEntry(
+                dialog.content_frame,
+                date_pattern='yyyy-MM-dd',
+                locale=get_tkcalendar_locale()
+            )
             date_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(5, 30))
             date_entry.set_date(default_expiry)
             
@@ -18009,7 +18009,11 @@ class SubnetPlannerApp:
         
         if DateEntry:
             # 使用DateEntry选择日期
-            expiry_entry = DateEntry(main_frame, date_pattern='yyyy-MM-dd')
+            expiry_entry = DateEntry(
+                main_frame,
+                date_pattern='yyyy-MM-dd',
+                locale=get_tkcalendar_locale()
+            )
             expiry_entry.grid(row=expiry_row, column=1, sticky="ew", pady=0, padx=(0, 10))
             # DateEntry初始化时会覆盖textvariable的值，所以需要在创建后设置日期
             expiry_entry.set_date(default_expiry)

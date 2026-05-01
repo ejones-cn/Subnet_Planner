@@ -36,6 +36,7 @@ class Args(NamedTuple):
     pfx_password: str | None
     signtool_path: str | None
     onefile: bool
+    no_upx: bool
 
 
 
@@ -241,11 +242,12 @@ def process_output_file(
     return True
 
 
-def _clean_dist_directory(dist_dir: str) -> None:
+def _clean_dist_directory(dist_dir: str, no_upx: bool = True) -> None:
     """清理 dist 目录中不必要的文件，减小体积和文件数
     
     Args:
         dist_dir: dist 目录路径
+        no_upx: 是否禁用 UPX 压缩（禁用可减少杀毒误报）
     """
     print("\n🧹 清理 dist 目录中不必要的文件...")
     
@@ -389,7 +391,28 @@ def _clean_dist_directory(dist_dir: str) -> None:
                         removed_count += 1
                         os.remove(fpath)
     
-    # 8. 清理无扩展名的文件（Nuitka 生成的编译缓存）
+    # 8. 清理 babel locale-data - 只保留中日韩英常用语言数据
+    babel_locale_dir = os.path.join(dist_dir, "babel", "locale-data")
+    if not os.path.exists(babel_locale_dir):
+        for root, dirs, _ in os.walk(dist_dir, onerror=lambda e: None):
+            if os.path.basename(root) == "locale-data" and "babel" in root:
+                babel_locale_dir = root
+                break
+    if os.path.exists(babel_locale_dir):
+        keep_locale_prefixes = (
+            "zh_", "zh.", "en_", "en.", "ja_", "ja.", "ko_", "ko.",
+            "root", "global",
+        )
+        for item in os.listdir(babel_locale_dir):
+            item_path = os.path.join(babel_locale_dir, item)
+            if os.path.isfile(item_path):
+                item_lower = item.lower()
+                if not any(item_lower.startswith(p) for p in keep_locale_prefixes):
+                    removed_size += os.path.getsize(item_path)
+                    removed_count += 1
+                    os.remove(item_path)
+
+    # 9. 清理无扩展名的文件（Nuitka 生成的编译缓存）
     for item in os.listdir(dist_dir):
         item_path = os.path.join(dist_dir, item)
         if os.path.isfile(item_path) and not os.path.splitext(item)[1]:
@@ -399,7 +422,7 @@ def _clean_dist_directory(dist_dir: str) -> None:
             removed_count += 1
             os.remove(item_path)
     
-    # 9. 删除空目录
+    # 10. 删除空目录
     for root, dirs, _ in os.walk(dist_dir, topdown=False, onerror=lambda e: None):
         for d in dirs:
             dir_path = os.path.join(root, d)
@@ -412,8 +435,11 @@ def _clean_dist_directory(dist_dir: str) -> None:
     removed_size_mb = removed_size / (1024 * 1024)
     print(f"   🗑️  删除了 {removed_count} 个文件，节省 {removed_size_mb:.1f} MB")
     
-    # UPX 压缩 DLL 和 PYD 文件
-    _upx_compress_dist(dist_dir)
+    if no_upx:
+        print("   ℹ️  UPX 压缩已禁用（默认），跳过 DLL/PYD 压缩以减少杀毒误报")
+        print("      如需启用 UPX 压缩减小体积，可加 --upx 参数")
+    else:
+        _upx_compress_dist(dist_dir)
 
 
 def _upx_compress_dist(dist_dir: str) -> None:
@@ -803,9 +829,58 @@ def sign_executable(executable_path: str, pfx_password: str | None = None, signt
     return False
 
 
+def _print_antivirus_tips(onefile: bool, no_upx: bool) -> None:
+    """输出杀毒软件误报处理指引
 
-def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None, onefile: bool = True) -> bool:
-    """使用Nuitka编译"""
+    Args:
+        onefile: 是否为单文件模式
+        no_upx: 是否禁用了 UPX 压缩
+    """
+    print("\n" + "=" * 60)
+    print("🛡️  杀毒软件误报处理指引")
+    print("=" * 60)
+
+    if onefile:
+        print("⚠️  当前使用 onefile（单文件）模式，此模式更容易触发杀毒误报")
+        print("   原因：onefile 模式运行时会自解压到临时目录，类似木马行为")
+        print("   建议：如持续误报，可改用 standalone（目录）模式编译")
+        print("         命令：python build_compile.py（不加 --onefile 参数）")
+    else:
+        print("✅  当前使用 standalone（目录）模式，误报风险较低")
+
+    if not no_upx:
+        print()
+        print("⚠️  当前启用了 UPX 压缩，UPX 加壳是 360 误报的首要原因！")
+        print("   建议：去掉 --upx 参数重新编译可大幅减少误报")
+        print("         命令：python build_compile.py")
+    else:
+        print("✅  已禁用 UPX 压缩，减少了杀毒误报风险")
+
+    print()
+    print("📋 减少误报的建议（按效果排序）：")
+    print("   1. 默认已禁用 UPX 压缩（不要加 --upx 参数）")
+    print("   2. 代码签名：使用 EV 代码签名证书签名 EXE（最有效）")
+    print("   3. 提交白名单：")
+    print("      - 360：http://sampleup.sd.360.cn （1-3个工作日处理）")
+    print("      - Windows Defender：https://www.microsoft.com/en-us/wdsi/filesubmission")
+    print("      - 火绒：https://www.huorong.cn/feedback.html")
+    print("   4. 发布时使用 ZIP/7z 压缩包而非裸 EXE")
+    print("   5. 提醒用户将程序添加到杀毒软件信任区")
+    print("   6. 上传 VirusTotal (https://www.virustotal.com) 自检误报情况")
+    print("=" * 60)
+
+
+
+def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, signtool_path: str | None = None, onefile: bool = True, no_upx: bool = True) -> bool:
+    """使用Nuitka编译
+    
+    Args:
+        output_dir: 输出目录
+        pfx_password: PFX证书密码
+        signtool_path: signtool.exe路径
+        onefile: 是否单文件模式
+        no_upx: 是否禁用UPX压缩（减少杀毒误报）
+    """
     print("\n🚀 使用 Nuitka 编译...")
     
     version, version_resource = prepare_version_info()
@@ -842,23 +917,29 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
         cmd: list[str] = [
             sys.executable, "-m", "nuitka",
             mode_arg,
-            "--follow-imports",  # 自动包含所有导入的模块
+            "--follow-imports",
             "--include-module=splash_screen",
             "--include-module=font_config",
             "--include-module=style_manager",
             "--include-module=chart_utils",
             "--include-module=visualization",
             "--include-package=tkcalendar",
+            "--include-package=babel",
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
             "--include-data-file=SubnetPlanner_config.json=SubnetPlanner_config.json",
             "--include-data-dir=Picture=Picture",
             "--enable-plugin=tk-inter",
-            "--windows-console-mode=attach",
+            "--windows-console-mode=disable",
             "--assume-yes-for-downloads",
-            # "--enable-plugin=anti-bloat",  # 禁用anti-bloat以确保tkcalendar被正确打包
-            # 排除不必要的包，减小体积
-            "--nofollow-import-to=babel",
+            "--deployment",
+            "--no-deployment-flag=self-execution",
+        ]
+
+        if onefile:
+            cmd.append("--onefile-tempdir-spec=%LOCALAPPDATA%/SubnetPlanner/runtime")
+
+        cmd.extend([
             "--nofollow-import-to=tzdata",
             "--nofollow-import-to=setuptools",
             "--nofollow-import-to=pip",
@@ -866,7 +947,6 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--nofollow-import-to=urllib3",
             "--nofollow-import-to=certifi",
             "--nofollow-import-to=requests",
-            # 排除大型科学计算库（未使用但可能被间接依赖）
             "--nofollow-import-to=numpy",
             "--nofollow-import-to=scipy",
             "--nofollow-import-to=matplotlib",
@@ -880,13 +960,15 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             f"--file-description={version_resource['file_description']}",
             f"--output-filename={output_filename if onefile else 'SubnetPlanner.exe'}",
             "windows_app.py"
-        ]
+        ])
         
         cmd = [option for option in cmd if option]
         
         print(f"📝 编译命令: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, cwd=os.getcwd())
         print("✅ Nuitka 编译成功!")
+
+        _print_antivirus_tips(onefile, no_upx)
         
         if onefile:
             # 单文件模式：查找 exe
@@ -913,7 +995,7 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             
             # 先清理源目录中的不必要文件（在复制前清理更高效）
             try:
-                _clean_dist_directory(dist_dir)
+                _clean_dist_directory(dist_dir, no_upx=no_upx)
             except OSError as e:
                 print(f"   ⚠️  清理过程中遇到文件系统问题（已跳过）: {e}")
             
@@ -1075,6 +1157,7 @@ def main() -> None:
     _ = parser.add_argument("--signtool-path", "-s", help="signtool.exe工具路径，不指定则自动检测")
     _ = parser.add_argument("--onefile", action="store_true", default=False, help="使用单文件编译模式（默认：否，使用Nuitka目录模式）")
     _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
+    _ = parser.add_argument("--upx", action="store_true", default=False, help="启用UPX压缩DLL/PYD（可减小体积但可能触发杀毒误报，默认禁用）")
     args = parser.parse_args()
     
     compile_type_str = cast(str, args.type)
@@ -1103,7 +1186,7 @@ def main() -> None:
     
     # 优先使用 Nuitka（真正的二进制编译）
     if args.type == CompileType.NUITKA or args.type == CompileType.BOTH:
-        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile)
+        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile, not args.upx)
     
     # 如果需要才使用 PyInstaller
     if args.type == CompileType.PYINSTALLER:

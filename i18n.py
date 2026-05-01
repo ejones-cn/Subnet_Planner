@@ -209,5 +209,21 @@ def get_supported_languages() -> list[tuple[str, str]]:
     return translator.get_supported_languages()
 
 
+def get_tkcalendar_locale() -> str:
+    """获取当前语言对应的 tkcalendar locale 字符串
+    
+    Returns:
+        tkcalendar 兼容的 locale 字符串，如 'zh_CN', 'en_US' 等
+    """
+    locale_map = {
+        "zh": "zh_CN",
+        "zh_tw": "zh_TW",
+        "en": "en_US",
+        "ja": "ja_JP",
+        "ko": "ko_KR"
+    }
+    return locale_map.get(translator.get_language(), "zh_CN")
+
+
 # 导出TRANSLATIONS常量，保持向后兼容
 TRANSLATIONS = translator.translations
