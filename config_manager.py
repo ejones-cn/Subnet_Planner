@@ -445,7 +445,7 @@ class ConfigManager:
         Returns:
             备份频率
         """
-        default_frequency = self.DEFAULT_CONFIG['auto_backup']['frequency']
+        default_frequency: str = "weekly"
         result = self.get('auto_backup.frequency', default_frequency)
         return result if isinstance(result, str) else default_frequency
     

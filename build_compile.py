@@ -1155,7 +1155,7 @@ def main() -> None:
     _ = parser.add_argument("--signtool-path", "-s", help="signtool.exe工具路径，不指定则自动检测")
     _ = parser.add_argument("--onefile", action="store_true", default=False, help="使用单文件编译模式（默认：否，使用Nuitka目录模式）")
     _ = parser.add_argument("--no-onefile", action="store_false", dest="onefile", help="不使用单文件编译模式")
-    _ = parser.add_argument("--upx", action="store_true", default=False,
+    _ = parser.add_argument("--upx", action="store_false", dest="no_upx", default=True,
                            help="启用UPX压缩（默认禁用以减少杀毒误报）")
     args = parser.parse_args()
     
@@ -1185,7 +1185,7 @@ def main() -> None:
     
     # 优先使用 Nuitka（真正的二进制编译）
     if args.type == CompileType.NUITKA or args.type == CompileType.BOTH:
-        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile, not args.upx)
+        success = compile_with_nuitka(args.output, args.pfx_password, args.signtool_path, args.onefile, args.no_upx)
     
     # 如果需要才使用 PyInstaller
     if args.type == CompileType.PYINSTALLER:
