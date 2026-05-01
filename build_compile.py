@@ -883,10 +883,8 @@ def compile_with_nuitka(output_dir: str = ".", pfx_password: str | None = None, 
             "--windows-icon-from-ico=icon.ico",
             "--include-data-file=translations.json=translations.json",
             "--enable-plugin=tk-inter",
-            "--windows-console-mode=disable",
+            "--windows-console-mode=attach",
             "--assume-yes-for-downloads",
-            "--deployment",
-            "--no-deployment-flag=self-execution",
         ]
 
         if onefile:

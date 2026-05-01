@@ -36,15 +36,16 @@ AllowNoIcons=yes
 OutputDir=installer
 OutputBaseFilename=SubnetPlannerV{#MyAppVersion}_Setup
 SetupIconFile=icon.ico
-; 压缩配置
-Compression=lzma2/ultra64
-SolidCompression=yes
-LZMAUseSeparateProcess=yes
+; 压缩配置（降低压缩等级减少杀毒误报，ultra64+固实压缩易被误判为加壳木马）
+Compression=lzma2/normal
+SolidCompression=no
+LZMAUseSeparateProcess=no
 LZMANumBlockThreads=4
 ; 安装选项
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog commandline
 ; 界面配置
 WizardStyle=modern
 WizardSizePercent=100
@@ -53,6 +54,8 @@ MinVersion=6.1sp1
 ; 架构
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+; 代码签名（通过 build_all.py 动态配置，无证书时自动跳过）
+; SignTool=mysign
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -101,13 +104,7 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
-var
-  ResultCode: Integer;
 begin
-  if CurStep = ssPostInstall then
-  begin
-    Exec('icacls', ExpandConstant('"{app}" /grant Users:(OI)(CI)M'), '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  end;
 end;
 
 function InitializeUninstall(): Boolean;
