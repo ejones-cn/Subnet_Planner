@@ -1771,10 +1771,7 @@ class SubnetPlannerApp:
 
         # 功能调试面板相关属性
         self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
-        self.undo_delete_btn = None
-        self.swap_btn = None
         self.planning_notebook = None
-        self.execute_planning_btn = None
         self.allocated_frame = None
         self.allocated_tree = None
         self.planning_remaining_frame = None
@@ -3140,32 +3137,36 @@ class SubnetPlannerApp:
         button_frame.grid_rowconfigure(0, weight=0)  # 添加按钮
         button_frame.grid_rowconfigure(1, weight=0)  # 删除按钮
         button_frame.grid_rowconfigure(2, weight=0)  # 撤销按钮
-        button_frame.grid_rowconfigure(3, weight=0)  # 导入按钮
-        button_frame.grid_rowconfigure(4, weight=1)  # 空白区域，将底部按钮推到底部
-        button_frame.grid_rowconfigure(5, weight=0)  # 空白行，保持原有结构
-        button_frame.grid_rowconfigure(6, weight=0)  # 交换记录按钮
+        button_frame.grid_rowconfigure(3, weight=0)  # 互换按钮
+        button_frame.grid_rowconfigure(4, weight=0)  # 导入按钮
+        button_frame.grid_rowconfigure(5, weight=1)  # 执行规划按钮 - 上半部分
+        button_frame.grid_rowconfigure(6, weight=0)  # 执行规划按钮 - 下半部分
         button_frame.grid_columnconfigure(0, weight=1)
 
         # 添加按钮
-        add_btn = ttk.Button(button_frame, text=_('add'), command=self.add_subnet_requirement, width=7, style="Function.TButton")
-        add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 5))
+        add_btn = ttk.Button(button_frame, text=_('add'), command=self.add_subnet_requirement, width=8, style="Function.TButton")
+        add_btn.grid(row=0, column=0, sticky="ew", pady=(0, 2))
 
         # 删除按钮
-        delete_btn = ttk.Button(button_frame, text=_('delete'), command=self.delete_subnet_requirement, width=7, style="Function.TButton")
-        delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 5))
+        delete_btn = ttk.Button(button_frame, text=_('delete'), command=self.delete_subnet_requirement, width=8, style="Function.TButton")
+        delete_btn.grid(row=1, column=0, sticky="ew", pady=(0, 2))
 
         # 撤销按钮
-        self.undo_delete_btn = ttk.Button(button_frame, text=_('undo'), command=self.undo, width=7, style="Function.TButton")
-        self.undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 5))
+        undo_delete_btn = ttk.Button(button_frame, text=_('undo'), command=self.undo, width=8, style="Function.TButton")
+        undo_delete_btn.grid(row=2, column=0, sticky="ew", pady=(0, 2))
 
         # 移动/交换按钮（根据选中情况自动判断操作）
         # 交换记录按钮 - 使用交换图标
-        self.swap_btn = ttk.Button(button_frame, text=_('move_records'), command=self.move_records, width=7, style="Move.TButton")
-        self.swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+        swap_btn = ttk.Button(button_frame, text=_('move_records'), command=self.move_records, width=8, style="Move.TButton")
+        swap_btn.grid(row=3, column=0, sticky="ew", pady=(0, 2))
 
-        # 导入按钮
-        import_btn = ttk.Button(button_frame, text=_('import'), command=self.import_requirements, width=7, style="Function.TButton")
-        import_btn.grid(row=6, column=0, sticky="ew", pady=(0, 0))
+        # 导入按钮 - 放置在互换按钮下面
+        import_btn = ttk.Button(button_frame, text=_('import'), command=self.import_requirements, width=8, style="Function.TButton")
+        import_btn.grid(row=4, column=0, sticky="ew", pady=(0, 2))
+
+        # 执行规划按钮 - 跨 row 5 和 row 6 两行，撑满两行高度
+        execute_planning_btn = ttk.Button(button_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=8, style="Function.TButton")
+        execute_planning_btn.grid(row=5, column=0, rowspan=2, sticky="nsew", pady=(7,0))
 
 
         # 从数据库加载子网需求和需求池数据
@@ -3252,13 +3253,7 @@ class SubnetPlannerApp:
         export_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=export_btn_x, y=-3)
         export_btn_width_actual = export_planning_btn.winfo_reqwidth()
 
-        # 执行规划按钮 - 位于导出规划按钮左边（最左边）
-        execute_btn_width, __ = style_manager.get_button_size("execute_planning") if style_manager else (10, 25)
-        self.execute_planning_btn = ttk.Button(
-            result_frame, text=_("execute_planning"), command=self.execute_subnet_planning, width=execute_btn_width
-        )
-        execute_btn_x = -sync_btn_width_actual - button_gap - export_btn_width_actual - button_gap
-        self.execute_planning_btn.place(relx=1.0, rely=0.0, anchor=tk.NE, x=execute_btn_x, y=-3)
+
 
         # 已分配子网页面
         self.allocated_frame = ttk.Frame(
@@ -10347,10 +10342,7 @@ class SubnetPlannerApp:
         self.export_utils = ExportUtils()
         
         self.test_dialog = None  # 用于存储调试面板的引用，确保只能打开一个
-        self.undo_delete_btn = None
-        self.swap_btn = None
         self.planning_notebook = None
-        self.execute_planning_btn = None
         self.allocated_frame = None
         self.allocated_tree = None
         self.planning_remaining_frame = None

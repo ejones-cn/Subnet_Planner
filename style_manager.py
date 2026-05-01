@@ -273,30 +273,19 @@ class StyleManager:
                        highlightbackground=[('focus', '')]
                        )
         
-        # 获取当前主题的按钮布局并移除焦点元素
+        # 重新定义按钮布局，完全移除焦点元素，确保所有按钮样式使用统一布局
         try:
-            tbutton_layout = self.style.layout("TButton")
-            new_layout = []
-            for element in tbutton_layout:
-                element_name = element[0]
-                if element_name not in ['focus', 'focusframe', 'highlight']:
-                    new_layout.append(element)
-            self.style.layout("TButton", new_layout)
-            self.style.layout("Function.TButton", new_layout)
-            self.style.layout("Move.TButton", new_layout)
-            self.style.layout("Icon.TButton", new_layout)
-        except Exception:
-            pass
-        
-        # 重新定义按钮布局，完全移除焦点元素
-        try:
-            self.style.layout("TButton", [
+            button_layout = [
                 ('Button.button', {'sticky': 'nswe', 'children': [
                     ('Button.padding', {'sticky': 'nswe', 'children': [
                         ('Button.label', {'sticky': 'nswe'})
                     ]})
                 ]})
-            ])
+            ]
+            self.style.layout("TButton", button_layout)
+            self.style.layout("Function.TButton", button_layout)
+            self.style.layout("Move.TButton", button_layout)
+            self.style.layout("Icon.TButton", button_layout)
         except Exception:
             pass
 

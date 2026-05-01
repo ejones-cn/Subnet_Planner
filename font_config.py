@@ -142,9 +142,9 @@ class FontConfig:
     
     FUNCTION_BUTTON_FONT_SIZE_SETTINGS: dict[str, int] = {
         "zh": 10,
-        "zh_tw": 11,
+        "zh_tw": 10,
         "ja": 10,
-        "ko": 10,
+        "ko": 9,
         "default": 9
     }
     

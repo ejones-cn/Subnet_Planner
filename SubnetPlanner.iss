@@ -14,8 +14,7 @@
 #define SourcePath "SubnetPlanner_Nuitka.dist"
 
 [Setup]
-; 基本配置
-AppId={{A5B8C9D0-E1F2-4A5B-8C9D-0E1F24A5B8C9}
+AppId={{A5B8C9D0-E1F2-4A5B-8C9D-0E1F24A5B8C9}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
